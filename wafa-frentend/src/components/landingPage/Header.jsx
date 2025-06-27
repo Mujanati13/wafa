@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -25,13 +26,13 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4 md:py-6">
           {/* Logo */}
-          <div className="text-2xl md:text-3xl font-bold tracking-tight group cursor-pointer transform transition-all duration-300 hover:scale-105">
+          <Link to="/" className="text-2xl md:text-3xl font-bold tracking-tight group cursor-pointer transform transition-all duration-300 hover:scale-105">
             <div className="relative">
               <span className="text-white group-hover:text-gray-200 transition-colors duration-300 drop-shadow-lg">WA</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 group-hover:from-purple-300 group-hover:via-pink-300 group-hover:to-blue-300 transition-all duration-300 drop-shadow-lg">FA</span>
               <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
@@ -51,7 +52,7 @@ const Header = () => {
 
           {/* Desktop CTA Button */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="relative overflow-hidden bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-purple-500/25 group border border-white/20 hover:border-white/30">
+            <Link to="/login" className="relative overflow-hidden bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-purple-500/25 group border border-white/20 hover:border-white/30">
               <span className="relative z-10 flex items-center space-x-2">
                 <span>Se connecter</span>
                 <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +61,7 @@ const Header = () => {
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur"></div>
-            </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -95,12 +96,13 @@ const Header = () => {
             </a>
           ))}
           <div className="pt-4 border-t border-white/10 cursor-pointer">
-            <button 
-              className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 transform hover:scale-105  "
+            <Link 
+              to="/login"
+              className="block w-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Se connecter
-            </button>
+            </Link>
           </div>
         </nav>
       </div>
