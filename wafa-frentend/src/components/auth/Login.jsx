@@ -149,27 +149,7 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  className="flex items-center justify-center px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white hover:bg-gray-700/50 transition-all duration-300 group"
-                >
-                  <FaGoogle className="mr-2 text-red-400 group-hover:text-red-300" />
-                  Google
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  className="flex items-center justify-center px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white hover:bg-gray-700/50 transition-all duration-300 group"
-                >
-                  <FaFacebook className="mr-2 text-blue-400 group-hover:text-blue-300" />
-                  Facebook
-                </motion.button>
-              </div>
+              
             </form>
 
             {/* Register Link */}

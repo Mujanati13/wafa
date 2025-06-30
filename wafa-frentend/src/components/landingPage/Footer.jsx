@@ -10,7 +10,7 @@ const Footer = () => {
              <span className="text-white">WA</span>
              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">FA</span>
            </div>
-           <p className="text-gray-400 mb-4">Work Smarter, Not harder</p>
+           <p className="text-gray-400 mb-4">Less work, Better results</p>
            <div className="flex space-x-4">
              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">📘</a>
              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">🐦</a>
