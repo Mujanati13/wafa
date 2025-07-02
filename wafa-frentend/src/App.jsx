@@ -5,10 +5,14 @@ import LandingPage from "./components/LandingPage";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import DashboardLayout from "./components/layout/DashboardLayout";
-import Dashboard from "./components/Dashboard";
-import ExamPage from "./components/ExamPage";
-
-
+import Dashboard from "./pages/Dashboard";
+import ExamsPage from "./pages/ExamsPage";
+import ExamPage from "./pages/ExamPage";
+import ResultsPage from "./pages/ResultsPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import ProgressPage from "./pages/ProgressPage";
+import SubjectsPage from "./pages/SubjectsPage";
 
 export default function App() {
   return (
@@ -20,13 +24,14 @@ export default function App() {
         
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard /> } />
-          <Route path="exams" element={<p className="text-white">exams</p>} />
-          <Route path="results" element={<p className="text-white">results</p>} />
-          <Route path="progress" element={<p className="text-white">progress</p>} />
-          <Route path="subjects" element={<p className="text-white">subjects</p>} />
+          <Route path="exams" element={<ExamsPage />} />
+          <Route path="exam/:examId" element={<ExamPage />} />
+          <Route path="results" element={<ResultsPage />} />
+          <Route path="progress" element={<ProgressPage />} />
+          <Route path="subjects" element={<SubjectsPage />} />
           <Route path="calendar" element={<p className="text-white">calendar</p>} />
-          <Route path="profile" element={<p className="text-white">profile</p>} />
-          <Route path="settings" element={<p className="text-white">settings</p>} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </Router>

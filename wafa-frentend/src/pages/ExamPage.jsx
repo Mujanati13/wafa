@@ -181,7 +181,7 @@ const ExamPage = () => {
   // Redirect to dashboard if exam not found
   useEffect(() => {
     if (!exam) {
-      navigate('/dashboard')
+      // navigate('/dashboard')
     } else {
       setTimeLeft(exam.duration * 60) // Set timer based on exam duration
     }

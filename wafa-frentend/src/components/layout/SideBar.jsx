@@ -11,7 +11,6 @@ const SideBar = () => {
         { id: 'results', label: 'Mes Résultats', icon: FaChartBar, path: '/dashboard/results' },
         { id: 'progress', label: 'Progression', icon: FaTrophy, path: '/dashboard/progress' },
         { id: 'subjects', label: 'Matières', icon: FaBook, path: '/dashboard/subjects' },
-        { id: 'calendar', label: 'Planning', icon: FaCalendarAlt, path: '/dashboard/calendar' },
         { id: 'profile', label: 'Profil', icon: FaUser, path: '/dashboard/profile' },
         { id: 'settings', label: 'Paramètres', icon: FaCog, path: '/dashboard/settings' },
       ]
@@ -61,7 +60,7 @@ const SideBar = () => {
        className="absolute -right-3 top-1/2 transform -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-full p-2 hover:bg-gray-700 transition-colors duration-300"
      >
        <motion.div
-         animate={{ rotate: sidebarOpen ? 180 : 0 }}
+         animate={{ rotate: sidebarOpen ? 0 : 180 }}
          transition={{ duration: 0.3 }}
        >
          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
