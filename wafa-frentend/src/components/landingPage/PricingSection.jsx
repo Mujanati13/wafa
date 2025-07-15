@@ -6,51 +6,51 @@ import { HiSparkles } from 'react-icons/hi'
 const PricingSection = () => {
   const plans = [
     {
-      name: "Freemium",
-      price: "Free",
+      name: "Gratuit",
+      price: "0DH",
       features: [
-        "Un cours par module",
-        "Questions classées",
+        "Accès limité aux QCM",
+        "Questions par catégorie",
         "Interface mobile",
-        "Organisateur de tâches",
-        "Forum de discussion",
+        "Suivi des progrès de base",
+        "Forum communautaire",
       ],
       highlight: false,
       icon: FiZap,
-      color: "from-blue-400 to-cyan-400",
-      bgGradient: "from-blue-500/10 to-cyan-500/10"
+      color: "from-blue-400 to-blue-500",
+      bgGradient: "from-blue-50 to-blue-100"
     },
     {
       name: "Premium (Semestre)",
-      price: "100 MAD",
-      originalPrice: "150 MAD",
+      price: "99DH",
+      originalPrice: "199DH",
       features: [
-        "Toutes les fonctionnalités de Freemium",
-        "Toutes les matières et fonctionnalités",
-        "Support",
-        "Assistance IA",
-        "Mises à jour anticipées",
+        "Accès illimité aux QCM",
+        "Toutes les spécialités médicales",
+        "Corrections détaillées",
+        "Suivi de performance avancé",
+        "Assistance IA ",
       ],
       highlight: true,
       icon: FiStar,
-      color: "from-purple-400 to-pink-400",
-      bgGradient: "from-purple-500/20 to-pink-500/20"
+      color: "from-blue-500 to-teal-500",
+      bgGradient: "from-blue-50 to-teal-50"
     },
     {
       name: "Premium (Année)",
-      price: "150 MAD",
-      originalPrice: "200 MAD",
+      price: "150DH",
+      originalPrice: "300DH",
       features: [
-        "All Premium features",
-        "Toutes les matières et fonctionnalités",
-        "Support",
-        "Assistance IA",
-        "Mises à jour anticipées",
+        "Toutes les fonctionnalités Premium",
+        "Accès aux examens blancs",
+        
+        "Statistiques détaillées",
+        "Accès anticipé aux nouveautés",
       ],
       highlight: false,
       icon: FiTrendingUp,
-      color: "from-orange-400 to-red-400",
-      bgGradient: "from-orange-500/10 to-red-500/10"
+      color: "from-teal-500 to-cyan-500",
+      bgGradient: "from-teal-50 to-cyan-50"
     },
   ];
 
@@ -93,11 +93,11 @@ const PricingSection = () => {
   };
 
   return (
-    <section id="plans" className="py-20 px-6 relative overflow-hidden">
+    <section id="plans" className="py-20 px-6 bg-white relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 to-pink-900/10"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/5 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-teal-50/30"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-100/20 rounded-full blur-3xl"></div>
       
       <div className="max-w-7xl mx-auto relative z-10">
         <motion.div 
@@ -112,14 +112,14 @@ const PricingSection = () => {
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
           >
-            <HiSparkles className="text-4xl text-purple-400 mx-auto" />
+            <HiSparkles className="text-4xl text-blue-600 mx-auto" />
           </motion.div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Choose the <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">perfect plan</span><br />
-            that suits you
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+            Choisissez le <span className="text-blue-600">plan parfait</span><br />
+            pour votre réussite
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Unlock your potential with our flexible pricing options designed for every learner
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            Débloquez votre potentiel avec nos options de tarification flexibles conçues pour chaque étudiant en médecine
           </p>
         </motion.div>
         
@@ -143,10 +143,10 @@ const PricingSection = () => {
                 className={`flex-1 max-w-sm mx-auto lg:mx-0 relative group`}
               >
                 <div className={`
-                  bg-gradient-to-br ${plan.bgGradient} backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500
+                  bg-white backdrop-blur-xl rounded-3xl p-8 border transition-all duration-500 shadow-lg hover:shadow-xl
                   ${plan.highlight 
-                    ? "border-purple-500/50 shadow-2xl shadow-purple-500/20" 
-                    : "border-gray-700/30 hover:border-purple-500/30"
+                    ? "border-blue-300 shadow-blue-100" 
+                    : "border-gray-200 hover:border-blue-200"
                   }
                 `}>
                   {/* Animated background overlay */}
@@ -160,9 +160,9 @@ const PricingSection = () => {
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
                       >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-bold shadow-lg">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold shadow-lg">
                           <HiSparkles className="text-sm" />
-                          MOST POPULAR
+                          LE PLUS POPULAIRE
                         </span>
                       </motion.div>
                     )}
@@ -175,12 +175,12 @@ const PricingSection = () => {
                       >
                         <IconComponent className="text-2xl text-white" />
                       </motion.div>
-                      <h3 className="text-2xl font-bold text-white">{plan.name}</h3>
+                      <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
                     </div>
                     
                     <div className="text-center mb-8">
                       <motion.div 
-                        className={`text-4xl font-black bg-gradient-to-r ${plan.color} bg-clip-text text-transparent mb-2`}
+                        className={`text-4xl font-black text-gray-900 mb-2`}
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.2 }}
                       >
@@ -214,7 +214,7 @@ const PricingSection = () => {
                       {plan.features.map((feature, idx) => (
                         <motion.li 
                           key={idx} 
-                          className="flex items-start gap-3 text-gray-300"
+                          className="flex items-start gap-3 text-gray-700"
                           variants={featureVariants}
                         >
                           <motion.div
@@ -224,7 +224,7 @@ const PricingSection = () => {
                           >
                             <FiCheck className="text-white text-sm" />
                           </motion.div>
-                          <span className="group-hover:text-white transition-colors duration-300">{feature}</span>
+                          <span className="group-hover:text-gray-800 transition-colors duration-300">{feature}</span>
                         </motion.li>
                       ))}
                     </motion.ul>
@@ -232,8 +232,8 @@ const PricingSection = () => {
                     <motion.button 
                       className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 relative overflow-hidden group ${
                         plan.highlight 
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg" 
-                          : "bg-gray-800/50 hover:bg-gray-700/50 text-purple-400 border border-purple-500/50"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-500/25" 
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-200 hover:border-blue-300"
                       }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -244,7 +244,7 @@ const PricingSection = () => {
                       <span className="relative z-10">Commencer</span>
                       {plan.highlight && (
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          className="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           layoutId="buttonBackground"
                         />
                       )}
@@ -254,6 +254,26 @@ const PricingSection = () => {
               </motion.div>
             );
           })}
+        </motion.div>
+        
+        <motion.div 
+          className="text-center mt-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          viewport={{ once: true }}
+        >
+          <p className="text-gray-600 mb-4">
+            Tous les plans incluent un accès mobile et une garantie de remboursement de 30 jours
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <span className="text-sm text-gray-500">Paiement sécurisé avec</span>
+            <div className="flex gap-4">
+              <div className="px-3 py-1 bg-blue-50 rounded-lg text-blue-700 font-medium text-sm">Carte bancaire</div>
+              <div className="px-3 py-1 bg-blue-50 rounded-lg text-blue-700 font-medium text-sm">PayPal</div>
+              <div className="px-3 py-1 bg-blue-50 rounded-lg text-blue-700 font-medium text-sm">Virement</div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

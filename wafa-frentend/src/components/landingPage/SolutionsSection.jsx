@@ -7,31 +7,31 @@ const SolutionsSection = () => {
   const features = [
     {
       icon: FaBookOpen,
-      title: "Medical Exams",
-      desc: "Practice with real medical exams and track your progress with comprehensive question banks.",
+      title: "QCM Médicaux",
+      desc: "Pratiquez avec de vrais QCM médicaux et suivez vos progrès avec des banques de questions complètes.",
       color: "from-blue-500 to-blue-600",
-      bgGradient: "from-blue-500/10 to-blue-600/10",
+      bgGradient: "from-blue-50 to-blue-100",
     },
     {
       icon: FaRobot,
-      title: "AI Feedback",
-      desc: "Get instant, personalized feedback powered by advanced AI to improve your understanding.",
-      color: "from-purple-500 to-purple-600",
-      bgGradient: "from-purple-500/10 to-purple-600/10",
+      title: "Feedback IA",
+      desc: "Obtenez des commentaires instantanés et personnalisés grâce à notre IA avancée pour améliorer votre compréhension.",
+      color: "from-teal-500 to-teal-600",
+      bgGradient: "from-teal-50 to-teal-100",
     },
     {
       icon: FaList,
-      title: "Study Playlists",
-      desc: "Curated study playlists for every medical subject, organized by difficulty and topic.",
-      color: "from-green-500 to-green-600",
-      bgGradient: "from-green-500/10 to-green-600/10",
+      title: "Matières Organisées",
+      desc: "Matières médicales organisées par difficulté et sujet, parfaites pour votre cursus médical.",
+      color: "from-indigo-500 to-indigo-600",
+      bgGradient: "from-indigo-50 to-indigo-100",
     },
     {
       icon: FaChartLine,
-      title: "Analytics & Stats",
-      desc: "Visualize your improvement with detailed analytics and performance tracking.",
-      color: "from-orange-500 to-orange-600",
-      bgGradient: "from-orange-500/10 to-orange-600/10",
+      title: "Statistiques Détaillées",
+      desc: "Visualisez vos améliorations avec des analyses détaillées et un suivi de performance.",
+      color: "from-cyan-500 to-cyan-600",
+      bgGradient: "from-cyan-50 to-cyan-100",
     },
   ];
 
@@ -76,10 +76,10 @@ const SolutionsSection = () => {
   };
   
   return (
-    <section id="features" className="py-24 px-6 relative overflow-hidden">
+    <section id="features" className="py-24 px-6 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/5 to-transparent"></div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-50/30 to-transparent"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl"></div>
       
       <div className="max-w-7xl mx-auto relative z-10">
         <motion.div 
@@ -90,19 +90,19 @@ const SolutionsSection = () => {
           variants={titleVariants}
         >
           <motion.div 
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-full px-6 py-2 mb-6 border border-purple-500/30"
+            className="inline-flex items-center gap-2 bg-blue-50 backdrop-blur-sm rounded-full px-6 py-3 mb-6 border border-blue-200 shadow-sm"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            <BiSolidBadgeCheck className="text-purple-400" />
-            <span className="text-sm font-medium text-purple-300">Our Solutions</span>
+            <BiSolidBadgeCheck className="text-blue-600" />
+            <span className="text-sm font-semibold text-blue-800">Nos Solutions</span>
           </motion.div>
           
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-            Comprehensive Medical Learning
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
+            Formation Médicale <span className="text-blue-600">Complète</span>
           </h2>
-          <p className="text-xl text-gray-400 max-w-4xl mx-auto leading-relaxed">
-            Elevate your medical education with cutting-edge tools designed by healthcare professionals for future doctors
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            Perfectionnez votre formation médicale avec des outils de pointe conçus par des professionnels de santé pour les futurs médecins
           </p>
         </motion.div>
         
@@ -127,7 +127,7 @@ const SolutionsSection = () => {
                 whileTap={{ scale: 0.95 }}
                 className="group relative"
               >
-                <div className={`relative bg-gradient-to-br from-gray-800/40 to-gray-900/40 backdrop-blur-xl rounded-3xl p-8 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-500 h-full`}>
+                <div className={`relative bg-white backdrop-blur-xl rounded-3xl p-8 border border-gray-200 hover:border-blue-300 transition-all duration-500 h-full shadow-lg hover:shadow-xl`}>
                   {/* Gradient background overlay on hover */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${feature.bgGradient} rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                   
@@ -144,25 +144,25 @@ const SolutionsSection = () => {
                       <IconComponent className="text-2xl text-white" />
                     </motion.div>
                     
-                    <h3 className="text-2xl font-bold mb-4 text-white group-hover:text-purple-100 transition-colors duration-300">
+                    <h3 className="text-2xl font-bold mb-4 text-gray-900 group-hover:text-gray-800 transition-colors duration-300">
                       {feature.title}
                     </h3>
                     
-                    <p className="text-gray-400 leading-relaxed mb-6 group-hover:text-gray-300 transition-colors duration-300">
+                    <p className="text-gray-600 leading-relaxed mb-6 group-hover:text-gray-700 transition-colors duration-300">
                       {feature.desc}
                     </p>
                     
                     <motion.div 
-                      className="inline-flex items-center gap-2 text-purple-400 font-medium group-hover:text-purple-300 transition-colors duration-300"
+                      className="inline-flex items-center gap-2 text-blue-600 font-medium group-hover:text-blue-700 transition-colors duration-300"
                       whileHover={{ x: 5 }}
                     >
-                      <span>Learn more</span>
+                      <span>En savoir plus</span>
                       <FaArrowRight className="text-sm" />
                     </motion.div>
                   </div>
                   
                   {/* Shine effect */}
-                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 </div>
               </motion.div>
             );
@@ -178,14 +178,14 @@ const SolutionsSection = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
         >
           <motion.button 
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transform transition-all duration-300"
+            className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300"
             whileHover={{ 
               scale: 1.05,
-              boxShadow: "0 20px 40px rgba(147, 51, 234, 0.3)"
+              boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)"
             }}
             whileTap={{ scale: 0.95 }}
           >
-            <span>Explore All Features</span>
+            <span>Découvrir toutes les fonctionnalités</span>
             <FaArrowRight className="text-lg" />
           </motion.button>
         </motion.div>

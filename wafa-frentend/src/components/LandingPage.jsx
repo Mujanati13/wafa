@@ -10,7 +10,7 @@ import Footer from "./landingPage/Footer";
 
 const LandingPage = () => {
   return (
-    <div className="bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] min-h-screen text-white font-sans">
+    <div className="bg-white min-h-screen text-gray-900 font-sans">
       <Header />
       <HeroSection />
       <SolutionsSection />

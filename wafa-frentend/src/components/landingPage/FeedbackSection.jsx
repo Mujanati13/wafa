@@ -35,7 +35,7 @@ const FeedbackSection = () => {
   ]
 
   return (
-    <section className="py-20 px-6 bg-gradient-to-br from-purple-900/10 via-indigo-900/10 to-pink-900/10 relative overflow-hidden">
+    <section className="py-20 px-6 bg-white relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -48,7 +48,7 @@ const FeedbackSection = () => {
             repeat: Infinity, 
             ease: "linear" 
           }}
-          className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-xl"
+          className="absolute -top-10 -right-10 w-40 h-40 bg-blue-100/20 rounded-full blur-xl"
         />
         <motion.div
           animate={{ 
@@ -60,7 +60,7 @@ const FeedbackSection = () => {
             repeat: Infinity, 
             ease: "linear" 
           }}
-          className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-full blur-xl"
+          className="absolute -bottom-10 -left-10 w-32 h-32 bg-teal-100/20 rounded-full blur-xl"
         />
       </div>
 
@@ -90,7 +90,7 @@ const FeedbackSection = () => {
                 repeatType: "reverse",
                 ease: "easeInOut"
               }}
-              className="absolute text-purple-400/30 text-2xl"
+              className="absolute text-blue-400/40 text-2xl"
               style={{
                 left: `${20 + index * 20}%`,
                 top: `${10 + (index % 2) * 80}%`
@@ -107,22 +107,22 @@ const FeedbackSection = () => {
             initial={{ scale: 0, rotate: -180 }}
             whileInView={{ scale: 1, rotate: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full mb-6 backdrop-blur-sm border border-purple-400/20"
+            className="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-full mb-6 shadow-lg border border-blue-200"
           >
-            <FiMessageCircle className="text-4xl text-purple-400" />
+            <FiMessageCircle className="text-4xl text-blue-600" />
           </motion.div>
         </motion.div>
 
         <motion.h2 
           variants={itemVariants}
-          className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent"
+          className="text-4xl md:text-6xl font-bold mb-6 text-gray-900"
         >
-          Nous voulons vos retours
+          Nous voulons vos <span className="text-blue-600">retours</span>
         </motion.h2>
 
         <motion.p 
           variants={itemVariants}
-          className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed"
+          className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed"
         >
           Aidez-nous à améliorer WAFA en partageant vos pensées et suggestions. 
           Votre contribution alimente notre innovation.
@@ -136,10 +136,10 @@ const FeedbackSection = () => {
           <motion.button
             whileHover={{ 
               scale: 1.05,
-              boxShadow: "0 20px 40px rgba(147, 51, 234, 0.4)"
+              boxShadow: "0 20px 40px rgba(59, 130, 246, 0.25)"
             }}
             whileTap={{ scale: 0.98 }}
-            className="group bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center relative overflow-hidden"
+            className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center relative overflow-hidden"
           >
             <motion.div
               whileHover={{ x: 5 }}
@@ -161,10 +161,10 @@ const FeedbackSection = () => {
           <motion.button
             whileHover={{ 
               scale: 1.05,
-              borderColor: "rgb(147, 51, 234)"
+              borderColor: "rgb(59, 130, 246)"
             }}
             whileTap={{ scale: 0.98 }}
-            className="border-2 border-gray-600 hover:border-purple-500 text-gray-300 hover:text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center backdrop-blur-sm"
+            className="border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center bg-white shadow-md"
           >
             <FiStar className="text-xl" />
             <span>Évaluer l'app</span>
@@ -184,7 +184,7 @@ const FeedbackSection = () => {
             <motion.div
               key={index}
               whileHover={{ y: -5, scale: 1.02 }}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center"
+              className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center shadow-lg"
             >
               <div className="flex justify-center mb-2">
                 {[...Array(5)].map((_, i) => (
@@ -198,8 +198,8 @@ const FeedbackSection = () => {
                   </motion.div>
                 ))}
               </div>
-              <p className="text-gray-300 text-sm mb-2">"{testimonial.text}"</p>
-              <p className="text-gray-400 text-xs">- {testimonial.author}</p>
+              <p className="text-gray-700 font-medium text-sm mb-2">"{testimonial.text}"</p>
+              <p className="text-blue-600 text-xs font-semibold">- {testimonial.author}</p>
             </motion.div>
           ))}
         </motion.div>

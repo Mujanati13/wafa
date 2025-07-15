@@ -9,19 +9,19 @@ const TestimonialsSection = () => {
 const testimonials = [
   {
     name: "Sara B.",
-    text: "WAFA m'a aidée à réussir mes examens avec moins de stress! L'IA est incroyable.",
+    text: "WAFA m'a aidée à réussir mes examens avec moins de stress! Les QCM sont excellents.",
     icon: FaUserGraduate,
     rating: 5,
     role: "Étudiante en médecine",
-    color: "from-purple-500 to-pink-500"
+    color: "from-blue-500 to-blue-600"
   },
   {
     name: "Yassine M.",
-    text: "Les playlists et les stats m'ont permis d'organiser mes révisions comme jamais.",
+    text: "L'organisation par matière et les statistiques m'ont permis d'optimiser mes révisions.",
     icon: AiFillThunderbolt,
     rating: 5,
     role: "Étudiant en pharmacie",
-    color: "from-blue-500 to-cyan-500"
+    color: "from-teal-500 to-teal-600"
   },
   {
     name: "Imane K.",
@@ -29,7 +29,7 @@ const testimonials = [
     icon: BsShieldCheck,
     rating: 5,
     role: "Étudiante en dentaire",
-    color: "from-emerald-500 to-teal-500"
+    color: "from-indigo-500 to-indigo-600"
   },
 ];
 
@@ -74,11 +74,11 @@ const titleVariants = {
 };
 
   return (
-   <section className="py-24 px-6 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 relative overflow-hidden">
+   <section className="py-24 px-6 bg-gradient-to-br from-blue-50 to-white relative overflow-hidden">
      {/* Background decoration */}
-     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5"></div>
-     <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-     <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"></div>
+     <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-teal-100/20"></div>
+     <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl"></div>
+     <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-100/30 rounded-full blur-3xl"></div>
      
      <div className="max-w-7xl mx-auto relative z-10">
        <motion.div
@@ -89,11 +89,11 @@ const titleVariants = {
          className="text-center mb-20"
        >
        
-         <h2 className="text-5xl md:text-7xl font-extrabold bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent mb-6">
-         What our students say
+         <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+           Ce que disent nos <span className="text-blue-600">étudiants</span>
          </h2>
-         <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-         Learn how WAFA is transforming the learning experience for thousands of students
+         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+           Découvrez comment WAFA transforme l'expérience d'apprentissage de milliers d'étudiants en médecine
          </p>
        </motion.div>
 
@@ -118,24 +118,24 @@ const titleVariants = {
                className="group relative"
              >
                {/* Card glow effect */}
-               <div className={`absolute -inset-1 bg-gradient-to-r ${testimonial.color} rounded-3xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200`}></div>
+               <div className={`absolute -inset-1 bg-gradient-to-r ${testimonial.color} rounded-3xl blur opacity-10 group-hover:opacity-25 transition duration-1000 group-hover:duration-200`}></div>
                
-               <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 group-hover:border-slate-600/50 transition-all duration-500 h-full">
+               <div className="relative bg-white backdrop-blur-xl rounded-3xl p-8 border border-gray-200 group-hover:border-blue-300 transition-all duration-500 h-full shadow-lg hover:shadow-xl">
                  {/* Quote icon */}
                  <div className="absolute top-6 right-6">
-                   <FaQuoteLeft className="text-3xl text-purple-400/30" />
+                   <FaQuoteLeft className="text-3xl text-blue-200" />
                  </div>
 
                  {/* Icon and user info */}
                  <div className="flex items-center mb-8">
                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${testimonial.color} p-0.5 mr-5`}>
-                     <div className="w-full h-full bg-slate-800 rounded-2xl flex items-center justify-center">
-                       <IconComponent className="text-2xl text-white" />
+                     <div className="w-full h-full bg-white rounded-2xl flex items-center justify-center">
+                       <IconComponent className="text-2xl text-blue-600" />
                      </div>
                    </div>
                    <div>
-                     <div className="font-bold text-xl text-white mb-1">{testimonial.name}</div>
-                     <div className="text-sm text-purple-400 font-medium">{testimonial.role}</div>
+                     <div className="font-bold text-xl text-gray-900 mb-1">{testimonial.name}</div>
+                     <div className="text-sm text-blue-600 font-medium">{testimonial.role}</div>
                    </div>
                  </div>
 
@@ -155,7 +155,7 @@ const titleVariants = {
                  </div>
 
                  {/* Testimonial text */}
-                 <p className="text-gray-300 leading-relaxed text-lg font-medium">
+                 <p className="text-gray-700 leading-relaxed text-lg font-medium">
                    "{testimonial.text}"
                  </p>
 
@@ -178,9 +178,9 @@ const titleVariants = {
          <motion.button
            whileHover={{ scale: 1.05 }}
            whileTap={{ scale: 0.95 }}
-           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 transform hover:shadow-purple-500/25"
+           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-300 transform hover:shadow-blue-500/25"
          >
-           Join us today
+           Rejoignez-nous dès aujourd'hui
          </motion.button>
        </motion.div>
      </div>
