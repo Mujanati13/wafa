@@ -25,14 +25,16 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard /> } />
           <Route path="exams" element={<ExamsPage />} />
-          <Route path="exam/:examId" element={<ExamPage />} />
+          {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />
           <Route path="progress" element={<ProgressPage />} />
           <Route path="subjects" element={<SubjectsPage />} />
+          <Route path="subjects/:courseId" element={<SubjectsPage />} />
           <Route path="calendar" element={<p className="text-white">calendar</p>} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
+        <Route path="/exam/:examId" element={<ExamPage />} />
       </Routes>
     </Router>
   );

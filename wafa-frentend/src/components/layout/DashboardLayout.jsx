@@ -8,7 +8,7 @@ const DashBoardLayout = () => {
 
   return (
     
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] ">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-50 to-white ">
       <SideBar />
       <main className="flex-1 overflow-y-auto">
         <TopBar />

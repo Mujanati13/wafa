@@ -1,686 +1,524 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  FaClock, FaQuestion, FaCheck, FaTimes, FaFlag, 
-  FaArrowLeft, FaArrowRight, FaPlay, FaPause,
-  FaCheckCircle, FaTimesCircle, FaExclamationTriangle,
-  FaStethoscope, FaMedkit, FaBrain, FaHeart, FaEye, FaBone
-} from 'react-icons/fa'
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaArrowLeft, FaArrowRight, FaClock, FaCheckCircle, FaTimesCircle, FaTimes, FaMoon, FaSun, FaCheck, FaChevronRight } from "react-icons/fa";
 
 const ExamPage = () => {
-  const { examId } = useParams()
-  const navigate = useNavigate()
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [timeLeft, setTimeLeft] = useState(5400) // Default 90 minutes
-  const [isActive, setIsActive] = useState(false)
-  const [flaggedQuestions, setFlaggedQuestions] = useState(new Set())
-  const [showResults, setShowResults] = useState(false)
-  const [examStarted, setExamStarted] = useState(false)
+  const { examId } = useParams();
+  const navigate = useNavigate();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const [examCompleted, setExamCompleted] = useState(false);
+  const [expandedPeriods, setExpandedPeriods] = useState({ 'janvier2024': true });
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Exam data lookup - this would come from a database in real implementation
-  const examDatabase = {
-    1: {
-    id: 1,
-    subject: 'Anatomie Générale',
-    icon: FaBone,
-    duration: 90,
-    totalQuestions: 20,
-    questions: [
-      {
-        id: 1,
-        question: "Quelle est la fonction principale du système cardiovasculaire ?",
-        options: [
-          "Transport des nutriments et de l'oxygène",
-          "Production d'hormones",
-          "Digestion des aliments",
-          "Filtration des déchets"
-        ],
-        correctAnswer: 0,
-        explanation: "Le système cardiovasculaire transporte les nutriments, l'oxygène et les hormones vers les tissus et élimine les déchets métaboliques."
-      },
-      {
-        id: 2,
-        question: "Combien d'os compose le squelette humain adulte ?",
-        options: [
-          "198 os",
-          "206 os",
-          "215 os",
-          "220 os"
-        ],
-        correctAnswer: 1,
-        explanation: "Le squelette humain adulte est composé de 206 os, contrairement au nouveau-né qui en possède environ 270."
-      },
-      {
-        id: 3,
-        question: "Quelle est la plus grande cellule du corps humain ?",
-        options: [
-          "Le neurone",
-          "L'ovule",
-          "Le globule rouge",
-          "La cellule musculaire"
-        ],
-        correctAnswer: 1,
-        explanation: "L'ovule est la plus grande cellule du corps humain avec un diamètre d'environ 0,1 mm."
-      },
-      {
-        id: 4,
-        question: "Dans quelle partie du cœur se trouve la valve tricuspide ?",
-        options: [
-          "Entre l'oreillette droite et le ventricule droit",
-          "Entre l'oreillette gauche et le ventricule gauche",
-          "À la sortie du ventricule droit",
-          "À la sortie du ventricule gauche"
-        ],
-        correctAnswer: 0,
-        explanation: "La valve tricuspide se situe entre l'oreillette droite et le ventricule droit, permettant le passage du sang dans un seul sens."
-      },
-      {
-        id: 5,
-        question: "Quel est le nom du processus par lequel les globules rouges transportent l'oxygène ?",
-        options: [
-          "Osmose",
-          "Diffusion simple",
-          "Liaison à l'hémoglobine",
-          "Transport actif"
-        ],
-        correctAnswer: 2,
-        explanation: "L'oxygène se lie à l'hémoglobine dans les globules rouges pour former l'oxyhémoglobine, permettant son transport."
-      },
-      {
-        id: 6,
-        question: "Quelle hormone régule principalement le taux de glucose dans le sang ?",
-        options: [
-          "L'adrénaline",
-          "L'insuline",
-          "Le cortisol",
-          "La thyroxine"
-        ],
-        correctAnswer: 1,
-        explanation: "L'insuline, produite par le pancréas, régule le taux de glucose sanguin en favorisant son absorption par les cellules."
-      },
-      {
-        id: 7,
-        question: "Combien de chambres possède le cœur humain ?",
-        options: [
-          "2 chambres",
-          "3 chambres",
-          "4 chambres",
-          "5 chambres"
-        ],
-        correctAnswer: 2,
-        explanation: "Le cœur humain possède 4 chambres : 2 oreillettes (droite et gauche) et 2 ventricules (droit et gauche)."
-      },
-      {
-        id: 8,
-        question: "Quelle est la fonction principale des reins ?",
-        options: [
-          "Production d'hormones uniquement",
-          "Filtration du sang et élimination des déchets",
-          "Stockage des nutriments",
-          "Production de globules rouges uniquement"
-        ],
-        correctAnswer: 1,
-        explanation: "Les reins filtrent le sang pour éliminer les déchets et l'excès d'eau, formant l'urine."
-      },
-      {
-        id: 9,
-        question: "Dans quel organe se déroule principalement la digestion des protéines ?",
-        options: [
-          "L'estomac",
-          "Le foie",
-          "L'intestin grêle",
-          "Le gros intestin"
-        ],
-        correctAnswer: 0,
-        explanation: "La digestion des protéines commence dans l'estomac grâce à la pepsine et à l'acidité gastrique."
-      },
-      {
-        id: 10,
-        question: "Quel est le neurotransmetteur principal du système nerveux parasympathique ?",
-        options: [
-          "La dopamine",
-          "La sérotonine",
-          "L'acétylcholine",
-          "La noradrénaline"
-        ],
-        correctAnswer: 2,
-        explanation: "L'acétylcholine est le principal neurotransmetteur du système nerveux parasympathique."
-      }
-    ]
-    },
-    2: {
-      id: 2,
-      subject: 'Biologie Cellulaire',
-      icon: FaMedkit,
-      duration: 75,
-      totalQuestions: 15,
+  // Exam data with medical questions - updated to support multiple correct answers
+  const examData = {
+    "gyneco": {
+      title: "Gyneco-obstétricale",
+      subject: "Cancérologies", 
+      description: "Janvier 2024 Q 25 - Correction : officiel",
+      totalQuestions: 89,
+      completed: 0,
       questions: [
         {
-          id: 1,
-          question: "Quelle organite est responsable de la production d'ATP ?",
+          id: 25,
+          period: "Janvier 2024",
+          status: "current",
+          question: "Concernant le cancer du col stade Ibl:",
           options: [
-            "Le noyau",
-            "La mitochondrie",
-            "Le réticulum endoplasmique",
-            "L'appareil de Golgi"
+            "C'est un stade pré invasif",
+            "il est étendu aux paramètres",
+            "il peut être traité par une hystérectomie élargie avec lymphadénectomie",
+            "il nécessite toujours une chimiothérapie",
+            "Il est de bon pronostic"
           ],
-          correctAnswer: 1,
-          explanation: "La mitochondrie est l'organite responsable de la production d'ATP par la respiration cellulaire."
+          correctAnswers: ["C", "E"], // Multiple correct answers
+          multipleChoice: true,
+          explanation: "Au stade Ibl, le cancer peut être traité par une hystérectomie élargie avec lymphadénectomie et il est généralement de bon pronostic quand traité appropriément."
+        },
+        {
+          id: 26,
+          period: "Janvier 2024", 
+          status: "pending",
+          question: "Les facteurs de risque du cancer du col utérin incluent:",
+          options: [
+            "L'infection par HPV",
+            "Le tabagisme",
+            "L'immunodépression",
+            "La multiparité",
+            "L'âge précoce des premiers rapports"
+          ],
+          correctAnswers: ["A", "B", "C", "D", "E"], // Multiple correct answers
+          multipleChoice: true,
+          explanation: "Tous ces facteurs augmentent le risque de cancer du col utérin : HPV, tabagisme, immunodépression, multiparité et âge précoce des premiers rapports."
+        },
+        {
+          id: 39,
+          period: "Janvier 2024",
+          status: "pending", 
+          question: "Le dépistage du cancer du col utérin:",
+          options: [
+            "Se fait par frottis cervical",
+            "Commence à 25 ans",
+            "Se fait tous les 3 ans",
+            "Peut détecter les lésions précancéreuses",
+            "Nécessite une anesthésie générale"
+          ],
+          correctAnswers: ["A", "B", "C", "D"], // Multiple correct answers
+          multipleChoice: true,
+          explanation: "Le dépistage par frottis permet une détection précoce efficace et se fait sans anesthésie."
         }
-        // More questions would be added here
       ]
     }
-    // More exams would be added here
-  }
+  };
 
-  // Get exam data based on examId from URL
-  const exam = examDatabase[parseInt(examId)]
-  
-  // Redirect to dashboard if exam not found
-  useEffect(() => {
-    if (!exam) {
-      // navigate('/dashboard')
-    } else {
-      setTimeLeft(exam.duration * 60) // Set timer based on exam duration
-    }
-  }, [exam, navigate])
-  
-  // Return loading state if exam not found
-  if (!exam) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p>Chargement de l'examen...</p>
-        </div>
-      </div>
-    )
-  }
+  const exam = examData[examId] || examData["gyneco"];
+  const question = exam.questions[currentQuestion];
 
-  // Timer effect
-  useEffect(() => {
-    let interval = null
-    if (isActive && timeLeft > 0 && examStarted) {
-      interval = setInterval(() => {
-        setTimeLeft(timeLeft => timeLeft - 1)
-      }, 1000)
-    } else if (timeLeft === 0) {
-      handleSubmitExam()
+  const examPeriods = [
+    {
+      id: "janvier2024",
+      label: "Janvier 2024", 
+      questions: [
+        { id: 25, status: "active" },
+        { id: 26, status: "pending" },
+        { id: 39, status: "pending" }
+      ]
+    },
+    {
+      id: "juillet2024",
+      label: "Juillet 2024",
+      questions: []
+    },
+    {
+      id: "octobre2024", 
+      label: "Octobre 2024",
+      questions: []
+    },
+    {
+      id: "novembre2024",
+      label: "Novembre 2024", 
+      questions: []
+    },
+    {
+      id: "janvier2023",
+      label: "Janvier 2023",
+      questions: []
+    },
+    {
+      id: "juin2023",
+      label: "Juin 2023", 
+      questions: []
+    },
+    {
+      id: "janvier2022",
+      label: "Janvier 2022",
+      questions: []
+    },
+    {
+      id: "janvier2021", 
+      label: "Janvier 2021",
+      questions: []
     }
-    return () => clearInterval(interval)
-  }, [isActive, timeLeft, examStarted])
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const remainingSeconds = seconds % 60
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleAnswerSelect = (answerKey) => {
+    const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
     
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
-    }
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-  }
-
-  const handleAnswerSelect = (questionId, optionIndex) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: optionIndex
-    }))
-  }
-
-  const handleFlagQuestion = (questionId) => {
-    setFlaggedQuestions(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(questionId)) {
-        newSet.delete(questionId)
+    if (question.multipleChoice) {
+      // For multiple choice questions
+      if (currentQuestionAnswers.includes(answerKey)) {
+        // Remove answer if already selected
+        setSelectedAnswers({
+          ...selectedAnswers,
+          [currentQuestion]: currentQuestionAnswers.filter(key => key !== answerKey)
+        });
       } else {
-        newSet.add(questionId)
+        // Add answer to selection
+        setSelectedAnswers({
+          ...selectedAnswers,
+          [currentQuestion]: [...currentQuestionAnswers, answerKey]
+        });
       }
-      return newSet
-    })
-  }
-
-  const startExam = () => {
-    setExamStarted(true)
-    setIsActive(true)
-  }
-
-  const handleSubmitExam = () => {
-    setIsActive(false)
-    setShowResults(true)
-    
-    // Calculate results
-    const correctAnswers = exam.questions.filter(q => 
-      answers[q.id] === q.correctAnswer
-    ).length
-    
-    const score = (correctAnswers / exam.questions.length) * 20 // Score out of 20
-    
-    // Save results to localStorage (in a real app, this would be sent to a server)
-    const examResult = {
-      examId: exam.id,
-      subject: exam.subject,
-      score: score.toFixed(1),
-      correctAnswers,
-      totalQuestions: exam.questions.length,
-      timeSpent: (exam.duration * 60) - timeLeft,
-      date: new Date().toISOString().split('T')[0],
-      answers
+    } else {
+      // For single choice questions
+      setSelectedAnswers({
+        ...selectedAnswers,
+        [currentQuestion]: [answerKey]
+      });
     }
-    
-    const existingResults = JSON.parse(localStorage.getItem('examResults') || '[]')
-    existingResults.push(examResult)
-    localStorage.setItem('examResults', JSON.stringify(existingResults))
-  }
+  };
+
+  const handleCheckAnswer = () => {
+    setShowResults(true);
+  };
+
+  const handleExit = () => {
+    navigate('/dashboard/home');
+  };
+
+  const togglePeriod = (periodId) => {
+    setExpandedPeriods(prev => ({
+      ...prev,
+      [periodId]: !prev[periodId]
+    }));
+  };
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const getQuestionStatus = (questionId) => {
-    if (answers[questionId] !== undefined) {
-      return 'answered'
-    } else if (flaggedQuestions.has(questionId)) {
-      return 'flagged'
-    }
-    return 'unanswered'
-  }
+    if (questionId === question.id) return 'active';
+    return 'pending';
+  };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'answered': return 'bg-green-500'
-      case 'flagged': return 'bg-yellow-500'
-      default: return 'bg-gray-600'
-    }
-  }
-
-  if (!examStarted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8 max-w-2xl w-full"
-        >
-          <div className="text-center">
-            <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 bg-opacity-20 w-fit mx-auto mb-6">
-              <exam.icon className="text-4xl text-purple-400" />
-            </div>
-            
-            <h1 className="text-3xl font-bold text-white mb-4">{exam.subject}</h1>
-            
-            <div className="grid grid-cols-2 gap-6 mb-8">
-              <div className="bg-gray-800/30 rounded-xl p-4">
-                <div className="text-gray-400 text-sm">Questions</div>
-                <div className="text-2xl font-bold text-white">{exam.questions.length}</div>
-              </div>
-              <div className="bg-gray-800/30 rounded-xl p-4">
-                <div className="text-gray-400 text-sm">Durée</div>
-                <div className="text-2xl font-bold text-white">{exam.duration} min</div>
-              </div>
-            </div>
-            
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 mb-8">
-              <h3 className="text-blue-400 font-semibold mb-2">Instructions</h3>
-              <ul className="text-gray-300 text-left space-y-2">
-                <li>• Lisez attentivement chaque question</li>
-                <li>• Choisissez la meilleure réponse parmi les options proposées</li>
-                <li>• Vous pouvez marquer les questions pour les réviser plus tard</li>
-                <li>• Le temps est limité, gérez-le bien</li>
-                <li>• Une fois soumis, vous ne pourrez plus modifier vos réponses</li>
-              </ul>
-            </div>
-            
-            <div className="flex gap-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex-1 bg-gray-600 text-white py-3 rounded-xl hover:bg-gray-700 transition-colors duration-300"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={startExam}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 flex items-center justify-center"
-              >
-                <FaPlay className="mr-2" />
-                Commencer l'examen
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    )
-  }
-
-  if (showResults) {
-    const correctAnswers = exam.questions.filter(q => 
-      answers[q.id] === q.correctAnswer
-    ).length
-    const score = (correctAnswers / exam.questions.length) * 20
-    const percentage = (correctAnswers / exam.questions.length) * 100
+  // Check if answer is correct
+  const isAnswerCorrect = () => {
+    const userAnswers = selectedAnswers[currentQuestion] || [];
+    const correctAnswers = question.correctAnswers || [];
     
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] p-6">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8 mb-6"
-          >
-            <div className="text-center mb-8">
-              <div className={`p-4 rounded-xl w-fit mx-auto mb-6 ${
-                percentage >= 70 ? 'bg-green-500/20' : percentage >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'
-              }`}>
-                {percentage >= 70 ? (
-                  <FaCheckCircle className="text-4xl text-green-400" />
-                ) : percentage >= 50 ? (
-                  <FaExclamationTriangle className="text-4xl text-yellow-400" />
-                ) : (
-                  <FaTimesCircle className="text-4xl text-red-400" />
-                )}
-              </div>
-              
-              <h1 className="text-3xl font-bold text-white mb-2">Résultats de l'examen</h1>
-              <p className="text-gray-400">{exam.subject}</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                <div className="bg-gray-800/30 rounded-xl p-6">
-                  <div className="text-gray-400 text-sm">Score</div>
-                  <div className="text-3xl font-bold text-white">{score.toFixed(1)}/20</div>
-                </div>
-                <div className="bg-gray-800/30 rounded-xl p-6">
-                  <div className="text-gray-400 text-sm">Réponses correctes</div>
-                  <div className="text-3xl font-bold text-white">{correctAnswers}/{exam.questions.length}</div>
-                </div>
-                <div className="bg-gray-800/30 rounded-xl p-6">
-                  <div className="text-gray-400 text-sm">Pourcentage</div>
-                  <div className="text-3xl font-bold text-white">{percentage.toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-          
-          {/* Detailed Results */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8"
-          >
-            <h2 className="text-2xl font-bold text-white mb-6">Détail des réponses</h2>
-            <div className="space-y-6">
-              {exam.questions.map((question, index) => {
-                const userAnswer = answers[question.id]
-                const isCorrect = userAnswer === question.correctAnswer
-                
-                return (
-                  <div key={question.id} className="bg-gray-800/30 rounded-xl p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-white flex-1">
-                        {index + 1}. {question.question}
-                      </h3>
-                      <div className={`p-2 rounded-full ${isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                        {isCorrect ? (
-                          <FaCheck className="text-green-400" />
-                        ) : (
-                          <FaTimes className="text-red-400" />
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4">
-                      {question.options.map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className={`p-3 rounded-lg border ${
-                            optionIndex === question.correctAnswer
-                              ? 'border-green-500 bg-green-500/10 text-green-400'
-                              : optionIndex === userAnswer && userAnswer !== question.correctAnswer
-                              ? 'border-red-500 bg-red-500/10 text-red-400'
-                              : 'border-gray-600 text-gray-300'
-                          }`}
-                        >
-                          {option}
-                          {optionIndex === question.correctAnswer && (
-                            <span className="ml-2 text-green-400">✓ Bonne réponse</span>
-                          )}
-                          {optionIndex === userAnswer && userAnswer !== question.correctAnswer && (
-                            <span className="ml-2 text-red-400">✗ Votre réponse</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                      <p className="text-blue-400 font-medium mb-1">Explication :</p>
-                      <p className="text-gray-300">{question.explanation}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            
-            <div className="flex gap-4 mt-8">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
-              >
-                Retour au tableau de bord
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    )
-  }
+    if (userAnswers.length !== correctAnswers.length) return false;
+    
+    return userAnswers.every(answer => correctAnswers.includes(answer)) &&
+           correctAnswers.every(answer => userAnswers.includes(answer));
+  };
 
-  const currentQ = exam.questions[currentQuestion]
-  const progress = ((currentQuestion + 1) / exam.questions.length) * 100
+  // Get answer option styling based on correctness and selection
+  const getAnswerOptionStyle = (answerKey, index) => {
+    const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
+    const isSelected = currentQuestionAnswers.includes(answerKey);
+    const isCorrect = question.correctAnswers.includes(answerKey);
+    
+    if (showResults) {
+      if (isCorrect && isSelected) {
+        return 'bg-green-500 text-white border-green-500'; // Correct and selected
+      } else if (isCorrect && !isSelected) {
+        return 'bg-green-100 text-green-800 border-green-300'; // Correct but not selected
+      } else if (!isCorrect && isSelected) {
+        return 'bg-red-500 text-white border-red-500'; // Wrong and selected
+      }
+      return 'bg-gray-100 text-gray-600 border-gray-200'; // Not selected and not correct
+    }
+    
+    if (isSelected) {
+      return 'bg-blue-50 text-blue-900 border-blue-300';
+    }
+    
+    return 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50';
+  };
+
+  // Get icon for answer option
+  const getAnswerIcon = (answerKey) => {
+    const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
+    const isSelected = currentQuestionAnswers.includes(answerKey);
+    const isCorrect = question.correctAnswers.includes(answerKey);
+
+    if (showResults) {
+      if (isCorrect) {
+        return <FaCheck className="w-3 h-3 text-white" />;
+      } else if (isSelected) {
+        return <FaTimes className="w-3 h-3 text-white" />;
+      }
+    }
+
+    if (question.multipleChoice) {
+      return isSelected ? <FaCheck className="w-3 h-3" /> : null;
+    }
+
+    return null;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0F] via-[#111015] to-[#1A1625] p-6">
-      {/* Header */}
-      <div className="max-w-6xl mx-auto mb-6">
-        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <exam.icon className="text-2xl text-purple-400 mr-3" />
-              <h1 className="text-2xl font-bold text-white">{exam.subject}</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        {/* Sidebar Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+              <span className="text-pink-600 text-lg">🫸</span>
             </div>
-            
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center text-white">
-                <FaClock className="mr-2 text-blue-400" />
-                <span className={`font-bold ${timeLeft < 600 ? 'text-red-400' : 'text-white'}`}>
-                  {formatTime(timeLeft)}
+            <span className="font-semibold text-gray-900 text-lg">{exam.title}</span>
+          </div>
+          
+          {/* Subject Progress */}
+          <div className="mb-6">
+            <div className="text-base font-medium text-gray-900 mb-2">{exam.subject}</div>
+            <div className="text-sm text-gray-500 mb-3">
+              {exam.completed}% Complete
+            </div>
+            <div className="text-sm text-gray-400">
+              {exam.completed} / {exam.totalQuestions}
+            </div>
+          </div>
+        </div>
+
+        {/* Period Navigation */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+          {examPeriods.map((period) => (
+            <div key={period.id}>
+              <button
+                onClick={() => togglePeriod(period.id)}
+                className="w-full flex items-center space-x-3 text-left text-sm text-gray-700 hover:text-gray-900 py-2"
+              >
+                <span className={`transform transition-transform ${expandedPeriods[period.id] ? 'rotate-90' : ''}`}>
+                  <FaChevronRight />
                 </span>
-              </div>
-              
-              <button
-                onClick={() => setIsActive(!isActive)}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors duration-300"
-              >
-                {isActive ? <FaPause /> : <FaPlay />}
+                <span className="font-medium">{period.label}</span>
               </button>
               
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-300"
-              >
-                Quitter
-              </button>
+              {expandedPeriods[period.id] && period.questions.length > 0 && (
+                <div className="ml-8 space-y-2 mt-2">
+                  {period.questions.map((q) => (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        const questionIndex = exam.questions.findIndex(eq => eq.id === q.id);
+                        if (questionIndex !== -1) setCurrentQuestion(questionIndex);
+                      }}
+                      className={`flex items-center space-x-3 text-sm py-2 px-3 rounded-lg transition-all w-full ${
+                        q.id === question.id 
+                          ? 'bg-red-100 text-red-700 border border-red-200' 
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        q.id === question.id ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                      }`}>
+                        {q.id === question.id && <span className="w-2 h-2 bg-white rounded-full"></span>}
+                      </span>
+                      <span className="font-medium">Q{q.id}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {expandedPeriods[period.id] && period.questions.length === 0 && (
+                <div className="ml-8 text-sm text-gray-400 py-2">Aucune question</div>
+              )}
             </div>
-          </div>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-            <motion.div 
-              className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between text-gray-400">
-            <span>Question {currentQuestion + 1} sur {exam.questions.length}</span>
-            <span>{progress.toFixed(0)}% complété</span>
-          </div>
+          ))}
         </div>
       </div>
-      
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Question Panel */}
-        <div className="lg:col-span-3">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentQuestion}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-8"
-            >
-              <div className="flex items-start justify-between mb-6">
-                <h2 className="text-xl font-semibold text-white flex-1">
-                  {currentQ.question}
-                </h2>
-                <button
-                  onClick={() => handleFlagQuestion(currentQ.id)}
-                  className={`p-2 rounded-lg transition-colors duration-300 ${
-                    flaggedQuestions.has(currentQ.id) 
-                      ? 'bg-yellow-500/20 text-yellow-400' 
-                      : 'bg-gray-700 text-gray-400 hover:text-yellow-400'
-                  }`}
-                >
-                  <FaFlag />
-                </button>
-              </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div></div>
+            
+            <div className="flex items-center space-x-6">
+              <button
+                onClick={handleExit}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <FaTimes className="w-4 h-4" />
+                <span className="text-sm font-medium">Exit</span>
+              </button>
               
-              <div className="space-y-4">
-                {currentQ.options.map((option, index) => (
-                  <motion.label
-                    key={index}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                      answers[currentQ.id] === index
-                        ? 'border-purple-500 bg-purple-500/10 text-white'
-                        : 'border-gray-600 bg-gray-800/30 text-gray-300 hover:border-gray-500 hover:bg-gray-700/30'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        name={`question-${currentQ.id}`}
-                        value={index}
-                        checked={answers[currentQ.id] === index}
-                        onChange={() => handleAnswerSelect(currentQ.id, index)}
-                        className="hidden"
-                      />
-                      <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        answers[currentQ.id] === index
-                          ? 'border-purple-500 bg-purple-500'
-                          : 'border-gray-400'
-                      }`}>
-                        {answers[currentQ.id] === index && (
-                          <div className="w-2 h-2 bg-white rounded-full" />
-                        )}
-                      </div>
-                      <span className="flex-1">{option}</span>
-                    </div>
-                  </motion.label>
-                ))}
-              </div>
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                {isDarkMode ? <FaSun className="w-5 h-5" /> : <FaMoon className="w-5 h-5" />}
+              </button>
               
-              <div className="flex justify-between mt-8">
-                <button
-                  onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
-                  disabled={currentQuestion === 0}
-                  className="flex items-center px-6 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FaArrowLeft className="mr-2" />
-                  Précédent
-                </button>
-                
-                {currentQuestion === exam.questions.length - 1 ? (
-                  <button
-                    onClick={handleSubmitExam}
-                    className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 font-semibold"
-                  >
-                    Terminer l'examen
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setCurrentQuestion(Math.min(exam.questions.length - 1, currentQuestion + 1))}
-                    className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
-                  >
-                    Suivant
-                    <FaArrowRight className="ml-2" />
-                  </button>
-                )}
+              <div className="w-10 h-10 bg-gray-900 text-white rounded-lg flex items-center justify-center text-sm font-bold">
+                YK
               </div>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+          </div>
         </div>
-        
-        {/* Question Navigator */}
-        <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Navigation</h3>
-          
-          <div className="grid grid-cols-5 gap-2 mb-6">
-            {exam.questions.map((_, index) => {
-              const status = getQuestionStatus(exam.questions[index].id)
-              return (
-                <button
-                  key={index}
-                  onClick={() => setCurrentQuestion(index)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition-all duration-300 ${
-                    currentQuestion === index
-                      ? 'bg-purple-500 text-white'
-                      : `${getStatusColor(status)} text-white hover:opacity-80`
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              )
-            })}
-          </div>
-          
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-              <span className="text-gray-300">Répondu</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
-              <span className="text-gray-300">Marqué</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-gray-600 rounded mr-2"></div>
-              <span className="text-gray-300">Non répondu</span>
-            </div>
-          </div>
-          
-          <div className="mt-6 pt-4 border-t border-gray-700">
-            <div className="text-gray-400 text-sm mb-2">Statistiques</div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Répondues:</span>
-                <span className="text-white">{Object.keys(answers).length}</span>
+
+        {/* Question Content */}
+        <div className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-5xl mx-auto">
+            {/* Question Header */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-600 font-medium">{question.period} Q {question.id}</span>
+                  <span className="bg-black text-white px-3 py-1 rounded-md text-sm font-medium">
+                    Correction : officiel
+                  </span>
+                  {question.multipleChoice && (
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm font-medium">
+                      Choix multiples
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => currentQuestion > 0 && setCurrentQuestion(currentQuestion - 1)}
+                    disabled={currentQuestion === 0}
+                    className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <FaArrowLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => currentQuestion < exam.questions.length - 1 && setCurrentQuestion(currentQuestion + 1)}
+                    disabled={currentQuestion === exam.questions.length - 1}
+                    className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <FaArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Marquées:</span>
-                <span className="text-white">{flaggedQuestions.size}</span>
+            </div>
+
+            {/* Question */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Question Number and Total */}
+              <div className="px-8 py-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6 text-lg font-semibold text-gray-800">
+                    <span>{currentQuestion + 1}</span>
+                    <span className="text-gray-400">{exam.totalQuestions}</span>
+                  </div>
+                  {question.multipleChoice && (
+                    <div className="text-sm text-gray-500">
+                      {selectedAnswers[currentQuestion]?.length || 0} réponse(s) sélectionnée(s)
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Restantes:</span>
-                <span className="text-white">{exam.questions.length - Object.keys(answers).length}</span>
+              
+              {/* Question Text */}
+              <div className="px-8 py-6">
+                <h2 className="text-xl text-gray-900 mb-8 font-medium leading-relaxed">
+                  {question.question}
+                </h2>
+
+                {question.multipleChoice && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-blue-800 text-sm font-medium">
+                      💡 Cette question accepte plusieurs réponses. Cliquez sur toutes les bonnes réponses.
+                    </div>
+                  </div>
+                )}
+
+                {/* Answer Options */}
+                <div className="space-y-4 mb-8">
+                  {question.options.map((option, index) => {
+                    const answerKey = String.fromCharCode(65 + index);
+                    const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
+                    const isSelected = currentQuestionAnswers.includes(answerKey);
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => !showResults && handleAnswerSelect(answerKey)}
+                        disabled={showResults}
+                        className={`w-full p-6 border-2 rounded-xl text-left transition-all ${getAnswerOptionStyle(answerKey, index)}`}
+                      >
+                        <div className="flex items-center space-x-5">
+                          <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center font-bold text-base relative ${
+                            showResults && question.correctAnswers.includes(answerKey)
+                              ? 'border-white bg-green-500 text-white'
+                              : showResults && isSelected && !question.correctAnswers.includes(answerKey)
+                              ? 'border-white bg-red-500 text-white'
+                              : isSelected
+                              ? 'border-blue-400 bg-blue-500 text-white'
+                              : 'border-gray-400 bg-white text-gray-600'
+                          }`}>
+                            {question.multipleChoice && (showResults || isSelected) ? (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                {getAnswerIcon(answerKey)}
+                              </div>
+                            ) : (
+                              answerKey
+                            )}
+                            {!question.multipleChoice && (
+                              <span className={showResults && question.correctAnswers.includes(answerKey) ? 'text-white' : ''}>
+                                {answerKey}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-base font-medium leading-relaxed">{option}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-6">
+                  <div className="flex space-x-4">
+                    {showResults && (
+                      <>
+                        <button className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors ${
+                          isAnswerCorrect() 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        }`}>
+                          {isAnswerCorrect() ? (
+                            <>
+                              <FaCheckCircle className="w-4 h-4" />
+                              <span className="font-medium">Correct</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaTimesCircle className="w-4 h-4" />
+                              <span className="font-medium">Incorrect</span>
+                            </>
+                          )}
+                        </button>
+                        <button className="flex items-center space-x-2 px-6 py-3 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors">
+                          <span className="text-sm">👥</span>
+                          <span className="font-medium">Community</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  
+                  {!showResults && (selectedAnswers[currentQuestion]?.length > 0) && (
+                    <button
+                      onClick={handleCheckAnswer}
+                      className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                    >
+                      Check Answer ✓
+                    </button>
+                  )}
+                </div>
+
+                {/* Explanation */}
+                {showResults && (
+                  <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="text-blue-800 font-semibold mb-3 text-base">Explication:</div>
+                    <div className="text-blue-700 text-base leading-relaxed">{question.explanation}</div>
+                    {question.multipleChoice && (
+                      <div className="mt-4 text-blue-700 text-sm">
+                        <strong>Réponses correctes:</strong> {question.correctAnswers.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ExamPage 
+export default ExamPage; 
