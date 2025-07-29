@@ -21,7 +21,7 @@ const SubjectsPage = () => {
           completed: 0, 
           progress: 0,
           description: "Mai 2024 Q 28",
-          correction: "officiel"
+          
         },
         { 
           id: "intro-nephro", 

@@ -19,7 +19,7 @@ const ExamPage = () => {
     "gyneco": {
       title: "Gyneco-obstétricale",
       subject: "Cancérologies", 
-      description: "Janvier 2024 Q 25 - Correction : officiel",
+      description: "Janvier 2024 Q 25 ",
       totalQuestions: 89,
       completed: 0,
       questions: [
@@ -356,9 +356,7 @@ const ExamPage = () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-4">
                   <span className="text-gray-600 font-medium">{question.period} Q {question.id}</span>
-                  <span className="bg-black text-white px-3 py-1 rounded-md text-sm font-medium">
-                    Correction : officiel
-                  </span>
+                 
                   {question.multipleChoice && (
                     <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm font-medium">
                       Choix multiples

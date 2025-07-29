@@ -215,45 +215,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Global Progress Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Global Progress</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Néphrologie/uro</span>
-                <span className="text-gray-900">0%</span>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Santé Publique</span>
-                <span className="text-gray-900">0%</span>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Med Legal</span>
-                <span className="text-gray-900">0%</span>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Synthèse Thérapeutique</span>
-                <span className="text-gray-900">0%</span>
-              </div>
-            </div>
-
-            {/* Overall Progress */}
-            <div className="mt-6 pt-4 border-t border-blue-100">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Overall Progress</span>
-                <span className="text-gray-900 text-sm">0%</span>
-              </div>
-              <div className="bg-blue-100 rounded-full h-2">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full w-0"></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
