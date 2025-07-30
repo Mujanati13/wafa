@@ -2,6 +2,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { FiCheck, FiStar, FiZap, FiTrendingUp } from 'react-icons/fi'
 import { HiSparkles } from 'react-icons/hi'
+import { BiSolidBadgeCheck } from 'react-icons/bi'
 
 const PricingSection = () => {
   const plans = [
@@ -107,12 +108,13 @@ const PricingSection = () => {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <motion.div
-            className="inline-block mb-4"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+           <motion.div 
+            className="inline-flex items-center gap-2 bg-blue-50 backdrop-blur-sm rounded-full px-6 py-3 mb-6 border border-blue-200 shadow-sm"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
           >
-            <HiSparkles className="text-4xl text-blue-600 mx-auto" />
+            <BiSolidBadgeCheck className="text-blue-600" />
+            <span className="text-sm font-semibold text-blue-800">Tarifs</span>
           </motion.div>
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
             Choisissez le <span className="text-blue-600">plan parfait</span><br />
@@ -264,7 +266,8 @@ const PricingSection = () => {
           viewport={{ once: true }}
         >
           <p className="text-gray-600 mb-4">
-            Tous les plans incluent un accès mobile et une garantie de remboursement de 30 jours
+          5 minutes pourraient vous faire économiser 50 heures d'étude. <br />
+          -Pour seulement 120dh -
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <span className="text-sm text-gray-500">Paiement sécurisé avec</span>

@@ -18,16 +18,16 @@ const Header = () => {
   }
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-[70px] ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
         : 'bg-white/90 backdrop-blur-sm'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4 md:py-5">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-2">
           {/* Logo */}
           <Link to="/" className="text-2xl md:text-3xl font-bold tracking-tight group cursor-pointer transform transition-all duration-300 hover:scale-105">
-            <div className="relative">
+            <div className="relative text-4xl">
               <span className="text-blue-600 group-hover:text-blue-700 transition-colors duration-300">WA</span>
               <span className="text-teal-600 group-hover:text-teal-700 transition-colors duration-300">FA</span>
               <div className="absolute -inset-1 bg-blue-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -36,7 +36,7 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {['À propos', 'Cours', 'Tarifs', 'Contact'].map((item, index) => (
+            {['Accueil',   'A propos',   'Tarifs',    'Mode paiments',  'Contact'].map((item, index) => (
               <a 
                 key={item}
                 href={`#${item.toLowerCase().replace('à propos', 'about').replace('é', 'e')}`}
@@ -51,14 +51,25 @@ const Header = () => {
 
           {/* Desktop CTA Button */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login" className="relative overflow-hidden bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/25 group">
-              <span className="relative z-10 flex items-center space-x-2">
-                <span>Se connecter</span>
-                <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+          <Link
+              to="/login"
+              className="flex items-center justify-center gap-2 w-full bg-white text-blue-600 border border-blue-600 hover:bg-blue-50 hover:text-blue-700 font-semibold px-6 py-3 rounded-lg shadow transition-all duration-300"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              login
+            </Link>
+            <Link
+              to="/register"
+              className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white hover:bg-blue-700 font-semibold px-6 py-3 rounded-lg shadow transition-all duration-300"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
+              </svg>
+              S'inscrire
             </Link>
           </div>
 
@@ -78,11 +89,11 @@ const Header = () => {
       {/* Mobile Menu */}
       <div className={`md:hidden transition-all duration-300 ${
         isMenuOpen 
-          ? 'max-h-96 opacity-100' 
+          ? 'max-h-150 opacity-100' 
           : 'max-h-0 opacity-0'
       } overflow-hidden bg-white shadow-lg border-t border-gray-200`}>
         <nav className="px-4 py-6 space-y-4">
-          {['À propos', 'Cours', 'Tarifs', 'Contact'].map((item, index) => (
+          {['Accueil', 'a propos', 'tarifs', 'mode paiments', 'contact'].map((item, index) => (
             <a 
               key={item}
               href={`#${item.toLowerCase().replace('à propos', 'about').replace('é', 'e')}`}
@@ -93,13 +104,26 @@ const Header = () => {
               {item}
             </a>
           ))}
-          <div className="pt-4 border-t border-gray-200">
-            <Link 
+          <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+            <Link
               to="/login"
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
+              className="flex items-center justify-center gap-2 w-full bg-white text-blue-600 border border-blue-600 hover:bg-blue-50 hover:text-blue-700 font-semibold px-6 py-3 rounded-lg shadow transition-all duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
-              Se connecter
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H3m0 0l4-4m-4 4l4 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              login
+            </Link>
+            <Link
+              to="/register"
+              className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white hover:bg-blue-700 font-semibold px-6 py-3 rounded-lg shadow transition-all duration-300"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-8 0v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
+              </svg>
+              S'inscrire
             </Link>
           </div>
         </nav>

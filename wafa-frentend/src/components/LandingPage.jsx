@@ -3,6 +3,7 @@ import Header from "./landingPage/Header";
 import HeroSection from "./landingPage/HeroSection";
 import SolutionsSection from "./landingPage/SolutionsSection";
 import PricingSection from "./landingPage/PricingSection";
+import PaymentMethodsSection from "./landingPage/PaymentMethodsSection";
 import TestimonialsSection from "./landingPage/TestimonialsSection";
 import FAQSection from "./landingPage/FAQSection";
 import FeedbackSection from "./landingPage/FeedbackSection";
@@ -15,6 +16,7 @@ const LandingPage = () => {
       <HeroSection />
       <SolutionsSection />
       <PricingSection />
+      <PaymentMethodsSection />
       <TestimonialsSection />
       <FAQSection />
       <FeedbackSection />

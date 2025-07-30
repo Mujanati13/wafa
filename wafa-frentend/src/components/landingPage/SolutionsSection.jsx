@@ -1,37 +1,52 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { FaBookOpen, FaRobot, FaList, FaChartLine, FaArrowRight } from 'react-icons/fa'
+import { FaBookOpen, FaRobot, FaList, FaChartLine, FaArrowRight, FaStickyNote, FaShieldAlt } from 'react-icons/fa'
 import { BiSolidBadgeCheck } from 'react-icons/bi'
 
 const SolutionsSection = () => {
+  // 6 Features total - all should be displayed
   const features = [
     {
-      icon: FaBookOpen,
-      title: "QCM Médicaux",
-      desc: "Pratiquez avec de vrais QCM médicaux et suivez vos progrès avec des banques de questions complètes.",
+      icon: FaShieldAlt, // Platforme stable: use a security/shield icon
+      title: "Plateforme stable",
+      desc: "Nous vous offrons une plateforme sécurisée et fiable. Toutes vos données ne seront montrées à personne.",
       color: "from-blue-500 to-blue-600",
       bgGradient: "from-blue-50 to-blue-100",
     },
     {
-      icon: FaRobot,
-      title: "Feedback IA",
-      desc: "Obtenez des commentaires instantanés et personnalisés grâce à notre IA avancée pour améliorer votre compréhension.",
+      icon: FaChartLine, // Classement direct: use a ranking/performance icon
+      title: "Classement direct",
+      desc: "Suivez vos performances et évaluez votre niveau parmi les meilleurs.",
       color: "from-teal-500 to-teal-600",
       bgGradient: "from-teal-50 to-teal-100",
     },
     {
-      icon: FaList,
-      title: "Matières Organisées",
-      desc: "Matières médicales organisées par difficulté et sujet, parfaites pour votre cursus médical.",
+      icon: BiSolidBadgeCheck, // En perpétuelle amélioration: use a badge/check icon
+      title: "En perpétuelle amélioration",
+      desc: "Nous sommes toujours à l'écoute de nos utilisateurs et nous améliorons constamment la plateforme.",
       color: "from-indigo-500 to-indigo-600",
       bgGradient: "from-indigo-50 to-indigo-100",
     },
     {
-      icon: FaChartLine,
-      title: "Statistiques Détaillées",
-      desc: "Visualisez vos améliorations avec des analyses détaillées et un suivi de performance.",
-      color: "from-cyan-500 to-cyan-600",
-      bgGradient: "from-cyan-50 to-cyan-100",
+      icon: FaBookOpen, // Surligneur: use a book/open-book icon
+      title: "Surligneur",
+      desc: "Mets en évidence ce qui est important.",
+      color: "from-yellow-500 to-yellow-600",
+      bgGradient: "from-yellow-50 to-yellow-100",
+    },
+    {
+      icon: FaList, // Playlists: use a list icon
+      title: "Playlists",
+      desc: "Organise-toi pour la dernière couche.",
+      color: "from-pink-500 to-pink-600",
+      bgGradient: "from-pink-50 to-pink-100",
+    },
+    {
+      icon: FaStickyNote, // Notes personnelles: use a note icon
+      title: "Notes personnelles",
+      desc: "Tu ne risques plus de perdre tes pensées.",
+      color: "from-green-500 to-green-600",
+      bgGradient: "from-green-50 to-green-100",
     },
   ];
 
@@ -40,8 +55,9 @@ const SolutionsSection = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3,
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+        when: "beforeChildren"
       }
     }
   };
@@ -49,15 +65,15 @@ const SolutionsSection = () => {
   const itemVariants = {
     hidden: { 
       opacity: 0, 
-      y: 50,
-      scale: 0.9 
+      y: 30,
+      scale: 0.95
     },
     visible: {
       opacity: 1,
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.6,
+        duration: 0.4,
         ease: "easeOut"
       }
     }
@@ -95,36 +111,31 @@ const SolutionsSection = () => {
             transition={{ type: "spring", stiffness: 300 }}
           >
             <BiSolidBadgeCheck className="text-blue-600" />
-            <span className="text-sm font-semibold text-blue-800">Nos Solutions</span>
+            <span className="text-sm font-semibold text-blue-800">A propos</span>
           </motion.div>
           
           <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
             Formation Médicale <span className="text-blue-600">Complète</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Perfectionnez votre formation médicale avec des outils de pointe conçus par des professionnels de santé pour les futurs médecins
+            Perfectionnez votre formation médicale avec des outils de pointe 
+            conçus pour la préparation des examens
           </p>
         </motion.div>
         
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={containerVariants}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 w-full"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
+          {/* Rendering all 6 features in a responsive grid layout */}
           {features.map((feature, i) => {
             const IconComponent = feature.icon;
             return (
-              <motion.div
+              <div
                 key={i}
-                variants={itemVariants}
-                whileHover={{ 
-                  scale: 1.05,
-                  rotateY: 5,
-                  transition: { duration: 0.3 }
-                }}
-                whileTap={{ scale: 0.95 }}
                 className="group relative"
               >
                 <div className={`relative bg-white backdrop-blur-xl rounded-3xl p-8 border border-gray-200 hover:border-blue-300 transition-all duration-500 h-full shadow-lg hover:shadow-xl`}>
@@ -133,16 +144,11 @@ const SolutionsSection = () => {
                   
                   {/* Content */}
                   <div className="relative z-10">
-                    <motion.div 
+                    <div 
                       className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} mb-6 shadow-lg`}
-                      whileHover={{ 
-                        rotate: 360,
-                        scale: 1.1,
-                        transition: { duration: 0.6 }
-                      }}
                     >
                       <IconComponent className="text-2xl text-white" />
-                    </motion.div>
+                    </div>
                     
                     <h3 className="text-2xl font-bold mb-4 text-gray-900 group-hover:text-gray-800 transition-colors duration-300">
                       {feature.title}
@@ -152,43 +158,23 @@ const SolutionsSection = () => {
                       {feature.desc}
                     </p>
                     
-                    <motion.div 
+                    <div 
                       className="inline-flex items-center gap-2 text-blue-600 font-medium group-hover:text-blue-700 transition-colors duration-300"
-                      whileHover={{ x: 5 }}
                     >
                       <span>En savoir plus</span>
                       <FaArrowRight className="text-sm" />
-                    </motion.div>
+                    </div>
                   </div>
                   
                   {/* Shine effect */}
-                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000"></div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </motion.div>
         
-        {/* Bottom CTA section */}
-        <motion.div 
-          className="text-center mt-20"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          <motion.button 
-            className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-300"
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)"
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span>Découvrir toutes les fonctionnalités</span>
-            <FaArrowRight className="text-lg" />
-          </motion.button>
-        </motion.div>
+     
       </div>
     </section>
   )
