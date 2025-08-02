@@ -25,7 +25,7 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
+  const [semester, setSemester] = useState("S10 med");
   // Course data based on the uploaded images
   const courses = [
     {
@@ -54,7 +54,7 @@ const Dashboard = () => {
     {
       id: "med-legal",
       name: "Med legal-éthique-travail-...",
-      img: "⚖️", // scales emoji
+      img: "https://medecinelegale.com/wp-content/uploads/2021/09/Me%CC%81decin-et-marteau-_1047750205-scaled.jpg", // scales emoji
       difficulty: "medium",
       progress: 0,
       color: "from-teal-500 to-blue-500",
@@ -140,125 +140,150 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex justify-between items-center mb-8">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Dashboard <span className="text-blue-600">S10 med</span>
+      <div className="relative z-10 flex flex-col md:flex-row justify-between items-center mb-10 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-8 py-6">
+        {/* Left: Welcome & Info */}
+        <div className="flex flex-col max-w-xl">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2 flex items-center gap-3">
+            <span className="inline-block bg-gradient-to-r from-blue-500 via-teal-400 to-blue-600 text-transparent bg-clip-text">
+              Bienvenue
+            </span>
+            <span className="inline-block text-blue-600">
+              Az-eddine serhani
+            </span>
           </h1>
+          <p className="text-gray-700 text-base leading-relaxed mt-1">
+            Bienvenue dans votre interface WAFA,{" "}
+            <span className="font-semibold text-blue-600">
+              Az-eddine serhani
+            </span>
+            .<br />
+            <span className="text-gray-500">
+              Si vous avez des questions ou souhaitez en savoir plus, n'hésitez
+              pas à nous{" "}
+              <a className=" text-blue-500 cursor-pointer">contacter.</a>{" "}
+            </span>
+          </p>
         </div>
-        <div className="flex items-center space-x-4">
-          <select className="bg-white text-gray-900 px-4 py-2 rounded-lg border border-blue-200 shadow-sm">
-            <option>S10 med</option>
+        <div className="flex items-center gap-2">
+          <label htmlFor="semester-select" className="text-gray-700 font-medium">
+            Semestre:
+          </label>
+          <select
+            onChange={(e) => {
+              setSemester(e.target.value);
+            }}
+            id="semester-select"
+            className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-blue-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+            defaultValue="S10 med"
+          >
+            <option value="S10 med">S10 med</option>
+            <option value="S11 med">S11 med</option>
+            <option value="S12 med">S12 med</option>
+            <option value="S13 med">S13 med</option>
+            <option value="S14 med">S14 med</option>
           </select>
-          <div className="text-gray-900 font-semibold">YK</div>
         </div>
       </div>
 
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-8">
-          {/* Courses Section */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Courses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map((course) => (
-                <motion.div
-                  key={course.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6 cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300"
-                  onClick={() => handleCourseClick(course.id)}
-                >
-                  {/* Course Icon and Header */}
-                  <div className="flex items-start justify-between mb-4">
+      <div className="relative z-10 flex flex-col gap-6">
+        <p className="text-2xl font-bold text-gray-900">
+          Dashboard <span className="text-blue-600">{semester}</span>
+          <div className="bg-blue-600 h-1 w-10 "></div>
+        </p>
+
+        <div></div>
+        {/* Courses Section */}
+        <div className="w-full">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Cours</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6 cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300"
+                onClick={() => handleCourseClick(course.id)}
+              >
+                {/* Course Icon and Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <img
+                    src={course.img}
+                    alt={course.name}
+                    className="w-full h-50 object-cover"
+                  />
+                </div>
+
+                {/* Course Title */}
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  {course.name}
+                </h3>
+
+                {/* Progress */}
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="flex-1 bg-blue-100 rounded-full h-2">
                     <div
-                      className={`w-16 h-16 ${course.bgColor} rounded-2xl flex items-center justify-center text-2xl shadow-lg`}
-                    >
-                      <img src={course.img} alt={course.name} className="w-16 h-16" />
-                      {course.img}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(
-                          course.difficulty
-                        )}`}
-                      >
-                        {course.difficulty}
-                      </span>
-                    </div>
+                      className={`bg-gradient-to-r ${course.color} h-2 rounded-full transition-all duration-300`}
+                      style={{ width: `${course.progress}%` }}
+                    ></div>
                   </div>
+                  <span className="text-gray-600 text-sm">
+                    {course.progress}%
+                  </span>
+                </div>
 
-                  {/* Course Title */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {course.name}
-                  </h3>
+                {/* Course Stats */ }
+                <div className="flex items-center justify-between">
+                <div className="text-gray-600 text-sm">
+                  0 / {course.exams ? course.exams.length : 8} Questions
+                </div>
 
-                  {/* Progress */}
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="flex-1 bg-blue-100 rounded-full h-2">
-                      <div
-                        className={`bg-gradient-to-r ${course.color} h-2 rounded-full transition-all duration-300`}
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-gray-600 text-sm">
-                      {course.progress}%
-                    </span>
-                  </div>
-
-                  {/* Course Stats */}
-                  <div className="text-gray-600 text-sm">
-                    0 / {course.exams ? course.exams.length : 8} Questions
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  <span className="text-blue-600 font-bold h-10 w-10 flex items-center justify-center rounded-full bg-blue-100">?</span></div>
+              </motion.div>
+            ))}
           </div>
+        </div>
 
-          {/* Rankers Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Rankers</h2>
+        {/* Rankers Section */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Rankers</h2>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-gray-600 text-sm border-b border-blue-100">
-                    <th className="text-left py-3">Rank</th>
-                    <th className="text-left py-3">User</th>
-                    <th className="text-left py-3">Level Percentage</th>
-                    <th className="text-left py-3">Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((player) => (
-                    <tr key={player.rank} className="border-b border-blue-50">
-                      <td className="py-4 text-gray-900 font-semibold">
-                        {player.rank}.
-                      </td>
-                      <td className="py-4">
-                        <div>
-                          <div className="text-gray-900 font-semibold">
-                            {player.user}
-                          </div>
-                          <div className="text-gray-600 text-sm">
-                            {player.level}
-                          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-gray-600 text-sm border-b border-blue-100">
+                  <th className="text-left py-3">Rank</th>
+                  <th className="text-left py-3">User</th>
+                  <th className="text-left py-3">Level Percentage</th>
+                  <th className="text-left py-3">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((player) => (
+                  <tr key={player.rank} className="border-b border-blue-50">
+                    <td className="py-4 text-gray-900 font-semibold">
+                      {player.rank}.
+                    </td>
+                    <td className="py-4">
+                      <div>
+                        <div className="text-gray-900 font-semibold">
+                          {player.user}
                         </div>
-                      </td>
-                      <td className="py-4 text-gray-900">
-                        {player.percentage}%
-                      </td>
-                      <td className="py-4">
-                        <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                          {player.points.toLocaleString()}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <div className="text-gray-600 text-sm">
+                          {player.level}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-gray-900">{player.percentage}%</td>
+                    <td className="py-4">
+                      <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        {player.points.toLocaleString()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

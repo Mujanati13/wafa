@@ -1,31 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaBell, FaSearch, FaUser } from "react-icons/fa";
+import ProfileMenu from "../profile/ProfileMenu";
 
 const TopBar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   return (
-    <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200 px-6 py-4 shadow-sm z-10 w-full">
+    <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200 px-6 py-4 shadow-sm  w-full z-1000 cursor-pointer h-16">
       <div className="flex items-center justify-between">
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600"></span>
-        {/* Right Side Icons */}
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold">WAFA</span>
+        {/* Right Side Icons */ }
         <div className="flex items-center space-x-4">
-          {/* Theme Toggle Icon */}
+          {/* Theme Toggle Icon */ }
           <button
             className="p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 focus:outline-none"
             title="Changer le thème"
-            onClick={() => {
-              // Simple theme toggle: toggles 'dark' class on <html>
-              const html = document.documentElement;
-              if (html.classList.contains("dark")) {
-                html.classList.remove("dark");
-                localStorage.setItem("theme", "light");
-              } else {
-                html.classList.add("dark");
-                localStorage.setItem("theme", "dark");
-              }
-            }}
+            onClick={ () => {
+              setDarkMode(!darkMode)
+            } }
           >
-            {/* Sun/Moon icon depending on theme */}
-            {document.documentElement.classList.contains("dark") ? (
+            {/* Sun/Moon icon depending on theme */ }
+            { darkMode ? (
               // Sun icon for light mode
               <svg
                 className="w-5 h-5 text-yellow-400"
@@ -43,18 +38,22 @@ const TopBar = () => {
               >
                 <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
               </svg>
-            )}
+            ) }
           </button>
 
-          {/* User Info */}
-          <div className="flex items-center space-x-3">
-            <p>az-eddine serhani</p>
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center shadow-sm">
-              <FaUser className="text-white text-sm" />
-            </div>
+          {/* User Info */ }
+          <div className="flex items-center space-x-3 cursor-pointer" >
+            <ProfileMenu isOpen={ isOpen } setIsOpen={ setIsOpen } />
           </div>
         </div>
-      </div>  
+      </div>
+      {
+        isOpen && (
+          <div className="absolute h-screen w-screen top-0 left-0 " onClick={() => setIsOpen(false)}>
+          
+          </div>
+        )
+      }
     </div>
   );
 };

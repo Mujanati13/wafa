@@ -18,17 +18,9 @@ const SideBar = () => {
      <motion.div 
      initial={{ x: -300 }}
      animate={{ x: 0 }}
-     className={`relative z-10 ${sidebarOpen ? 'w-64' : 'w-20'} bg-white/80 backdrop-blur-sm border-r border-blue-200 shadow-lg transition-all duration-300`}
+     className={`relative z-10 ${sidebarOpen ? 'w-64' : 'w-20'} bg-white/80 backdrop-blur-sm border-r border-blue-200 shadow-lg transition-all duration-300 `}
    >
-     {/* Logo */}
-     <div className="p-6 border-b border-blue-200">
-       <Link to="/" className="flex items-center space-x-3">
-         <div className="text-2xl font-bold tracking-tight">
-           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600">WAFA</span>
-           
-         </div>
-       </Link>
-     </div>
+   
 
      {/* Navigation */}
      <nav className="p-4 space-y-2">
