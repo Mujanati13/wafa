@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaPlay, FaRedo, FaChevronDown } from "react-icons/fa";
 import { IoCloseSharp } from "react-icons/io5";
-
+import { SiBookstack } from "react-icons/si";
 const SubjectsPage = () => {
   const [showModel, setShowmodal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -14,14 +14,46 @@ const SubjectsPage = () => {
   // Course data with exam details
   const courseData = {
     "nephro-uro": {
-      name: "Néphrologie/uro",
+      name: "Néphrologie/Urologie",
       image: "🫘",
       categories: [
         { id: "all", name: "Toutes les catégories" },
-        { id: "biochemistry", name: "Les bases biochimiques" },
-        { id: "clinical", name: "Clinique" },
-        { id: "diagnostic", name: "Diagnostic" },
-        { id: "treatment", name: "Traitement" },
+        {
+          id: "biochemistry",
+          name: "Les bases biochimiques",
+          subcategories: [
+            { id: "biochemistry-basic", name: "Bases fondamentales" },
+            { id: "biochemistry-advanced", name: "Biochimie avancée" },
+            { id: "biochemistry-clinical", name: "Biochimie clinique" },
+          ],
+        },
+        {
+          id: "clinical",
+          name: "Clinique",
+          subcategories: [
+            { id: "clinical-basics", name: "Bases cliniques" },
+            { id: "clinical-advanced", name: "Clinique avancée" },
+            { id: "clinical-practice", name: "Pratique clinique" },
+          ],
+        },
+        {
+          id: "diagnostic",
+          name: "Diagnostic",
+          subcategories: [
+            { id: "diagnostic-imaging", name: "Imagerie diagnostique" },
+            { id: "diagnostic-laboratory", name: "Diagnostic biologique" },
+            { id: "diagnostic-clinical", name: "Diagnostic clinique" },
+          ],
+        },
+        {
+          id: "treatment",
+          name: "Traitement",
+          subcategories: [
+            { id: "treatment-medical", name: "Traitement médical" },
+            { id: "treatment-surgical", name: "Traitement chirurgical" },
+            { id: "treatment-preventive", name: "Traitement préventif" },
+          ],
+        },
       ],
       exams: [
         {
@@ -32,15 +64,17 @@ const SubjectsPage = () => {
           progress: 0,
           description: "Mai 2024 Q 28",
           category: "biochemistry",
+          subcategory: "biochemistry-clinical",
         },
         {
           id: "intro-nephro",
           name: "Intro néphrologie",
           questions: 2,
-          completed: 0,
-          progress: 0,
+          completed: 1,
+          progress: 80,
           description: "Introduction course",
           category: "clinical",
+          subcategory: "clinical-basics",
         },
         {
           id: "nephro-hereditaire",
@@ -50,6 +84,7 @@ const SubjectsPage = () => {
           progress: 0,
           description: "Hereditary nephrology",
           category: "clinical",
+          subcategory: "clinical-advanced",
         },
         {
           id: "nephro-diabetique",
@@ -59,6 +94,7 @@ const SubjectsPage = () => {
           progress: 0,
           description: "Diabetic nephrology",
           category: "diagnostic",
+          subcategory: "diagnostic-clinical",
         },
         {
           id: "nephro-lupique",
@@ -68,6 +104,7 @@ const SubjectsPage = () => {
           progress: 0,
           description: "Lupus nephrology",
           category: "diagnostic",
+          subcategory: "diagnostic-laboratory",
         },
         {
           id: "glomerulo",
@@ -76,8 +113,8 @@ const SubjectsPage = () => {
           completed: 0,
           progress: 0,
           description: "Extracapillary glomerulonephritis",
-          difficulty: "hard",
           category: "treatment",
+          subcategory: "treatment-medical",
         },
         {
           id: "lgm",
@@ -86,8 +123,8 @@ const SubjectsPage = () => {
           completed: 0,
           progress: 0,
           description: "LGM course",
-          difficulty: "medium",
           category: "biochemistry",
+          subcategory: "biochemistry-basic",
         },
         {
           id: "hsf",
@@ -96,8 +133,808 @@ const SubjectsPage = () => {
           completed: 0,
           progress: 0,
           description: "HSF course",
-          difficulty: "easy",
           category: "biochemistry",
+          subcategory: "biochemistry-advanced",
+        },
+        {
+          id: "insuffisance-renale",
+          name: "Insuffisance rénale chronique",
+          questions: 45,
+          completed: 12,
+          progress: 27,
+          description: "Chronic kidney disease management",
+          category: "clinical",
+          subcategory: "clinical-practice",
+        },
+        {
+          id: "dialyse",
+          name: "Dialyse et hémodialyse",
+          questions: 38,
+          completed: 0,
+          progress: 0,
+          description: "Dialysis techniques and management",
+          category: "treatment",
+          subcategory: "treatment-surgical",
+        },
+      ],
+    },
+    cardiologie: {
+      name: "Cardiologie",
+      image: "❤️",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        {
+          id: "arrhythmia",
+          name: "Troubles du rythme",
+          subcategories: [
+            { id: "arrhythmia-basic", name: "Bases des troubles du rythme" },
+            { id: "arrhythmia-advanced", name: "Troubles complexes" },
+            { id: "arrhythmia-treatment", name: "Traitement des troubles" },
+          ],
+        },
+        {
+          id: "ischemic",
+          name: "Cardiopathie ischémique",
+          subcategories: [
+            { id: "ischemic-acute", name: "Syndromes coronariens aigus" },
+            { id: "ischemic-chronic", name: "Cardiopathie chronique" },
+            { id: "ischemic-prevention", name: "Prévention" },
+          ],
+        },
+        {
+          id: "heart-failure",
+          name: "Insuffisance cardiaque",
+          subcategories: [
+            { id: "heart-failure-acute", name: "Insuffisance aiguë" },
+            { id: "heart-failure-chronic", name: "Insuffisance chronique" },
+            { id: "heart-failure-treatment", name: "Traitement" },
+          ],
+        },
+        {
+          id: "valvular",
+          name: "Valvulopathies",
+          subcategories: [
+            { id: "valvular-diagnosis", name: "Diagnostic" },
+            { id: "valvular-treatment", name: "Traitement" },
+            { id: "valvular-surgery", name: "Chirurgie valvulaire" },
+          ],
+        },
+      ],
+      exams: [
+        {
+          id: "ecg-basics",
+          name: "ECG de base",
+          questions: 25,
+          completed: 18,
+          progress: 72,
+          description: "Basic ECG interpretation",
+          category: "arrhythmia",
+          subcategory: "arrhythmia-basic",
+        },
+        {
+          id: "infarctus",
+          name: "Infarctus du myocarde",
+          questions: 42,
+          completed: 8,
+          progress: 19,
+          description: "Acute myocardial infarction",
+          category: "ischemic",
+          subcategory: "ischemic-acute",
+        },
+        {
+          id: "fibrillation-auriculaire",
+          name: "Fibrillation auriculaire",
+          questions: 28,
+          completed: 0,
+          progress: 0,
+          description: "Atrial fibrillation management",
+          category: "arrhythmia",
+          subcategory: "arrhythmia-advanced",
+        },
+        {
+          id: "insuffisance-cardiaque",
+          name: "Insuffisance cardiaque",
+          questions: 35,
+          completed: 15,
+          progress: 43,
+          description: "Heart failure pathophysiology",
+          category: "heart-failure",
+        },
+        {
+          id: "valvulopathies",
+          name: "Valvulopathies",
+          questions: 33,
+          completed: 0,
+          progress: 0,
+          description: "Cardiac valve diseases",
+          category: "valvular",
+        },
+        {
+          id: "hypertension",
+          name: "Hypertension artérielle",
+          questions: 29,
+          completed: 22,
+          progress: 76,
+          description: "Arterial hypertension management",
+          category: "ischemic",
+        },
+        {
+          id: "pericardite",
+          name: "Péricardite",
+          questions: 18,
+          completed: 0,
+          progress: 0,
+          description: "Pericardial diseases",
+          category: "heart-failure",
+        },
+        {
+          id: "cardiopathie-congenitale",
+          name: "Cardiopathies congénitales",
+          questions: 31,
+          completed: 5,
+          progress: 16,
+          description: "Congenital heart diseases",
+          category: "valvular",
+        },
+      ],
+    },
+    pneumologie: {
+      name: "Pneumologie",
+      image: "🫁",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "infectious", name: "Infectieux" },
+        { id: "oncology", name: "Oncologie" },
+        { id: "chronic", name: "Maladies chroniques" },
+        { id: "emergency", name: "Urgences" },
+      ],
+      exams: [
+        {
+          id: "pneumonie",
+          name: "Pneumonie communautaire",
+          questions: 27,
+          completed: 20,
+          progress: 74,
+          description: "Community-acquired pneumonia",
+          category: "infectious",
+        },
+        {
+          id: "tuberculose",
+          name: "Tuberculose pulmonaire",
+          questions: 32,
+          completed: 0,
+          progress: 0,
+          description: "Pulmonary tuberculosis",
+          category: "infectious",
+        },
+        {
+          id: "cancer-poumon",
+          name: "Cancer du poumon",
+          questions: 38,
+          completed: 12,
+          progress: 32,
+          description: "Lung cancer diagnosis and staging",
+          category: "oncology",
+        },
+        {
+          id: "bpco",
+          name: "BPCO",
+          questions: 34,
+          completed: 28,
+          progress: 82,
+          description: "Chronic obstructive pulmonary disease",
+          category: "chronic",
+        },
+        {
+          id: "asthme",
+          name: "Asthme",
+          questions: 26,
+          completed: 15,
+          progress: 58,
+          description: "Asthma management",
+          category: "chronic",
+        },
+        {
+          id: "embolie-pulmonaire",
+          name: "Embolie pulmonaire",
+          questions: 23,
+          completed: 0,
+          progress: 0,
+          description: "Pulmonary embolism",
+          category: "emergency",
+        },
+        {
+          id: "fibrose-pulmonaire",
+          name: "Fibrose pulmonaire",
+          questions: 21,
+          completed: 7,
+          progress: 33,
+          description: "Pulmonary fibrosis",
+          category: "chronic",
+        },
+      ],
+    },
+    gastroenterologie: {
+      name: "Gastroentérologie",
+      image: "🫃",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "hepatology", name: "Hépatologie" },
+        { id: "inflammatory", name: "Inflammatoire" },
+        { id: "oncology", name: "Oncologie" },
+        { id: "functional", name: "Troubles fonctionnels" },
+      ],
+      exams: [
+        {
+          id: "cirrhose",
+          name: "Cirrhose hépatique",
+          questions: 36,
+          completed: 0,
+          progress: 0,
+          description: "Hepatic cirrhosis",
+          category: "hepatology",
+        },
+        {
+          id: "hepatite-b",
+          name: "Hépatite B",
+          questions: 24,
+          completed: 18,
+          progress: 75,
+          description: "Hepatitis B infection",
+          category: "hepatology",
+        },
+        {
+          id: "mici",
+          name: "MICI (Crohn, RCH)",
+          questions: 41,
+          completed: 12,
+          progress: 29,
+          description: "Inflammatory bowel diseases",
+          category: "inflammatory",
+        },
+        {
+          id: "cancer-colorectal",
+          name: "Cancer colorectal",
+          questions: 33,
+          completed: 0,
+          progress: 0,
+          description: "Colorectal cancer screening",
+          category: "oncology",
+        },
+        {
+          id: "syndrome-intestin-irritable",
+          name: "Syndrome intestin irritable",
+          questions: 19,
+          completed: 14,
+          progress: 74,
+          description: "Irritable bowel syndrome",
+          category: "functional",
+        },
+        {
+          id: "pancreatite",
+          name: "Pancréatite aiguë",
+          questions: 28,
+          completed: 0,
+          progress: 0,
+          description: "Acute pancreatitis",
+          category: "inflammatory",
+        },
+      ],
+    },
+    neurologie: {
+      name: "Neurologie",
+      image: "🧠",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "vascular", name: "Vasculaire" },
+        { id: "degenerative", name: "Dégénératif" },
+        { id: "inflammatory", name: "Inflammatoire" },
+        { id: "epilepsy", name: "Épilepsie" },
+      ],
+      exams: [
+        {
+          id: "avc",
+          name: "Accident vasculaire cérébral",
+          questions: 44,
+          completed: 22,
+          progress: 50,
+          description: "Stroke management",
+          category: "vascular",
+        },
+        {
+          id: "parkinson",
+          name: "Maladie de Parkinson",
+          questions: 31,
+          completed: 0,
+          progress: 0,
+          description: "Parkinson's disease",
+          category: "degenerative",
+        },
+        {
+          id: "alzheimer",
+          name: "Maladie d'Alzheimer",
+          questions: 29,
+          completed: 15,
+          progress: 52,
+          description: "Alzheimer's disease",
+          category: "degenerative",
+        },
+        {
+          id: "sclerose-plaques",
+          name: "Sclérose en plaques",
+          questions: 37,
+          completed: 0,
+          progress: 0,
+          description: "Multiple sclerosis",
+          category: "inflammatory",
+        },
+        {
+          id: "epilepsie",
+          name: "Épilepsie",
+          questions: 26,
+          completed: 20,
+          progress: 77,
+          description: "Epilepsy management",
+          category: "epilepsy",
+        },
+        {
+          id: "cephalees",
+          name: "Céphalées et migraines",
+          questions: 22,
+          completed: 8,
+          progress: 36,
+          description: "Headaches and migraines",
+          category: "vascular",
+        },
+      ],
+    },
+    endocrinologie: {
+      name: "Endocrinologie",
+      image: "🦋",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "diabetes", name: "Diabète" },
+        { id: "thyroid", name: "Thyroïde" },
+        { id: "adrenal", name: "Surrénales" },
+        { id: "reproductive", name: "Hormones reproductrices" },
+      ],
+      exams: [
+        {
+          id: "diabete-type1",
+          name: "Diabète type 1",
+          questions: 32,
+          completed: 25,
+          progress: 78,
+          description: "Type 1 diabetes management",
+          category: "diabetes",
+        },
+        {
+          id: "diabete-type2",
+          name: "Diabète type 2",
+          questions: 38,
+          completed: 10,
+          progress: 26,
+          description: "Type 2 diabetes management",
+          category: "diabetes",
+        },
+        {
+          id: "hyperthyroidie",
+          name: "Hyperthyroïdie",
+          questions: 24,
+          completed: 0,
+          progress: 0,
+          description: "Hyperthyroidism",
+          category: "thyroid",
+        },
+        {
+          id: "hypothyroidie",
+          name: "Hypothyroïdie",
+          questions: 21,
+          completed: 16,
+          progress: 76,
+          description: "Hypothyroidism",
+          category: "thyroid",
+        },
+        {
+          id: "syndrome-cushing",
+          name: "Syndrome de Cushing",
+          questions: 18,
+          completed: 0,
+          progress: 0,
+          description: "Cushing's syndrome",
+          category: "adrenal",
+        },
+      ],
+    },
+    rhumatologie: {
+      name: "Rhumatologie",
+      image: "🦴",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "inflammatory", name: "Inflammatoire" },
+        { id: "degenerative", name: "Dégénératif" },
+        { id: "metabolic", name: "Métabolique" },
+        { id: "autoimmune", name: "Auto-immune" },
+      ],
+      exams: [
+        {
+          id: "polyarthrite-rhumatoide",
+          name: "Polyarthrite rhumatoïde",
+          questions: 35,
+          completed: 0,
+          progress: 0,
+          description: "Rheumatoid arthritis",
+          category: "autoimmune",
+        },
+        {
+          id: "arthrose",
+          name: "Arthrose",
+          questions: 28,
+          completed: 22,
+          progress: 79,
+          description: "Osteoarthritis",
+          category: "degenerative",
+        },
+        {
+          id: "goutte",
+          name: "Goutte",
+          questions: 20,
+          completed: 15,
+          progress: 75,
+          description: "Gout management",
+          category: "metabolic",
+        },
+        {
+          id: "spondylarthrite",
+          name: "Spondylarthrite ankylosante",
+          questions: 26,
+          completed: 0,
+          progress: 0,
+          description: "Ankylosing spondylitis",
+          category: "inflammatory",
+        },
+        {
+          id: "lupus",
+          name: "Lupus érythémateux",
+          questions: 33,
+          completed: 8,
+          progress: 24,
+          description: "Systemic lupus erythematosus",
+          category: "autoimmune",
+        },
+      ],
+    },
+    hematologie: {
+      name: "Hématologie",
+      image: "🩸",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "anemia", name: "Anémies" },
+        { id: "malignant", name: "Hémopathies malignes" },
+        { id: "coagulation", name: "Troubles coagulation" },
+        { id: "transfusion", name: "Transfusion" },
+      ],
+      exams: [
+        {
+          id: "anemie-ferriprive",
+          name: "Anémie ferriprive",
+          questions: 23,
+          completed: 18,
+          progress: 78,
+          description: "Iron deficiency anemia",
+          category: "anemia",
+        },
+        {
+          id: "leucemie-aigue",
+          name: "Leucémie aiguë",
+          questions: 39,
+          completed: 0,
+          progress: 0,
+          description: "Acute leukemia",
+          category: "malignant",
+        },
+        {
+          id: "lymphome",
+          name: "Lymphomes",
+          questions: 34,
+          completed: 12,
+          progress: 35,
+          description: "Lymphoma classification",
+          category: "malignant",
+        },
+        {
+          id: "thrombopenie",
+          name: "Thrombopénie",
+          questions: 19,
+          completed: 0,
+          progress: 0,
+          description: "Thrombocytopenia",
+          category: "coagulation",
+        },
+      ],
+    },
+    dermatologie: {
+      name: "Dermatologie",
+      image: "🫥",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "inflammatory", name: "Inflammatoire" },
+        { id: "infectious", name: "Infectieux" },
+        { id: "oncology", name: "Oncologie" },
+        { id: "allergic", name: "Allergique" },
+      ],
+      exams: [
+        {
+          id: "eczema",
+          name: "Eczéma atopique",
+          questions: 22,
+          completed: 16,
+          progress: 73,
+          description: "Atopic dermatitis",
+          category: "inflammatory",
+        },
+        {
+          id: "psoriasis",
+          name: "Psoriasis",
+          questions: 27,
+          completed: 0,
+          progress: 0,
+          description: "Psoriasis management",
+          category: "inflammatory",
+        },
+        {
+          id: "melanome",
+          name: "Mélanome",
+          questions: 31,
+          completed: 8,
+          progress: 26,
+          description: "Melanoma diagnosis",
+          category: "oncology",
+        },
+        {
+          id: "mycoses",
+          name: "Mycoses cutanées",
+          questions: 18,
+          completed: 12,
+          progress: 67,
+          description: "Cutaneous mycoses",
+          category: "infectious",
+        },
+      ],
+    },
+    psychiatrie: {
+      name: "Psychiatrie",
+      image: "🧘",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "mood", name: "Troubles de l'humeur" },
+        { id: "anxiety", name: "Troubles anxieux" },
+        { id: "psychotic", name: "Troubles psychotiques" },
+        { id: "addiction", name: "Addictions" },
+      ],
+      exams: [
+        {
+          id: "depression",
+          name: "Épisode dépressif majeur",
+          questions: 29,
+          completed: 20,
+          progress: 69,
+          description: "Major depressive episode",
+          category: "mood",
+        },
+        {
+          id: "trouble-bipolaire",
+          name: "Trouble bipolaire",
+          questions: 33,
+          completed: 0,
+          progress: 0,
+          description: "Bipolar disorder",
+          category: "mood",
+        },
+        {
+          id: "schizophrenie",
+          name: "Schizophrénie",
+          questions: 36,
+          completed: 15,
+          progress: 42,
+          description: "Schizophrenia spectrum",
+          category: "psychotic",
+        },
+        {
+          id: "trouble-anxieux",
+          name: "Troubles anxieux",
+          questions: 25,
+          completed: 18,
+          progress: 72,
+          description: "Anxiety disorders",
+          category: "anxiety",
+        },
+        {
+          id: "addiction-alcool",
+          name: "Addiction à l'alcool",
+          questions: 28,
+          completed: 0,
+          progress: 0,
+          description: "Alcohol use disorder",
+          category: "addiction",
+        },
+      ],
+    },
+    pediatrie: {
+      name: "Pédiatrie",
+      image: "👶",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "neonatology", name: "Néonatologie" },
+        { id: "infectious", name: "Infectieux" },
+        { id: "development", name: "Développement" },
+        { id: "emergency", name: "Urgences" },
+      ],
+      exams: [
+        {
+          id: "vaccination",
+          name: "Calendrier vaccinal",
+          questions: 21,
+          completed: 19,
+          progress: 90,
+          description: "Pediatric vaccination schedule",
+          category: "infectious",
+        },
+        {
+          id: "bronchiolite",
+          name: "Bronchiolite",
+          questions: 18,
+          completed: 0,
+          progress: 0,
+          description: "Bronchiolitis management",
+          category: "infectious",
+        },
+        {
+          id: "croissance",
+          name: "Troubles de la croissance",
+          questions: 26,
+          completed: 12,
+          progress: 46,
+          description: "Growth disorders",
+          category: "development",
+        },
+        {
+          id: "convulsions-febriles",
+          name: "Convulsions fébriles",
+          questions: 15,
+          completed: 10,
+          progress: 67,
+          description: "Febrile seizures",
+          category: "emergency",
+        },
+      ],
+    },
+    gynecologie: {
+      name: "Gynécologie-Obstétrique",
+      image: "🤱",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "pregnancy", name: "Grossesse" },
+        { id: "gynecology", name: "Gynécologie" },
+        { id: "contraception", name: "Contraception" },
+        { id: "oncology", name: "Oncologie" },
+      ],
+      exams: [
+        {
+          id: "suivi-grossesse",
+          name: "Suivi de grossesse",
+          questions: 35,
+          completed: 28,
+          progress: 80,
+          description: "Pregnancy monitoring",
+          category: "pregnancy",
+        },
+        {
+          id: "endometriose",
+          name: "Endométriose",
+          questions: 24,
+          completed: 0,
+          progress: 0,
+          description: "Endometriosis management",
+          category: "gynecology",
+        },
+        {
+          id: "contraception",
+          name: "Méthodes contraceptives",
+          questions: 19,
+          completed: 15,
+          progress: 79,
+          description: "Contraceptive methods",
+          category: "contraception",
+        },
+        {
+          id: "cancer-sein",
+          name: "Cancer du sein",
+          questions: 41,
+          completed: 8,
+          progress: 20,
+          description: "Breast cancer screening",
+          category: "oncology",
+        },
+      ],
+    },
+    ophtalmologie: {
+      name: "Ophtalmologie",
+      image: "👁️",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "glaucoma", name: "Glaucome" },
+        { id: "retinal", name: "Rétinopathies" },
+        { id: "refractive", name: "Troubles réfractifs" },
+        { id: "emergency", name: "Urgences" },
+      ],
+      exams: [
+        {
+          id: "glaucome",
+          name: "Glaucome chronique",
+          questions: 22,
+          completed: 0,
+          progress: 0,
+          description: "Chronic glaucoma",
+          category: "glaucoma",
+        },
+        {
+          id: "retinopathie-diabetique",
+          name: "Rétinopathie diabétique",
+          questions: 28,
+          completed: 20,
+          progress: 71,
+          description: "Diabetic retinopathy",
+          category: "retinal",
+        },
+        {
+          id: "cataracte",
+          name: "Cataracte",
+          questions: 16,
+          completed: 12,
+          progress: 75,
+          description: "Cataract surgery",
+          category: "refractive",
+        },
+      ],
+    },
+    orl: {
+      name: "ORL",
+      image: "👂",
+      categories: [
+        { id: "all", name: "Toutes les catégories" },
+        { id: "ear", name: "Oreille" },
+        { id: "nose", name: "Nez" },
+        { id: "throat", name: "Gorge" },
+        { id: "oncology", name: "Oncologie" },
+      ],
+      exams: [
+        {
+          id: "otite",
+          name: "Otites",
+          questions: 20,
+          completed: 16,
+          progress: 80,
+          description: "Otitis management",
+          category: "ear",
+        },
+        {
+          id: "sinusite",
+          name: "Sinusite",
+          questions: 18,
+          completed: 0,
+          progress: 0,
+          description: "Sinusitis treatment",
+          category: "nose",
+        },
+        {
+          id: "angine",
+          name: "Angines",
+          questions: 15,
+          completed: 12,
+          progress: 80,
+          description: "Pharyngitis management",
+          category: "throat",
         },
       ],
     },
@@ -117,7 +954,6 @@ const SubjectsPage = () => {
           questions: 25,
           completed: 0,
           progress: 0,
-          difficulty: "medium",
           category: "ethics",
         },
         {
@@ -126,7 +962,6 @@ const SubjectsPage = () => {
           questions: 30,
           completed: 0,
           progress: 0,
-          difficulty: "hard",
           category: "legal",
         },
         {
@@ -135,15 +970,31 @@ const SubjectsPage = () => {
           questions: 20,
           completed: 0,
           progress: 0,
-          difficulty: "easy",
           category: "work",
+        },
+        {
+          id: "certificats",
+          name: "Certificats médicaux",
+          questions: 16,
+          completed: 8,
+          progress: 50,
+          description: "Medical certificates",
+          category: "legal",
+        },
+        {
+          id: "consentement",
+          name: "Consentement éclairé",
+          questions: 14,
+          completed: 12,
+          progress: 86,
+          description: "Informed consent",
+          category: "ethics",
         },
       ],
     },
     synthese: {
       name: "Synthèse thérapeutique",
       image: "💊",
-      difficulty: "medium",
       categories: [
         { id: "all", name: "Toutes les catégories" },
         { id: "synthesis", name: "Synthèse" },
@@ -158,15 +1009,25 @@ const SubjectsPage = () => {
           difficulty: "medium",
           category: "synthesis",
         },
+        {
+          id: "polypathologie",
+          name: "Polypathologie du sujet âgé",
+          questions: 28,
+          completed: 15,
+          progress: 54,
+          description: "Elderly polypathology",
+          category: "synthesis",
+        },
       ],
     },
     "sante-publique": {
       name: "Santé publique",
       image: "📊",
-      difficulty: "medium",
       categories: [
         { id: "all", name: "Toutes les catégories" },
         { id: "public-health", name: "Santé publique" },
+        { id: "epidemiology", name: "Épidémiologie" },
+        { id: "prevention", name: "Prévention" },
       ],
       exams: [
         {
@@ -177,6 +1038,24 @@ const SubjectsPage = () => {
           progress: 0,
           difficulty: "medium",
           category: "public-health",
+        },
+        {
+          id: "epidemiologie",
+          name: "Épidémiologie analytique",
+          questions: 32,
+          completed: 20,
+          progress: 63,
+          description: "Analytical epidemiology",
+          category: "epidemiology",
+        },
+        {
+          id: "depistage",
+          name: "Dépistage et prévention",
+          questions: 26,
+          completed: 18,
+          progress: 69,
+          description: "Screening and prevention",
+          category: "prevention",
         },
       ],
     },
@@ -192,10 +1071,21 @@ const SubjectsPage = () => {
     );
   }
 
-  // Filter exams based on selected category
-  const filteredExams = course.exams.filter(
-    (exam) => selectedCategory === "all" || exam.category === selectedCategory
-  );
+  // Filter exams based on selected category and subcategory
+  const filteredExams = course.exams.filter((exam) => {
+    if (selectedCategory === "all") return true;
+
+    // Check if selected category is a main category
+    const isMainCategory = course.categories.some(
+      (cat) => cat.id === selectedCategory
+    );
+    if (isMainCategory) {
+      return exam.category === selectedCategory;
+    }
+
+    // Check if selected category is a subcategory
+    return exam.subcategory === selectedCategory;
+  });
 
   const handleExamStart = (examId) => {
     navigate(`/exam/${examId}`);
@@ -219,9 +1109,27 @@ const SubjectsPage = () => {
     }
   };
 
-  const selectedCategoryName =
-    course.categories.find((cat) => cat.id === selectedCategory)?.name ||
-    "Toutes les catégories";
+  const selectedCategoryName = (() => {
+    if (selectedCategory === "all") return "Toutes les catégories";
+
+    // Check if it's a main category
+    const mainCategory = course.categories.find(
+      (cat) => cat.id === selectedCategory
+    );
+    if (mainCategory) return mainCategory.name;
+
+    // Check if it's a subcategory
+    for (const category of course.categories) {
+      if (category.subcategories) {
+        const subcategory = category.subcategories.find(
+          (sub) => sub.id === selectedCategory
+        );
+        if (subcategory) return subcategory.name;
+      }
+    }
+
+    return "Toutes les catégories";
+  })();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
@@ -269,42 +1177,68 @@ const SubjectsPage = () => {
         </div>
       </div>
 
-      {/* Category Dropdown */}
       <div className="relative z-10 mb-6">
-        <div className="relative">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className=" mt-2 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto grid grid-cols-3"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="mt-2 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-xl shadow-lg z-50 p-4"
+        >
+          <div className="space-y-4">
             {course.categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => {
-                  setSelectedCategory(category.id);
-                  setIsDropdownOpen(false);
-                }}
-                className={`w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-blue-50 transition-colors duration-200 ${
-                  selectedCategory === category.id
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-700"
-                }`}
-              >
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
-                  A
+              <div key={category.id} className="space-y-2">
+                {/* Category Title with Selection */}
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {category.name}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                      selectedCategory === category.id
+                        ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                        : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
+                    }`}
+                  >
+                    Tout {category.name}
+                  </button>
                 </div>
-                <span className="font-medium">{category.name}</span>
-              </button>
+
+                {/* Subcategories */}
+                {category.subcategories &&
+                  category.subcategories.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {category.subcategories.map((subcat) => (
+                        <button
+                          key={subcat.id}
+                          onClick={() => {
+                            setSelectedCategory(subcat.id);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                            selectedCategory === subcat.id
+                              ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                              : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
+                          }`}
+                        >
+                          {subcat.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+              </div>
             ))}
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10">
         {/* Exam Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {filteredExams.map((exam, index) => (
             <motion.div
               key={exam.id}
@@ -315,7 +1249,9 @@ const SubjectsPage = () => {
             >
               {/* Exam Image Placeholder */}
               <div className="h-32 bg-gradient-to-br from-blue-400 to-teal-500 flex items-center justify-center">
-                <div className="text-white text-4xl">🫘</div>
+                <div className="text-white text-4xl">
+                  <SiBookstack />
+                </div>
                 <span
                   className="absolute top-1 right-4 h-10 w-10 bg-blue-800 text-white rounded-full flex items-center justify-center text-[20px]  hover:rounded-2xl duration-500 cursor-pointer"
                   onClick={() => setShowmodal(true)}
