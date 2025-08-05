@@ -12,12 +12,18 @@ import {
   FaSun,
   FaCheck,
   FaChevronRight,
+  FaPlay,
+  FaFilter,
+  FaFlag,
+  FaExclamationTriangle,
+  FaPlus,
 } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
 import { ImFontSize } from "react-icons/im";
 import { PiImagesSquareFill } from "react-icons/pi";
 import ResumeModel from "../components/ExamsPage/ResumeModel";
 import ExplicationModel from "../components/ExamsPage/ExplicationModel";
+
 const ExamPage = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
@@ -29,65 +35,212 @@ const ExamPage = () => {
   const [expandedPeriods, setExpandedPeriods] = useState({ janvier2024: true });
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [editModelShow, setEditModelShow] = useState(false);
+  const [fontSize, setFontSize] = useState(16); // Default font size
+  const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
+
   // Exam data with medical questions - updated to support multiple correct answers
   const examData = {
     gyneco: {
-      title: "Gyneco-obstétricale",
-      subject: "Cancérologies",
+      title: "Santé publique",
+      subject: "nom d'app",
       description: "Janvier 2024 Q 25 ",
-      totalQuestions: 89,
-      completed: 0,
+      totalQuestions: 50,
+      completed: 11,
       questions: [
         {
-          id: 25,
-          period: "Janvier 2024",
+          id: 1,
+          period: "Septembre 2024",
           status: "current",
-          question: "Concernant le cancer du col stade Ibl:",
+          question: "Text question",
           options: [
-            "C'est un stade pré invasif",
-            "il est étendu aux paramètres",
-            "il peut être traité par une hystérectomie élargie avec lymphadénectomie",
-            "il nécessite toujours une chimiothérapie",
-            "Il est de bon pronostic",
+            "Sur les vaccins",
+            "Sur la sérothérapie",
+            "Sur la biothérapie",
+            "Sur les Anti Inflammatoires non stéroïdiens",
+            "Aucune réponse n'est juste",
           ],
-          correctAnswers: ["C", "E"], // Multiple correct answers
+          correctAnswers: ["C", "D"], // Multiple correct answers
           multipleChoice: true,
           explanation:
-            "Au stade Ibl, le cancer peut être traité par une hystérectomie élargie avec lymphadénectomie et il est généralement de bon pronostic quand traité appropriément.",
+            "La biothérapie et les AINS sont des traitements importants en médecine.",
         },
         {
-          id: 26,
-          period: "Janvier 2024",
+          id: 2,
+          period: "Septembre 2024",
           status: "pending",
-          question: "Les facteurs de risque du cancer du col utérin incluent:",
-          options: [
-            "L'infection par HPV",
-            "Le tabagisme",
-            "L'immunodépression",
-            "La multiparité",
-            "L'âge précoce des premiers rapports",
-          ],
-          correctAnswers: ["A", "B", "C", "D", "E"], // Multiple correct answers
+          question: "Question sur les traitements médicaux:",
+          options: ["Option A", "Option B", "Option C", "Option D", "Option E"],
+          correctAnswers: ["A", "B"], // Multiple correct answers
           multipleChoice: true,
-          explanation:
-            "Tous ces facteurs augmentent le risque de cancer du col utérin : HPV, tabagisme, immunodépression, multiparité et âge précoce des premiers rapports.",
+          explanation: "Explication de la réponse correcte.",
         },
         {
-          id: 39,
-          period: "Janvier 2024",
+          id: 3,
+          period: "Septembre 2024",
           status: "pending",
-          question: "Le dépistage du cancer du col utérin:",
+          question:
+            "Quels sont les facteurs de risque de l'hypertension artérielle ?",
           options: [
-            "Se fait par frottis cervical",
-            "Commence à 25 ans",
-            "Se fait tous les 3 ans",
-            "Peut détecter les lésions précancéreuses",
-            "Nécessite une anesthésie générale",
+            "Tabagisme",
+            "Sédentarité",
+            "Consommation excessive de sel",
+            "Exercice physique régulier",
+            "Obésité",
           ],
-          correctAnswers: ["A", "B", "C", "D"], // Multiple correct answers
+          correctAnswers: ["A", "B", "C", "E"],
           multipleChoice: true,
           explanation:
-            "Le dépistage par frottis permet une détection précoce efficace et se fait sans anesthésie.",
+            "Le tabagisme, la sédentarité, la consommation excessive de sel et l'obésité sont des facteurs de risque.",
+        },
+        {
+          id: 4,
+          period: "Septembre 2024",
+          status: "pending",
+          question:
+            "Parmi les suivants, lesquels sont des vaccins obligatoires en France chez l’enfant ?",
+          options: ["BCG", "Hépatite B", "Coqueluche", "Rougeole", "Tétanos"],
+          correctAnswers: ["B", "C", "D", "E"],
+          multipleChoice: true,
+          explanation:
+            "Hépatite B, coqueluche, rougeole et tétanos sont obligatoires.",
+        },
+        {
+          id: 5,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Quels sont des exemples de maladies auto-immunes ?",
+          options: [
+            "Diabète de type 1",
+            "Polyarthrite rhumatoïde",
+            "Tuberculose",
+            "Lupus érythémateux disséminé",
+            "Grippe",
+          ],
+          correctAnswers: ["A", "B", "D"],
+          multipleChoice: true,
+          explanation:
+            "Le diabète de type 1, la polyarthrite rhumatoïde et le lupus sont des maladies auto-immunes.",
+        },
+        {
+          id: 6,
+          period: "Septembre 2024",
+          status: "pending",
+          question:
+            "Lesquels des éléments suivants sont des symptômes du diabète ?",
+          options: [
+            "Polyurie",
+            "Polydipsie",
+            "Perte de poids",
+            "Fièvre",
+            "Vision trouble",
+          ],
+          correctAnswers: ["A", "B", "C", "E"],
+          multipleChoice: true,
+          explanation:
+            "Polyurie, polydipsie, perte de poids et vision trouble sont des symptômes du diabète.",
+        },
+        {
+          id: 7,
+          period: "Septembre 2024",
+          status: "pending",
+          question:
+            "Quels sont des moyens de prévention des maladies cardiovasculaires ?",
+          options: [
+            "Arrêt du tabac",
+            "Activité physique régulière",
+            "Consommation excessive d’alcool",
+            "Alimentation équilibrée",
+            "Gestion du stress",
+          ],
+          correctAnswers: ["A", "B", "D", "E"],
+          multipleChoice: true,
+          explanation:
+            "Arrêter de fumer, faire du sport, manger équilibré et gérer le stress préviennent les maladies cardiovasculaires.",
+        },
+        {
+          id: 8,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Quels sont des exemples d’antibiotiques ?",
+          options: [
+            "Amoxicilline",
+            "Ibuprofène",
+            "Ciprofloxacine",
+            "Paracétamol",
+            "Azithromycine",
+          ],
+          correctAnswers: ["A", "C", "E"],
+          multipleChoice: true,
+          explanation:
+            "Amoxicilline, ciprofloxacine et azithromycine sont des antibiotiques.",
+        },
+        {
+          id: 9,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Quels sont des facteurs de risque du cancer du poumon ?",
+          options: [
+            "Tabagisme",
+            "Exposition à l’amiante",
+            "Pollution de l’air",
+            "Consommation de fruits",
+            "Antécédents familiaux",
+          ],
+          correctAnswers: ["A", "B", "C", "E"],
+          multipleChoice: true,
+          explanation:
+            "Tabac, amiante, pollution et antécédents familiaux sont des facteurs de risque.",
+        },
+        {
+          id: 10,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Lesquels des suivants sont des signes d’infection ?",
+          options: [
+            "Fièvre",
+            "Rougeur",
+            "Douleur",
+            "Somnolence",
+            "Chaleur locale",
+          ],
+          correctAnswers: ["A", "B", "C", "E"],
+          multipleChoice: true,
+          explanation:
+            "Fièvre, rougeur, douleur et chaleur locale sont des signes d’infection.",
+        },
+        {
+          id: 11,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Quels sont des exemples de maladies chroniques ?",
+          options: [
+            "Asthme",
+            "Grippe",
+            "Diabète",
+            "Hypertension artérielle",
+            "Varicelle",
+          ],
+          correctAnswers: ["A", "C", "D"],
+          multipleChoice: true,
+          explanation:
+            "Asthme, diabète et hypertension sont des maladies chroniques.",
+        },
+        {
+          id: 12,
+          period: "Septembre 2024",
+          status: "pending",
+          question: "Quels sont des modes de transmission du VIH ?",
+          options: [
+            "Rapports sexuels non protégés",
+            "Partage de seringues",
+            "Poignée de main",
+            "Transmission mère-enfant",
+            "Toux",
+          ],
+          correctAnswers: ["A", "B", "D"],
+          multipleChoice: true,
+          explanation:
+            "Rapports non protégés, seringues partagées et transmission mère-enfant transmettent le VIH.",
         },
       ],
     },
@@ -98,47 +251,42 @@ const ExamPage = () => {
 
   const examPeriods = [
     {
-      id: "janvier2024",
-      label: "Janvier 2024",
-      questions: [
-        { id: 25, status: "active" },
-        { id: 26, status: "pending" },
-        { id: 39, status: "pending" },
-      ],
-    },
-    {
-      id: "juillet2024",
-      label: "Juillet 2024",
-      questions: [],
-    },
-    {
       id: "octobre2024",
       label: "Octobre 2024",
-      questions: [],
-    },
-    {
-      id: "novembre2024",
-      label: "Novembre 2024",
-      questions: [],
+      questions: [
+        { id: 4, status: "active" },
+        { id: 5, status: "pending" },
+      ],
     },
     {
       id: "janvier2023",
       label: "Janvier 2023",
+      questions: [{ id: 3, status: "active" }],
+    },
+    {
+      id: "normal2022",
+      label: "Normal 2022",
+      questions: [
+        { id: 1, status: "active" },
+        { id: 2, status: "pending" },
+        { id: 6, status: "pending" },
+        { id: 7, status: "pending" },
+        { id: 8, status: "pending" },
+      ],
+    },
+    {
+      id: "normal2021",
+      label: "Normal 2021",
       questions: [],
     },
     {
-      id: "juin2023",
-      label: "Juin 2023",
+      id: "normal2020",
+      label: "Normal 2020",
       questions: [],
     },
     {
-      id: "janvier2022",
-      label: "Janvier 2022",
-      questions: [],
-    },
-    {
-      id: "janvier2021",
-      label: "Janvier 2021",
+      id: "normal2019",
+      label: "Normal 2019",
       questions: [],
     },
   ];
@@ -150,6 +298,48 @@ const ExamPage = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Close font size menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFontSizeMenu && !event.target.closest(".font-size-selector")) {
+        setShowFontSizeMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFontSizeMenu]);
+
+  // Keyboard shortcuts for font size
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key) {
+          case "=":
+          case "+":
+            event.preventDefault();
+            increaseFontSize();
+            break;
+          case "-":
+            event.preventDefault();
+            decreaseFontSize();
+            break;
+          case "0":
+            event.preventDefault();
+            resetFontSize();
+            break;
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -157,16 +347,7 @@ const ExamPage = () => {
       .toString()
       .padStart(2, "0")}`;
   };
-  const [isZoomed, setIsZoomed] = useState(false);
 
-  const toggleZoom = () => {
-    if (isZoomed) {
-      document.body.style.zoom = "100%";
-    } else {
-      document.body.style.zoom = "120%";
-    }
-    setIsZoomed(!isZoomed);
-  };
   const handleAnswerSelect = (answerKey) => {
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
 
@@ -200,10 +381,6 @@ const ExamPage = () => {
     setShowResults(true);
   };
 
-  const handleExit = () => {
-    navigate("/dashboard/home");
-  };
-
   const togglePeriod = (periodId) => {
     setExpandedPeriods((prev) => ({
       ...prev,
@@ -215,9 +392,24 @@ const ExamPage = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  const increaseFontSize = () => {
+    setFontSize((prev) => Math.min(prev + 2, 24)); // Max 24px
+  };
+
+  const decreaseFontSize = () => {
+    setFontSize((prev) => Math.max(prev - 2, 12)); // Min 12px
+  };
+
+  const resetFontSize = () => {
+    setFontSize(16); // Reset to default
+  };
+
   const getQuestionStatus = (questionId) => {
     if (questionId === question.id) return "active";
     return "pending";
+  };
+  const handleExit = () => {
+    navigate("/dashboard/home");
   };
 
   // Check if answer is correct
@@ -278,50 +470,105 @@ const ExamPage = () => {
     return null;
   };
 
+  // Get feedback message based on user's answer
+  const getFeedbackMessage = () => {
+    const userAnswers = selectedAnswers[currentQuestion] || [];
+    const correctAnswers = question.correctAnswers || [];
+    const hasSelectedCorrect = userAnswers.some((answer) =>
+      correctAnswers.includes(answer)
+    );
+    const hasSelectedIncorrect = userAnswers.some(
+      (answer) => !correctAnswers.includes(answer)
+    );
+    const missedCorrect = correctAnswers.some(
+      (answer) => !userAnswers.includes(answer)
+    );
+
+    if (hasSelectedCorrect && !hasSelectedIncorrect && !missedCorrect) {
+      return {
+        type: "correct",
+        message: "Parfait ! Vous avez sélectionné toutes les bonnes réponses.",
+        icon: <FaCheckCircle className="w-5 h-5 text-green-500" />,
+      };
+    } else if (hasSelectedCorrect && (hasSelectedIncorrect || missedCorrect)) {
+      return {
+        type: "partial",
+        message:
+          "Vous avez sélectionné certaines bonnes réponses, mais il y a des erreurs.",
+        icon: <FaExclamationTriangle className="w-5 h-5 text-yellow-500" />,
+      };
+    } else {
+      return {
+        type: "incorrect",
+        message: "Vous n'avez pas sélectionné les bonnes réponses.",
+        icon: <FaTimesCircle className="w-5 h-5 text-red-500" />,
+      };
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        {/* Sidebar Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-              <span className="text-pink-600 text-lg">🫸</span>
+    <div className="max-h-screen bg-gray-50 flex">
+      {/* Top Header Bar */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Left - Logo and App Name */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <span className="text-blue-600 text-sm">📊</span>
             </div>
-            <span className="font-semibold text-gray-900 text-lg">
-              {exam.title}
+            <span className="font-semibold text-gray-900">Santé publique</span>
+          </div>
+
+          {/* Center - App Name */}
+          <div className="text-gray-600 font-medium">WAFA</div>
+
+          {/* Right - Controls */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              {isDarkMode ? (
+                <FaSun className="w-4 h-4" />
+              ) : (
+                <FaMoon className="w-4 h-4" />
+              )}
+            </button>
+            <span onClick={() => handleExit()} className="cursor-pointer">
+              Exit
             </span>
           </div>
+        </div>
+      </div>
 
-          {/* Subject Progress */}
-          <div className="mb-6">
-            <div className="text-base font-medium text-gray-900 mb-2">
-              {exam.subject}
-            </div>
-            <div className="text-sm text-gray-500 mb-3">
-              {exam.completed}% Complete
-            </div>
-            <div className="text-sm text-gray-400">
-              {exam.completed} / {exam.totalQuestions}
-            </div>
-          </div>
+      {/* Left Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen">
+        {/* Add Button */}
+        <div className="p-6 border-b border-gray-200">
+          <button className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
+            <FaPlus className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Period Navigation */}
+        {/* Navigation Items */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {examPeriods.map((period) => (
             <div key={period.id}>
               <button
                 onClick={() => togglePeriod(period.id)}
-                className="w-full flex items-center space-x-3 text-left text-sm text-gray-700 hover:text-gray-900 py-2"
+                className={`w-full flex items-center space-x-3 text-left text-sm py-2 px-3 rounded-lg transition-all ${
+                  period.id === "normal2022"
+                    ? "bg-blue-100 text-blue-700 font-semibold"
+                    : "text-gray-700 hover:text-gray-900"
+                }`}
               >
-                <span
-                  className={`transform transition-transform ${
-                    expandedPeriods[period.id] ? "rotate-90" : ""
+                <FaPlay
+                  className={`w-3 h-3 ${
+                    period.id === "normal2022"
+                      ? "text-blue-600"
+                      : "text-gray-500"
                   }`}
-                >
-                  <FaChevronRight />
-                </span>
+                />
                 <span className="font-medium">{period.label}</span>
               </button>
 
@@ -339,14 +586,14 @@ const ExamPage = () => {
                       }}
                       className={`flex items-center space-x-3 text-sm py-2 px-3 rounded-lg transition-all w-full ${
                         q.id === question.id
-                          ? "bg-red-100 text-red-700 border border-red-200"
+                          ? "bg-blue-100 text-blue-700 border border-blue-200"
                           : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                       }`}
                     >
                       <span
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           q.id === question.id
-                            ? "border-red-500 bg-red-500"
+                            ? "border-blue-500 bg-blue-500"
                             : "border-gray-300"
                         }`}
                       >
@@ -368,248 +615,288 @@ const ExamPage = () => {
             </div>
           ))}
         </div>
+
+        {/* Progress Indicator */}
+        <div className="p-6 border-t border-gray-200">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-red-500 font-medium">fausses</span>
+            <span className="text-green-500 font-medium">corrects</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className="bg-red-500 h-2 rounded-full"
+              style={{
+                width: `${(exam.completed / exam.totalQuestions) * 100}%`,
+              }}
+            ></div>
+          </div>
+          <div className="text-sm text-gray-600">
+            {Math.round((exam.completed / exam.totalQuestions) * 100)}% Complete
+          </div>
+          <div className="text-sm text-gray-500">
+            {exam.completed}/{exam.totalQuestions}
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* /* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
+      <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll">
+        {/* Top Navigation Bar */}
+        <div className="bg-blue-500 text-white px-8 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              Néphrologie/uro <IoIosArrowForward /> septembre 2024
-            </div>
-            <div className="flex items-center space-x-4 bg-blue-200 p-2 rounded-3xl">
-              <PiImagesSquareFill className="text-2xl text-blue-900 hover:text-blue-400 transform duration-300" />
-              <ImFontSize
-                className="text-2xl text-blue-900 cursor-pointer hover:text-blue-400 transform duration-300"
-                onClick={() => {
-                  toggleZoom();
-                }}
-                
-              />
-              <FiEdit
-                className="text-2xl text-blue-900 cursor-pointer hover:text-blue-400 transform duration-300"
-                onClick={() => {
-                  setEditModelShow(true);
-                }}
-              />  
-            </div>
-            <div className="flex items-center space-x-6">
-              <button
-                onClick={handleExit}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <FaTimes className="w-4 h-4" />
-                <span className="text-sm font-medium">Exit</span>
-              </button>
-
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                {isDarkMode ? (
-                  <FaSun className="w-5 h-5" />
-                ) : (
-                  <FaMoon className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <div className="text-sm">sous module name &gt; year session</div>
           </div>
         </div>
 
         {/* Question Content */}
         <div className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             {/* Question Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <span className="text-gray-600 font-medium">
-                    {question.period} Q {question.id}
+                    {question.period} Q{question.id}
                   </span>
-
-                  {question.multipleChoice && (
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm font-medium">
-                      Choix multiples
-                    </span>
-                  )}
+                  <span className="text-gray-400">|</span>
+                  <span className="bg-black text-white px-3 py-1 rounded-full text-sm">
+                    collective
+                  </span>
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() =>
-                      currentQuestion > 0 &&
-                      setCurrentQuestion(currentQuestion - 1)
-                    }
-                    disabled={currentQuestion === 0}
-                    className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <FaArrowLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      currentQuestion < exam.questions.length - 1 &&
-                      setCurrentQuestion(currentQuestion + 1)
-                    }
-                    disabled={currentQuestion === exam.questions.length - 1}
-                    className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <FaArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Question */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              {/* Question Number and Total */}
-              <div className="px-8 py-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6 text-lg font-semibold text-gray-800">
-                    <span>{currentQuestion + 1}</span>
-                    <span className="text-gray-400">{exam.totalQuestions}</span>
-                  </div>
-                  {question.multipleChoice && (
-                    <div className="text-sm text-gray-500">
-                      {selectedAnswers[currentQuestion]?.length || 0} réponse(s)
-                      sélectionnée(s)
+                  <button className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                    <div className="w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center">
+                      <span className="text-xs">✓</span>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </button>
 
-              {/* Question Text */}
-              <div className="px-8 py-6">
-                <h2 className="text-xl text-gray-900 mb-8 font-medium leading-relaxed flex items-center gap-1">
-                  <img
-                    src="https://res.cloudinary.com/void-elsan/image/upload/f_auto/q_90/v1/inline-images/nephrologie-%28personnalise%29.jpg?_a=BAAAV6Bs"
-                    alt=""
-                    className="h-40 w-40 object-cover rounded-3xl border-2 border-blue-500"
-                  />
-                  {question.question}
-                </h2>
+                  {/* Font Size Selector */}
+                  <div className="relative font-size-selector">
+                    <button
+                      onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
+                      className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                    >
+                      <ImFontSize className="w-4 h-4 text-gray-600" />
+                      <span className="text-xs font-bold">
+                        <span className="text-red-500">A</span>
+                        <span className="text-gray-500">a</span>
+                      </span>
+                      <span className="text-xs text-gray-600 ml-1">
+                        {fontSize}px
+                      </span>
+                    </button>
 
-                {/* Answer Options */}
-                <div className="space-y-4 mb-8">
-                  {question.options.map((option, index) => {
-                    const answerKey = String.fromCharCode(65 + index);
-                    const currentQuestionAnswers =
-                      selectedAnswers[currentQuestion] || [];
-                    const isSelected =
-                      currentQuestionAnswers.includes(answerKey);
-
-                    return (
-                      <button
-                        key={index}
-                        onClick={() =>
-                          !showResults && handleAnswerSelect(answerKey)
-                        }
-                        disabled={showResults}
-                        className={`w-full p-6 border-2 rounded-xl text-left transition-all ${getAnswerOptionStyle(
-                          answerKey,
-                          index
-                        )}`}
-                      >
-                        <div className="flex items-center space-x-5">
-                          <div
-                            className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center font-bold text-base relative ${
-                              showResults &&
-                              question.correctAnswers.includes(answerKey)
-                                ? "border-white bg-green-500 text-white"
-                                : showResults &&
-                                  isSelected &&
-                                  !question.correctAnswers.includes(answerKey)
-                                ? "border-white bg-red-500 text-white"
-                                : isSelected
-                                ? "border-blue-400 bg-blue-600 text-white"
-                                : "border-gray-400 bg-white text-gray-600"
-                            }`}
-                          >
-                            {question.multipleChoice &&
-                            (showResults || isSelected) ? (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                {getAnswerIcon(answerKey)}
-                              </div>
-                            ) : (
-                              answerKey
-                            )}
-                            {!question.multipleChoice && (
-                              <span
-                                className={
-                                  showResults &&
-                                  question.correctAnswers.includes(answerKey)
-                                    ? "text-white"
-                                    : ""
-                                }
-                              >
-                                {answerKey}
-                              </span>
-                            )}
+                    {showFontSizeMenu && (
+                      <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                        <div className="p-2 border-b border-gray-100">
+                          <div className="text-xs text-gray-600 mb-2">
+                            Font Size
                           </div>
-                          <span className="text-base font-medium leading-relaxed">
-                            {option}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={decreaseFontSize}
+                              className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
+                            >
+                              <span className="text-xs">-</span>
+                            </button>
+                            <span className="text-xs font-medium">
+                              {fontSize}px
+                            </span>
+                            <button
+                              onClick={increaseFontSize}
+                              className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
+                            >
+                              <span className="text-xs">+</span>
+                            </button>
+                          </div>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-6">
-                  <div className="flex space-x-4">
-                    {showResults && (
-                      <>
                         <button
-                          className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors ${
-                            isAnswerCorrect()
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-red-100 text-red-700 hover:bg-red-200"
-                          }`}
+                          onClick={resetFontSize}
+                          className="w-full text-left px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
                         >
-                          {isAnswerCorrect() ? (
-                            <>
-                              <FaCheckCircle className="w-4 h-4" />
-                              <span className="font-medium">Correct</span>
-                            </>
-                          ) : (
-                            <>
-                              <FaTimesCircle className="w-4 h-4" />
-                              <span className="font-medium">Incorrect</span>
-                            </>
-                          )}
+                          Reset to Default
                         </button>
-                        <button className="flex items-center space-x-2 px-6 py-3 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors">
-                          <span className="text-sm">👥</span>
-                          <span className="font-medium">Community</span>
-                        </button>
-                      </>
+                        <div className="px-2 py-1 text-xs text-gray-400 border-t border-gray-100">
+                          <div>Keyboard shortcuts:</div>
+                          <div>Ctrl/Cmd + = : Increase</div>
+                          <div>Ctrl/Cmd + - : Decrease</div>
+                          <div>Ctrl/Cmd + 0 : Reset</div>
+                        </div>
+                      </div>
                     )}
                   </div>
 
-                  {!showResults &&
-                    selectedAnswers[currentQuestion]?.length > 0 && (
-                      <button
-                        onClick={handleCheckAnswer}
-                        className="bg-black text-white px-8 py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-                      >
-                        Check Answer ✓
-                      </button>
-                    )}
+                  <button className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                    <PiImagesSquareFill className="w-4 h-4 text-gray-600" />
+                  </button>
                 </div>
-
-                {/* Explanation */}
-                {showResults && (
-                  <ExplicationModel question={question} />
-                )}
               </div>
             </div>
+
+            {/* Question Box */}
+            <div className="bg-orange-100 rounded-xl p-6 mb-8 relative">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-xs text-gray-600">JPEG</span>
+                </div>
+                <div className="flex-1">
+                  <p
+                    className="text-gray-800"
+                    style={{ fontSize: `${fontSize}px` }}
+                  >
+                    {question.question}
+                  </p>
+                </div>
+              </div>
+              <div className="absolute top-4 right-4 bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm">
+                {currentQuestion + 1}/{exam.totalQuestions}
+              </div>
+            </div>
+
+            {/* Answer Options */}
+            <div className="space-y-4 mb-8">
+              {question.options.map((option, index) => {
+                const answerKey = String.fromCharCode(65 + index);
+                const currentQuestionAnswers =
+                  selectedAnswers[currentQuestion] || [];
+                const isSelected = currentQuestionAnswers.includes(answerKey);
+                const isCorrect = question.correctAnswers.includes(answerKey);
+
+                return (
+                  <button
+                    key={index}
+                    onClick={() =>
+                      !showResults && handleAnswerSelect(answerKey)
+                    }
+                    disabled={showResults}
+                    className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
+                      showResults
+                        ? getAnswerOptionStyle(answerKey, index)
+                        : isSelected
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          showResults
+                            ? isCorrect
+                              ? "bg-green-600 text-white"
+                              : isSelected
+                              ? "bg-red-600 text-white"
+                              : "bg-gray-300 text-gray-600"
+                            : isSelected
+                            ? "bg-orange-500 text-white"
+                            : "bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {answerKey}
+                      </div>
+                      <span
+                        className="font-medium"
+                        style={{ fontSize: `${fontSize}px` }}
+                      >
+                        {option}
+                      </span>
+                      {showResults && getAnswerIcon(answerKey)}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Feedback Section */}
+            {showResults && (
+              <div className="mb-8">
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    {getFeedbackMessage().icon}
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Résultat de votre réponse
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Feedback Element B - Incorrect/Unselected Correct */}
+                    <div className="flex items-center space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">B</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-red-800">
+                          C'est lorsque l'utilisateur n'a pas sélectionné la
+                          réponse correcte
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Feedback Element C - Correct Selection */}
+                    <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">C</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-green-800">
+                          C'est lorsque l'utilisateur a sélectionné la réponse
+                          correcte
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 text-sm">
+                      {getFeedbackMessage().message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between">
+              <div></div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() =>
+                    currentQuestion > 0 &&
+                    setCurrentQuestion(currentQuestion - 1)
+                  }
+                  disabled={currentQuestion === 0}
+                  className="p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <FaArrowLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCheckAnswer}
+                  disabled={
+                    !selectedAnswers[currentQuestion]?.length || showResults
+                  }
+                  className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {showResults ? "Réponse Vérifiée" : "Vérifier la Réponse"}
+                </button>
+                <button
+                  onClick={() =>
+                    currentQuestion < exam.questions.length - 1 &&
+                    setCurrentQuestion(currentQuestion + 1)
+                  }
+                  disabled={currentQuestion === exam.questions.length - 1}
+                  className="p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <FaArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Explanation */}
+            {showResults && <ExplicationModel question={question} />}
           </div>
         </div>
       </div>
-      {
-        editModelShow && <ResumeModel/>
-      }
+      {editModelShow && <ResumeModel />}
     </div>
   );
 };

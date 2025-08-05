@@ -7,7 +7,8 @@ import { SiBookstack } from "react-icons/si";
 const SubjectsPage = () => {
   const [showModel, setShowmodal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
   const { courseId } = useParams();
   const navigate = useNavigate();
 
@@ -17,7 +18,6 @@ const SubjectsPage = () => {
       name: "Néphrologie/Urologie",
       image: "🫘",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         {
           id: "biochemistry",
           name: "Les bases biochimiques",
@@ -162,7 +162,6 @@ const SubjectsPage = () => {
       name: "Cardiologie",
       image: "❤️",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         {
           id: "arrhythmia",
           name: "Troubles du rythme",
@@ -282,7 +281,6 @@ const SubjectsPage = () => {
       name: "Pneumologie",
       image: "🫁",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "infectious", name: "Infectieux" },
         { id: "oncology", name: "Oncologie" },
         { id: "chronic", name: "Maladies chroniques" },
@@ -358,7 +356,6 @@ const SubjectsPage = () => {
       name: "Gastroentérologie",
       image: "🫃",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "hepatology", name: "Hépatologie" },
         { id: "inflammatory", name: "Inflammatoire" },
         { id: "oncology", name: "Oncologie" },
@@ -425,7 +422,6 @@ const SubjectsPage = () => {
       name: "Neurologie",
       image: "🧠",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "vascular", name: "Vasculaire" },
         { id: "degenerative", name: "Dégénératif" },
         { id: "inflammatory", name: "Inflammatoire" },
@@ -492,7 +488,6 @@ const SubjectsPage = () => {
       name: "Endocrinologie",
       image: "🦋",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "diabetes", name: "Diabète" },
         { id: "thyroid", name: "Thyroïde" },
         { id: "adrenal", name: "Surrénales" },
@@ -550,7 +545,6 @@ const SubjectsPage = () => {
       name: "Rhumatologie",
       image: "🦴",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "inflammatory", name: "Inflammatoire" },
         { id: "degenerative", name: "Dégénératif" },
         { id: "metabolic", name: "Métabolique" },
@@ -608,7 +602,6 @@ const SubjectsPage = () => {
       name: "Hématologie",
       image: "🩸",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "anemia", name: "Anémies" },
         { id: "malignant", name: "Hémopathies malignes" },
         { id: "coagulation", name: "Troubles coagulation" },
@@ -657,7 +650,6 @@ const SubjectsPage = () => {
       name: "Dermatologie",
       image: "🫥",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "inflammatory", name: "Inflammatoire" },
         { id: "infectious", name: "Infectieux" },
         { id: "oncology", name: "Oncologie" },
@@ -706,7 +698,6 @@ const SubjectsPage = () => {
       name: "Psychiatrie",
       image: "🧘",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "mood", name: "Troubles de l'humeur" },
         { id: "anxiety", name: "Troubles anxieux" },
         { id: "psychotic", name: "Troubles psychotiques" },
@@ -764,7 +755,6 @@ const SubjectsPage = () => {
       name: "Pédiatrie",
       image: "👶",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "neonatology", name: "Néonatologie" },
         { id: "infectious", name: "Infectieux" },
         { id: "development", name: "Développement" },
@@ -813,7 +803,6 @@ const SubjectsPage = () => {
       name: "Gynécologie-Obstétrique",
       image: "🤱",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "pregnancy", name: "Grossesse" },
         { id: "gynecology", name: "Gynécologie" },
         { id: "contraception", name: "Contraception" },
@@ -862,7 +851,6 @@ const SubjectsPage = () => {
       name: "Ophtalmologie",
       image: "👁️",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "glaucoma", name: "Glaucome" },
         { id: "retinal", name: "Rétinopathies" },
         { id: "refractive", name: "Troubles réfractifs" },
@@ -902,7 +890,6 @@ const SubjectsPage = () => {
       name: "ORL",
       image: "👂",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "ear", name: "Oreille" },
         { id: "nose", name: "Nez" },
         { id: "throat", name: "Gorge" },
@@ -942,7 +929,6 @@ const SubjectsPage = () => {
       name: "Med legal-éthique-travail",
       image: "⚖️",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "ethics", name: "Éthique" },
         { id: "legal", name: "Légal" },
         { id: "work", name: "Travail" },
@@ -995,10 +981,7 @@ const SubjectsPage = () => {
     synthese: {
       name: "Synthèse thérapeutique",
       image: "💊",
-      categories: [
-        { id: "all", name: "Toutes les catégories" },
-        { id: "synthesis", name: "Synthèse" },
-      ],
+      categories: [{ id: "synthesis", name: "Synthèse" }],
       exams: [
         {
           id: "synthesis",
@@ -1024,7 +1007,6 @@ const SubjectsPage = () => {
       name: "Santé publique",
       image: "📊",
       categories: [
-        { id: "all", name: "Toutes les catégories" },
         { id: "public-health", name: "Santé publique" },
         { id: "epidemiology", name: "Épidémiologie" },
         { id: "prevention", name: "Prévention" },
@@ -1074,17 +1056,9 @@ const SubjectsPage = () => {
   // Filter exams based on selected category and subcategory
   const filteredExams = course.exams.filter((exam) => {
     if (selectedCategory === "all") return true;
-
-    // Check if selected category is a main category
-    const isMainCategory = course.categories.some(
-      (cat) => cat.id === selectedCategory
-    );
-    if (isMainCategory) {
-      return exam.category === selectedCategory;
-    }
-
-    // Check if selected category is a subcategory
-    return exam.subcategory === selectedCategory;
+    if (exam.category !== selectedCategory) return false;
+    if (selectedSubcategory === "all") return true;
+    return exam.subcategory === selectedSubcategory;
   });
 
   const handleExamStart = (examId) => {
@@ -1111,25 +1085,43 @@ const SubjectsPage = () => {
 
   const selectedCategoryName = (() => {
     if (selectedCategory === "all") return "Toutes les catégories";
-
-    // Check if it's a main category
-    const mainCategory = course.categories.find(
+    const category = course.categories.find(
       (cat) => cat.id === selectedCategory
     );
-    if (mainCategory) return mainCategory.name;
-
-    // Check if it's a subcategory
-    for (const category of course.categories) {
-      if (category.subcategories) {
-        const subcategory = category.subcategories.find(
-          (sub) => sub.id === selectedCategory
-        );
-        if (subcategory) return subcategory.name;
-      }
-    }
-
-    return "Toutes les catégories";
+    return category ? category.name : "Toutes les catégories";
   })();
+
+  const selectedSubcategoryName = (() => {
+    if (selectedSubcategory === "all") return "Toutes les sous-catégories";
+    const category = course.categories.find(
+      (cat) => cat.id === selectedCategory
+    );
+    if (!category || !category.subcategories)
+      return "Toutes les sous-catégories";
+    const subcategory = category.subcategories.find(
+      (sub) => sub.id === selectedSubcategory
+    );
+    return subcategory ? subcategory.name : "Toutes les sous-catégories";
+  })();
+
+  const toggleCategoryExpansion = (categoryId) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setSelectedSubcategory("all"); // Reset subcategory when category changes
+  };
+
+  const handleSubcategorySelect = (subcategoryId) => {
+    setSelectedSubcategory(subcategoryId);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
@@ -1177,139 +1169,200 @@ const SubjectsPage = () => {
         </div>
       </div>
 
-      <div className="relative z-10 mb-6">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="mt-2 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-xl shadow-lg z-50 p-4"
-        >
+      <div className="mb-6">
+        <div className="bg-blue-400 rounded-lg border border-gray-200 p-4 z-[1000]">
+          {/* Categories and Subcategories Layout */}
           <div className="space-y-4">
             {course.categories.map((category) => (
               <div key={category.id} className="space-y-2">
-                {/* Category Title with Selection */}
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {category.name}
-                  </h3>
+                {/* Category */}
+                <div className="flex items-center">
                   <button
-                    onClick={() => {
-                      setSelectedCategory(category.id);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                    onClick={() => handleCategorySelect(category.id)}
+                    className={`text-left font-medium transition-all duration-200 ${
                       selectedCategory === category.id
-                        ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                        : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-700 hover:text-gray-900"
                     }`}
                   >
-                    Tout {category.name}
+                    {category.name}
                   </button>
                 </div>
 
-                {/* Subcategories */}
-                {category.subcategories &&
-                  category.subcategories.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {category.subcategories.map((subcat) => (
-                        <button
-                          key={subcat.id}
-                          onClick={() => {
-                            setSelectedCategory(subcat.id);
-                            setIsDropdownOpen(false);
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
-                            selectedCategory === subcat.id
-                              ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                              : "bg-white text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
-                          }`}
-                        >
-                          {subcat.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                {/* Subcategories - Show for all categories, not just selected ones */}
+                {category.subcategories && (
+                  <div className="ml-6 flex flex-wrap gap-2">
+                    {category.subcategories.map((subcategory) => (
+                      <button
+                        key={subcategory.id}
+                        onClick={() => {
+                          setSelectedCategory(category.id);
+                          handleSubcategorySelect(subcategory.id);
+                        }}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
+                          selectedCategory === category.id &&
+                          selectedSubcategory === subcategory.id
+                            ? "bg-teal-500 text-white shadow-md"
+                            : selectedCategory === category.id &&
+                              selectedSubcategory === "all"
+                            ? "bg-teal-100 text-teal-700 border border-teal-200"
+                            : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                        }`}
+                      >
+                        {subcategory.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </motion.div>
+
+          {/* Active Filters Display */}
+          {(selectedCategory !== "all" || selectedSubcategory !== "all") && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <h5 className="text-sm font-medium text-blue-800 mb-2">
+                Filtres actifs :
+              </h5>
+              <div className="flex flex-wrap gap-2">
+                {selectedCategory !== "all" && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Catégorie : {selectedCategoryName}
+                  </span>
+                )}
+                {selectedSubcategory !== "all" && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                    Sous-catégorie : {selectedSubcategoryName}
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setSelectedSubcategory("all");
+                  }}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  Effacer tous les filtres
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10">
-        {/* Exam Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {filteredExams.map((exam, index) => (
-            <motion.div
-              onClick={()=> handleExamStart(exam.id)}
-              key={exam.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-            >
-              {/* Exam Image Placeholder */}
-              <div className="h-32 bg-gradient-to-br from-blue-400 to-teal-500 flex items-center justify-center">
-                <div className="text-white text-4xl">
-                  <SiBookstack />
-                </div>
-                <span
-                  className="absolute top-1 right-4 h-10 w-10 bg-blue-800 text-white rounded-full flex items-center justify-center text-[20px]  hover:rounded-2xl duration-500 cursor-pointer"
-                  onClick={() => setShowmodal(true)}
+        {/* Results Summary */}
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Résultats ({filteredExams.length} examens)
+              </h3>
+              {(selectedCategory !== "all" ||
+                selectedSubcategory !== "all") && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Filtré par : {selectedCategoryName}
+                  {selectedSubcategory !== "all" &&
+                    ` > ${selectedSubcategoryName}`}
+                </p>
+              )}
+            </div>
+            {filteredExams.length === 0 && (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-6xl mb-4">🔍</div>
+                <p className="text-gray-500">
+                  Aucun examen trouvé avec les filtres actuels
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setSelectedSubcategory("all");
+                  }}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
-                  ?
-                </span>
+                  Effacer les filtres
+                </button>
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Exam Content */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-gray-900 font-semibold">{exam.name}</h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
-                      exam.difficulty
-                    )}`}
-                  >
-                    {exam.difficulty}
-                  </span>
-                </div>
-
-                {exam.description && (
-                  <div className="text-gray-600 text-sm mb-2">
-                    {exam.description}
+        {/* Exam Grid */}
+        {filteredExams.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {filteredExams.map((exam, index) => (
+              <motion.div
+                onClick={() => handleExamStart(exam.id)}
+                key={exam.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
+              >
+                {/* Exam Image Placeholder */}
+                <div className="h-32 bg-gradient-to-br from-blue-400 to-teal-500 flex items-center justify-center">
+                  <div className="text-white text-4xl">
+                    <SiBookstack />
                   </div>
-                )}
-
-                {exam.correction && (
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-3">
-                    Correction : {exam.correction}
-                  </span>
-                )}
-
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                  <span>
-                    {exam.completed} / {exam.questions} Questions
+                  <span
+                    className="absolute top-1 right-4 h-10 w-10 bg-blue-800 text-white rounded-full flex items-center justify-center text-[20px]  hover:rounded-2xl duration-500 cursor-pointer"
+                    onClick={() => setShowmodal(true)}
+                  >
+                    ?
                   </span>
                 </div>
 
-                {/* Progress */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-blue-600">
-                      {exam.progress}% Complete
+                {/* Exam Content */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-gray-900 font-semibold">{exam.name}</h3>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
+                        exam.difficulty
+                      )}`}
+                    >
+                      {exam.difficulty}
                     </span>
                   </div>
-                  <div className="bg-blue-100 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${exam.progress}%` }}
-                    ></div>
+
+                  {exam.description && (
+                    <div className="text-gray-600 text-sm mb-2">
+                      {exam.description}
+                    </div>
+                  )}
+
+                  {exam.correction && (
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-3">
+                      Correction : {exam.correction}
+                    </span>
+                  )}
+
+                  <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                    <span>
+                      {exam.completed} / {exam.questions} Questions
+                    </span>
+                  </div>
+
+                  {/* Progress */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-blue-600">
+                        {exam.progress}% Complete
+                      </span>
+                    </div>
+                    <div className="bg-blue-100 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${exam.progress}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
       {showModel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
