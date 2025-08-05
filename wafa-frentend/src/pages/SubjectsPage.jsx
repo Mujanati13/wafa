@@ -1241,11 +1241,12 @@ const SubjectsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {filteredExams.map((exam, index) => (
             <motion.div
+              onClick={()=> handleExamStart(exam.id)}
               key={exam.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
+              className="cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
             >
               {/* Exam Image Placeholder */}
               <div className="h-32 bg-gradient-to-br from-blue-400 to-teal-500 flex items-center justify-center">
