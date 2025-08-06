@@ -1125,11 +1125,7 @@ const SubjectsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-blue-100 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-teal-100 rounded-full opacity-15 animate-pulse delay-1000"></div>
-      </div>
+
 
       {/* Header */}
       <div className="relative z-10 flex flex-col justify-between mb-8">
@@ -1170,52 +1166,102 @@ const SubjectsPage = () => {
       </div>
 
       <div className="mb-6">
-        <div className="bg-blue-400 rounded-lg border border-gray-200 p-4 z-[1000]">
-          {/* Categories and Subcategories Layout */}
-          <div className="space-y-4">
-            {course.categories.map((category) => (
-              <div key={category.id} className="space-y-2">
-                {/* Category */}
-                <div className="flex items-center">
-                  <button
-                    onClick={() => handleCategorySelect(category.id)}
-                    className={`text-left font-medium transition-all duration-200 ${
-                      selectedCategory === category.id
-                        ? "text-blue-600 font-semibold"
-                        : "text-gray-700 hover:text-gray-900"
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 z-[1000]">
+          {/* Two Column Layout - Par examen and Par chapitre */}
+          <div className="grid grid-cols-2 gap-8">
+            {/* Par examen Section */}
+            <div className="space-y-4">
 
-                {/* Subcategories - Show for all categories, not just selected ones */}
-                {category.subcategories && (
-                  <div className="ml-6 flex flex-wrap gap-2">
-                    {category.subcategories.map((subcategory) => (
-                      <button
-                        key={subcategory.id}
-                        onClick={() => {
-                          setSelectedCategory(category.id);
-                          handleSubcategorySelect(subcategory.id);
-                        }}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
-                          selectedCategory === category.id &&
-                          selectedSubcategory === subcategory.id
-                            ? "bg-teal-500 text-white shadow-md"
-                            : selectedCategory === category.id &&
-                              selectedSubcategory === "all"
-                            ? "bg-teal-100 text-teal-700 border border-teal-200"
-                            : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
-                        }`}
-                      >
-                        {subcategory.name}
-                      </button>
-                    ))}
+              <div className="grid grid-cols-2 gap-4">
+                {course.categories.slice(0, 2).map((category) => (
+                  <div key={category.id} className="space-y-3">
+                    {/* Main Category - Blue Box */}
+                    <button
+                      onClick={() => handleCategorySelect(category.id)}
+                      className={`w-full p-3 rounded-lg text-center font-medium transition-all duration-200 ${
+                        selectedCategory === category.id
+                          ? "bg-blue-500 text-white shadow-lg"
+                          : "bg-blue-400 text-white hover:bg-blue-500"
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+
+                    {/* Subcategories - White boxes with blue borders */}
+                    {category.subcategories && (
+                      <div className="space-y-2">
+                        {category.subcategories
+                          .slice(0, 2)
+                          .map((subcategory) => (
+                            <button
+                              key={subcategory.id}
+                              onClick={() => {
+                                setSelectedCategory(category.id);
+                                handleSubcategorySelect(subcategory.id);
+                              }}
+                              className={`w-full p-2 rounded-lg text-center text-sm font-medium transition-all duration-200 border ${
+                                selectedCategory === category.id &&
+                                selectedSubcategory === subcategory.id
+                                  ? "bg-blue-50 border-blue-300 text-blue-700 shadow-md"
+                                  : "bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                              }`}
+                            >
+                              {subcategory.name}
+                            </button>
+                          ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Par chapitre Section */}
+            <div className="space-y-4">
+            
+              <div className="grid grid-cols-2 gap-4">
+                {course.categories.slice(2, 4).map((category) => (
+                  <div key={category.id} className="space-y-3">
+                    {/* Main Category - Blue Box */}
+                    <button
+                      onClick={() => handleCategorySelect(category.id)}
+                      className={`w-full p-3 rounded-lg text-center font-medium transition-all duration-200 ${
+                        selectedCategory === category.id
+                          ? "bg-blue-500 text-white shadow-lg"
+                          : "bg-blue-400 text-white hover:bg-blue-500"
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+
+                    {/* Subcategories - White boxes with blue borders */}
+                    {category.subcategories && (
+                      <div className="space-y-2">
+                        {category.subcategories
+                          .slice(0, 2)
+                          .map((subcategory) => (
+                            <button
+                              key={subcategory.id}
+                              onClick={() => {
+                                setSelectedCategory(category.id);
+                                handleSubcategorySelect(subcategory.id);
+                              }}
+                              className={`w-full p-2 rounded-lg text-center text-sm font-medium transition-all duration-200 border ${
+                                selectedCategory === category.id &&
+                                selectedSubcategory === subcategory.id
+                                  ? "bg-blue-50 border-blue-300 text-blue-700 shadow-md"
+                                  : "bg-white border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                              }`}
+                            >
+                              {subcategory.name}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Active Filters Display */}

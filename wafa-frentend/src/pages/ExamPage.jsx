@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiEdit } from "react-icons/fi";
+import { motion } from "framer-motion";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -17,6 +18,7 @@ import {
   FaFlag,
   FaExclamationTriangle,
   FaPlus,
+  FaMinus,
 } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
 import { ImFontSize } from "react-icons/im";
@@ -37,7 +39,7 @@ const ExamPage = () => {
   const [editModelShow, setEditModelShow] = useState(false);
   const [fontSize, setFontSize] = useState(16); // Default font size
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
-
+  const [help, setHelp] = useState(false);
   // Exam data with medical questions - updated to support multiple correct answers
   const examData = {
     gyneco: {
@@ -507,7 +509,7 @@ const ExamPage = () => {
   };
 
   return (
-    <div className="max-h-screen bg-gray-50 flex">
+    <div className="max-h-screen bg-gray-50 flex relative">
       {/* Top Header Bar */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -542,12 +544,24 @@ const ExamPage = () => {
       </div>
 
       {/* Left Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen">
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative">
         {/* Add Button */}
-        <div className="p-6 border-b border-gray-200">
-          <button className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
-            <FaPlus className="w-4 h-4" />
-          </button>
+        <div className="p-6 absolute -right-2">
+          {!help ? (
+            <button
+              onClick={() => setHelp(true)}
+              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+            >
+              <FaPlus className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setHelp(false)}
+              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+            >
+              <FaMinus className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
@@ -573,37 +587,37 @@ const ExamPage = () => {
               </button>
 
               {expandedPeriods[period.id] && period.questions.length > 0 && (
-                <div className="ml-8 space-y-2 mt-2">
-                  {period.questions.map((q) => (
-                    <button
-                      key={q.id}
-                      onClick={() => {
-                        const questionIndex = exam.questions.findIndex(
-                          (eq) => eq.id === q.id
-                        );
-                        if (questionIndex !== -1)
-                          setCurrentQuestion(questionIndex);
-                      }}
-                      className={`flex items-center space-x-3 text-sm py-2 px-3 rounded-lg transition-all w-full ${
-                        q.id === question.id
-                          ? "bg-blue-100 text-blue-700 border border-blue-200"
-                          : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          q.id === question.id
-                            ? "border-blue-500 bg-blue-500"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {q.id === question.id && (
-                          <span className="w-2 h-2 bg-white rounded-full"></span>
-                        )}
-                      </span>
-                      <span className="font-medium">Q{q.id}</span>
-                    </button>
-                  ))}
+                <div className="ml-8 mt-2">
+                  <div className="grid grid-cols-5 gap-2">
+                    {period.questions.map((q, index) => {
+                      // Determine color based on position (alternating pattern like in the image)
+                      const isReddishPink = index % 5 < 2 || index % 5 >= 3;
+                      const bgColor = isReddishPink
+                        ? "bg-rose-400"
+                        : "bg-teal-400";
+                      const isCurrentQuestion = q.id === question.id;
+
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => {
+                            const questionIndex = exam.questions.findIndex(
+                              (eq) => eq.id === q.id
+                            );
+                            if (questionIndex !== -1)
+                              setCurrentQuestion(questionIndex);
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
+                            isCurrentQuestion
+                              ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800"
+                              : ""
+                          }`}
+                        >
+                          {q.id}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -642,7 +656,7 @@ const ExamPage = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll">
         {/* Top Navigation Bar */}
-        <div className="bg-blue-500 text-white px-8 py-3">
+        <div className="bg-blue-500 text-white px-8 py-3 w-[55vw] mx-auto">
           <div className="flex items-center justify-between">
             <div className="text-sm">sous module name &gt; year session</div>
           </div>
@@ -717,12 +731,6 @@ const ExamPage = () => {
                         >
                           Reset to Default
                         </button>
-                        <div className="px-2 py-1 text-xs text-gray-400 border-t border-gray-100">
-                          <div>Keyboard shortcuts:</div>
-                          <div>Ctrl/Cmd + = : Increase</div>
-                          <div>Ctrl/Cmd + - : Decrease</div>
-                          <div>Ctrl/Cmd + 0 : Reset</div>
-                        </div>
                       </div>
                     )}
                   </div>
@@ -749,7 +757,7 @@ const ExamPage = () => {
                   </p>
                 </div>
               </div>
-              <div className="absolute top-4 right-4 bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm">
+              <div className="absolute top-[-15px] right-[50%] bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm">
                 {currentQuestion + 1}/{exam.totalQuestions}
               </div>
             </div>
@@ -897,6 +905,32 @@ const ExamPage = () => {
         </div>
       </div>
       {editModelShow && <ResumeModel />}
+      {help && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          exit={{ opacity: 0, scale: 0.5 }}
+          className="absolute top-20 left-[330px] h-[100px]   grid grid-cols-2 p-4 gap-5 rounded-2xl bg-gray-100 border border-gray-300"
+        >
+          <div className="flex items-center gap-2">
+            <div className="bg-green-500 h-5 w-5 rounded-full " />
+            <span className="text-green-400">Answerd</span>
+          </div>{" "}
+          <div className="flex items-center gap-2">
+            <div className="bg-red-500 h-5 w-5 rounded-full " />
+            <span className="text-red-400">UnAnswerd</span>
+          </div>{" "}
+          <div className="flex items-center gap-2">
+            <div className="bg-gray-500 h-5 w-5 rounded-full " />
+            <span className="text-gray-400">Not Visited</span>
+          </div>{" "}
+          <div className="flex items-center gap-2">
+            <div className="bg-purple-400 h-5 w-5 rounded-full " />
+            <span className="text-purple-400">Review</span>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
