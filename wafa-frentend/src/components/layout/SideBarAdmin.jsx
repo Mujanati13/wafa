@@ -3,61 +3,52 @@ import {
   FaHome,
   FaFileAlt,
   FaChartBar,
-  FaTrophy,
-  FaBook,
-  FaCalendarAlt,
-  FaUser,
-  FaCog,
-  FaSignOutAlt,
   FaStethoscope,
   FaMedkit,
-  FaBrain,
-  FaHeart,
+  FaUsers,
 } from "react-icons/fa";
 import { RiAdminFill } from "react-icons/ri";
+import { MdOutlineAnalytics } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-const SideBar = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+import { LuNotebook } from "react-icons/lu";
+const SideBarAdmin = () => {
+  const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const sidebarItems = [
     {
-      id: "overview",
-      label: "Dashboard",
-      icon: FaHome,
-      path: "/dashboard/home",
+      id: "analytics",
+      label: "Analytics",
+      icon: MdOutlineAnalytics,
+      path: "/admin/analytics",
     },
     {
-      id: "nephro",
-      label: "Néphrologie/uro",
-      icon: FaStethoscope,
-      path: "/dashboard/subjects/nephro-uro",
+      id: "users",
+      label: "User Management",
+      icon: FaUsers,
+      path: "/admin/users",
+    },
+
+    {
+      id: "subscription",
+      label: "Subscription Plans",
+      icon: LuNotebook,
+      path: "/admin/subscription",
     },
     {
-      id: "legal",
-      label: "Med Legal-éthique...",
-      icon: FaFileAlt,
-      path: "/dashboard/subjects/med-legal",
-    },
-    {
-      id: "synthese",
-      label: "Synthèse Thérap...",
-      icon: FaMedkit,
-      path: "/dashboard/subjects/synthese",
-    },
-    {
-      id: "sante",
-      label: "Santé Publique",
-      icon: FaChartBar,
-      path: "/dashboard/subjects/sante-publique",
-    },
-    {
-      id: "admin",
-      label: "Admin",
-      icon: RiAdminFill,
-      path: "/dashboard/admin",
+      id: "exam",
+      label: "Exam Management",
+      icon: LuNotebook,
+      path: "/admin/exam",
     },
   ];
+
+  //
+  //
+  // Content Library
+  // Analytics
+  // Reports
+  // Settings
   const navigate = useNavigate();
   return (
     <motion.div
@@ -91,4 +82,4 @@ const SideBar = () => {
   );
 };
 
-export default SideBar;
+export default SideBarAdmin;

@@ -1264,75 +1264,13 @@ const SubjectsPage = () => {
             </div>
           </div>
 
-          {/* Active Filters Display */}
-          {(selectedCategory !== "all" || selectedSubcategory !== "all") && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <h5 className="text-sm font-medium text-blue-800 mb-2">
-                Filtres actifs :
-              </h5>
-              <div className="flex flex-wrap gap-2">
-                {selectedCategory !== "all" && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Catégorie : {selectedCategoryName}
-                  </span>
-                )}
-                {selectedSubcategory !== "all" && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                    Sous-catégorie : {selectedSubcategoryName}
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    setSelectedCategory("all");
-                    setSelectedSubcategory("all");
-                  }}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                >
-                  Effacer tous les filtres
-                </button>
-              </div>
-            </div>
-          )}
+         
         </div>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10">
-        {/* Results Summary */}
-        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">
-                Résultats ({filteredExams.length} examens)
-              </h3>
-              {(selectedCategory !== "all" ||
-                selectedSubcategory !== "all") && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Filtré par : {selectedCategoryName}
-                  {selectedSubcategory !== "all" &&
-                    ` > ${selectedSubcategoryName}`}
-                </p>
-              )}
-            </div>
-            {filteredExams.length === 0 && (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-6xl mb-4">🔍</div>
-                <p className="text-gray-500">
-                  Aucun examen trouvé avec les filtres actuels
-                </p>
-                <button
-                  onClick={() => {
-                    setSelectedCategory("all");
-                    setSelectedSubcategory("all");
-                  }}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Effacer les filtres
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+       
 
         {/* Exam Grid */}
         {filteredExams.length > 0 && (
