@@ -12,6 +12,7 @@ import { MdOutlineAnalytics } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LuNotebook } from "react-icons/lu";
+import { SlCreditCard } from "react-icons/sl";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,7 +33,7 @@ const SideBarAdmin = () => {
     {
       id: "subscription",
       label: "Subscription Plans",
-      icon: LuNotebook,
+      icon: SlCreditCard,
       path: "/admin/subscription",
     },
     {

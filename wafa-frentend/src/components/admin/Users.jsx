@@ -1,0 +1,574 @@
+import React, { useState } from "react";
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "../ui/card";
+import { cn } from "../../lib/utils";
+import {
+  FiDownload,
+  FiUserPlus,
+  FiSearch,
+  FiFilter,
+  FiMail,
+  FiPhone,
+  FiCalendar,
+  FiMoreVertical,
+  FiChevronLeft,
+  FiChevronRight,
+  FiUsers,
+  FiUserCheck,
+  FiTrendingUp,
+  FiActivity,
+  FiArrowUp,
+  FiArrowDown,
+} from "react-icons/fi";
+import { FaCrown } from "react-icons/fa6";
+import NewUserForm from "./NewUserForm";
+
+const Users = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [showNewUserForm, setShowNewUserForm] = useState(false);
+  // Extended sample user data for pagination demonstration
+  const users = [
+    {
+      id: 1,
+      name: "Dr. Sarah Johnson",
+      email: "sarah.johnson@email.com",
+      phone: "+1 (555) 123-4567",
+      plan: "Premium",
+      status: "Active",
+      exams: 12,
+      lastLogin: "2024-01-20",
+    },
+    {
+      id: 2,
+      name: "Michael Chen",
+      email: "michael.chen@email.com",
+      phone: "+1 (555) 234-5678",
+      plan: "Basic",
+      status: "Active",
+      exams: 8,
+      lastLogin: "2024-01-19",
+    },
+    {
+      id: 3,
+      name: "Dr. Emily Rodriguez",
+      email: "emily.rodriguez@email.com",
+      phone: "+1 (555) 345-6789",
+      plan: "Enterprise",
+      status: "Inactive",
+      exams: 25,
+      lastLogin: "2024-01-05",
+    },
+    {
+      id: 4,
+      name: "James Wilson",
+      email: "james.wilson@email.com",
+      phone: "+1 (555) 456-7890",
+      plan: "Premium",
+      status: "Active",
+      exams: 15,
+      lastLogin: "2024-01-20",
+    },
+    {
+      id: 5,
+      name: "Dr. Lisa Park",
+      email: "lisa.park@email.com",
+      phone: "+1 (555) 567-8901",
+      plan: "Basic",
+      status: "Suspended",
+      exams: 6,
+      lastLogin: "2024-01-18",
+    },
+    {
+      id: 6,
+      name: "Alex Thompson",
+      email: "alex.thompson@email.com",
+      phone: "+1 (555) 678-9012",
+      plan: "Premium",
+      status: "Active",
+      exams: 18,
+      lastLogin: "2024-01-21",
+    },
+    {
+      id: 7,
+      name: "Dr. Maria Garcia",
+      email: "maria.garcia@email.com",
+      phone: "+1 (555) 789-0123",
+      plan: "Enterprise",
+      status: "Active",
+      exams: 30,
+      lastLogin: "2024-01-22",
+    },
+    {
+      id: 8,
+      name: "David Kim",
+      email: "david.kim@email.com",
+      phone: "+1 (555) 890-1234",
+      plan: "Basic",
+      status: "Inactive",
+      exams: 4,
+      lastLogin: "2024-01-10",
+    },
+    {
+      id: 9,
+      name: "Dr. Robert Brown",
+      email: "robert.brown@email.com",
+      phone: "+1 (555) 901-2345",
+      plan: "Premium",
+      status: "Active",
+      exams: 22,
+      lastLogin: "2024-01-23",
+    },
+    {
+      id: 10,
+      name: "Jennifer Lee",
+      email: "jennifer.lee@email.com",
+      phone: "+1 (555) 012-3456",
+      plan: "Basic",
+      status: "Suspended",
+      exams: 9,
+      lastLogin: "2024-01-15",
+    },
+  ];
+
+  const getPlanBadgeColor = (plan) => {
+    switch (plan) {
+      case "Premium":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "Basic":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Enterprise":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case "Active":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "Inactive":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "Suspended":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  // Calculate analytics data
+  const totalUsers = users.length;
+  const activeUsers = users.filter((user) => user.status === "Active").length;
+  const premiumUsers = users.filter((user) => user.plan === "Premium").length;
+  const enterpriseUsers = users.filter(
+    (user) => user.plan === "Enterprise"
+  ).length;
+  const inactiveUsers = users.filter(
+    (user) => user.status === "Inactive"
+  ).length;
+  const suspendedUsers = users.filter(
+    (user) => user.status === "Suspended"
+  ).length;
+
+  // Calculate growth percentages (mock data)
+  const userGrowth = 12.5;
+  const activeGrowth = 8.2;
+  const premiumGrowth = 15.7;
+  const enterpriseGrowth = 22.3;
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Reset to first page when search term changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisiblePages = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // Previous button
+    buttons.push(
+      <Button
+        key="prev"
+        variant="outline"
+        size="sm"
+        onClick={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-1"
+      >
+        <FiChevronLeft className="w-4 h-4" />
+        Previous
+      </Button>
+    );
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <Button
+          key={i}
+          variant={currentPage === i ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(i)}
+          className="min-w-[40px]"
+        >
+          {i}
+        </Button>
+      );
+    }
+
+    // Next button
+    buttons.push(
+      <Button
+        key="next"
+        variant="outline"
+        size="sm"
+        onClick={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-1"
+      >
+        Next
+        <FiChevronRight className="w-4 h-4" />
+      </Button>
+    );
+
+    return buttons;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="w-full space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              User Management
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Manage user accounts, subscriptions, and access
+            </p>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <Button variant="outline" size="sm">
+              <FiDownload className="w-4 h-4" />
+              Export
+            </Button>
+            <Button size="sm" className="bg-black text-white hover:bg-gray-800" onClick={() => setShowNewUserForm(!showNewUserForm)}>
+              <FiUserPlus className="w-4 h-4" />
+              Add
+            </Button>
+           
+          </div>
+        </div>
+
+        {/* Analytics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Users Card */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Users
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {totalUsers}
+                  </p>
+                  <div className="flex items-center mt-2">
+                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <span className="text-sm text-green-600 font-medium">
+                      +{userGrowth}%
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      from last month
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FiUsers className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Users Card */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Active Users
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {activeUsers}
+                  </p>
+                  <div className="flex items-center mt-2">
+                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <span className="text-sm text-green-600 font-medium">
+                      +{activeGrowth}%
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      from last month
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <FiUserCheck className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Premium Users Card */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Premium Users
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {premiumUsers}
+                  </p>
+                  <div className="flex items-center mt-2">
+                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <span className="text-sm text-green-600 font-medium">
+                      +{premiumGrowth}%
+                    </span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      from last month
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <FaCrown className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Basic Users
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {users.filter((user) => user.plan === "Basic").length}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(
+                      (users.filter((user) => user.plan === "Basic").length /
+                        totalUsers) *
+                      100
+                    ).toFixed(1)}
+                    % of total
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <FiUsers className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+      
+
+        {/* User Directory Section */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">User Directory</CardTitle>
+            <CardDescription>
+              Search and filter through all platform users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search users by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <Button variant="outline" className="sm:w-auto">
+                <FiFilter className="w-4 h-4" />
+                Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* All Users Section */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">
+              All Users ({filteredUsers.length})
+            </CardTitle>
+            <CardDescription>
+              Complete list of platform users with their details.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      User
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      Contact
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      Plan
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      Status
+                    </th>
+
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      Last Login
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-gray-600 font-medium text-sm">
+                              {user.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-gray-900 truncate">
+                              {user.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {user.id}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <FiMail className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                            <span className="text-gray-700 truncate">
+                              {user.email}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <FiPhone className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                            <span className="text-gray-700">{user.phone}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={cn(
+                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                            getPlanBadgeColor(user.plan)
+                          )}
+                        >
+                          {user.plan}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={cn(
+                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                            getStatusBadgeColor(user.status)
+                          )}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <FiCalendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                          <span className="text-gray-700">
+                            {user.lastLogin}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <FiMoreVertical className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+
+          {/* Pagination Footer */}
+          {totalPages > 1 && (
+            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} to{" "}
+                {Math.min(endIndex, filteredUsers.length)} of{" "}
+                {filteredUsers.length} results
+              </div>
+              <div className="flex items-center gap-2">
+                {renderPaginationButtons()}
+              </div>
+            </CardFooter>
+          )}
+        </Card>
+      </div>
+      {showNewUserForm && <NewUserForm setShowNewUserForm={setShowNewUserForm} />}
+    </div>
+  );
+};
+
+export default Users;

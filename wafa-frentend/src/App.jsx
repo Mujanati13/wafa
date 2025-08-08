@@ -21,6 +21,9 @@ import SubjectsPage from "./pages/SubjectsPage";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminPage from "./pages/AdminPage";
 import AnayticsPage from "./pages/AnayticsPage";
+import Users from "./components/admin/Users";
+import SubscriptionPage from "./pages/SubscriptionPage";
+
 
 export default function App() {
   return (
@@ -48,7 +51,8 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
 
           <Route path="analytics" element={<AnayticsPage />} />
-          <Route path="users" element={<p>users</p>} />
+          <Route path="users" element={<Users />} />
+          <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<p>exams</p>} />
 
           <Route path="profile" element={<ProfilePage />} />

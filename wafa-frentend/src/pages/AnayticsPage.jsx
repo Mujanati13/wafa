@@ -1,4 +1,10 @@
-import { SubscrptionChart, UserGrowChart } from "@/components/admin/Charts";
+import {
+  SubscrptionChart,
+  UserGrowChart,
+  SubjectPerformanceChart,
+  ExamAttemptsChart,
+  UserDemographicsChart,
+} from "@/components/admin/Charts";
 import {
   Card,
   CardContent,
@@ -6,8 +12,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { TrendingUp, Users, GraduationCap, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  TrendingUp,
+  Users,
+  GraduationCap,
+  CreditCard,
+  Plus,
+  Calendar,
+  Download,
+  BarChart3,
+  Clock,
+  Target,
+  Award,
+  Activity,
+} from "lucide-react";
+import { useState } from "react";
 
 // Stats Cards Data
 const stats = [
@@ -41,9 +61,139 @@ const stats = [
   },
 ];
 
+// Performance Metrics Data
+const performanceMetrics = [
+  {
+    label: "Average Score",
+    value: "78.5%",
+    change: "+5.2%",
+    icon: <Target className="w-5 h-5 text-blue-500" />,
+  },
+  {
+    label: "Completion Rate",
+    value: "92.3%",
+    change: "+2.1%",
+    icon: <Award className="w-5 h-5 text-green-500" />,
+  },
+  {
+    label: "Study Time",
+    value: "4.2h",
+    change: "+0.8h",
+    icon: <Clock className="w-5 h-5 text-purple-500" />,
+  },
+  {
+    label: "Active Sessions",
+    value: "1,847",
+    change: "+12.3%",
+    icon: <Activity className="w-5 h-5 text-orange-500" />,
+  },
+];
+
+// Subject Performance Data
+const subjectPerformance = [
+  { subject: "Mathematics", score: 85, attempts: 1247, growth: "+12.3%" },
+  { subject: "Physics", score: 78, attempts: 892, growth: "+8.7%" },
+  { subject: "Chemistry", score: 82, attempts: 756, growth: "+15.2%" },
+  { subject: "Biology", score: 79, attempts: 634, growth: "+6.8%" },
+  { subject: "English", score: 88, attempts: 445, growth: "+9.1%" },
+];
+
+// Recent Activity Data
+const recentActivity = [
+  {
+    action: "New user registered",
+    user: "John Doe",
+    time: "2 minutes ago",
+    type: "user",
+  },
+  {
+    action: "Exam completed",
+    user: "Sarah Smith",
+    time: "5 minutes ago",
+    type: "exam",
+  },
+  {
+    action: "Subscription upgraded",
+    user: "Mike Johnson",
+    time: "12 minutes ago",
+    type: "subscription",
+  },
+  {
+    action: "Payment received",
+    user: "Emily Brown",
+    time: "18 minutes ago",
+    type: "payment",
+  },
+  {
+    action: "New exam added",
+    user: "Admin",
+    time: "25 minutes ago",
+    type: "admin",
+  },
+];
+
 const AnalyticsPage = () => {
+  const [dateRange, setDateRange] = useState("30d");
+
+  const handleExport = () => {
+    // Export functionality would go here
+    console.log("Exporting analytics data...");
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case "user":
+        return <Users className="w-4 h-4 text-blue-500" />;
+      case "exam":
+        return <GraduationCap className="w-4 h-4 text-green-500" />;
+      case "subscription":
+        return <CreditCard className="w-4 h-4 text-purple-500" />;
+      case "payment":
+        return <TrendingUp className="w-4 h-4 text-orange-500" />;
+      case "admin":
+        return <Plus className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Activity className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
   return (
     <div className="p-5 space-y-6 flex flex-col">
+      {/* Header with Filters and Export */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Analytics Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Monitor your platform performance and user engagement
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="text-sm border-none outline-none bg-transparent"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="1y">Last year</option>
+            </select>
+          </div>
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat) => (
@@ -69,11 +219,158 @@ const AnalyticsPage = () => {
           </div>
         ))}
       </div>
+
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {performanceMetrics.map((metric) => (
+          <Card
+            key={metric.label}
+            className="hover:shadow-md transition-shadow"
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">{metric.label}</p>
+                  <p className="text-2xl font-bold">{metric.value}</p>
+                  <p className="text-xs text-green-600 font-medium">
+                    {metric.change}
+                  </p>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-lg">{metric.icon}</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <UserGrowChart />
         <SubscrptionChart />
       </div>
+
+      {/* Additional Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SubjectPerformanceChart />
+        <ExamAttemptsChart />
+      </div>
+
+      {/* User Demographics Chart */}
+      <div className="grid grid-cols-1 gap-4">
+        <UserDemographicsChart />
+      </div>
+
+      {/* Subject Performance and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subject Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Subject Performance
+            </CardTitle>
+            <CardDescription>
+              Average scores and attempts by subject
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {subjectPerformance.map((subject) => (
+                <div
+                  key={subject.subject}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">
+                      {subject.subject}
+                    </h4>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span>Score: {subject.score}%</span>
+                      <span>Attempts: {subject.attempts}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-medium text-green-600">
+                      {subject.growth}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Recent Activity
+            </CardTitle>
+            <CardDescription>Latest platform activities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="mt-1">{getActivityIcon(activity.type)}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.action}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {activity.user} • {activity.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common administrative tasks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+            >
+              <Users className="w-6 h-6" />
+              <span className="text-sm">Manage Users</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+            >
+              <GraduationCap className="w-6 h-6" />
+              <span className="text-sm">Add Exam</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+            >
+              <CreditCard className="w-6 h-6" />
+              <span className="text-sm">View Subscriptions</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col"
+            >
+              <BarChart3 className="w-6 h-6" />
+              <span className="text-sm">Generate Report</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
