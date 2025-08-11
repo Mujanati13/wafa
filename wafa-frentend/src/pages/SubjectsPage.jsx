@@ -1125,8 +1125,6 @@ const SubjectsPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-
-
       {/* Header */}
       <div className="relative z-10 flex flex-col justify-between mb-8">
         <div className="flex items-center space-x-4">
@@ -1171,7 +1169,6 @@ const SubjectsPage = () => {
           <div className="grid grid-cols-2 gap-8">
             {/* Par examen Section */}
             <div className="space-y-4">
-
               <div className="grid grid-cols-2 gap-4">
                 {course.categories.slice(0, 2).map((category) => (
                   <div key={category.id} className="space-y-3">
@@ -1218,7 +1215,6 @@ const SubjectsPage = () => {
 
             {/* Par chapitre Section */}
             <div className="space-y-4">
-            
               <div className="grid grid-cols-2 gap-4">
                 {course.categories.slice(2, 4).map((category) => (
                   <div key={category.id} className="space-y-3">
