@@ -588,7 +588,7 @@ const ExamPage = () => {
 
               {expandedPeriods[period.id] && period.questions.length > 0 && (
                 <div className="ml-8 mt-2">
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-5 ">
                     {period.questions.map((q, index) => {
                       // Determine color based on position (alternating pattern like in the image)
                       const isReddishPink = index % 5 < 2 || index % 5 >= 3;
@@ -607,7 +607,7 @@ const ExamPage = () => {
                             if (questionIndex !== -1)
                               setCurrentQuestion(questionIndex);
                           }}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
                             isCurrentQuestion
                               ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800"
                               : ""
