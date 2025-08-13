@@ -25,6 +25,9 @@ import Users from "./components/admin/Users";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import ReportQuestionsAdmin from "./pages/ReportQuestionsAdmin";
 import Explications from "./pages/Explications";
+import Resumes from "./pages/Resumes";
+import DemandesDePayements from "./pages/DemandesDePayements";
+import Leaderboard from "./pages/Leaderboard";
 
 export default function App() {
   return (
@@ -52,10 +55,18 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="analytics" element={<AnayticsPage />} />
           <Route path="users" element={<Users />} />
+          <Route path="usersFree" element={<Users />} />
+          <Route path="usersPaying" element={<Users />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<p>exams</p>} />
           <Route path="report-questions" element={<ReportQuestionsAdmin />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="explications" element={<Explications />} />
+          <Route path="resumes" element={<Resumes />} />
+          <Route
+            path="demandes-de-paiements"
+            element={<DemandesDePayements />}
+          />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

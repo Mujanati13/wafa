@@ -6,33 +6,62 @@ import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
 import { AiOutlineDelete } from "react-icons/ai";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { MdPlaylistAddCheck } from "react-icons/md";
-const Explications = () => {
-  // Pagination state
+import { FaBook } from "react-icons/fa";
+const Resumes = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10);
+  const [resumes, setResumes] = useState(initialResumes);
+  const [uploadFile, setUploadFile] = useState(null);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(explication.length / itemsPerPage);
+  // Pagination logic
+  const totalPages = Math.ceil(resumes.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentReports = explication.slice(startIndex, endIndex);
+  const currentResumes = resumes.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
+  const handleApprove = (id) => {
+    setResumes((prev) =>
+      prev.map((resume) =>
+        resume.id === id ? { ...resume, approved: true } : resume
+      )
+    );
+  };
+
+  const handleSeePDF = (pdfUrl) => {
+    window.open(pdfUrl, "_blank");
+  };
+
+  const handleFileChange = (e) => {
+    setUploadFile(e.target.files[0]);
+  };
+
+  const handleUpload = () => {
+    if (!uploadFile) return;
+    // Simulate upload: create a new resume entry
+    const newResume = {
+      id: resumes.length + 1,
+      username: "DemoUser",
+      name: "Demo User",
+      title: uploadFile.name,
+      pdf: URL.createObjectURL(uploadFile),
+      approved: false,
+    };
+    setResumes([newResume, ...resumes]);
+    setUploadFile(null);
+  };
+
   const renderPaginationButtons = () => {
     const buttons = [];
     const maxVisiblePages = 5;
-
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-
-    // Previous button
     buttons.push(
       <Button
         key="prev"
@@ -46,8 +75,6 @@ const Explications = () => {
         &#8592;
       </Button>
     );
-
-    // Page numbers
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <Button
@@ -61,8 +88,6 @@ const Explications = () => {
         </Button>
       );
     }
-
-    // Next button
     buttons.push(
       <Button
         key="next"
@@ -76,7 +101,6 @@ const Explications = () => {
         &#8594;
       </Button>
     );
-
     return buttons;
   };
   return (
@@ -84,34 +108,32 @@ const Explications = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            User Explication Questions Management
+            User Resumes Management
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage user explication questions
+            Manage user uploaded resumes, approve them, and view PDF files.
           </p>
         </div>
       </div>
-      {/* Analytics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Total Reports
+                  Total Resumes
                 </p>
                 <p className="text-xl font-bold text-gray-900">
-                  {explication.length}
+                  {resumes.length}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
-                <MdPlaylistAddCheck className="w-6 h-6 text-blue-600" />
+                <FaBook className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
       <Card>
         <CardContent>
           <div className="overflow-x-auto">
@@ -125,10 +147,13 @@ const Explications = () => {
                     Username
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Question
+                    Resume Title
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Details
+                    PDF
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
+                    Status
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Action
@@ -136,43 +161,46 @@ const Explications = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentReports.map((report) => (
+                {currentResumes.map((resume) => (
                   <tr
-                    key={report.id}
+                    key={resume.id}
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <td className="py-4 px-4 font-medium text-gray-900">
-                      {report.name}
+                      {resume.name}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
-                      {report.username}
+                      {resume.username}
                     </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {report.question}
-                    </td>
+                    <td className="py-4 px-4 text-gray-700">{resume.title}</td>
                     <td
                       className="py-4 px-4 text-gray-700"
                       style={{ minWidth: 120 }}
                     >
-                      {/^https?:\/\//.test(report.imageOrText) ? (
-                        <img
-                          src={report.imageOrText}
-                          alt="detail"
-                          className="max-h-16 max-w-xs rounded border cursor-pointer"
-                          style={{
-                            width: "100px",
-                            height: "auto",
-                            objectFit: "cover",
-                          }}
-                        />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSeePDF(resume.pdf)}
+                      >
+                        See PDF
+                      </Button>
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {resume.approved ? (
+                        <span className="text-green-600 font-semibold">
+                          Approved
+                        </span>
                       ) : (
-                        report.imageOrText
+                        <span className="text-yellow-600 font-semibold">
+                          Pending
+                        </span>
                       )}
                     </td>
                     <td className="py-4 px-4 text-gray-700 flex gap-2.5">
                       <IoCheckmarkDoneCircle
                         className="text-green-600 hover:text-green-300 cursor-pointer"
                         fontSize={20}
+                        onClick={() => handleApprove(resume.id)}
                       />
                       <AiOutlineDelete
                         className="hover:text-red-500 cursor-pointer"
@@ -186,12 +214,11 @@ const Explications = () => {
           </div>
         </CardContent>
       </Card>
-      {/* Pagination Footer */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50 px-6 py-3">
           <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(endIndex, explication.length)}{" "}
-            of {explication.length} results
+            Showing {startIndex + 1} to {Math.min(endIndex, resumes.length)} of{" "}
+            {resumes.length} results
           </div>
           <div className="flex items-center gap-2">
             {renderPaginationButtons()}
@@ -202,82 +229,126 @@ const Explications = () => {
   );
 };
 
-export default Explications;
-
-const explication = [
+export default Resumes;
+const initialResumes = [
   {
     id: 1,
     username: "JohnDoe",
     name: "John Doe",
-    question: "How do I upload a profile picture?",
-    imageOrText:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    title: "Software Engineer Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: false,
   },
   {
     id: 2,
     username: "JaneSmith",
     name: "Jane Smith",
-    question: "Where can I find the invoice for my last order?",
-    imageOrText: "Check your account dashboard under 'Billing History'.",
+    title: "Marketing Manager Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: true,
   },
   {
     id: 3,
     username: "MikeBrown",
     name: "Mike Brown",
-    question: "How do I reset my password?",
-    imageOrText:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    title: "Data Analyst Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: false,
   },
   {
     id: 4,
     username: "SaraLee",
     name: "Sara Lee",
-    question: "How do I share my project with a colleague?",
-    imageOrText: "Open the project and click 'Share' in the top-right corner.",
+    title: "Project Manager Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: false,
   },
   {
     id: 5,
     username: "ChrisGreen",
     name: "Chris Green",
-    question: "Can I import data from Excel?",
-    imageOrText:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    title: "Designer Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: true,
   },
   {
     id: 6,
-    username: "LindaWhite",
-    name: "Linda White",
-    question: "Where can I see the changelog?",
-    imageOrText: "Visit the 'Updates' section in the help center.",
+    username: "AnnaWhite",
+    name: "Anna White",
+    title: "HR Specialist Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: false,
   },
   {
     id: 7,
-    username: "DavidKing",
-    name: "David King",
-    question: "Is there a dark mode?",
-    imageOrText:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    username: "TomBlack",
+    name: "Tom Black",
+    title: "Business Analyst Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: true,
   },
   {
     id: 8,
-    username: "EmilyClark",
-    name: "Emily Clark",
-    question: "How do I export my report as PDF?",
-    imageOrText: "Open your report and click 'Export' → 'PDF'.",
+    username: "LisaBrown",
+    name: "Lisa Brown",
+    title: "Content Writer Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: false,
   },
   {
     id: 9,
-    username: "RobertHall",
-    name: "Robert Hall",
-    question: "Where do I update my payment method?",
-    imageOrText:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    username: "DavidClark",
+    name: "David Clark",
+    title: "QA Engineer Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: false,
   },
   {
     id: 10,
+    username: "EmilyStone",
+    name: "Emily Stone",
+    title: "Frontend Developer Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: true,
+  },
+  {
+    id: 11,
+    username: "BrianKing",
+    name: "Brian King",
+    title: "Backend Developer Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: false,
+  },
+  {
+    id: 12,
     username: "OliviaYoung",
     name: "Olivia Young",
-    question: "Can I add more team members to my plan?",
-    imageOrText: "Yes, go to 'Team Settings' and click 'Add Member'.",
+    title: "Product Manager Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: true,
+  },
+  {
+    id: 13,
+    username: "KevinHill",
+    name: "Kevin Hill",
+    title: "DevOps Engineer Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: false,
+  },
+  {
+    id: 14,
+    username: "SophiaGreen",
+    name: "Sophia Green",
+    title: "UI/UX Designer Resume.pdf",
+    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
+    approved: false,
+  },
+  {
+    id: 15,
+    username: "JackTurner",
+    name: "Jack Turner",
+    title: "System Administrator Resume.pdf",
+    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    approved: true,
   },
 ];

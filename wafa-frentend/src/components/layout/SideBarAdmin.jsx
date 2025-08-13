@@ -7,6 +7,8 @@ import {
   FaMedkit,
   FaUsers,
 } from "react-icons/fa";
+import { MdOutlineLeaderboard } from "react-icons/md";
+import { FaBook } from "react-icons/fa6";
 import { RiAdminFill } from "react-icons/ri";
 import { MdOutlineAnalytics } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,6 +17,7 @@ import { LuNotebook } from "react-icons/lu";
 import { SlCreditCard } from "react-icons/sl";
 import { FaFileCircleQuestion } from "react-icons/fa6";
 import { MdPlaylistAddCheck } from "react-icons/md";
+import { MdOutlinePayments } from "react-icons/md";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -26,10 +29,16 @@ const SideBarAdmin = () => {
       path: "/admin/analytics",
     },
     {
-      id: "users",
-      label: "User Management",
+      id: "FreeUsers",
+      label: "Free Users",
       icon: FaUsers,
-      path: "/admin/users",
+      path: "/admin/usersFree",
+    },
+    {
+      id: "PayUsers",
+      label: "Paying Users",
+      icon: FaUsers,
+      path: "/admin/usersPaying",
     },
 
     {
@@ -50,8 +59,25 @@ const SideBarAdmin = () => {
       icon: MdPlaylistAddCheck,
       path: "/admin/explications ",
     },
+    {
+      id: "resumes",
+      label: "Resumes ",
+      icon: FaBook,
+      path: "/admin/resumes",
+    },
+    {
+      id: "demandesDePayements",
+      label: "Demandes de Paiements",
+      icon: MdOutlinePayments,
+      path: "/admin/demandes-de-paiements",
+    },
+    {
+      id: "leaderboard",
+      label: "Leaderboard",
+      icon: MdOutlineLeaderboard,
+      path: "/admin/leaderboard",
+    },
   ];
-
 
   const navigate = useNavigate();
   return (
@@ -78,7 +104,9 @@ const SideBarAdmin = () => {
             }`}
           >
             <item.icon className="text-xl flex-shrink-0" />
-            {sidebarOpen && <span className="font-medium">{item.label}</span>}
+            {sidebarOpen && (
+              <span className="font-medium text-left">{item.label}</span>
+            )}
           </button>
         ))}
       </nav>
