@@ -28,6 +28,11 @@ import Explications from "./pages/Explications";
 import Resumes from "./pages/Resumes";
 import DemandesDePayements from "./pages/DemandesDePayements";
 import Leaderboard from "./pages/Leaderboard";
+import Semesters from "./pages/Semesters";
+import Module from "./pages/Module";
+import CategoriesOfModules from "./pages/CategoriesOfModules";
+import ExamParYears from "./pages/ExamParYears";
+import ExamCourses from "./pages/ExamCourses";
 
 export default function App() {
   return (
@@ -62,7 +67,12 @@ export default function App() {
           <Route path="report-questions" element={<ReportQuestionsAdmin />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="explications" element={<Explications />} />
-          <Route path="resumes" element={<Resumes />} />
+          <Route path="semesters" element={<Semesters />} />
+          <Route path="module" element={<Module />} />
+          <Route path="categoriesOfModules" element={<CategoriesOfModules />} />
+          <Route path="examParYears" element={<ExamParYears />} />
+          <Route path="examCourses" element={<ExamCourses />} />
+          <Route path="resumes" eleexamCoursesment={<Resumes />} />
           <Route
             path="demandes-de-paiements"
             element={<DemandesDePayements />}

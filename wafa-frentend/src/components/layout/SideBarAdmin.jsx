@@ -18,6 +18,12 @@ import { SlCreditCard } from "react-icons/sl";
 import { FaFileCircleQuestion } from "react-icons/fa6";
 import { MdPlaylistAddCheck } from "react-icons/md";
 import { MdOutlinePayments } from "react-icons/md";
+import {
+  GraduationCap,
+  Component,
+  ChartColumnStacked,
+  BookOpenCheck,
+} from "lucide-react";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -77,6 +83,36 @@ const SideBarAdmin = () => {
       icon: MdOutlineLeaderboard,
       path: "/admin/leaderboard",
     },
+    {
+      id: "semesters",
+      label: "Semesters",
+      icon: GraduationCap,
+      path: "/admin/semesters",
+    },
+    {
+      id: "module",
+      label: "Module",
+      icon: Component,
+      path: "/admin/module",
+    },
+    {
+      id: "categoriesOfModules",
+      label: "Categories of Modules",
+      icon: ChartColumnStacked,
+      path: "/admin/categoriesOfModules",
+    },
+    {
+      id: "examParYears",
+      label: "Exam par years",
+      icon: BookOpenCheck,
+      path: "/admin/examParYears",
+    },
+    {
+      id: "examCourses",
+      label: "Exam par course",
+      icon: BookOpenCheck,
+      path: "/admin/examCourses",
+    },
   ];
 
   const navigate = useNavigate();
@@ -97,7 +133,7 @@ const SideBarAdmin = () => {
               setActiveTab(item.id);
               navigate(item.path);
             }}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-300 ${
               activeTab === item.id
                 ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-700 border border-blue-300 shadow-sm"
                 : "text-gray-600 hover:text-gray-900 hover:bg-blue-50"
