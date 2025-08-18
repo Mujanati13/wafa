@@ -33,6 +33,7 @@ import Module from "./pages/Module";
 import CategoriesOfModules from "./pages/CategoriesOfModules";
 import ExamParYears from "./pages/ExamParYears";
 import ExamCourses from "./pages/ExamCourses";
+import ImportExamParYears from "./pages/ImportExamParYears";
 
 export default function App() {
   return (
@@ -79,6 +80,7 @@ export default function App() {
           />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="importExamParYears" element={<ImportExamParYears />} />
         </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
       </Routes>

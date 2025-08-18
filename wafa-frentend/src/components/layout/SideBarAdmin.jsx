@@ -23,6 +23,7 @@ import {
   Component,
   ChartColumnStacked,
   BookOpenCheck,
+  FileDown 
 } from "lucide-react";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
@@ -112,6 +113,12 @@ const SideBarAdmin = () => {
       label: "Exam par course",
       icon: BookOpenCheck,
       path: "/admin/examCourses",
+    },
+    {
+      id: "importExamParYears",
+      label: "Import exam par years",
+      icon: FileDown,
+      path: "/admin/importExamParYears",
     },
   ];
 
