@@ -23,104 +23,167 @@ import {
   Component,
   ChartColumnStacked,
   BookOpenCheck,
-  FileDown 
+  FileDown,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const sidebarItems = [
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: MdOutlineAnalytics,
-      path: "/admin/analytics",
-    },
-    {
-      id: "FreeUsers",
-      label: "Free Users",
-      icon: FaUsers,
-      path: "/admin/usersFree",
-    },
-    {
-      id: "PayUsers",
-      label: "Paying Users",
-      icon: FaUsers,
-      path: "/admin/usersPaying",
-    },
+  const [openCategories, setOpenCategories] = useState({
+    overview: true,
+    users: true,
+    content: true,
+    payments: true,
+    exams: true,
+  });
 
+  const sidebarCategories = [
     {
-      id: "subscription",
-      label: "Subscription Plans",
-      icon: SlCreditCard,
-      path: "/admin/subscription",
+      id: "overview",
+      label: "Overview",
+      icon: MdOutlineAnalytics,
+      items: [
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: MdOutlineAnalytics,
+          path: "/admin/analytics",
+        },
+        {
+          id: "leaderboard",
+          label: "Leaderboard",
+          icon: MdOutlineLeaderboard,
+          path: "/admin/leaderboard",
+        },
+      ],
     },
     {
-      id: "reportQuestions",
-      label: "Report questions",
-      icon: FaFileCircleQuestion,
-      path: "/admin/report-questions",
+      id: "users",
+      label: "Users",
+      icon: FaUsers,
+      items: [
+        {
+          id: "FreeUsers",
+          label: "Free Users",
+          icon: FaUsers,
+          path: "/admin/usersFree",
+        },
+        {
+          id: "PayUsers",
+          label: "Paying Users",
+          icon: FaUsers,
+          path: "/admin/usersPaying",
+        },
+      ],
     },
     {
-      id: "explications",
-      label: "Explications ",
-      icon: MdPlaylistAddCheck,
-      path: "/admin/explications ",
-    },
-    {
-      id: "resumes",
-      label: "Resumes ",
+      id: "content",
+      label: "Content",
       icon: FaBook,
-      path: "/admin/resumes",
+      items: [
+        {
+          id: "reportQuestions",
+          label: "Report questions",
+          icon: FaFileCircleQuestion,
+          path: "/admin/report-questions",
+        },
+        {
+          id: "explications",
+          label: "Explications ",
+          icon: MdPlaylistAddCheck,
+          path: "/admin/explications ",
+        },
+        {
+          id: "resumes",
+          label: "Resumes ",
+          icon: FaBook,
+          path: "/admin/resumes",
+        },
+        {
+          id: "importResumes",
+          label: "Import Resumes ",
+          icon: FileDown,
+          path: "/admin/importResumes",
+        },
+      ],
     },
     {
-      id: "demandesDePayements",
-      label: "Demandes de Paiements",
-      icon: MdOutlinePayments,
-      path: "/admin/demandes-de-paiements",
+      id: "payments",
+      label: "Payments",
+      icon: SlCreditCard,
+      items: [
+        {
+          id: "subscription",
+          label: "Subscription Plans",
+          icon: SlCreditCard,
+          path: "/admin/subscription",
+        },
+        {
+          id: "demandesDePayements",
+          label: "Demandes de Paiements",
+          icon: MdOutlinePayments,
+          path: "/admin/demandes-de-paiements",
+        },
+      ],
     },
     {
-      id: "leaderboard",
-      label: "Leaderboard",
-      icon: MdOutlineLeaderboard,
-      path: "/admin/leaderboard",
-    },
-    {
-      id: "semesters",
-      label: "Semesters",
-      icon: GraduationCap,
-      path: "/admin/semesters",
-    },
-    {
-      id: "module",
-      label: "Module",
-      icon: Component,
-      path: "/admin/module",
-    },
-    {
-      id: "categoriesOfModules",
-      label: "Categories of Modules",
-      icon: ChartColumnStacked,
-      path: "/admin/categoriesOfModules",
-    },
-    {
-      id: "examParYears",
-      label: "Exam par years",
+      id: "exams",
+      label: "Exams",
       icon: BookOpenCheck,
-      path: "/admin/examParYears",
-    },
-    {
-      id: "examCourses",
-      label: "Exam par course",
-      icon: BookOpenCheck,
-      path: "/admin/examCourses",
-    },
-    {
-      id: "importExamParYears",
-      label: "Import exam par years",
-      icon: FileDown,
-      path: "/admin/importExamParYears",
+      items: [
+        {
+          id: "semesters",
+          label: "Semesters",
+          icon: GraduationCap,
+          path: "/admin/semesters",
+        },
+        {
+          id: "module",
+          label: "Module",
+          icon: Component,
+          path: "/admin/module",
+        },
+        {
+          id: "categoriesOfModules",
+          label: "Categories of Modules",
+          icon: ChartColumnStacked,
+          path: "/admin/categoriesOfModules",
+        },
+        {
+          id: "examParYears",
+          label: "Exam par years",
+          icon: BookOpenCheck,
+          path: "/admin/examParYears",
+        },
+        {
+          id: "examCourses",
+          label: "Exam par course",
+          icon: BookOpenCheck,
+          path: "/admin/examCourses",
+        },
+        {
+          id: "importExamParYears",
+          label: "Import exam par years",
+          icon: FileDown,
+          path: "/admin/importExamParYears",
+        },
+        {
+          id: "importExamParCourse",
+          label: "Import exam par course",
+          icon: FileDown,
+          path: "/admin/importExamParCourse",
+        },
+      ],
     },
   ];
+
+  const toggleCategory = (categoryId) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [categoryId]: !prev[categoryId],
+    }));
+  };
 
   const navigate = useNavigate();
   return (
@@ -129,28 +192,57 @@ const SideBarAdmin = () => {
       animate={{ x: 0 }}
       className={`relative z-10 ${
         sidebarOpen ? "w-64" : "w-20"
-      } bg-white/80 backdrop-blur-sm border-r border-blue-200 shadow-lg transition-all duration-300 `}
+      } bg-white/80 backdrop-blur-sm border-r border-blue-200 shadow-lg transition-all duration-300 overflow-y-scroll `}
     >
       {/* Navigation */}
       <nav className="p-4 space-y-2">
-        {sidebarItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => {
-              setActiveTab(item.id);
-              navigate(item.path);
-            }}
-            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-300 ${
-              activeTab === item.id
-                ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-700 border border-blue-300 shadow-sm"
-                : "text-gray-600 hover:text-gray-900 hover:bg-blue-50"
-            }`}
-          >
-            <item.icon className="text-xl flex-shrink-0" />
-            {sidebarOpen && (
-              <span className="font-medium text-left">{item.label}</span>
+        {sidebarCategories.map((category) => (
+          <div key={category.id}>
+            <button
+              onClick={() => toggleCategory(category.id)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:text-gray-900 hover:bg-blue-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <category.icon className="text-lg flex-shrink-0" />
+                {sidebarOpen && (
+                  <span className="text-sm font-semibold uppercase tracking-wide">
+                    {category.label}
+                  </span>
+                )}
+              </div>
+              {sidebarOpen &&
+                (openCategories[category.id] ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                ))}
+            </button>
+            {openCategories[category.id] && (
+              <div className="mt-1 ml-2 border-l border-blue-100 pl-2 space-y-1">
+                {category.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      navigate(item.path);
+                    }}
+                    className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-300 ${
+                      activeTab === item.id
+                        ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-700 border border-blue-300 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-blue-50"
+                    }`}
+                  >
+                    <item.icon className="text-xl flex-shrink-0" />
+                    {sidebarOpen && (
+                      <span className="font-medium text-left">
+                        {item.label}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
-          </button>
+          </div>
         ))}
       </nav>
     </motion.div>
