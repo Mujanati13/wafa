@@ -5,6 +5,7 @@ import { FaFileCircleQuestion } from "react-icons/fa6";
 import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
 import { AiOutlineDelete } from "react-icons/ai";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
+import { FilePenLine } from "lucide-react";
 
 const ReportQuestionsAdmin = () => {
   // Pagination state
@@ -127,6 +128,9 @@ const ReportQuestionsAdmin = () => {
                     Question
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
+                    Date
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Details
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
@@ -149,6 +153,9 @@ const ReportQuestionsAdmin = () => {
                     <td className="py-4 px-4 text-gray-700">
                       {report.question}
                     </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {report.date || "—"}
+                    </td>
                     <td className="py-4 px-4 text-gray-700">{report.text}</td>
                     <td className="py-4 px-4 text-gray-700 flex gap-2.5">
                       <IoCheckmarkDoneCircle
@@ -158,6 +165,10 @@ const ReportQuestionsAdmin = () => {
                       <AiOutlineDelete
                         className="hover:text-red-500 cursor-pointer"
                         fontSize={20}
+                      />
+                      <FilePenLine
+                        className="hover:text-blue-500 cursor-pointer"
+                        size={20}
                       />
                     </td>
                   </tr>
@@ -193,6 +204,7 @@ const reportQuestionsByUser = [
     name: "John Doe",
     question: "How can I reset my account password?",
     text: "I tried the reset link but it didn’t work.",
+    date: "2024-09-30",
   },
   {
     id: 2,
@@ -200,6 +212,7 @@ const reportQuestionsByUser = [
     name: "Jane Smith",
     question: "Why is my order delayed?",
     text: "My package was supposed to arrive yesterday.",
+    date: "2024-10-02",
   },
   {
     id: 3,
@@ -207,6 +220,7 @@ const reportQuestionsByUser = [
     name: "Mike Brown",
     question: "Can I change my subscription plan?",
     text: "I want to switch from monthly to yearly billing.",
+    date: "2024-10-04",
   },
   {
     id: 4,
@@ -214,6 +228,7 @@ const reportQuestionsByUser = [
     name: "Sara Lee",
     question: "Is there a refund policy?",
     text: "I bought the wrong product by mistake.",
+    date: "2024-10-06",
   },
   {
     id: 5,
@@ -221,6 +236,7 @@ const reportQuestionsByUser = [
     name: "Chris Green",
     question: "How do I update my profile picture?",
     text: "I can’t find the upload button.",
+    date: "2024-10-08",
   },
   {
     id: 6,
@@ -228,6 +244,7 @@ const reportQuestionsByUser = [
     name: "Linda White",
     question: "Can I have multiple accounts?",
     text: "I want separate accounts for personal and work.",
+    date: "2024-10-10",
   },
   {
     id: 7,
@@ -235,6 +252,7 @@ const reportQuestionsByUser = [
     name: "David King",
     question: "Is there a mobile app?",
     text: "I can’t find it on the app store.",
+    date: "2024-10-12",
   },
   {
     id: 8,
@@ -242,6 +260,7 @@ const reportQuestionsByUser = [
     name: "Emily Clark",
     question: "How do I delete my account?",
     text: "I want to remove all my data permanently.",
+    date: "2024-10-14",
   },
   {
     id: 9,
@@ -249,6 +268,7 @@ const reportQuestionsByUser = [
     name: "Robert Hall",
     question: "Why am I not receiving notifications?",
     text: "I’ve checked my settings but still nothing.",
+    date: "2024-10-16",
   },
   {
     id: 10,
@@ -256,5 +276,6 @@ const reportQuestionsByUser = [
     name: "Olivia Young",
     question: "Can I use your service abroad?",
     text: "I will be traveling to Europe next month.",
+    date: "2024-10-18",
   },
 ];

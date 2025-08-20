@@ -128,6 +128,12 @@ const Explications = () => {
                     Question
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
+                    Title
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
+                    Date
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Details
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
@@ -150,24 +156,80 @@ const Explications = () => {
                     <td className="py-4 px-4 text-gray-700">
                       {report.question}
                     </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {report.explicationTitle || "—"}
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {report.date || "—"}
+                    </td>
                     <td
-                      className="py-4 px-4 text-gray-700"
-                      style={{ minWidth: 120 }}
+                      className="py-4 px-4 text-gray-700 align-top"
+                      style={{ minWidth: 160 }}
                     >
-                      {/^https?:\/\//.test(report.imageOrText) ? (
-                        <img
-                          src={report.imageOrText}
-                          alt="detail"
-                          className="max-h-16 max-w-xs rounded border cursor-pointer"
-                          style={{
-                            width: "100px",
-                            height: "auto",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        report.imageOrText
-                      )}
+                      {(() => {
+                        const images = Array.isArray(report?.images)
+                          ? report.images.filter(Boolean)
+                          : [];
+                        if (!images.length && report?.image) {
+                          images.push(report.image);
+                        }
+                        if (
+                          !images.length &&
+                          typeof report?.imageOrText === "string" &&
+                          /^https?:\/\//.test(report.imageOrText)
+                        ) {
+                          images.push(report.imageOrText);
+                        }
+
+                        const text =
+                          typeof report?.text === "string" && report.text.trim()
+                            ? report.text
+                            : typeof report?.imageOrText === "string" &&
+                              !/^https?:\/\//.test(report.imageOrText)
+                            ? report.imageOrText
+                            : "";
+
+                        return (
+                          <div className="flex flex-col gap-2">
+                            {images.length > 0 && (
+                              <div className="grid grid-cols-2 gap-2 max-w-[220px]">
+                                {images.map((src, idx) => (
+                                  <button
+                                    key={`${src}-${idx}`}
+                                    type="button"
+                                    className="relative aspect-video w-full overflow-hidden rounded-md border border-gray-200 bg-gray-50"
+                                    onClick={() =>
+                                      window.open(
+                                        src,
+                                        "_blank",
+                                        "noopener,noreferrer"
+                                      )
+                                    }
+                                    title="Open image in new tab"
+                                  >
+                                    <img
+                                      src={src}
+                                      alt={`detail ${idx + 1}`}
+                                      className="h-full w-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {text && (
+                              <div className="text-sm text-gray-800 whitespace-pre-line max-w-xs">
+                                {text}
+                              </div>
+                            )}
+                            {!images.length && !text && (
+                              <span className="text-gray-400 text-sm">
+                                No details provided
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="py-4 px-4 text-gray-700 flex gap-2.5">
                       <IoCheckmarkDoneCircle
@@ -210,7 +272,9 @@ const explication = [
     username: "JohnDoe",
     name: "John Doe",
     question: "How do I upload a profile picture?",
-    imageOrText:
+    explicationTitle: "Upload Profile Picture",
+    date: "2024-11-01",
+    image:
       "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
   },
   {
@@ -218,59 +282,83 @@ const explication = [
     username: "JaneSmith",
     name: "Jane Smith",
     question: "Where can I find the invoice for my last order?",
-    imageOrText: "Check your account dashboard under 'Billing History'.",
+    explicationTitle: "Find Invoice",
+    date: "2024-11-02",
+    text: "Check your account dashboard under 'Billing History'.",
   },
   {
     id: 3,
     username: "MikeBrown",
     name: "Mike Brown",
     question: "How do I reset my password?",
-    imageOrText:
+    explicationTitle: "Reset Password",
+    date: "2024-11-03",
+    images: [
       "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    ],
   },
   {
     id: 4,
     username: "SaraLee",
     name: "Sara Lee",
     question: "How do I share my project with a colleague?",
-    imageOrText: "Open the project and click 'Share' in the top-right corner.",
+    explicationTitle: "Share Project",
+    date: "2024-11-04",
+    text: "Open the project and click 'Share' in the top-right corner.",
+    image:
+      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
   },
   {
     id: 5,
     username: "ChrisGreen",
     name: "Chris Green",
     question: "Can I import data from Excel?",
-    imageOrText:
+    explicationTitle: "Import from Excel",
+    date: "2024-11-05",
+    images: [
       "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    ],
   },
   {
     id: 6,
     username: "LindaWhite",
     name: "Linda White",
     question: "Where can I see the changelog?",
-    imageOrText: "Visit the 'Updates' section in the help center.",
+    explicationTitle: "View Changelog",
+    date: "2024-11-06",
+    text: "Visit the 'Updates' section in the help center.",
   },
   {
     id: 7,
     username: "DavidKing",
     name: "David King",
     question: "Is there a dark mode?",
-    imageOrText:
+    explicationTitle: "Enable Dark Mode",
+    date: "2024-11-07",
+    text: "Yes, enable it from Settings → Appearance.",
+    images: [
       "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
+    ],
   },
   {
     id: 8,
     username: "EmilyClark",
     name: "Emily Clark",
     question: "How do I export my report as PDF?",
-    imageOrText: "Open your report and click 'Export' → 'PDF'.",
+    explicationTitle: "Export Report as PDF",
+    date: "2024-11-08",
+    text: "Open your report and click 'Export' → 'PDF'.",
   },
   {
     id: 9,
     username: "RobertHall",
     name: "Robert Hall",
     question: "Where do I update my payment method?",
-    imageOrText:
+    explicationTitle: "Update Payment Method",
+    date: "2024-11-09",
+    image:
       "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
   },
   {
@@ -278,6 +366,8 @@ const explication = [
     username: "OliviaYoung",
     name: "Olivia Young",
     question: "Can I add more team members to my plan?",
-    imageOrText: "Yes, go to 'Team Settings' and click 'Add Member'.",
+    explicationTitle: "Add Team Members",
+    date: "2024-11-10",
+    text: "Yes, go to 'Team Settings' and click 'Add Member'.",
   },
 ];

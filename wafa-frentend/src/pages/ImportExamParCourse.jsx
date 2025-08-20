@@ -151,7 +151,7 @@ const ImportExamParCourse = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Select module</Label>
                 <Select
@@ -218,25 +218,7 @@ const ImportExamParCourse = () => {
                   ))}
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>exam par courses</Label>
-                <Select
-                  value={selectedExam}
-                  onChange={(e) => setSelectedExam(e.target.value)}
-                  disabled={!selectedCourse}
-                >
-                  <option value="" disabled>
-                    {selectedCourse
-                      ? "Choose an exam"
-                      : "Select a course first"}
-                  </option>
-                  {examOptions.map((ex) => (
-                    <option key={ex} value={ex}>
-                      {ex}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+             
               <div className="space-y-2">
                 <Label>Excel file of questions</Label>
                 <Input

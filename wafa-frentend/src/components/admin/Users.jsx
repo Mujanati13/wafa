@@ -45,7 +45,7 @@ const Users = () => {
       plan: "Premium",
       status: "Active",
       exams: 12,
-      lastLogin: "2024-01-20",
+      registerDate: "2024-01-20",
     },
     {
       id: 2,
@@ -55,7 +55,7 @@ const Users = () => {
       plan: "Basic",
       status: "Active",
       exams: 8,
-      lastLogin: "2024-01-19",
+      registerDate: "2024-01-19",
     },
     {
       id: 3,
@@ -65,7 +65,7 @@ const Users = () => {
       plan: "Enterprise",
       status: "Inactive",
       exams: 25,
-      lastLogin: "2024-01-05",
+      registerDate: "2024-01-05",
     },
     {
       id: 4,
@@ -75,7 +75,7 @@ const Users = () => {
       plan: "Premium",
       status: "Active",
       exams: 15,
-      lastLogin: "2024-01-20",
+      registerDate: "2024-01-20",
     },
     {
       id: 5,
@@ -85,7 +85,7 @@ const Users = () => {
       plan: "Basic",
       status: "Suspended",
       exams: 6,
-      lastLogin: "2024-01-18",
+      registerDate: "2024-01-18",
     },
     {
       id: 6,
@@ -95,7 +95,7 @@ const Users = () => {
       plan: "Premium",
       status: "Active",
       exams: 18,
-      lastLogin: "2024-01-21",
+      registerDate: "2024-01-21",
     },
     {
       id: 7,
@@ -105,7 +105,7 @@ const Users = () => {
       plan: "Enterprise",
       status: "Active",
       exams: 30,
-      lastLogin: "2024-01-22",
+      registerDate: "2024-01-22",
     },
     {
       id: 8,
@@ -115,7 +115,7 @@ const Users = () => {
       plan: "Basic",
       status: "Inactive",
       exams: 4,
-      lastLogin: "2024-01-10",
+      registerDate: "2024-01-10",
     },
     {
       id: 9,
@@ -125,7 +125,7 @@ const Users = () => {
       plan: "Premium",
       status: "Active",
       exams: 22,
-      lastLogin: "2024-01-23",
+      registerDate: "2024-01-23",
     },
     {
       id: 10,
@@ -135,7 +135,7 @@ const Users = () => {
       plan: "Basic",
       status: "Suspended",
       exams: 9,
-      lastLogin: "2024-01-15",
+      registerDate: "2024-01-15",
     },
   ];
 
@@ -284,11 +284,14 @@ const Users = () => {
               <FiDownload className="w-4 h-4" />
               Export
             </Button>
-            <Button size="sm" className="bg-black text-white hover:bg-gray-800" onClick={() => setShowNewUserForm(!showNewUserForm)}>
+            <Button
+              size="sm"
+              className="bg-black text-white hover:bg-gray-800"
+              onClick={() => setShowNewUserForm(!showNewUserForm)}
+            >
               <FiUserPlus className="w-4 h-4" />
               Add
             </Button>
-           
           </div>
         </div>
 
@@ -404,8 +407,6 @@ const Users = () => {
           </Card>
         </div>
 
-      
-
         {/* User Directory Section */}
         <Card className="shadow-sm">
           <CardHeader>
@@ -463,7 +464,7 @@ const Users = () => {
                     </th>
 
                     <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Last Login
+                      Register Date
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">
                       Actions
@@ -535,7 +536,7 @@ const Users = () => {
                         <div className="flex items-center gap-2">
                           <FiCalendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                           <span className="text-gray-700">
-                            {user.lastLogin}
+                            {user.registerDate}
                           </span>
                         </div>
                       </td>
@@ -566,7 +567,9 @@ const Users = () => {
           )}
         </Card>
       </div>
-      {showNewUserForm && <NewUserForm setShowNewUserForm={setShowNewUserForm} />}
+      {showNewUserForm && (
+        <NewUserForm setShowNewUserForm={setShowNewUserForm} />
+      )}
     </div>
   );
 };

@@ -26,6 +26,8 @@ import {
   FileDown,
   ChevronDown,
   ChevronRight,
+  FileQuestionMark,
+  ImagePlus,
 } from "lucide-react";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
@@ -106,6 +108,18 @@ const SideBarAdmin = () => {
           icon: FileDown,
           path: "/admin/importResumes",
         },
+        {
+          id: "importExplications",
+          label: "Import Explications ",
+          icon: FileDown,
+          path: "/admin/importExplications",
+        },
+        {
+          id: "importImages",
+          label: "Import Images ",
+          icon: ImagePlus,
+          path: "/admin/importImages",
+        },
       ],
     },
     {
@@ -173,6 +187,18 @@ const SideBarAdmin = () => {
           label: "Import exam par course",
           icon: FileDown,
           path: "/admin/importExamParCourse",
+        },
+        {
+          id: "addQuestions",
+          label: "Add Questions",
+          icon: FileQuestionMark,
+          path: "/admin/addQuestions",
+        },
+        {
+          id: "createCategoriesForCourses",
+          label: "Create Categories For Courses",
+          icon: FileQuestionMark,
+          path: "/admin/createCategoriesForCourses",
         },
       ],
     },

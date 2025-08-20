@@ -36,6 +36,10 @@ import ExamCourses from "./pages/ExamCourses";
 import ImportExamParYears from "./pages/ImportExamParYears";
 import ImportExamParCourse from "./pages/ImportExamParCourse";
 import ImportResumes from "./pages/ImportResumes";
+import AddQuestions from "./pages/AddQuestions";
+import ImportImages from "./pages/ImportImages";
+import ImportExplications from "./pages/ImportExplications";
+import CreateCategoriesForCourses from "./pages/CreateCategoriesForCourses";
 
 export default function App() {
   return (
@@ -76,8 +80,9 @@ export default function App() {
           <Route path="examParYears" element={<ExamParYears />} />
           <Route path="importExamParCourse" element={<ImportExamParCourse />} />
           <Route path="examCourses" element={<ExamCourses />} />
-          <Route path="resumes" eleexamCoursesment={ <Resumes /> } />
+          <Route path="resumes" element={<Resumes />} />
           <Route path="importResumes" element={<ImportResumes />} />
+          <Route path="importImages" element={<ImportImages />} />
           <Route
             path="demandes-de-paiements"
             element={<DemandesDePayements />}
@@ -85,7 +90,10 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="importExamParYears" element={<ImportExamParYears />} />
-        </Route>
+          <Route path="addQuestions" element={<AddQuestions />} />
+          <Route path="importExplications" element={<ImportExplications />} />
+          <Route path="createCategoriesForCourses" element={<CreateCategoriesForCourses />} />
+          </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
       </Routes>
     </Router>

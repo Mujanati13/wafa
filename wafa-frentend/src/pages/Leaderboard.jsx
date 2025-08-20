@@ -67,7 +67,7 @@ const Leaderboard = () => {
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Users</p>
@@ -93,17 +93,6 @@ const Leaderboard = () => {
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <FiTrendingUp className="w-6 h-6 text-yellow-600" />
-            </div>
-          </div>
-          <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Blue Points
-              </p>
-              <p className="text-xl font-bold text-gray-900">{bluePointsSum}</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FiArrowUp className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
@@ -182,9 +171,7 @@ const Leaderboard = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Points
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Blue Points
-                  </th>
+                  
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Rank
                   </th>
@@ -215,9 +202,7 @@ const Leaderboard = () => {
                       <td className="py-4 px-4 font-bold text-gray-900">
                         {user.points}
                       </td>
-                      <td className="py-4 px-4 text-blue-600 font-semibold">
-                        {user.bluePoints}
-                      </td>
+                      
                       <td className="py-4 px-4 font-bold text-gray-900">
                         {user.rank}
                       </td>

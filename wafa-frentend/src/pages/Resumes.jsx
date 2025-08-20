@@ -49,6 +49,7 @@ const Resumes = () => {
       title: uploadFile.name,
       pdf: URL.createObjectURL(uploadFile),
       approved: false,
+      date: new Date().toISOString().slice(0, 10),
     };
     setResumes([newResume, ...resumes]);
     setUploadFile(null);
@@ -153,6 +154,9 @@ const Resumes = () => {
                     PDF
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
+                    Date
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Status
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
@@ -184,6 +188,9 @@ const Resumes = () => {
                       >
                         See PDF
                       </Button>
+                    </td>
+                    <td className="py-4 px-4 text-gray-700">
+                      {resume.date || "—"}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {resume.approved ? (
@@ -238,6 +245,7 @@ const initialResumes = [
     title: "Software Engineer Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: false,
+    date: "2024-10-01",
   },
   {
     id: 2,
@@ -246,6 +254,7 @@ const initialResumes = [
     title: "Marketing Manager Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: true,
+    date: "2024-10-03",
   },
   {
     id: 3,
@@ -254,6 +263,7 @@ const initialResumes = [
     title: "Data Analyst Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: false,
+    date: "2024-10-05",
   },
   {
     id: 4,
@@ -262,6 +272,7 @@ const initialResumes = [
     title: "Project Manager Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: false,
+    date: "2024-10-06",
   },
   {
     id: 5,
@@ -270,6 +281,7 @@ const initialResumes = [
     title: "Designer Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: true,
+    date: "2024-10-08",
   },
   {
     id: 6,
@@ -278,6 +290,7 @@ const initialResumes = [
     title: "HR Specialist Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: false,
+    date: "2024-10-10",
   },
   {
     id: 7,
@@ -286,6 +299,7 @@ const initialResumes = [
     title: "Business Analyst Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: true,
+    date: "2024-10-12",
   },
   {
     id: 8,
@@ -294,6 +308,7 @@ const initialResumes = [
     title: "Content Writer Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: false,
+    date: "2024-10-14",
   },
   {
     id: 9,
@@ -302,6 +317,7 @@ const initialResumes = [
     title: "QA Engineer Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: false,
+    date: "2024-10-16",
   },
   {
     id: 10,
@@ -310,6 +326,7 @@ const initialResumes = [
     title: "Frontend Developer Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: true,
+    date: "2024-10-18",
   },
   {
     id: 11,
@@ -318,6 +335,7 @@ const initialResumes = [
     title: "Backend Developer Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: false,
+    date: "2024-10-20",
   },
   {
     id: 12,
@@ -326,6 +344,7 @@ const initialResumes = [
     title: "Product Manager Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: true,
+    date: "2024-10-22",
   },
   {
     id: 13,
@@ -334,6 +353,7 @@ const initialResumes = [
     title: "DevOps Engineer Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: false,
+    date: "2024-10-24",
   },
   {
     id: 14,
@@ -342,6 +362,7 @@ const initialResumes = [
     title: "UI/UX Designer Resume.pdf",
     pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
     approved: false,
+    date: "2024-10-26",
   },
   {
     id: 15,
@@ -350,5 +371,6 @@ const initialResumes = [
     title: "System Administrator Resume.pdf",
     pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
     approved: true,
+    date: "2024-10-28",
   },
 ];
