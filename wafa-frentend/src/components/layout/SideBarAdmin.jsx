@@ -28,16 +28,17 @@ import {
   ChevronRight,
   FileQuestionMark,
   ImagePlus,
+  Blocks,
 } from "lucide-react";
 const SideBarAdmin = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [openCategories, setOpenCategories] = useState({
-    overview: true,
-    users: true,
-    content: true,
-    payments: true,
-    exams: true,
+    overview: false,
+    users: false,
+    content: false,
+    payments: false,
+    exams: false,
   });
 
   const sidebarCategories = [
@@ -165,6 +166,12 @@ const SideBarAdmin = () => {
           path: "/admin/categoriesOfModules",
         },
         {
+          id: "createCategoriesForCourses",
+          label: "Create Categories For Courses",
+          icon: Blocks,
+          path: "/admin/createCategoriesForCourses",
+        },
+        {
           id: "examParYears",
           label: "Exam par years",
           icon: BookOpenCheck,
@@ -193,12 +200,6 @@ const SideBarAdmin = () => {
           label: "Add Questions",
           icon: FileQuestionMark,
           path: "/admin/addQuestions",
-        },
-        {
-          id: "createCategoriesForCourses",
-          label: "Create Categories For Courses",
-          icon: FileQuestionMark,
-          path: "/admin/createCategoriesForCourses",
         },
       ],
     },
