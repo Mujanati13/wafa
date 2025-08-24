@@ -4,12 +4,13 @@ const examParYearSchema = new mongoose.Schema(
     {
         name: { 
                 type: String,
+                unique: [true, "Name must be unique"],
                 required: [true, "Name is required"]
         },
         moduleId:{
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Module",
-                // required: [true, "Module ID is required"]
+                required: [true, "Module ID is required"]
         },
         year: {
                 type: Number,

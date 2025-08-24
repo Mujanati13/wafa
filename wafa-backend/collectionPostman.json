@@ -1,0 +1,238 @@
+{
+    "info": {
+        "_postman_id": "random-uuid",
+        "name": "WAFA API",
+        "description": "Collection for WAFA API endpoints",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Exams",
+            "item": [
+                {
+                    "name": "Create Exam",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Final Exam 2025\",\n    \"moduleId\": \"your_module_id_here\",\n    \"year\": 2025,\n    \"imageUrl\": \"https://example.com/exam.jpg\",\n    \"infoText\": \"Final examination for the course\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/exams/create",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "exams", "create"]
+                        },
+                        "description": "Create a new exam with validation"
+                    }
+                },
+                {
+                    "name": "Get All Exams",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/exams",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "exams"]
+                        },
+                        "description": "Get all exams from the database"
+                    }
+                },
+                {
+                    "name": "Get Exam by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/exams/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "exams", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "exam_id_here",
+                                    "description": "MongoDB ObjectId of the exam"
+                                }
+                            ]
+                        },
+                        "description": "Get a specific exam by its ID"
+                    }
+                },
+                {
+                    "name": "Update Exam",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Updated Final Exam 2025\",\n    \"moduleId\": \"your_module_id_here\",\n    \"year\": 2025,\n    \"imageUrl\": \"https://example.com/updated-exam.jpg\",\n    \"infoText\": \"Updated final examination for the course\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/exams/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "exams", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "exam_id_here",
+                                    "description": "MongoDB ObjectId of the exam to update"
+                                }
+                            ]
+                        },
+                        "description": "Update an exam by ID with validation"
+                    }
+                },
+                {
+                    "name": "Delete Exam",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/exams/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "exams", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "exam_id_here",
+                                    "description": "MongoDB ObjectId of the exam to delete"
+                                }
+                            ]
+                        },
+                        "description": "Delete an exam by ID"
+                    }
+                }
+            ],
+            "description": "Endpoints for managing exams"
+        },
+        {
+            "name": "Modules",
+            "item": [
+                {
+                    "name": "Create Module",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Mathematics\",\n    \"semester\": \"S1\",\n    \"imageUrl\": \"https://example.com/math.jpg\",\n    \"infoText\": \"Basic mathematics course\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/modules/create",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "modules", "create"]
+                        },
+                        "description": "Create a new module with validation"
+                    }
+                },
+                {
+                    "name": "Get All Modules",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/modules",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "modules"]
+                        },
+                        "description": "Get all modules from the database"
+                    }
+                },
+                {
+                    "name": "Get Module by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/modules/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "modules", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "module_id_here",
+                                    "description": "MongoDB ObjectId of the module"
+                                }
+                            ]
+                        },
+                        "description": "Get a specific module by its ID"
+                    }
+                },
+                {
+                    "name": "Update Module",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Advanced Mathematics\",\n    \"semester\": \"S2\",\n    \"imageUrl\": \"https://example.com/advanced-math.jpg\",\n    \"infoText\": \"Advanced mathematics course\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/modules/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "modules", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "module_id_here",
+                                    "description": "MongoDB ObjectId of the module to update"
+                                }
+                            ]
+                        },
+                        "description": "Update a module by ID with validation"
+                    }
+                },
+                {
+                    "name": "Delete Module",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/modules/:id",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["api", "v1", "modules", ":id"],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "module_id_here",
+                                    "description": "MongoDB ObjectId of the module to delete"
+                                }
+                            ]
+                        },
+                        "description": "Delete a module by ID"
+                    }
+                }
+            ],
+            "description": "Endpoints for managing modules"
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string",
+            "description": "The base URL for the API"
+        }
+    ]
+}
