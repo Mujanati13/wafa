@@ -1,39 +1,30 @@
-# Node.js dependencies
+# Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-
-# Environment variables
+package-lock.json
 .env
-.env.*
+dist/
+build/
+coverage/
+*.tgz
 
-# Logs
-logs/
-*.log
-*.out
-*.pid
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# Build output
-dist/
-build/
-tmp/
-temp/
+# Logs
+logs
+*.log
 
-# Coverage
-coverage/
-
-# IDEs and editors
+# IDEs
 .vscode/
 .idea/
 *.sublime-workspace
 *.sublime-project
 
 # Misc
-*.tgz
-!.github
+*.swp
+*.bak
+*.tmp
