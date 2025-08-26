@@ -3,6 +3,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import routes from "./routes/index.js";
+import MongoStore from "connect-mongo";
+import session from "express-session";
+import passport from "passport";
+
 dotenv.config();
 
 const app = express();
@@ -28,6 +32,21 @@ mongoose.connect(process.env.MONGO_URL, {
 })
 .then(() => console.log("MongoDB connected"))
 .catch(err => console.error("MongoDB connection error:", err));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    saveUninitialized: false,
+    resave: false,
+    store: MongoStore.create({
+      client: mongoose.connection.getClient(),
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days in milliseconds
+    },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use("/api/v1", routes);
