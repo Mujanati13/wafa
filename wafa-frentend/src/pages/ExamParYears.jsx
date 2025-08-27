@@ -21,6 +21,7 @@ import {
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { Trash, Edit, Eye } from "lucide-react";
 import NewExamForm from "../components/admin/NewExamForm";
+import { api } from "../lib/utils";
 
 const ExamParYears = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,54 +30,43 @@ const ExamParYears = () => {
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Sample data generator for exams by years
-  const examsByYears = useMemo(() => {
-    const placeholderImage =
-      "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Exam";
-    const modules = [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-      "Biostatistiques 1",
-      "Génétique",
-      "Sémiologie 1",
-      "Microbiologie 1",
-      "Immunologie",
-      "Hématologie",
-    ];
-    const years = ["2020", "2021", "2022", "2023", "2024"];
-
-    let id = 1;
-    const list = [];
-
-    modules.forEach((module, moduleIdx) => {
-      years.forEach((year, yearIdx) => {
-        if (Math.random() > 0.3) {
-          // 70% chance to create an exam
-          list.push({
-            id: id++,
-            moduleName: module,
-            examName: `${module} - ${year}`,
-            year: year,
-            imageUrl: placeholderImage,
-            totalQuestions: 30 + ((id + moduleIdx + yearIdx) % 50),
-            helpText: `Informations et explications pour ${module} ${year}`,
-            status: Math.random() > 0.5 ? "active" : "draft",
-          });
-        }
-      });
-    });
-
-    return list.sort((a, b) => b.year.localeCompare(a.year));
-  }, []);
+  const placeholderImage =
+    "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Exam";
+  React.useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await api.get("/exams/all");
+        const list = (data?.data || []).map((e) => ({
+          id: e?._id,
+          moduleName: e?.moduleName || e?.moduleId?.name || "",
+          examName: e?.name || "",
+          year: String(e?.year ?? ""),
+          imageUrl: e?.imageUrl || placeholderImage,
+          totalQuestions: Array.isArray(e?.questions) ? e.questions.length : 0,
+          helpText: e?.infoText || "",
+          status: "active",
+        }));
+        // sort by year desc
+        list.sort((a, b) => b.year.localeCompare(a.year));
+        setExams(list);
+      } catch (err) {
+        setError("Failed to load exams");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchExams();
+  }, [showCreateForm]);
 
   const filteredExams = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    return examsByYears.filter((exam) => {
+    return exams.filter((exam) => {
       const passesModule =
         moduleFilter === "all" || exam.moduleName === moduleFilter;
       const passesYear = yearFilter === "all" || exam.year === yearFilter;
@@ -88,7 +78,7 @@ const ExamParYears = () => {
 
       return passesModule && passesYear && passesSearch;
     });
-  }, [searchTerm, moduleFilter, yearFilter, examsByYears]);
+  }, [searchTerm, moduleFilter, yearFilter, exams]);
 
   const totalPages = Math.ceil(filteredExams.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -158,10 +148,8 @@ const ExamParYears = () => {
   };
 
   // Get unique modules and years for the form
-  const uniqueModules = Array.from(
-    new Set(examsByYears.map((e) => e.moduleName))
-  );
-  const uniqueYears = Array.from(new Set(examsByYears.map((e) => e.year))).sort(
+  const uniqueModules = Array.from(new Set(exams.map((e) => e.moduleName)));
+  const uniqueYears = Array.from(new Set(exams.map((e) => e.year))).sort(
     (a, b) => b - a
   );
 
@@ -215,13 +203,13 @@ const ExamParYears = () => {
                   className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                 >
                   <option value="all">All modules</option>
-                  {Array.from(
-                    new Set(examsByYears.map((e) => e.moduleName))
-                  ).map((module) => (
-                    <option key={module} value={module}>
-                      {module}
-                    </option>
-                  ))}
+                  {Array.from(new Set(exams.map((e) => e.moduleName))).map(
+                    (module) => (
+                      <option key={module} value={module}>
+                        {module}
+                      </option>
+                    )
+                  )}
                 </Select>
               </div>
               <div>
@@ -231,7 +219,7 @@ const ExamParYears = () => {
                   className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                 >
                   <option value="all">All years</option>
-                  {Array.from(new Set(examsByYears.map((e) => e.year)))
+                  {Array.from(new Set(exams.map((e) => e.year)))
                     .sort((a, b) => b - a)
                     .map((year) => (
                       <option key={year} value={year}>
@@ -254,6 +242,10 @@ const ExamParYears = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {loading && (
+              <div className="text-sm text-gray-600">Loading exams...</div>
+            )}
+            {error && <div className="text-sm text-red-600">{error}</div>}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1000px]">
                 <thead>

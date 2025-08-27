@@ -14,21 +14,18 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
+import { api } from "@/lib/utils";
 
 const newExamSchema = z.object({
   name: z.string().min(2, "Exam name is required"),
   moduleName: z.string().min(1, "Select a module"),
   year: z.string().min(1, "Select a year"),
-  totalQuestions: z
-    .string()
-    .min(1, "Total questions is required")
-    .transform((val) => parseInt(val, 10)),
   imageUrl: z
     .string()
     .url("Enter a valid image URL")
     .or(z.string().length(0))
     .transform((v) => v || ""),
-  helpText: z.string().min(2, "Please add the help text shown in the ?"),
+  helpText: z.string(),
 });
 
 const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
@@ -40,16 +37,25 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
       name: "",
       moduleName: "",
       year: "",
-      totalQuestions: "",
       imageUrl: "",
       helpText: "",
     },
   });
 
   const onSubmit = async (data) => {
+    console.log(data);
+
     setIsSubmitting(true);
     try {
-      // TODO: Replace with API integration
+      const res = await api.post("/exams/create", {
+        name: data.name,
+        moduleId: "68ab0eaf049261f556c36340", //!TODO:replace this
+        year: data.year,
+        imageUrl: data.imageUrl,
+        infoText: data.helpText,
+      });
+      console.log(res);
+
       console.log("New exam:", data);
       await new Promise((r) => setTimeout(r, 800));
       form.reset();
@@ -107,8 +113,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                   </FormLabel>
                   <FormControl>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      {...field}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
@@ -136,8 +141,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                   </FormLabel>
                   <FormControl>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      {...field}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
@@ -149,27 +153,6 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                         </option>
                       ))}
                     </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="totalQuestions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Total Questions
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 50"
-                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                      {...field}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

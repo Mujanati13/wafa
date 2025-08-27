@@ -13,14 +13,12 @@ const examParYearSchema = joi.object({
         'number.base': 'Year must be a number',
         'any.required': 'Year is required'
     }),
-    imageUrl: joi.string().uri().required().messages({
+    imageUrl: joi.string().uri().allow('').messages({
         'string.base': 'Image URL must be a string',
-        'string.uri': 'Image URL must be a valid URI',
-        'any.required': 'Image URL is required'
+        'string.uri': 'Image URL must be a valid URI'
     }),
-    infoText: joi.string().required().messages({
-        'string.base': 'Info text must be a string',
-        'any.required': 'Info text is required'
+    infoText: joi.string().allow('').messages({
+        'string.base': 'Info text must be a string'
     })
 });
 
@@ -43,4 +41,4 @@ const updateExamParYearSchema = joi.object({
     })
 });
 
-export default {examParYearSchema, updateExamParYearSchema};
+export default { examParYearSchema, updateExamParYearSchema };

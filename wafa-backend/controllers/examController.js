@@ -1,83 +1,112 @@
 import examModel from "../models/examParYearModel.js";
 import asyncHandler from '../handlers/asyncHandler.js';
+import QuestionModel from "../models/questionModule.js";
+
 export const examController = {
     create: asyncHandler(async (req, res) => {
-    
-            const { name, moduleId, year, imageUrl, infoText } = req.body;
-            const newExam = await examModel.create({
-                name,
-                moduleId,
-                year,
-                imageUrl,
-                infoText
-            });
-            res.status(201).json({
-                success: true,
-                data: newExam
-            });
-       
+
+        const { name, moduleId, year, imageUrl, infoText } = req.body;
+        const newExam = await examModel.create({
+            name,
+            moduleId,
+            year,
+            imageUrl,
+            infoText
+        });
+        res.status(201).json({
+            success: true,
+            data: newExam
+        });
+
     }),
 
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;
         const { name, moduleId, year, imageUrl, infoText } = req.body;
-            const updatedExam = await examModel.findByIdAndUpdate(
-                id,
-                {
-                    name,
-                    moduleId,
-                    year,
-                    imageUrl,
-                    infoText
-                },
-                { new: true }
-            );
-            if (!updatedExam) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Exam not found"
-                });
-            }
-            res.status(200).json({
-                success: true,
-                data: updatedExam
+        const updatedExam = await examModel.findByIdAndUpdate(
+            id,
+            {
+                name,
+                moduleId,
+                year,
+                imageUrl,
+                infoText
+            },
+            { new: true }
+        );
+        if (!updatedExam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found"
             });
-        }),
+        }
+        res.status(200).json({
+            success: true,
+            data: updatedExam
+        });
+    }),
 
-        delete: asyncHandler(async (req, res) => {
-            const { id } = req.params;
-            const deletedExam = await examModel.findByIdAndDelete(id);
-            if (!deletedExam) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Exam not found"
-                });
+    delete: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const deletedExam = await examModel.findByIdAndDelete(id);
+        if (!deletedExam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "Exam deleted successfully",
+            data: deletedExam
+        });
+    }),
+    getAll: asyncHandler(async (req, res) => {
+        // Get all exams and populate related module name
+        const exams = await examModel.find().populate('moduleId', 'name').lean();
+        // For each exam, get its related questions
+        const examIds = exams.map(e => e._id);
+        // Assuming QuestionModel has a field 'examId' referencing exam
+        const questions = await QuestionModel.find({ examId: { $in: examIds } }).lean();
+
+        // Group questions by examId
+        const questionsByExam = {};
+        questions.forEach(q => {
+            const key = q.examId?.toString();
+            if (!questionsByExam[key]) questionsByExam[key] = [];
+            questionsByExam[key].push(q);
+        });
+
+        // Attach questions and moduleName to each exam
+        const examsWithQuestions = exams.map(exam => ({
+            ...exam,
+            moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
+            questions: questionsByExam[exam._id.toString()] || []
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: examsWithQuestions
+        });
+    }),
+    getById: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const exam = await examModel.findById(id).populate('moduleId', 'name').lean();
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found"
+            });
+        }
+        // Get questions related to this exam
+        const questions = await QuestionModel.find({ examId: id }).lean();
+        res.status(200).json({
+            success: true,
+            data: {
+                ...exam,
+                moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
+                questions: questions
             }
-            res.status(200).json({
-                success: true,
-                message: "Exam deleted successfully",
-                data: deletedExam
-            });
-        }),
-        getAll: asyncHandler(async (req, res) => {
-            const exams = await examModel.find();
-            res.status(200).json({
-                success: true,
-                data: exams
-            });
-        }),
-        getById: asyncHandler(async (req, res) => {
-            const { id } = req.params;
-            const exam = await examModel.findById(id);
-            if (!exam) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Exam not found"
-                });
-            }
-            res.status(200).json({
-                success: true,
-                data: exam
-            });
-        })
+        });
+    })
 };
