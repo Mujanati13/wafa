@@ -20,6 +20,7 @@ import {
 import NewModuleForm from "../components/admin/NewModuleForm";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { Trash } from "lucide-react";
+import { api } from "../lib/utils";
 
 const Module = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,55 +29,35 @@ const Module = () => {
   const itemsPerPage = 8;
   const [semesterFilter, setSemesterFilter] = useState("all");
 
-  // Sample data generator until API integration (40+ modules)
-  const modules = useMemo(() => {
-    const placeholderImage =
-      "http://www.univ-mosta.dz/medecine/wp-content/uploads/sites/4/2021/12/telechargement-1-1.jpg";
-    const semesters = [
-      "S1",
-      "S2",
-      "S3",
-      "S4",
-      "S5",
-      "S6",
-      "S7",
-      "S8",
-      "S9",
-      "S10",
-    ];
-    const namesBySemester = {
-      S1: ["Anatomie 1", "Biophysique", "Embryologie", "Histologie"],
-      S2: ["Physiologie 1", "Biochimie 1", "Biostatistiques 1", "Génétique"],
-      S3: ["Sémiologie 1", "Microbiologie 1", "Immunologie", "Hématologie"],
-      S4: ["Pharmacologie", "Pathologie 1", "Parasitologie", "Toxicologie"],
-      S5: ["Sémiologie 2", "Physiologie 2", "Anatomie 2", "Biochimie 2"],
-      S6: ["Pathologie 2", "Radiologie", "Médecine Nucléaire", "Infectiologie"],
-      S7: ["Chirurgie 1", "Gynécologie 1", "ORL 1", "Ophtalmologie 1"],
-      S8: [
-        "Pédiatrie 1",
-        "Médecine Interne 1",
-        "Dermatologie 1",
-        "Psychiatrie 1",
-      ],
-      S9: ["Chirurgie 2", "Gynécologie 2", "Urgences", "Anesthésie 1"],
-      S10: ["Santé Publique", "Médecine Interne 2", "ORL 2", "Ophtalmologie 2"],
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  React.useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await api.get("/modules");
+        const placeholderImage =
+          "http://www.univ-mosta.dz/medecine/wp-content/uploads/sites/4/2021/12/telechargement-1-1.jpg";
+        const list = (data?.data || []).map((m) => ({
+          id: m?._id,
+          semester: m?.semester || "",
+          name: m?.name || "",
+          imageUrl: m?.imageUrl || placeholderImage,
+          totalQuestions: Array.isArray(m?.questions) ? m.questions.length : 0,
+          helpText: m?.infoText || "",
+        }));
+        setModules(list);
+      } catch (e) {
+        setError("Failed to load modules");
+      } finally {
+        setLoading(false);
+      }
     };
-    let id = 1;
-    const list = [];
-    semesters.forEach((sem) => {
-      (namesBySemester[sem] || []).forEach((name, idx) => {
-        list.push({
-          id: id++,
-          semester: sem,
-          name,
-          imageUrl: placeholderImage,
-          totalQuestions: 50 + ((id + idx * 7) % 120),
-          helpText: `Notes et explications pour ${name}`,
-        });
-      });
-    });
-    return list;
-  }, []);
+    fetchModules();
+  }, [showNewModuleForm]);
 
   const filteredModules = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -230,6 +211,10 @@ const Module = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {loading && (
+              <div className="text-sm text-gray-600">Loading modules...</div>
+            )}
+            {error && <div className="text-sm text-red-600">{error}</div>}
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead>

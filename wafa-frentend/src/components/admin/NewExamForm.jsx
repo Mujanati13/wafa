@@ -25,7 +25,10 @@ const newExamSchema = z.object({
     .url("Enter a valid image URL")
     .or(z.string().length(0))
     .transform((v) => v || ""),
-  helpText: z.string(),
+  helpText: z
+    .string()
+    .optional()
+    .transform((v) => (v == null ? "" : v)),
 });
 
 const NewExamForm = ({ setShowNewExamForm, modules, years }) => {

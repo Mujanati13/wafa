@@ -14,6 +14,7 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
+import { api } from "@/lib/utils";
 
 const newModuleSchema = z.object({
   name: z.string().min(2, "Module name is required"),
@@ -23,7 +24,10 @@ const newModuleSchema = z.object({
     .url("Enter a valid image URL")
     .or(z.string().length(0))
     .transform((v) => v || ""),
-  helpText: z.string().min(2, "Please add the help text shown in the ?"),
+  helpText: z
+    .string()
+    .optional()
+    .transform((v) => (v == null ? "" : v)),
 });
 
 const NewModuleForm = ({ setShowNewModuleForm }) => {
@@ -43,6 +47,14 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
     setIsSubmitting(true);
     try {
       // TODO: Replace with API integration
+      const res = await api.post("/modules/create", {
+        name: data.name,
+        semester: data.semester,
+        imageUrl: data.imageUrl,
+        infoText: data.helpText,
+      });
+      console.log(res);
+
       console.log("New module:", data);
       await new Promise((r) => setTimeout(r, 800));
       form.reset();
@@ -100,8 +112,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                   </FormLabel>
                   <FormControl>
                     <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      {...field}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
