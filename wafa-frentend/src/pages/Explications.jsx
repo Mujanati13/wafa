@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FaFileCircleQuestion } from "react-icons/fa6";
@@ -6,16 +6,49 @@ import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
 import { AiOutlineDelete } from "react-icons/ai";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { MdPlaylistAddCheck } from "react-icons/md";
+import { api } from "@/lib/utils";
 const Explications = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [explanations, setExplanations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const { data } = await api.get("/explanations");
+        const list = Array.isArray(data?.data) ? data.data : [];
+        const mapped = list.map((item) => ({
+          id: item?._id,
+          username: item?.userId?.email || "—",
+          name: item?.userId?.name || "—",
+          question: item?.questionId?.text || "—",
+          explicationTitle: item?.title || "—",
+          date: item?.createdAt
+            ? new Date(item.createdAt).toISOString().slice(0, 10)
+            : "—",
+          images: item?.imageUrl ? [item.imageUrl] : [],
+          text: item?.contentText || "",
+        }));
+        setExplanations(mapped);
+      } catch (e) {
+        setError("Failed to load explanations");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Calculate pagination
-  const totalPages = Math.ceil(explication.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(explanations.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentReports = explication.slice(startIndex, endIndex);
+  const currentReports = explanations.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -98,10 +131,10 @@ const Explications = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Total Reports
+                  Total Explanations
                 </p>
                 <p className="text-xl font-bold text-gray-900">
-                  {explication.length}
+                  {explanations.length}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -114,12 +147,20 @@ const Explications = () => {
 
       <Card>
         <CardContent>
+          {loading && (
+            <div className="py-8 text-center text-gray-600">Loading…</div>
+          )}
+          {error && !loading && (
+            <div className="py-3 px-4 mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    User
+                    Id
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Username
@@ -148,7 +189,7 @@ const Explications = () => {
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <td className="py-4 px-4 font-medium text-gray-900">
-                      {report.name}
+                      {report.id}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {report.username}
@@ -252,8 +293,9 @@ const Explications = () => {
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50 px-6 py-3">
           <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(endIndex, explication.length)}{" "}
-            of {explication.length} results
+            Showing {startIndex + 1} to{" "}
+            {Math.min(endIndex, explanations.length)} of {explanations.length}{" "}
+            results
           </div>
           <div className="flex items-center gap-2">
             {renderPaginationButtons()}
@@ -266,108 +308,4 @@ const Explications = () => {
 
 export default Explications;
 
-const explication = [
-  {
-    id: 1,
-    username: "JohnDoe",
-    name: "John Doe",
-    question: "How do I upload a profile picture?",
-    explicationTitle: "Upload Profile Picture",
-    date: "2024-11-01",
-    image:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-  },
-  {
-    id: 2,
-    username: "JaneSmith",
-    name: "Jane Smith",
-    question: "Where can I find the invoice for my last order?",
-    explicationTitle: "Find Invoice",
-    date: "2024-11-02",
-    text: "Check your account dashboard under 'Billing History'.",
-  },
-  {
-    id: 3,
-    username: "MikeBrown",
-    name: "Mike Brown",
-    question: "How do I reset my password?",
-    explicationTitle: "Reset Password",
-    date: "2024-11-03",
-    images: [
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    ],
-  },
-  {
-    id: 4,
-    username: "SaraLee",
-    name: "Sara Lee",
-    question: "How do I share my project with a colleague?",
-    explicationTitle: "Share Project",
-    date: "2024-11-04",
-    text: "Open the project and click 'Share' in the top-right corner.",
-    image:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-  },
-  {
-    id: 5,
-    username: "ChrisGreen",
-    name: "Chris Green",
-    question: "Can I import data from Excel?",
-    explicationTitle: "Import from Excel",
-    date: "2024-11-05",
-    images: [
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    ],
-  },
-  {
-    id: 6,
-    username: "LindaWhite",
-    name: "Linda White",
-    question: "Where can I see the changelog?",
-    explicationTitle: "View Changelog",
-    date: "2024-11-06",
-    text: "Visit the 'Updates' section in the help center.",
-  },
-  {
-    id: 7,
-    username: "DavidKing",
-    name: "David King",
-    question: "Is there a dark mode?",
-    explicationTitle: "Enable Dark Mode",
-    date: "2024-11-07",
-    text: "Yes, enable it from Settings → Appearance.",
-    images: [
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    ],
-  },
-  {
-    id: 8,
-    username: "EmilyClark",
-    name: "Emily Clark",
-    question: "How do I export my report as PDF?",
-    explicationTitle: "Export Report as PDF",
-    date: "2024-11-08",
-    text: "Open your report and click 'Export' → 'PDF'.",
-  },
-  {
-    id: 9,
-    username: "RobertHall",
-    name: "Robert Hall",
-    question: "Where do I update my payment method?",
-    explicationTitle: "Update Payment Method",
-    date: "2024-11-09",
-    image:
-      "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-  },
-  {
-    id: 10,
-    username: "OliviaYoung",
-    name: "Olivia Young",
-    question: "Can I add more team members to my plan?",
-    explicationTitle: "Add Team Members",
-    date: "2024-11-10",
-    text: "Yes, go to 'Team Settings' and click 'Add Member'.",
-  },
-];
+// dummy data removed; using API data

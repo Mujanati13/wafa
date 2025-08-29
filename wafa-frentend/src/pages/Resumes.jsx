@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FaFileCircleQuestion } from "react-icons/fa6";
@@ -7,11 +7,42 @@ import { AiOutlineDelete } from "react-icons/ai";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { MdPlaylistAddCheck } from "react-icons/md";
 import { FaBook } from "react-icons/fa";
+import { api } from "@/lib/utils";
 const Resumes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [resumes, setResumes] = useState(initialResumes);
+  const [resumes, setResumes] = useState([]);
   const [uploadFile, setUploadFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchResumes = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const { data } = await api.get("/resumes");
+        const list = Array.isArray(data?.data) ? data.data : [];
+        const mapped = list.map((item) => ({
+          id: item?._id,
+          username: item?.userId?.email || "—",
+          name: item?.userId?.name || "—",
+          title: item?.title || "—",
+          pdf: item?.pdfUrl || "",
+          approved: String(item?.status || "").toLowerCase() === "approved",
+          date: item?.createdAt
+            ? new Date(item.createdAt).toISOString().slice(0, 10)
+            : "—",
+        }));
+        setResumes(mapped);
+      } catch (e) {
+        setError("Failed to load resumes");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResumes();
+  }, []);
 
   // Pagination logic
   const totalPages = Math.ceil(resumes.length / itemsPerPage);
@@ -23,12 +54,17 @@ const Resumes = () => {
     setCurrentPage(page);
   };
 
-  const handleApprove = (id) => {
-    setResumes((prev) =>
-      prev.map((resume) =>
-        resume.id === id ? { ...resume, approved: true } : resume
-      )
-    );
+  const handleApprove = async (id) => {
+    try {
+      await api.patch(`/resumes/${id}/status`, { status: "approved" });
+      setResumes((prev) =>
+        prev.map((resume) =>
+          resume.id === id ? { ...resume, approved: true } : resume
+        )
+      );
+    } catch (e) {
+      // noop: keep current state if request fails
+    }
   };
 
   const handleSeePDF = (pdfUrl) => {
@@ -137,12 +173,20 @@ const Resumes = () => {
       </div>
       <Card>
         <CardContent>
+          {loading && (
+            <div className="py-8 text-center text-gray-600">Loading…</div>
+          )}
+          {error && !loading && (
+            <div className="py-3 px-4 mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    User
+                    Id
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Username
@@ -171,7 +215,7 @@ const Resumes = () => {
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <td className="py-4 px-4 font-medium text-gray-900">
-                      {resume.name}
+                      {resume.id}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {resume.username}
@@ -237,140 +281,3 @@ const Resumes = () => {
 };
 
 export default Resumes;
-const initialResumes = [
-  {
-    id: 1,
-    username: "JohnDoe",
-    name: "John Doe",
-    title: "Software Engineer Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: false,
-    date: "2024-10-01",
-  },
-  {
-    id: 2,
-    username: "JaneSmith",
-    name: "Jane Smith",
-    title: "Marketing Manager Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: true,
-    date: "2024-10-03",
-  },
-  {
-    id: 3,
-    username: "MikeBrown",
-    name: "Mike Brown",
-    title: "Data Analyst Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: false,
-    date: "2024-10-05",
-  },
-  {
-    id: 4,
-    username: "SaraLee",
-    name: "Sara Lee",
-    title: "Project Manager Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: false,
-    date: "2024-10-06",
-  },
-  {
-    id: 5,
-    username: "ChrisGreen",
-    name: "Chris Green",
-    title: "Designer Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: true,
-    date: "2024-10-08",
-  },
-  {
-    id: 6,
-    username: "AnnaWhite",
-    name: "Anna White",
-    title: "HR Specialist Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: false,
-    date: "2024-10-10",
-  },
-  {
-    id: 7,
-    username: "TomBlack",
-    name: "Tom Black",
-    title: "Business Analyst Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: true,
-    date: "2024-10-12",
-  },
-  {
-    id: 8,
-    username: "LisaBrown",
-    name: "Lisa Brown",
-    title: "Content Writer Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: false,
-    date: "2024-10-14",
-  },
-  {
-    id: 9,
-    username: "DavidClark",
-    name: "David Clark",
-    title: "QA Engineer Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: false,
-    date: "2024-10-16",
-  },
-  {
-    id: 10,
-    username: "EmilyStone",
-    name: "Emily Stone",
-    title: "Frontend Developer Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: true,
-    date: "2024-10-18",
-  },
-  {
-    id: 11,
-    username: "BrianKing",
-    name: "Brian King",
-    title: "Backend Developer Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: false,
-    date: "2024-10-20",
-  },
-  {
-    id: 12,
-    username: "OliviaYoung",
-    name: "Olivia Young",
-    title: "Product Manager Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: true,
-    date: "2024-10-22",
-  },
-  {
-    id: 13,
-    username: "KevinHill",
-    name: "Kevin Hill",
-    title: "DevOps Engineer Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: false,
-    date: "2024-10-24",
-  },
-  {
-    id: 14,
-    username: "SophiaGreen",
-    name: "Sophia Green",
-    title: "UI/UX Designer Resume.pdf",
-    pdf: "https://ia801204.us.archive.org/10/items/LivreDeLinterneAnesthsiologie/Livre%20de%20l%27interne%20-%20M%C3%A9decine%20interne.pdf",
-    approved: false,
-    date: "2024-10-26",
-  },
-  {
-    id: 15,
-    username: "JackTurner",
-    name: "Jack Turner",
-    title: "System Administrator Resume.pdf",
-    pdf: "https://cdn.pixabay.com/photo/2014/06/03/19/38/board-361516_640.jpg",
-    approved: true,
-    date: "2024-10-28",
-  },
-];

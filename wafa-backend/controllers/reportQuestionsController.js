@@ -32,29 +32,69 @@ export const reportQuestionsController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        const reports = await ReportQuestions.find();
-        res.status(200).json({ success: true, data: reports });
+        const reports = await ReportQuestions.find()
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
+
+        const shaped = reports.map((r) => ({
+            ...r,
+            username: r.userId?.username,
+            questionTitle: r.questionId?.text,
+        }));
+
+        res.status(200).json({ success: true, data: shaped });
     }),
 
     getById: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const report = await ReportQuestions.findById(id);
+        const report = await ReportQuestions.findById(id)
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
         if (!report) {
             return res.status(404).json({ success: false, message: "Report not found" });
         }
-        res.status(200).json({ success: true, data: report });
+        res.status(200).json({
+            success: true,
+            data: {
+                ...report,
+                username: report.userId?.username,
+                questionTitle: report.questionId?.text,
+            },
+        });
     }),
 
     getByUserId: asyncHandler(async (req, res) => {
         const { userId } = req.params;
-        const reports = await ReportQuestions.find({ userId });
-        res.status(200).json({ success: true, data: reports });
+        const reports = await ReportQuestions.find({ userId })
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
+
+        const shaped = reports.map((r) => ({
+            ...r,
+            username: r.userId?.username,
+            questionTitle: r.questionId?.text,
+        }));
+
+        res.status(200).json({ success: true, data: shaped });
     }),
 
     getByQuestionId: asyncHandler(async (req, res) => {
         const { questionId } = req.params;
-        const reports = await ReportQuestions.find({ questionId });
-        res.status(200).json({ success: true, data: reports });
+        const reports = await ReportQuestions.find({ questionId })
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
+
+        const shaped = reports.map((r) => ({
+            ...r,
+            username: r.userId?.username,
+            questionTitle: r.questionId?.text,
+        }));
+
+        res.status(200).json({ success: true, data: shaped });
     })
 };
 

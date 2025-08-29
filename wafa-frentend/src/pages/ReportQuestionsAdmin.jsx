@@ -1,22 +1,52 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaFileCircleQuestion } from "react-icons/fa6";
 import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
 import { AiOutlineDelete } from "react-icons/ai";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import { FilePenLine } from "lucide-react";
+import { api } from "@/lib/utils";
 
 const ReportQuestionsAdmin = () => {
+  // Data state
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await api.get("/report-questions/all");
+        const list = (data?.data || []).map((r) => ({
+          id: r?._id,
+          name: r?.username || r?.userId?.username || "—",
+          username: r?.username || r?.userId?.username || "—",
+          question: r?.questionTitle || r?.questionId?.text || "—",
+          text: r?.details || "",
+          date: (r?.createdAt || r?.updatedAt || "").slice(0, 10),
+        }));
+        setReports(list);
+      } catch (e) {
+        setError("Failed to load reports");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, []);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
   // Calculate pagination
-  const totalPages = Math.ceil(reportQuestionsByUser.length / itemsPerPage);
+  const totalPages = Math.ceil(reports.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentReports = reportQuestionsByUser.slice(startIndex, endIndex);
+  const currentReports = reports.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -101,7 +131,7 @@ const ReportQuestionsAdmin = () => {
                   Total Reports
                 </p>
                 <p className="text-xl font-bold text-gray-900">
-                  {reportQuestionsByUser.length}
+                  {reports.length}
                 </p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -119,7 +149,7 @@ const ReportQuestionsAdmin = () => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    User
+                    Id
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     Username
@@ -145,7 +175,7 @@ const ReportQuestionsAdmin = () => {
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <td className="py-4 px-4 font-medium text-gray-900">
-                      {report.name}
+                      {report.id}
                     </td>
                     <td className="py-4 px-4 text-gray-700">
                       {report.username}
@@ -179,12 +209,17 @@ const ReportQuestionsAdmin = () => {
         </CardContent>
       </Card>
       {/* Pagination Footer */}
-      {totalPages > 1 && (
+      {reports.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50 px-6 py-3">
           <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to{" "}
-            {Math.min(endIndex, reportQuestionsByUser.length)} of{" "}
-            {reportQuestionsByUser.length} results
+            {loading && "Loading..."}
+            {!loading && !error && (
+              <>
+                Showing {startIndex + 1} to {Math.min(endIndex, reports.length)}{" "}
+                of {reports.length} results
+              </>
+            )}
+            {!loading && error && <span className="text-red-600">{error}</span>}
           </div>
           <div className="flex items-center gap-2">
             {renderPaginationButtons()}
@@ -196,86 +231,3 @@ const ReportQuestionsAdmin = () => {
 };
 
 export default ReportQuestionsAdmin;
-
-const reportQuestionsByUser = [
-  {
-    id: 1,
-    username: "JohnDoe",
-    name: "John Doe",
-    question: "How can I reset my account password?",
-    text: "I tried the reset link but it didn’t work.",
-    date: "2024-09-30",
-  },
-  {
-    id: 2,
-    username: "JaneSmith",
-    name: "Jane Smith",
-    question: "Why is my order delayed?",
-    text: "My package was supposed to arrive yesterday.",
-    date: "2024-10-02",
-  },
-  {
-    id: 3,
-    username: "MikeBrown",
-    name: "Mike Brown",
-    question: "Can I change my subscription plan?",
-    text: "I want to switch from monthly to yearly billing.",
-    date: "2024-10-04",
-  },
-  {
-    id: 4,
-    username: "SaraLee",
-    name: "Sara Lee",
-    question: "Is there a refund policy?",
-    text: "I bought the wrong product by mistake.",
-    date: "2024-10-06",
-  },
-  {
-    id: 5,
-    username: "ChrisGreen",
-    name: "Chris Green",
-    question: "How do I update my profile picture?",
-    text: "I can’t find the upload button.",
-    date: "2024-10-08",
-  },
-  {
-    id: 6,
-    username: "LindaWhite",
-    name: "Linda White",
-    question: "Can I have multiple accounts?",
-    text: "I want separate accounts for personal and work.",
-    date: "2024-10-10",
-  },
-  {
-    id: 7,
-    username: "DavidKing",
-    name: "David King",
-    question: "Is there a mobile app?",
-    text: "I can’t find it on the app store.",
-    date: "2024-10-12",
-  },
-  {
-    id: 8,
-    username: "EmilyClark",
-    name: "Emily Clark",
-    question: "How do I delete my account?",
-    text: "I want to remove all my data permanently.",
-    date: "2024-10-14",
-  },
-  {
-    id: 9,
-    username: "RobertHall",
-    name: "Robert Hall",
-    question: "Why am I not receiving notifications?",
-    text: "I’ve checked my settings but still nothing.",
-    date: "2024-10-16",
-  },
-  {
-    id: 10,
-    username: "OliviaYoung",
-    name: "Olivia Young",
-    question: "Can I use your service abroad?",
-    text: "I will be traveling to Europe next month.",
-    date: "2024-10-18",
-  },
-];

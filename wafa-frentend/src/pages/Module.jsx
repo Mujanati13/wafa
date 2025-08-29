@@ -39,6 +39,8 @@ const Module = () => {
         setLoading(true);
         setError(null);
         const { data } = await api.get("/modules");
+        console.log(data);
+
         const placeholderImage =
           "http://www.univ-mosta.dz/medecine/wp-content/uploads/sites/4/2021/12/telechargement-1-1.jpg";
         const list = (data?.data || []).map((m) => ({
@@ -46,7 +48,7 @@ const Module = () => {
           semester: m?.semester || "",
           name: m?.name || "",
           imageUrl: m?.imageUrl || placeholderImage,
-          totalQuestions: Array.isArray(m?.questions) ? m.questions.length : 0,
+          totalQuestions: m.totalQuestions,
           helpText: m?.infoText || "",
         }));
         setModules(list);
