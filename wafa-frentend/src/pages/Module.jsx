@@ -18,8 +18,9 @@ import {
   FiSearch,
 } from "react-icons/fi";
 import NewModuleForm from "../components/admin/NewModuleForm";
+import EditModuleForm from "../components/admin/EditModuleForm";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
-import { Trash } from "lucide-react";
+import { Trash, Edit } from "lucide-react";
 import { api } from "../lib/utils";
 
 const Module = () => {
@@ -32,6 +33,8 @@ const Module = () => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedModule, setSelectedModule] = useState(null);
 
   React.useEffect(() => {
     const fetchModules = async () => {
@@ -59,7 +62,18 @@ const Module = () => {
       }
     };
     fetchModules();
-  }, [showNewModuleForm]);
+  }, [showNewModuleForm, showEditForm]);
+
+  const handleEditModule = (module) => {
+    setSelectedModule(module);
+    setShowEditForm(true);
+  };
+
+  const handleModuleUpdated = () => {
+    // This will trigger the useEffect to refetch modules
+    setShowEditForm(false);
+    setSelectedModule(null);
+  };
 
   const filteredModules = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -282,10 +296,13 @@ const Module = () => {
                         {m.helpText}
                       </td>
                       <td className="py-4 px-4 text-gray-700 flex gap-2.5 items-center ">
-                        <IoCheckmarkDoneCircle
-                          className="text-green-600 hover:text-green-300 cursor-pointer"
-                          fontSize={20}
+                        <Edit
+                          size={18}
+                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                          onClick={() => handleEditModule(m)}
+                          title="Edit module"
                         />
+                      
                         <Trash
                           size={18}
                           className="hover:text-red-500 cursor-pointer"
@@ -310,6 +327,14 @@ const Module = () => {
 
       {showNewModuleForm && (
         <NewModuleForm setShowNewModuleForm={setShowNewModuleForm} />
+      )}
+
+      {showEditForm && selectedModule && (
+        <EditModuleForm
+          module={selectedModule}
+          setShowEditForm={setShowEditForm}
+          onModuleUpdated={handleModuleUpdated}
+        />
       )}
     </div>
   );

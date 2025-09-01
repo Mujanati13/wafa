@@ -51,6 +51,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Test route for debugging
+app.get("/api/v1/test", (req, res) => {
+  res.json({ message: "Backend is working!", timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use("/api/v1", routes);
 

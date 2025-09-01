@@ -66,17 +66,12 @@ const SideBarAdmin = () => {
       label: "Users",
       icon: FaUsers,
       items: [
+        
         {
-          id: "FreeUsers",
-          label: "Free Users",
+          id: "Users",
+          label: "Users",
           icon: FaUsers,
-          path: "/admin/usersFree",
-        },
-        {
-          id: "PayUsers",
-          label: "Paying Users",
-          icon: FaUsers,
-          path: "/admin/usersPaying",
+          path: "/admin/users",
         },
       ],
     },

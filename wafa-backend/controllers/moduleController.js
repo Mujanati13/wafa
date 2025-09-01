@@ -21,11 +21,19 @@ export const moduleController = {
 
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { name, semester, imageUrl, infoText } = req.body;
+        const updateData = {};
+
+        // Only include fields that are provided in the request
+        if (req.body.name !== undefined) updateData.name = req.body.name;
+        if (req.body.semester !== undefined) updateData.semester = req.body.semester;
+        if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
+        if (req.body.infoText !== undefined) updateData.infoText = req.body.infoText;
+
+        console.log(`Updating module ${id} with data:`, updateData);
 
         const updatedModule = await moduleSchema.findByIdAndUpdate(
             id,
-            { name, semester, imageUrl, infoText },
+            updateData,
             { new: true, runValidators: true }
         );
 

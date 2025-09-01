@@ -22,6 +22,7 @@ import AdminLayout from "./components/layout/AdminLayout";
 import AdminPage from "./pages/AdminPage";
 import AnayticsPage from "./pages/AnayticsPage";
 import Users from "./components/admin/Users";
+import UsersWithTabs from "./components/admin/UsersWithTabs";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import ReportQuestionsAdmin from "./pages/ReportQuestionsAdmin";
 import Explications from "./pages/Explications";
@@ -66,9 +67,8 @@ export default function App() {
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="analytics" element={<AnayticsPage />} />
-          <Route path="users" element={<Users />} />
-          <Route path="usersFree" element={<Users />} />
-          <Route path="usersPaying" element={<Users />} />
+          <Route path="users" element={<UsersWithTabs />} />
+
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<p>exams</p>} />
           <Route path="report-questions" element={<ReportQuestionsAdmin />} />
@@ -92,8 +92,11 @@ export default function App() {
           <Route path="importExamParYears" element={<ImportExamParYears />} />
           <Route path="addQuestions" element={<AddQuestions />} />
           <Route path="importExplications" element={<ImportExplications />} />
-          <Route path="createCategoriesForCourses" element={<CreateCategoriesForCourses />} />
-          </Route>
+          <Route
+            path="createCategoriesForCourses"
+            element={<CreateCategoriesForCourses />}
+          />
+        </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
       </Routes>
     </Router>
