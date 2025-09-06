@@ -25,6 +25,8 @@ import { ImFontSize } from "react-icons/im";
 import { PiImagesSquareFill } from "react-icons/pi";
 import ResumeModel from "../components/ExamsPage/ResumeModel";
 import ExplicationModel from "../components/ExamsPage/ExplicationModel";
+import { api } from "@/lib/utils";
+import { LuAlignVerticalSpaceBetween } from "react-icons/lu";
 
 const ExamPage = () => {
   const { examId } = useParams();
@@ -40,258 +42,42 @@ const ExamPage = () => {
   const [fontSize, setFontSize] = useState(16); // Default font size
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
   const [help, setHelp] = useState(false);
-  // Exam data with medical questions - updated to support multiple correct answers
-  const examData = {
-    gyneco: {
-      title: "Santé publique",
-      subject: "nom d'app",
-      description: "Janvier 2024 Q 25 ",
-      totalQuestions: 50,
-      completed: 11,
-      questions: [
-        {
-          id: 1,
-          period: "Septembre 2024",
-          status: "current",
-          question: "Text question",
-          options: [
-            "Sur les vaccins",
-            "Sur la sérothérapie",
-            "Sur la biothérapie",
-            "Sur les Anti Inflammatoires non stéroïdiens",
-            "Aucune réponse n'est juste",
-          ],
-          correctAnswers: ["C", "D"], // Multiple correct answers
-          multipleChoice: true,
-          explanation:
-            "La biothérapie et les AINS sont des traitements importants en médecine.",
-        },
-        {
-          id: 2,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Question sur les traitements médicaux:",
-          options: ["Option A", "Option B", "Option C", "Option D", "Option E"],
-          correctAnswers: ["A", "B"], // Multiple correct answers
-          multipleChoice: true,
-          explanation: "Explication de la réponse correcte.",
-        },
-        {
-          id: 3,
-          period: "Septembre 2024",
-          status: "pending",
-          question:
-            "Quels sont les facteurs de risque de l'hypertension artérielle ?",
-          options: [
-            "Tabagisme",
-            "Sédentarité",
-            "Consommation excessive de sel",
-            "Exercice physique régulier",
-            "Obésité",
-          ],
-          correctAnswers: ["A", "B", "C", "E"],
-          multipleChoice: true,
-          explanation:
-            "Le tabagisme, la sédentarité, la consommation excessive de sel et l'obésité sont des facteurs de risque.",
-        },
-        {
-          id: 4,
-          period: "Septembre 2024",
-          status: "pending",
-          question:
-            "Parmi les suivants, lesquels sont des vaccins obligatoires en France chez l’enfant ?",
-          options: ["BCG", "Hépatite B", "Coqueluche", "Rougeole", "Tétanos"],
-          correctAnswers: ["B", "C", "D", "E"],
-          multipleChoice: true,
-          explanation:
-            "Hépatite B, coqueluche, rougeole et tétanos sont obligatoires.",
-        },
-        {
-          id: 5,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Quels sont des exemples de maladies auto-immunes ?",
-          options: [
-            "Diabète de type 1",
-            "Polyarthrite rhumatoïde",
-            "Tuberculose",
-            "Lupus érythémateux disséminé",
-            "Grippe",
-          ],
-          correctAnswers: ["A", "B", "D"],
-          multipleChoice: true,
-          explanation:
-            "Le diabète de type 1, la polyarthrite rhumatoïde et le lupus sont des maladies auto-immunes.",
-        },
-        {
-          id: 6,
-          period: "Septembre 2024",
-          status: "pending",
-          question:
-            "Lesquels des éléments suivants sont des symptômes du diabète ?",
-          options: [
-            "Polyurie",
-            "Polydipsie",
-            "Perte de poids",
-            "Fièvre",
-            "Vision trouble",
-          ],
-          correctAnswers: ["A", "B", "C", "E"],
-          multipleChoice: true,
-          explanation:
-            "Polyurie, polydipsie, perte de poids et vision trouble sont des symptômes du diabète.",
-        },
-        {
-          id: 7,
-          period: "Septembre 2024",
-          status: "pending",
-          question:
-            "Quels sont des moyens de prévention des maladies cardiovasculaires ?",
-          options: [
-            "Arrêt du tabac",
-            "Activité physique régulière",
-            "Consommation excessive d’alcool",
-            "Alimentation équilibrée",
-            "Gestion du stress",
-          ],
-          correctAnswers: ["A", "B", "D", "E"],
-          multipleChoice: true,
-          explanation:
-            "Arrêter de fumer, faire du sport, manger équilibré et gérer le stress préviennent les maladies cardiovasculaires.",
-        },
-        {
-          id: 8,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Quels sont des exemples d’antibiotiques ?",
-          options: [
-            "Amoxicilline",
-            "Ibuprofène",
-            "Ciprofloxacine",
-            "Paracétamol",
-            "Azithromycine",
-          ],
-          correctAnswers: ["A", "C", "E"],
-          multipleChoice: true,
-          explanation:
-            "Amoxicilline, ciprofloxacine et azithromycine sont des antibiotiques.",
-        },
-        {
-          id: 9,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Quels sont des facteurs de risque du cancer du poumon ?",
-          options: [
-            "Tabagisme",
-            "Exposition à l’amiante",
-            "Pollution de l’air",
-            "Consommation de fruits",
-            "Antécédents familiaux",
-          ],
-          correctAnswers: ["A", "B", "C", "E"],
-          multipleChoice: true,
-          explanation:
-            "Tabac, amiante, pollution et antécédents familiaux sont des facteurs de risque.",
-        },
-        {
-          id: 10,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Lesquels des suivants sont des signes d’infection ?",
-          options: [
-            "Fièvre",
-            "Rougeur",
-            "Douleur",
-            "Somnolence",
-            "Chaleur locale",
-          ],
-          correctAnswers: ["A", "B", "C", "E"],
-          multipleChoice: true,
-          explanation:
-            "Fièvre, rougeur, douleur et chaleur locale sont des signes d’infection.",
-        },
-        {
-          id: 11,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Quels sont des exemples de maladies chroniques ?",
-          options: [
-            "Asthme",
-            "Grippe",
-            "Diabète",
-            "Hypertension artérielle",
-            "Varicelle",
-          ],
-          correctAnswers: ["A", "C", "D"],
-          multipleChoice: true,
-          explanation:
-            "Asthme, diabète et hypertension sont des maladies chroniques.",
-        },
-        {
-          id: 12,
-          period: "Septembre 2024",
-          status: "pending",
-          question: "Quels sont des modes de transmission du VIH ?",
-          options: [
-            "Rapports sexuels non protégés",
-            "Partage de seringues",
-            "Poignée de main",
-            "Transmission mère-enfant",
-            "Toux",
-          ],
-          correctAnswers: ["A", "B", "D"],
-          multipleChoice: true,
-          explanation:
-            "Rapports non protégés, seringues partagées et transmission mère-enfant transmettent le VIH.",
-        },
-      ],
-    },
+  const [examQuestionData, setExamQuestionData] = useState(null); // Backend exam data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Get current question from backend data
+  const getCurrentQuestion = () => {
+    if (!examQuestionData || !examQuestionData.questions) return null;
+
+    // Flatten all questions from all sessions
+    const allQuestions = [];
+    Object.values(examQuestionData.questions).forEach((sessionQuestions) => {
+      allQuestions.push(...sessionQuestions);
+    });
+
+    return allQuestions[currentQuestion] || null;
   };
 
-  const exam = examData[examId] || examData["gyneco"];
-  const question = exam.questions[currentQuestion];
+  const question = getCurrentQuestion();
 
-  const examPeriods = [
-    {
-      id: "octobre2024",
-      label: "Octobre 2024",
-      questions: [
-        { id: 4, status: "active" },
-        { id: 5, status: "pending" },
-      ],
-    },
-    {
-      id: "janvier2023",
-      label: "Janvier 2023",
-      questions: [{ id: 3, status: "active" }],
-    },
-    {
-      id: "normal2022",
-      label: "Normal 2022",
-      questions: [
-        { id: 1, status: "active" },
-        { id: 2, status: "pending" },
-        { id: 6, status: "pending" },
-        { id: 7, status: "pending" },
-        { id: 8, status: "pending" },
-      ],
-    },
-    {
-      id: "normal2021",
-      label: "Normal 2021",
-      questions: [],
-    },
-    {
-      id: "normal2020",
-      label: "Normal 2020",
-      questions: [],
-    },
-    {
-      id: "normal2019",
-      label: "Normal 2019",
-      questions: [],
-    },
-  ];
+  // Generate exam periods from backend data
+  const getExamPeriods = () => {
+    if (!examQuestionData || !examQuestionData.questions) return [];
+
+    return Object.entries(examQuestionData.questions).map(
+      ([sessionLabel, questions]) => ({
+        id: sessionLabel.toLowerCase().replace(/\s+/g, ""),
+        label: sessionLabel,
+        questions: questions.map((q, index) => ({
+          id: q._id,
+          status: "pending",
+        })),
+      })
+    );
+  };
+
+  const examPeriods = getExamPeriods();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -413,11 +199,34 @@ const ExamPage = () => {
   const handleExit = () => {
     navigate("/dashboard/home");
   };
+  // Fetch exam data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get("exams/all/" + examId);
+        setExamQuestionData(response.data.data);
+      } catch (err) {
+        setError("Failed to load exam data");
+        console.error("Error fetching exam data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [examId]);
 
   // Check if answer is correct
   const isAnswerCorrect = () => {
+    if (!question) return false;
+
     const userAnswers = selectedAnswers[currentQuestion] || [];
-    const correctAnswers = question.correctAnswers || [];
+    const correctAnswers = question.options
+      .map((option, index) =>
+        option.isCorrect ? String.fromCharCode(65 + index) : null
+      )
+      .filter(Boolean);
 
     if (userAnswers.length !== correctAnswers.length) return false;
 
@@ -429,9 +238,12 @@ const ExamPage = () => {
 
   // Get answer option styling based on correctness and selection
   const getAnswerOptionStyle = (answerKey, index) => {
+    if (!question)
+      return "bg-white text-gray-700 border-gray-200 hover:bg-gray-50";
+
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
     const isSelected = currentQuestionAnswers.includes(answerKey);
-    const isCorrect = question.correctAnswers.includes(answerKey);
+    const isCorrect = question.options[index]?.isCorrect || false;
 
     if (showResults) {
       if (isCorrect && isSelected) {
@@ -452,10 +264,12 @@ const ExamPage = () => {
   };
 
   // Get icon for answer option
-  const getAnswerIcon = (answerKey) => {
+  const getAnswerIcon = (answerKey, index) => {
+    if (!question) return null;
+
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
     const isSelected = currentQuestionAnswers.includes(answerKey);
-    const isCorrect = question.correctAnswers.includes(answerKey);
+    const isCorrect = question.options[index]?.isCorrect || false;
 
     if (showResults) {
       if (isCorrect) {
@@ -465,7 +279,11 @@ const ExamPage = () => {
       }
     }
 
-    if (question.multipleChoice) {
+    // Check if this is a multiple choice question (more than one correct answer)
+    const correctAnswersCount = question.options.filter(
+      (opt) => opt.isCorrect
+    ).length;
+    if (correctAnswersCount > 1) {
       return isSelected ? <FaCheck className="w-3 h-3" /> : null;
     }
 
@@ -474,8 +292,21 @@ const ExamPage = () => {
 
   // Get feedback message based on user's answer
   const getFeedbackMessage = () => {
+    if (!question) {
+      return {
+        type: "incorrect",
+        message: "Question non disponible.",
+        icon: <FaTimesCircle className="w-5 h-5 text-red-500" />,
+      };
+    }
+
     const userAnswers = selectedAnswers[currentQuestion] || [];
-    const correctAnswers = question.correctAnswers || [];
+    const correctAnswers = question.options
+      .map((option, index) =>
+        option.isCorrect ? String.fromCharCode(65 + index) : null
+      )
+      .filter(Boolean);
+
     const hasSelectedCorrect = userAnswers.some((answer) =>
       correctAnswers.includes(answer)
     );
@@ -508,6 +339,50 @@ const ExamPage = () => {
     }
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement de l'examen...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <p className="text-red-600 text-lg mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show no data state
+  if (!examQuestionData || !question) {
+    return (
+      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-500 text-6xl mb-4">📝</div>
+          <p className="text-gray-600 text-lg">
+            Aucune question trouvée pour cet examen.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-h-screen bg-gray-50 flex relative">
       {/* Top Header Bar */}
@@ -518,7 +393,9 @@ const ExamPage = () => {
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
               <span className="text-blue-600 text-sm">📊</span>
             </div>
-            <span className="font-semibold text-gray-900">Santé publique</span>
+            <span className="font-semibold text-gray-900">
+              {examQuestionData?.moduleName || "Examen"}
+            </span>
           </div>
 
           {/* Center - App Name */}
@@ -588,21 +465,28 @@ const ExamPage = () => {
 
               {expandedPeriods[period.id] && period.questions.length > 0 && (
                 <div className="ml-8 mt-2">
-                  <div className="grid grid-cols-5 ">
+                  <div className="grid grid-cols-5 gap-5">
                     {period.questions.map((q, index) => {
                       // Determine color based on position (alternating pattern like in the image)
                       const isReddishPink = index % 5 < 2 || index % 5 >= 3;
                       const bgColor = isReddishPink
                         ? "bg-rose-400"
                         : "bg-teal-400";
-                      const isCurrentQuestion = q.id === question.id;
+                      const isCurrentQuestion = q.id === question?._id;
 
                       return (
                         <button
                           key={q.id}
                           onClick={() => {
-                            const questionIndex = exam.questions.findIndex(
-                              (eq) => eq.id === q.id
+                            // Find the question index in the flattened questions array
+                            const allQuestions = [];
+                            Object.values(examQuestionData.questions).forEach(
+                              (sessionQuestions) => {
+                                allQuestions.push(...sessionQuestions);
+                              }
+                            );
+                            const questionIndex = allQuestions.findIndex(
+                              (eq) => eq._id === q.id
                             );
                             if (questionIndex !== -1)
                               setCurrentQuestion(questionIndex);
@@ -613,7 +497,7 @@ const ExamPage = () => {
                               : ""
                           }`}
                         >
-                          {q.id}
+                          {index + 1}
                         </button>
                       );
                     })}
@@ -640,15 +524,24 @@ const ExamPage = () => {
             <div
               className="bg-red-500 h-2 rounded-full"
               style={{
-                width: `${(exam.completed / exam.totalQuestions) * 100}%`,
+                width: `${
+                  examQuestionData?.totalQuestions
+                    ? (currentQuestion / examQuestionData.totalQuestions) * 100
+                    : 0
+                }%`,
               }}
             ></div>
           </div>
           <div className="text-sm text-gray-600">
-            {Math.round((exam.completed / exam.totalQuestions) * 100)}% Complete
+            {examQuestionData?.totalQuestions
+              ? Math.round(
+                  (currentQuestion / examQuestionData.totalQuestions) * 100
+                )
+              : 0}
+            % Complete
           </div>
           <div className="text-sm text-gray-500">
-            {exam.completed}/{exam.totalQuestions}
+            {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
           </div>
         </div>
       </div>
@@ -658,7 +551,11 @@ const ExamPage = () => {
         {/* Top Navigation Bar */}
         <div className="bg-blue-500 text-white px-8 py-3 w-[55vw] mx-auto">
           <div className="flex items-center justify-between">
-            <div className="text-sm">sous module name &gt; year session</div>
+            <div className="text-sm">
+              {examQuestionData?.moduleName || "Module"} &gt;{" "}
+              {examQuestionData?.year || "Année"} -{" "}
+              {examQuestionData?.name || "Session"}
+            </div>
           </div>
         </div>
 
@@ -670,7 +567,7 @@ const ExamPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <span className="text-gray-600 font-medium">
-                    {question.period} Q{question.id}
+                    {question?.sessionLabel || "Session"} Q{currentQuestion + 1}
                   </span>
                   <span className="text-gray-400">|</span>
                   <span className="bg-black text-white px-3 py-1 rounded-full text-sm">
@@ -745,31 +642,37 @@ const ExamPage = () => {
             {/* Question Box */}
             <div className="bg-orange-100 rounded-xl p-6 mb-8 relative">
               <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <span className="text-xs text-gray-600">JPEG</span>
-                </div>
+                {question?.images && question.images.length > 0 ? (
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-xs text-gray-600">IMG</span>
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-xs text-gray-600">TXT</span>
+                  </div>
+                )}
                 <div className="flex-1">
                   <p
                     className="text-gray-800"
                     style={{ fontSize: `${fontSize}px` }}
                   >
-                    {question.question}
+                    {question?.text || "Question non disponible"}
                   </p>
                 </div>
               </div>
               <div className="absolute top-[-15px] right-[50%] bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm">
-                {currentQuestion + 1}/{exam.totalQuestions}
+                {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
               </div>
             </div>
 
             {/* Answer Options */}
             <div className="space-y-4 mb-8">
-              {question.options.map((option, index) => {
+              {question?.options?.map((option, index) => {
                 const answerKey = String.fromCharCode(65 + index);
                 const currentQuestionAnswers =
                   selectedAnswers[currentQuestion] || [];
                 const isSelected = currentQuestionAnswers.includes(answerKey);
-                const isCorrect = question.correctAnswers.includes(answerKey);
+                const isCorrect = option.isCorrect || false;
 
                 return (
                   <button
@@ -806,9 +709,9 @@ const ExamPage = () => {
                         className="font-medium"
                         style={{ fontSize: `${fontSize}px` }}
                       >
-                        {option}
+                        {option.text}
                       </span>
-                      {showResults && getAnswerIcon(answerKey)}
+                      {showResults && getAnswerIcon(answerKey, index)}
                     </div>
                   </button>
                 );
@@ -887,11 +790,21 @@ const ExamPage = () => {
                   {showResults ? "Réponse Vérifiée" : "Vérifier la Réponse"}
                 </button>
                 <button
-                  onClick={() =>
-                    currentQuestion < exam.questions.length - 1 &&
-                    setCurrentQuestion(currentQuestion + 1)
+                  onClick={() => {
+                    const allQuestions = [];
+                    Object.values(examQuestionData.questions).forEach(
+                      (sessionQuestions) => {
+                        allQuestions.push(...sessionQuestions);
+                      }
+                    );
+                    if (currentQuestion < allQuestions.length - 1) {
+                      setCurrentQuestion(currentQuestion + 1);
+                    }
+                  }}
+                  disabled={
+                    currentQuestion >=
+                    (examQuestionData?.totalQuestions || 0) - 1
                   }
-                  disabled={currentQuestion === exam.questions.length - 1}
                   className="p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <FaArrowRight className="w-4 h-4" />
@@ -936,3 +849,8 @@ const ExamPage = () => {
 };
 
 export default ExamPage;
+
+// Néphrologie/uro
+// Med Legal-éthique-travail-deontology
+// Synthèse Thérapeutique
+// Santé Publique

@@ -3,8 +3,8 @@ import QuestionModel from "../models/questionModule.js";
 
 export const questionController = {
     create: asyncHandler(async (req, res) => {
-        const { examId, text, options, note, images } = req.body;
-        const newQuestion = await QuestionModel.create({ examId, text, options, note, images });
+        const { examId, text, options, note, images, sessionLabel } = req.body;
+        const newQuestion = await QuestionModel.create({ examId, text, options, note, images, sessionLabel });
         res.status(201).json({ success: true, data: newQuestion });
     }),
 

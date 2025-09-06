@@ -1,17 +1,69 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaPlay, FaRedo, FaChevronDown } from "react-icons/fa";
 import { IoCloseSharp } from "react-icons/io5";
 import { SiBookstack } from "react-icons/si";
+import { moduleService } from "@/services/moduleService";
 const SubjectsPage = () => {
-  const [showModel, setShowmodal] = useState(false);
+  const [showModel, setShowmodal] = useState({
+    isShown: false,
+    text: "",
+  });
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [expandedCategories, setExpandedCategories] = useState(new Set());
+  const [course, setCours] = useState();
   const { courseId } = useParams();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchData = async (id) => {
+      try {
+        const { data } = await moduleService.getModuleById(id);
+        const moduleData = data?.data;
+
+        if (!moduleData) return;
+
+        // Build a map of examId -> questions count
+        const examIdToQuestionCount = (moduleData.questions || []).reduce(
+          (acc, q) => {
+            const key = q.examId;
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+          },
+          {}
+        );
+
+        // Normalize exams to UI structure
+        const normalizedExams = (moduleData.exams || []).map((e) => ({
+          id: e._id,
+          name: e.name,
+          questions: examIdToQuestionCount[e._id] || 0,
+          completed: 0,
+          progress: 0,
+          description: e.infoText,
+          imageUrl: e.imageUrl,
+          infoText: e.infoText,
+          category: "all",
+        }));
+
+        // Minimal categories for filters
+        const categories = [{ id: "all", name: "Tous" }];
+
+        setCours({
+          id: moduleData._id,
+          name: moduleData.name,
+          image: "📘",
+          categories,
+          exams: normalizedExams,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData(courseId);
+  }, [courseId]);
   // Course data with exam details
   const courseData = {
     "nephro-uro": {
@@ -1043,7 +1095,7 @@ const SubjectsPage = () => {
     },
   };
 
-  const course = courseData[courseId];
+  // const course = courseData[courseId];
 
   if (!course) {
     return (
@@ -1259,15 +1311,11 @@ const SubjectsPage = () => {
               </div>
             </div>
           </div>
-
-         
         </div>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10">
-       
-
         {/* Exam Grid */}
         {filteredExams.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -1281,13 +1329,28 @@ const SubjectsPage = () => {
                 className="cursor-pointer bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
               >
                 {/* Exam Image Placeholder */}
-                <div className="h-32 bg-gradient-to-br from-blue-400 to-teal-500 flex items-center justify-center">
-                  <div className="text-white text-4xl">
-                    <SiBookstack />
+
+                <div className="h-32 bg-gradient-to-br  flex items-center justify-center">
+                  <div className="text-white text-4xl flex items-center justify-center">
+                    {exam.imageUrl ? (
+                      <img
+                        src={exam.imageUrl}
+                        alt={exam.name || ""}
+                        className="h-32 w-full object-contain "
+                      />
+                    ) : (
+                      <span>{exam.image || "📘"}</span>
+                    )}
                   </div>
                   <span
-                    className="absolute top-1 right-4 h-10 w-10 bg-blue-800 text-white rounded-full flex items-center justify-center text-[20px]  hover:rounded-2xl duration-500 cursor-pointer"
-                    onClick={() => setShowmodal(true)}
+                    className="absolute top-1 right-4 h-10 w-10 bg-blue-800 text-white rounded-full flex items-center justify-center text-[20px] hover:rounded-2xl duration-500 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowmodal({
+                        isShown: true,
+                        text: exam.infoText,
+                      });
+                    }}
                   >
                     ?
                   </span>
@@ -1344,7 +1407,7 @@ const SubjectsPage = () => {
           </div>
         )}
       </div>
-      {showModel && (
+      {showModel.isShown && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -1364,11 +1427,7 @@ const SubjectsPage = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
                 Information sur l'examen
               </h2>
-              <p className="text-gray-600 text-center mb-6">
-                Êtes-vous prêt à commencer cet examen&nbsp;? Assurez-vous
-                d'avoir le temps nécessaire et d'être dans un environnement
-                calme. Bonne chance&nbsp;!
-              </p>
+              <p className="text-gray-600 text-center mb-6">{showModel.text}</p>
             </div>
           </motion.div>
         </div>

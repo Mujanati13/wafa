@@ -1,31 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaUser,
-  FaTrophy,
-  FaClock,
-  FaPlay,
-  FaUsers,
-  FaGraduationCap,
-  FaCalendarAlt,
-  FaFileAlt,
-  FaStethoscope,
-  FaMedkit,
-  FaBrain,
-  FaHeart,
-  FaEye,
-  FaBone,
-  FaCheck,
-  FaStar,
-  FaChartLine,
-  FaFilter,
-  FaDownload,
-} from "react-icons/fa";
+
+import { api } from "@/lib/utils";
+import { moduleService } from "@/services/moduleService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [semester, setSemester] = useState("S10 med");
+  const [semester, setSemester] = useState("S1");
+  const [coursesData, setCoursesData] = useState();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data } = await moduleService.getAllmodules();
+      localStorage.setItem("modules", JSON.stringify(data.data));
+      setCoursesData(data.data);
+    };
+    fetchData();
+  }, []);
   // Course data based on the uploaded images
   const courses = [
     {
@@ -113,19 +105,6 @@ const Dashboard = () => {
     },
   ];
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case "hard":
-        return "bg-red-500 text-white";
-      case "medium":
-        return "bg-blue-500 text-white";
-      case "easy":
-        return "bg-green-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
-
   const handleCourseClick = (courseId) => {
     navigate(`/dashboard/subjects/${courseId}`);
   };
@@ -165,7 +144,10 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label htmlFor="semester-select" className="text-gray-700 font-medium">
+          <label
+            htmlFor="semester-select"
+            className="text-gray-700 font-medium"
+          >
             Semestre:
           </label>
           <select
@@ -174,13 +156,18 @@ const Dashboard = () => {
             }}
             id="semester-select"
             className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-blue-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-            defaultValue="S10 med"
+            defaultValue="S1"
           >
-            <option value="S10 med">S10 med</option>
-            <option value="S11 med">S11 med</option>
-            <option value="S12 med">S12 med</option>
-            <option value="S13 med">S13 med</option>
-            <option value="S14 med">S14 med</option>
+            <option value="S10">S1</option>
+            <option value="S11">S2</option>
+            <option value="S12">S3</option>
+            <option value="S13">S4</option>
+            <option value="S14">S5</option>
+            <option value="S15">S6</option>
+            <option value="S16">S7</option>
+            <option value="S17">S8</option>
+            <option value="S18">S9</option>
+            <option value="S19">S10</option>
           </select>
         </div>
       </div>
@@ -194,53 +181,57 @@ const Dashboard = () => {
         <div></div>
         {/* Courses Section */}
         <div className="w-full">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Cours</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6 cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300"
-                onClick={() => handleCourseClick(course.id)}
-              >
-                {/* Course Icon and Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <img
-                    src={course.img}
-                    alt={course.name}
-                    className="w-full h-50 object-cover"
-                  />
-                </div>
-
-                {/* Course Title */}
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  {course.name}
-                </h3>
-
-                {/* Progress */}
-                <div className="flex items-center space-x-2 mb-4">
-                  <div className="flex-1 bg-blue-100 rounded-full h-2">
-                    <div
-                      className={`bg-gradient-to-r ${course.color} h-2 rounded-full transition-all duration-300`}
-                      style={{ width: `${course.progress}%` }}
-                    ></div>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Modules </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {coursesData &&
+              coursesData?.map((course) => (
+                <motion.div
+                  key={course._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-6 cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300"
+                  onClick={() => handleCourseClick(course._id)}
+                >
+                  {/* Course Icon and Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <img
+                      src={course.imageUrl}
+                      alt={course.name}
+                      className="w-full h-50 object-cover"
+                    />
                   </div>
-                  <span className="text-gray-600 text-sm">
-                    {course.progress}%
-                  </span>
-                </div>
 
-                {/* Course Stats */ }
-                <div className="flex items-center justify-between">
-                <div className="text-gray-600 text-sm">
-                  0 / {course.exams ? course.exams.length : 8} Questions
-                </div>
+                  {/* Course Title */}
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {course.name}
+                  </h3>
 
-                  <span className="text-blue-600 font-bold h-10 w-10 flex items-center justify-center rounded-full bg-blue-100">?</span></div>
-              </motion.div>
-            ))}
+                  {/* Progress */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="flex-1 bg-blue-100 rounded-full h-2">
+                      <div
+                        className={`bg-gradient-to-r ${course.color} h-2 rounded-full transition-all duration-300`}
+                        style={{ width: `${course.progress}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-gray-600 text-sm">
+                      {course.progress}%
+                    </span>
+                  </div>
+
+                  {/* Course Stats */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-600 text-sm">
+                      0 / {course.exams ? course.totalQuestions : 8} Questions
+                    </div>
+
+                    <span className="text-blue-600 font-bold h-10 w-10 flex items-center justify-center rounded-full bg-blue-100">
+                      ?
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
           </div>
         </div>
 

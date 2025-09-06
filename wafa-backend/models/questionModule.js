@@ -7,7 +7,7 @@ const questionSchema = new mongoose.Schema(
             ref: "ExamParYear",
             required: true
         },
-        text:{
+        text: {
             type: String,
             required: true
         },
@@ -23,14 +23,18 @@ const questionSchema = new mongoose.Schema(
                 }
             }
         ],
-        note:{
+        note: {
             type: String,
         },
         images: [
             {
                 type: String,
             }
-        ]
+        ],
+        sessionLabel: {
+            type: String,
+            required: true
+        }
     },
     { timestamps: true }
 );

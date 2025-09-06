@@ -8,7 +8,6 @@ router.post("/create", validate(ExamParYearSchema.examParYearSchema), examContro
 router.patch("/update/:id", validate(ExamParYearSchema.updateExamParYearSchema), examController.update);
 router.delete("/delete/:id", examController.delete);
 router.get("/all", examController.getAll);
-router.get("/all", examController.getAll);
 router.get("/all/:id", examController.getById);
 
 export default router;

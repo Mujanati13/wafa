@@ -26,7 +26,11 @@ const createQuestionSchema = joi.object({
         'any.required': 'options are required'
     }),
     note: joi.string().allow('', null),
-    images: joi.array().items(joi.string().uri()).default([])
+    images: joi.array().items(joi.string().uri()).default([]),
+    sessionLabel: joi.string().required().messages({
+        'string.base': 'sessionLabel must be a string',
+        'any.required': 'sessionLabel is required'
+    })
 });
 
 const updateQuestionSchema = joi.object({

@@ -69,11 +69,6 @@ export const moduleController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        // Import models here or at the top of the file as needed
-        // import ExamParYear from "../models/examParYearModel.js";
-        // import Question from "../models/questionModule.js";
-        // Assuming they are already imported
-
         // Get all modules
         const modules = await moduleSchema.find({}).lean();
 
@@ -94,31 +89,46 @@ export const moduleController = {
         const allExamParYearIds = examParYears.map(epy => epy._id);
         const questions = await questionModule.find({ examId: { $in: allExamParYearIds } }).lean();
 
+        // Build a map from examParYearId -> moduleId
+        const examIdToModuleId = {};
+        examParYears.forEach(epy => {
+            examIdToModuleId[epy._id.toString()] = epy.moduleId.toString();
+        });
+
+        // Group exams by moduleId
+        const moduleIdToExams = {};
+        examParYears.forEach(epy => {
+            const moduleId = epy.moduleId.toString();
+            if (!moduleIdToExams[moduleId]) moduleIdToExams[moduleId] = [];
+            moduleIdToExams[moduleId].push(epy);
+        });
+
         // Count questions per module
         const moduleIdToQuestionCount = {};
+        const moduleIdToQuestions = {};
         questions.forEach(q => {
             // Find which module this question belongs to
             const examId = q.examId.toString();
-            const epy = examParYears.find(e => e._id.toString() === examId);
-            if (epy) {
-                const moduleId = epy.moduleId.toString();
-                if (!moduleIdToQuestionCount[moduleId]) {
-                    moduleIdToQuestionCount[moduleId] = 0;
-                }
-                moduleIdToQuestionCount[moduleId]++;
-            }
+            const moduleId = examIdToModuleId[examId];
+            if (!moduleId) return;
+            if (!moduleIdToQuestionCount[moduleId]) moduleIdToQuestionCount[moduleId] = 0;
+            if (!moduleIdToQuestions[moduleId]) moduleIdToQuestions[moduleId] = [];
+            moduleIdToQuestionCount[moduleId]++;
+            moduleIdToQuestions[moduleId].push(q);
         });
 
         // Attach question count to each module
-        const modulesWithQuestionCount = modules.map(m => ({
+        const modulesWithRelations = modules.map(m => ({
             ...m,
-            totalQuestions: moduleIdToQuestionCount[m._id.toString()] || 0
+            totalQuestions: moduleIdToQuestionCount[m._id.toString()] || 0,
+            exams: moduleIdToExams[m._id.toString()] || [],
+            questions: moduleIdToQuestions[m._id.toString()] || []
         }));
 
         res.status(200).json({
             success: true,
-            count: modulesWithQuestionCount.length,
-            data: modulesWithQuestionCount
+            count: modulesWithRelations.length,
+            data: modulesWithRelations
         });
     }),
 
@@ -135,16 +145,19 @@ export const moduleController = {
         }
 
         // Get all ExamParYears for this module
-        const examParYears = await ExamParYear.find({ moduleId: id }).lean();
+        const examParYears = await examParYearModel.find({ moduleId: id }).lean();
         const examParYearIds = examParYears.map(epy => epy._id);
 
         // Get count of questions for these examParYears
-        const questionCount = await Question.countDocuments({ examId: { $in: examParYearIds } });
+        const questions = await questionModule.find({ examId: { $in: examParYearIds } }).lean();
+        const questionCount = questions.length;
 
         res.status(200).json({
             success: true,
             data: {
                 ...module,
+                exams: examParYears,
+                questions,
                 totalQuestions: questionCount
             }
         });

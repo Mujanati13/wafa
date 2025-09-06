@@ -25,6 +25,10 @@ app.use(cors({
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    console.log('Request body type:', typeof req.body);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+  }
   next();
 });
 
@@ -56,8 +60,26 @@ app.get("/api/v1/test", (req, res) => {
   res.json({ message: "Backend is working!", timestamp: new Date().toISOString() });
 });
 
+
+
 // Routes
 app.use("/api/v1", routes);
+
+// JSON parsing error handler
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('JSON Parse Error:', err.message);
+    console.error('Request URL:', req.url);
+    console.error('Request Method:', req.method);
+    console.error('Request Headers:', req.headers);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON format",
+      error: "Malformed JSON in request body"
+    });
+  }
+  next(err);
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -91,6 +91,8 @@ export const examController = {
     }),
     getById: asyncHandler(async (req, res) => {
         const { id } = req.params;
+
+        // Find exam
         const exam = await examModel.findById(id).populate('moduleId', 'name').lean();
         if (!exam) {
             return res.status(404).json({
@@ -98,15 +100,30 @@ export const examController = {
                 message: "Exam not found"
             });
         }
+
         // Get questions related to this exam
         const questions = await QuestionModel.find({ examId: id }).lean();
+
+        // Group questions by session.label
+        const groupedQuestions = questions.reduce((acc, q) => {
+            const session = q.session?.label || "No Session"; // fallback if no session
+            if (!acc[session]) acc[session] = [];
+            acc[session].push(q);
+            return acc;
+        }, {});
+
         res.status(200).json({
             success: true,
             data: {
                 ...exam,
-                moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
-                questions: questions
+                moduleName:
+                    typeof exam.moduleId === 'object' && exam.moduleId !== null
+                        ? exam.moduleId.name
+                        : undefined,
+                totalQuestions: questions.length,
+                questions: groupedQuestions,
             }
         });
     })
+
 };
