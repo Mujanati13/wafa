@@ -3,11 +3,8 @@ import { Outlet } from "react-router";
 import SideBar from "./SideBar";
 import TopBar from "./TopBar";
 
-
 const DashBoardLayout = () => {
-
   return (
-
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-white">
       <TopBar />
       <div className="flex flex-1 overflow-hidden">

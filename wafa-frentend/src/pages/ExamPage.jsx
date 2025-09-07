@@ -27,8 +27,12 @@ import ResumeModel from "../components/ExamsPage/ResumeModel";
 import ExplicationModel from "../components/ExamsPage/ExplicationModel";
 import { api } from "@/lib/utils";
 import { LuAlignVerticalSpaceBetween } from "react-icons/lu";
+import Spinner from "@/components/ui/Spinner";
+import { LogOut } from "lucide-react";
+import ProfileMenu from "@/components/profile/ProfileMenu";
 
 const ExamPage = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const { examId } = useParams();
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -342,9 +346,9 @@ const ExamPage = () => {
   // Show loading state
   if (loading) {
     return (
-      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <Spinner color="black" />
           <p className="text-gray-600">Chargement de l'examen...</p>
         </div>
       </div>
@@ -384,7 +388,7 @@ const ExamPage = () => {
   }
 
   return (
-    <div className="max-h-screen bg-gray-50 flex relative">
+    <div className="max-h-screen bg-gray-50 flex relative overflow-hidden">
       {/* Top Header Bar */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -393,13 +397,17 @@ const ExamPage = () => {
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
               <span className="text-blue-600 text-sm">📊</span>
             </div>
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-gray-900 text-[25px]">
               {examQuestionData?.moduleName || "Examen"}
             </span>
           </div>
 
           {/* Center - App Name */}
-          <div className="text-gray-600 font-medium">WAFA</div>
+          <div className="flex items-center space-x-2">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold tracking-wide drop-shadow-sm select-none">
+              WAFA
+            </span>
+          </div>
 
           {/* Right - Controls */}
           <div className="flex items-center space-x-4">
@@ -414,14 +422,15 @@ const ExamPage = () => {
               )}
             </button>
             <span onClick={() => handleExit()} className="cursor-pointer">
-              Exit
+              <LogOut />
             </span>
+            <ProfileMenu isOpen={isOpen} setIsOpen={setIsOpen} />
           </div>
         </div>
       </div>
 
       {/* Left Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative">
+      <div className="w-50 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative">
         {/* Add Button */}
         <div className="p-6 absolute -right-2">
           {!help ? (
@@ -465,7 +474,7 @@ const ExamPage = () => {
 
               {expandedPeriods[period.id] && period.questions.length > 0 && (
                 <div className="ml-8 mt-2">
-                  <div className="grid grid-cols-5 gap-5">
+                  <div className="grid grid-cols-3 gap-5">
                     {period.questions.map((q, index) => {
                       // Determine color based on position (alternating pattern like in the image)
                       const isReddishPink = index % 5 < 2 || index % 5 >= 3;
@@ -547,9 +556,9 @@ const ExamPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll">
+      <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll w-[80vw]">
         {/* Top Navigation Bar */}
-        <div className="bg-blue-500 text-white px-8 py-3 w-[55vw] mx-auto">
+        <div className="bg-blue-400 text-white px-8 py-3 w-[80vw] mx-auto mt-[60px]">
           <div className="flex items-center justify-between">
             <div className="text-sm">
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
@@ -660,7 +669,7 @@ const ExamPage = () => {
                   </p>
                 </div>
               </div>
-              <div className="absolute top-[-15px] right-[50%] bg-gray-300 text-gray-600 px-2 py-1 rounded-full text-sm">
+              <div className="absolute top-[-15px] right-[50%] bg-white text-blue-600 px-2 py-1 rounded-full text-sm">
                 {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
               </div>
             </div>

@@ -106,7 +106,7 @@ export const examController = {
 
         // Group questions by session.label
         const groupedQuestions = questions.reduce((acc, q) => {
-            const session = q.session?.label || "No Session"; // fallback if no session
+            const session = q.sessionLabel || "No Session"; // fallback if no session
             if (!acc[session]) acc[session] = [];
             acc[session].push(q);
             return acc;

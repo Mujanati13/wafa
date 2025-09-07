@@ -66,7 +66,6 @@ const SideBarAdmin = () => {
       label: "Users",
       icon: FaUsers,
       items: [
-        
         {
           id: "Users",
           label: "Users",
