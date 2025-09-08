@@ -6,7 +6,7 @@ export const moduleService = {
             const responce = await api.get("/modules")
             return responce
         } catch (error) {
-            console.error('Error fetching all users:', error);
+            console.error('Error fetching all modules:', error);
             throw error;
         }
     },

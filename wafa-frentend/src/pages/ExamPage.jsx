@@ -449,25 +449,24 @@ const ExamPage = () => {
           />
         </button>
         {/* Add Button */}
-        {!isSidebarCollapsed && (
-          <div className="p-6 absolute -right-10">
-            {!help ? (
-              <button
-                onClick={() => setHelp(true)}
-                className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-              >
-                <FaPlus className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setHelp(false)}
-                className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-              >
-                <FaMinus className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        )}
+
+        <div className="p-6 absolute -right-10">
+          {!help ? (
+            <button
+              onClick={() => setHelp(true)}
+              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+            >
+              <FaPlus className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setHelp(false)}
+              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+            >
+              <FaMinus className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
         {/* Navigation Items */}
         {!isSidebarCollapsed && (
