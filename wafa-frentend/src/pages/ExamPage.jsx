@@ -33,6 +33,7 @@ import ProfileMenu from "@/components/profile/ProfileMenu";
 
 const ExamPage = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { examId } = useParams();
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -185,11 +186,11 @@ const ExamPage = () => {
   };
 
   const increaseFontSize = () => {
-    setFontSize((prev) => Math.min(prev + 2, 24)); // Max 24px
+    setFontSize((prev) => Math.min(prev + 2, 20)); // Max 24px
   };
 
   const decreaseFontSize = () => {
-    setFontSize((prev) => Math.max(prev - 2, 12)); // Min 12px
+    setFontSize((prev) => Math.max(prev - 2, 14)); // Min 12px
   };
 
   const resetFontSize = () => {
@@ -430,129 +431,153 @@ const ExamPage = () => {
       </div>
 
       {/* Left Sidebar */}
-      <div className="w-50 bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative">
+      <div
+        className={`${
+          isSidebarCollapsed ? "w-0" : "w-50"
+        } bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative transition-all duration-300`}
+      >
+        {/* Collapse/Expand Handle */}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-24 z-50 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow hover:bg-blue-600 transition-colors"
+          title={isSidebarCollapsed ? "Expand" : "Collapse"}
+        >
+          <FaChevronRight
+            className={`w-3 h-3 transition-transform  ${
+              !isSidebarCollapsed ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
         {/* Add Button */}
-        <div className="p-6 absolute -right-2">
-          {!help ? (
-            <button
-              onClick={() => setHelp(true)}
-              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-            >
-              <FaPlus className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setHelp(false)}
-              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-            >
-              <FaMinus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        {!isSidebarCollapsed && (
+          <div className="p-6 absolute -right-10">
+            {!help ? (
+              <button
+                onClick={() => setHelp(true)}
+                className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+              >
+                <FaPlus className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setHelp(false)}
+                className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
+              >
+                <FaMinus className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
-          {examPeriods.map((period) => (
-            <div key={period.id}>
-              <button
-                onClick={() => togglePeriod(period.id)}
-                className={`w-full flex items-center space-x-3 text-left text-sm py-2 px-3 rounded-lg transition-all ${
-                  period.id === "normal2022"
-                    ? "bg-blue-100 text-blue-700 font-semibold"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-              >
-                <FaPlay
-                  className={`w-3 h-3 ${
+        {!isSidebarCollapsed && (
+          <div className="flex-1 overflow-y-auto p-6 space-y-3">
+            {examPeriods.map((period) => (
+              <div key={period.id}>
+                <button
+                  onClick={() => togglePeriod(period.id)}
+                  className={`w-full flex items-center space-x-3 text-left text-sm py-2 px-3 rounded-lg transition-all ${
                     period.id === "normal2022"
-                      ? "text-blue-600"
-                      : "text-gray-500"
+                      ? "bg-blue-100 text-blue-700 font-semibold"
+                      : "text-gray-700 hover:text-gray-900"
                   }`}
-                />
-                <span className="font-medium">{period.label}</span>
-              </button>
+                >
+                  <FaPlay
+                    className={`w-3 h-3 ${
+                      period.id === "normal2022"
+                        ? "text-blue-600"
+                        : "text-gray-500"
+                    }`}
+                  />
+                  <span className="font-medium">{period.label}</span>
+                </button>
 
-              {expandedPeriods[period.id] && period.questions.length > 0 && (
-                <div className="ml-8 mt-2">
-                  <div className="grid grid-cols-3 gap-5">
-                    {period.questions.map((q, index) => {
-                      // Determine color based on position (alternating pattern like in the image)
-                      const isReddishPink = index % 5 < 2 || index % 5 >= 3;
-                      const bgColor = isReddishPink
-                        ? "bg-rose-400"
-                        : "bg-teal-400";
-                      const isCurrentQuestion = q.id === question?._id;
+                {expandedPeriods[period.id] && period.questions.length > 0 && (
+                  <div className="ml-8 mt-2">
+                    <div className="grid grid-cols-3 gap-5">
+                      {period.questions.map((q, index) => {
+                        // Determine color based on position (alternating pattern like in the image)
+                        const isReddishPink = index % 5 < 2 || index % 5 >= 3;
+                        const bgColor = isReddishPink
+                          ? "bg-rose-400"
+                          : "bg-teal-400";
+                        const isCurrentQuestion = q.id === question?._id;
 
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => {
-                            // Find the question index in the flattened questions array
-                            const allQuestions = [];
-                            Object.values(examQuestionData.questions).forEach(
-                              (sessionQuestions) => {
-                                allQuestions.push(...sessionQuestions);
-                              }
-                            );
-                            const questionIndex = allQuestions.findIndex(
-                              (eq) => eq._id === q.id
-                            );
-                            if (questionIndex !== -1)
-                              setCurrentQuestion(questionIndex);
-                          }}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
-                            isCurrentQuestion
-                              ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800"
-                              : ""
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => {
+                              // Find the question index in the flattened questions array
+                              const allQuestions = [];
+                              Object.values(examQuestionData.questions).forEach(
+                                (sessionQuestions) => {
+                                  allQuestions.push(...sessionQuestions);
+                                }
+                              );
+                              const questionIndex = allQuestions.findIndex(
+                                (eq) => eq._id === q.id
+                              );
+                              if (questionIndex !== -1)
+                                setCurrentQuestion(questionIndex);
+                            }}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
+                              isCurrentQuestion
+                                ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800"
+                                : ""
+                            }`}
+                          >
+                            {index + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {expandedPeriods[period.id] && period.questions.length === 0 && (
-                <div className="ml-8 text-sm text-gray-400 py-2">
-                  Aucune question
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {expandedPeriods[period.id] &&
+                  period.questions.length === 0 && (
+                    <div className="ml-8 text-sm text-gray-400 py-2">
+                      Aucune question
+                    </div>
+                  )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Progress Indicator */}
-        <div className="p-6 border-t border-gray-200">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-red-500 font-medium">fausses</span>
-            <span className="text-green-500 font-medium">corrects</span>
+        {!isSidebarCollapsed && (
+          <div className="p-6 border-t border-gray-200">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-red-500 font-medium">fausses</span>
+              <span className="text-green-500 font-medium">corrects</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div
+                className="bg-red-500 h-2 rounded-full"
+                style={{
+                  width: `${
+                    examQuestionData?.totalQuestions
+                      ? (currentQuestion / examQuestionData.totalQuestions) *
+                        100
+                      : 0
+                  }%`,
+                }}
+              ></div>
+            </div>
+            <div className="text-sm text-gray-600">
+              {examQuestionData?.totalQuestions
+                ? Math.round(
+                    (currentQuestion / examQuestionData.totalQuestions) * 100
+                  )
+                : 0}
+              % Complete
+            </div>
+            <div className="text-sm text-gray-500">
+              {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div
-              className="bg-red-500 h-2 rounded-full"
-              style={{
-                width: `${
-                  examQuestionData?.totalQuestions
-                    ? (currentQuestion / examQuestionData.totalQuestions) * 100
-                    : 0
-                }%`,
-              }}
-            ></div>
-          </div>
-          <div className="text-sm text-gray-600">
-            {examQuestionData?.totalQuestions
-              ? Math.round(
-                  (currentQuestion / examQuestionData.totalQuestions) * 100
-                )
-              : 0}
-            % Complete
-          </div>
-          <div className="text-sm text-gray-500">
-            {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -694,8 +719,8 @@ const ExamPage = () => {
                       showResults
                         ? getAnswerOptionStyle(answerKey, index)
                         : isSelected
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                        ? "bg-blue-500 text-white border-blue-500 py-[10px]"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 py-[10px]"
                     }`}
                   >
                     <div className="flex items-center space-x-4">
@@ -715,7 +740,7 @@ const ExamPage = () => {
                         {answerKey}
                       </div>
                       <span
-                        className="font-medium"
+                        className="font-medium h-[20px]"
                         style={{ fontSize: `${fontSize}px` }}
                       >
                         {option.text}
