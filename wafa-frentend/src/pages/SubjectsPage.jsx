@@ -5,6 +5,7 @@ import { FaArrowLeft, FaPlay, FaRedo, FaChevronDown } from "react-icons/fa";
 import { IoCloseSharp } from "react-icons/io5";
 import { SiBookstack } from "react-icons/si";
 import { moduleService } from "@/services/moduleService";
+import Spinner from "@/components/ui/Spinner";
 const SubjectsPage = () => {
   const [showModel, setShowmodal] = useState({
     isShown: false,
@@ -1098,11 +1099,7 @@ const SubjectsPage = () => {
   // const course = courseData[courseId];
 
   if (!course) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
-        <div className="text-gray-900 text-center">Course not found</div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   // Filter exams based on selected category and subcategory

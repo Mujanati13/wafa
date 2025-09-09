@@ -41,6 +41,7 @@ import AddQuestions from "./pages/AddQuestions";
 import ImportImages from "./pages/ImportImages";
 import ImportExplications from "./pages/ImportExplications";
 import CreateCategoriesForCourses from "./pages/CreateCategoriesForCourses";
+import Myplaylist from "./pages/Myplaylist";
 
 export default function App() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
 
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard />} />
+          <Route path="playlist" element={<Myplaylist />} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />

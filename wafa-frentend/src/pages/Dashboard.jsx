@@ -4,12 +4,24 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { api } from "@/lib/utils";
 import { moduleService } from "@/services/moduleService";
+import { Lock } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [semester, setSemester] = useState("S1");
   const [coursesData, setCoursesData] = useState();
-
+  const semesters = [
+    { name: "S1", isOpen: true },
+    { name: "S2", isOpen: false },
+    { name: "S3", isOpen: false },
+    { name: "S4", isOpen: false },
+    { name: "S5", isOpen: false },
+    { name: "S6", isOpen: false },
+    { name: "S7", isOpen: false },
+    { name: "S8", isOpen: false },
+    { name: "S9", isOpen: false },
+    { name: "S10", isOpen: false },
+  ];
   useEffect(() => {
     const fetchData = async () => {
       const { data } = await moduleService.getAllmodules();
@@ -119,7 +131,7 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex flex-col md:flex-row justify-between items-center mb-10 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-8 py-6">
+      <div className="relative z-10 flex flex-col min-w-fit  justify-between  mb-10 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-8 py-6">
         {/* Left: Welcome & Info */}
         <div className="flex flex-col max-w-xl">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2 flex items-center gap-3">
@@ -143,32 +155,32 @@ const Dashboard = () => {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="semester-select"
-            className="text-gray-700 font-medium"
-          >
-            Semestre:
-          </label>
-          <select
-            onChange={(e) => {
-              setSemester(e.target.value);
-            }}
-            id="semester-select"
-            className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-blue-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-            defaultValue="S1"
-          >
-            <option value="S10">S1</option>
-            <option value="S11">S2</option>
-            <option value="S12">S3</option>
-            <option value="S13">S4</option>
-            <option value="S14">S5</option>
-            <option value="S15">S6</option>
-            <option value="S16">S7</option>
-            <option value="S17">S8</option>
-            <option value="S18">S9</option>
-            <option value="S19">S10</option>
-          </select>
+        <div className="flex items-center  gap-2">
+          <div className="flex gap-2 mt-4">
+            {semesters.map((item, index) => (
+              <button
+                key={item.name}
+                disabled={!item.isOpen}
+                onClick={() => setSemester(item.name)}
+                className={`px-4 py-2 rounded-full font-semibold transition-all duration-200 border
+                  ${
+                    semester === item.name
+                      ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white border-blue-500 shadow-md scale-105"
+                      : "bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:scale-105"
+                  }
+                `}
+                style={{
+                  minWidth: 48,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {item.name}
+                {item.isOpen === false && <Lock className="w-4" />}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

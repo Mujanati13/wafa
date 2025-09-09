@@ -28,8 +28,9 @@ import ExplicationModel from "../components/ExamsPage/ExplicationModel";
 import { api } from "@/lib/utils";
 import { LuAlignVerticalSpaceBetween } from "react-icons/lu";
 import Spinner from "@/components/ui/Spinner";
-import { LogOut } from "lucide-react";
+import { Bookmark, LogOut, NotebookPen, TriangleAlert } from "lucide-react";
 import ProfileMenu from "@/components/profile/ProfileMenu";
+import IconWithTooltip from "@/components/ExamsPage/IconWithTooltip";
 
 const ExamPage = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -143,8 +144,11 @@ const ExamPage = () => {
 
   const handleAnswerSelect = (answerKey) => {
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
+    const correctAnswersCount =
+      question?.options?.filter((opt) => opt.isCorrect).length || 0;
+    const isMultipleChoice = correctAnswersCount > 1;
 
-    if (question.multipleChoice) {
+    if (isMultipleChoice) {
       // For multiple choice questions
       if (currentQuestionAnswers.includes(answerKey)) {
         // Remove answer if already selected
@@ -588,6 +592,11 @@ const ExamPage = () => {
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
               {examQuestionData?.year || "Année"} -{" "}
               {examQuestionData?.name || "Session"}
+            </div>
+            <div className=" flex gap-2.5">
+              <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
+              <IconWithTooltip Icon={NotebookPen} label={"ajouter une note"} />
+              <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
             </div>
           </div>
         </div>
