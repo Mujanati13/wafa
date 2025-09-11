@@ -41,6 +41,7 @@ const ExamPage = () => {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [examCompleted, setExamCompleted] = useState(false);
   const [expandedPeriods, setExpandedPeriods] = useState({ janvier2024: true });
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -51,6 +52,7 @@ const ExamPage = () => {
   const [examQuestionData, setExamQuestionData] = useState(null); // Backend exam data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   // Get current question from backend data
   const getCurrentQuestion = () => {
@@ -144,38 +146,19 @@ const ExamPage = () => {
 
   const handleAnswerSelect = (answerKey) => {
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
-    const correctAnswersCount =
-      question?.options?.filter((opt) => opt.isCorrect).length || 0;
-    const isMultipleChoice = correctAnswersCount > 1;
+    const updatedAnswers = currentQuestionAnswers.includes(answerKey)
+      ? currentQuestionAnswers.filter((key) => key !== answerKey)
+      : [...currentQuestionAnswers, answerKey];
 
-    if (isMultipleChoice) {
-      // For multiple choice questions
-      if (currentQuestionAnswers.includes(answerKey)) {
-        // Remove answer if already selected
-        setSelectedAnswers({
-          ...selectedAnswers,
-          [currentQuestion]: currentQuestionAnswers.filter(
-            (key) => key !== answerKey
-          ),
-        });
-      } else {
-        // Add answer to selection
-        setSelectedAnswers({
-          ...selectedAnswers,
-          [currentQuestion]: [...currentQuestionAnswers, answerKey],
-        });
-      }
-    } else {
-      // For single choice questions
-      setSelectedAnswers({
-        ...selectedAnswers,
-        [currentQuestion]: [answerKey],
-      });
-    }
+    setSelectedAnswers({
+      ...selectedAnswers,
+      [currentQuestion]: updatedAnswers,
+    });
   };
 
   const handleCheckAnswer = () => {
     setShowResults(true);
+    setShowVerifyModal(true);
   };
 
   const togglePeriod = (periodId) => {
@@ -237,12 +220,15 @@ const ExamPage = () => {
       )
       .filter(Boolean);
 
-    if (userAnswers.length !== correctAnswers.length) return false;
-
-    return (
-      userAnswers.every((answer) => correctAnswers.includes(answer)) &&
-      correctAnswers.every((answer) => userAnswers.includes(answer))
+    // Consider correct if every selected answer is correct and at least one was chosen
+    if (userAnswers.length === 0) return false;
+    const allSelectedAreCorrect = userAnswers.every((answer) =>
+      correctAnswers.includes(answer)
     );
+    const missedAnyCorrect = correctAnswers.some(
+      (answer) => !userAnswers.includes(answer)
+    );
+    return allSelectedAreCorrect && !missedAnyCorrect;
   };
 
   // Get answer option styling based on correctness and selection
@@ -399,18 +385,15 @@ const ExamPage = () => {
         <div className="flex items-center justify-between px-6 py-4">
           {/* Left - Logo and App Name */}
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-blue-600 text-sm">📊</span>
-            </div>
-            <span className="font-semibold text-gray-900 text-[25px]">
-              {examQuestionData?.moduleName || "Examen"}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold tracking-wide drop-shadow-sm select-none">
+              WAFA
             </span>
           </div>
 
           {/* Center - App Name */}
           <div className="flex items-center space-x-2">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold tracking-wide drop-shadow-sm select-none">
-              WAFA
+            <span className="font-semibold text-gray-900 text-[25px]">
+              {examQuestionData?.moduleName || "Examen"}
             </span>
           </div>
 
@@ -452,29 +435,29 @@ const ExamPage = () => {
             }`}
           />
         </button>
-        {/* Add Button */}
-
-        <div className="p-6 absolute -right-10">
-          {!help ? (
-            <button
-              onClick={() => setHelp(true)}
-              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-            >
-              <FaPlus className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setHelp(false)}
-              className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors absolute "
-            >
-              <FaMinus className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        {/* Legend */}
+        {!isSidebarCollapsed && (
+          <div className="px-4 pt-4">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                <span className="text-gray-500 text-sm">not visited</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-orange-400"></span>
+                <span className="text-orange-500 text-sm">unanswered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                <span className="text-purple-500 text-sm">review</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navigation Items */}
         {!isSidebarCollapsed && (
-          <div className="flex-1 overflow-y-auto p-6 space-y-3">
+          <div className="flex-1 overflow-y-auto  space-y-3">
             {examPeriods.map((period) => (
               <div key={period.id}>
                 <button
@@ -485,8 +468,10 @@ const ExamPage = () => {
                       : "text-gray-700 hover:text-gray-900"
                   }`}
                 >
-                  <FaPlay
-                    className={`w-3 h-3 ${
+                  <IoIosArrowForward
+                    className={`w-4 h-4 transition-transform ${
+                      expandedPeriods[period.id] ? "rotate-90" : "rotate-0"
+                    } ${
                       period.id === "normal2022"
                         ? "text-blue-600"
                         : "text-gray-500"
@@ -497,20 +482,17 @@ const ExamPage = () => {
 
                 {expandedPeriods[period.id] && period.questions.length > 0 && (
                   <div className="ml-8 mt-2">
-                    <div className="grid grid-cols-3 gap-5">
+                    <div className="flex flex-wrap gap-x-5 gap-y-3">
                       {period.questions.map((q, index) => {
-                        // Determine color based on position (alternating pattern like in the image)
-                        const isReddishPink = index % 5 < 2 || index % 5 >= 3;
-                        const bgColor = isReddishPink
-                          ? "bg-rose-400"
-                          : "bg-teal-400";
                         const isCurrentQuestion = q.id === question?._id;
+                        const dotColor = isCurrentQuestion
+                          ? "bg-blue-500"
+                          : "bg-orange-300";
 
                         return (
                           <button
                             key={q.id}
                             onClick={() => {
-                              // Find the question index in the flattened questions array
                               const allQuestions = [];
                               Object.values(examQuestionData.questions).forEach(
                                 (sessionQuestions) => {
@@ -523,13 +505,16 @@ const ExamPage = () => {
                               if (questionIndex !== -1)
                                 setCurrentQuestion(questionIndex);
                             }}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all hover:scale-105 ${bgColor} ${
+                            className={`flex items-center gap-2 text-[13px] ${
                               isCurrentQuestion
-                                ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800"
-                                : ""
+                                ? "text-blue-700 font-semibold"
+                                : "text-gray-700 hover:text-gray-900"
                             }`}
                           >
-                            {index + 1}
+                            <span
+                              className={`w-3 h-3 rounded-full ${dotColor}`}
+                            ></span>
+                            <span>Q{index + 1}</span>
                           </button>
                         );
                       })}
@@ -586,7 +571,10 @@ const ExamPage = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll w-[80vw]">
         {/* Top Navigation Bar */}
-        <div className="bg-blue-400 text-white px-8 py-3 w-[80vw] mx-auto mt-[60px]">
+        <div
+          className="text-white px-8 py-3 w-[80vw] mx-auto mt-[60px]"
+          style={{ backgroundColor: "#00a8f3" }}
+        >
           <div className="flex items-center justify-between">
             <div className="text-sm">
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
@@ -682,7 +670,10 @@ const ExamPage = () => {
             </div>
 
             {/* Question Box */}
-            <div className="bg-orange-100 rounded-xl p-6 mb-8 relative">
+            <div
+              className="rounded-xl p-6 mb-8 relative"
+              style={{ backgroundColor: "#f9ddad" }}
+            >
               <div className="flex items-start space-x-4">
                 {question?.images && question.images.length > 0 ? (
                   <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -708,7 +699,7 @@ const ExamPage = () => {
             </div>
 
             {/* Answer Options */}
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 mb-8">
               {question?.options?.map((option, index) => {
                 const answerKey = String.fromCharCode(65 + index);
                 const currentQuestionAnswers =
@@ -723,37 +714,94 @@ const ExamPage = () => {
                       !showResults && handleAnswerSelect(answerKey)
                     }
                     disabled={showResults}
-                    className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
+                    className={`w-full rounded-[10px] text-left transition-all border overflow-hidden ${
                       showResults
-                        ? getAnswerOptionStyle(answerKey, index)
+                        ? ""
                         : isSelected
-                        ? "bg-blue-500 text-white border-blue-500 py-[10px]"
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 py-[10px]"
+                        ? "text-white"
+                        : "text-gray-700"
                     }`}
+                    style={
+                      showResults
+                        ? // Results styles
+                          isCorrect && isSelected
+                          ? {
+                              backgroundColor: "#28a89b",
+                              borderColor: "#28a89b",
+                              color: "#ffffff",
+                            }
+                          : isCorrect && !isSelected
+                          ? {
+                              backgroundColor: "#ffffff",
+                              borderColor: "#298e7e",
+                              color: "#298e7e",
+                            }
+                          : !isCorrect && isSelected
+                          ? {
+                              backgroundColor: "#cf4d65",
+                              borderColor: "#cf4d65",
+                              color: "#ffffff",
+                            }
+                          : {
+                              backgroundColor: "#f3f4f6",
+                              borderColor: "#e5e7eb",
+                              color: "#374151",
+                            }
+                        : // Pre-submit styles
+                        isSelected
+                        ? { backgroundColor: "#276fc9", borderColor: "#276fc9" }
+                        : { backgroundColor: "#f3f4f6", borderColor: "#e5e7eb" }
+                    }
                   >
-                    <div className="flex items-center space-x-4">
+                    <div
+                      className="flex items-center gap-3 px-4"
+                      style={{ minHeight: "55px" }}
+                    >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          showResults
-                            ? isCorrect
-                              ? "bg-green-600 text-white"
-                              : isSelected
-                              ? "bg-red-600 text-white"
-                              : "bg-gray-300 text-gray-600"
+                        className="w-7 h-7 rounded-full border flex items-center justify-center text-xs font-semibold"
+                        style={{
+                          backgroundColor: showResults
+                            ? isCorrect && isSelected
+                              ? "#0c8381"
+                              : !isCorrect && isSelected
+                              ? "#ac1429"
+                              : isCorrect && !isSelected
+                              ? "#298e7e"
+                              : "#ffffff"
                             : isSelected
-                            ? "bg-orange-500 text-white"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
+                            ? "#f59e0b"
+                            : "#ffffff",
+                          color: showResults
+                            ? isCorrect || isSelected
+                              ? "#ffffff"
+                              : "#374151"
+                            : isSelected
+                            ? "#ffffff"
+                            : "#374151",
+                          borderColor: showResults
+                            ? isCorrect || isSelected
+                              ? "transparent"
+                              : "#d1d5db"
+                            : isSelected
+                            ? "transparent"
+                            : "#d1d5db",
+                          borderWidth: 1,
+                        }}
                       >
                         {answerKey}
                       </div>
+
                       <span
-                        className="font-medium h-[20px]"
+                        className="font-medium"
                         style={{ fontSize: `${fontSize}px` }}
                       >
                         {option.text}
                       </span>
-                      {showResults && getAnswerIcon(answerKey, index)}
+                      {showResults && (
+                        <span className="ml-auto">
+                          {getAnswerIcon(answerKey, index)}
+                        </span>
+                      )}
                     </div>
                   </button>
                 );
@@ -855,37 +903,90 @@ const ExamPage = () => {
             </div>
 
             {/* Explanation */}
-            {showResults && <ExplicationModel question={question} />}
+            {(showResults || showExplanation) && (
+              <ExplicationModel question={question} />
+            )}
           </div>
         </div>
       </div>
       {editModelShow && <ResumeModel />}
-      {help && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          exit={{ opacity: 0, scale: 0.5 }}
-          className="absolute top-20 left-[330px] h-[100px]   grid grid-cols-2 p-4 gap-5 rounded-2xl bg-gray-100 border border-gray-300"
-        >
-          <div className="flex items-center gap-2">
-            <div className="bg-green-500 h-5 w-5 rounded-full " />
-            <span className="text-green-400">Answerd</span>
-          </div>{" "}
-          <div className="flex items-center gap-2">
-            <div className="bg-red-500 h-5 w-5 rounded-full " />
-            <span className="text-red-400">UnAnswerd</span>
-          </div>{" "}
-          <div className="flex items-center gap-2">
-            <div className="bg-gray-500 h-5 w-5 rounded-full " />
-            <span className="text-gray-400">Not Visited</span>
-          </div>{" "}
-          <div className="flex items-center gap-2">
-            <div className="bg-purple-400 h-5 w-5 rounded-full " />
-            <span className="text-purple-400">Review</span>
+      {/* Verify Modal */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-[60]">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowVerifyModal(false)}
+          ></div>
+          <div className="absolute left-0 right-0 bottom-4 flex items-center justify-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 shadow-lg shadow-red-300/40 flex items-center justify-center text-white text-2xl font-bold">
+                ×
+              </div>
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-green-600 shadow-lg shadow-green-300/40 flex items-center justify-center text-white text-2xl font-bold">
+                ✓
+              </div>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4">
+              <button
+                className="w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  const prevIndex = Math.max(0, currentQuestion - 1);
+                  setCurrentQuestion(prevIndex);
+                }}
+              >
+                ←
+              </button>
+              <button
+                className="w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                onClick={() => {
+                  const allQuestions = [];
+                  Object.values(examQuestionData.questions).forEach(
+                    (sessionQuestions) => {
+                      allQuestions.push(...sessionQuestions);
+                    }
+                  );
+                  const nextIndex = Math.min(
+                    allQuestions.length - 1,
+                    currentQuestion + 1
+                  );
+                  setCurrentQuestion(nextIndex);
+                }}
+              >
+                →
+              </button>
+              <button
+                className="px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm"
+                onClick={() => setShowVerifyModal(false)}
+              >
+                communité
+              </button>
+              <button
+                className="px-5 py-2 rounded-full border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 shadow-sm"
+                onClick={() => {
+                  setShowExplanation(true);
+                  setShowVerifyModal(false);
+                }}
+              >
+                Explication
+              </button>
+              <button
+                className="px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm"
+                onClick={() => {
+                  setSelectedAnswers({
+                    ...selectedAnswers,
+                    [currentQuestion]: [],
+                  });
+                  setShowResults(false);
+                  setShowVerifyModal(false);
+                }}
+              >
+                Ressayer
+              </button>
+            </div>
           </div>
-        </motion.div>
+        </div>
       )}
+      {/* Help legend overlay removed; legend moved inside sidebar */}
     </div>
   );
 };
