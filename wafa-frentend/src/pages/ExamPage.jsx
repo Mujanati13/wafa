@@ -912,7 +912,7 @@ const ExamPage = () => {
       {editModelShow && <ResumeModel />}
       {/* Verify Modal */}
       {showVerifyModal && (
-        <div className="fixed inset-0 z-[60]">
+        <div className="absolute   z-[60] bg-white h-[100px] ">
           <div
             className="absolute inset-0"
             onClick={() => setShowVerifyModal(false)}

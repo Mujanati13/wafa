@@ -62,6 +62,12 @@ const SideBar = () => {
       icon: Icons.SquareLibrary,
       path: "/dashboard/playlist",
     },
+    {
+      id: "note",
+      label: "My note",
+      icon: Icons.NotebookIcon,
+      path: "/dashboard/note",
+    },
   ];
 
   // Dynamic module items based on fetched modules

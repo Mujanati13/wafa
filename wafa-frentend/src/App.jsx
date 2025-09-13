@@ -54,6 +54,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard />} />
           <Route path="playlist" element={<Myplaylist />} />
+          <Route path="note" element={<p>note</p>} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />

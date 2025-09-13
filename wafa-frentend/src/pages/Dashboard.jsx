@@ -155,8 +155,8 @@ const Dashboard = () => {
             </span>
           </p>
         </div>
-        <div className="flex items-center  gap-2">
-          <div className="flex gap-2 mt-4">
+        <div className="flex items-center  gap-2 ">
+          <div className="flex gap-2 mt-4 ">
             {semesters.map((item, index) => (
               <button
                 key={item.name}
@@ -180,6 +180,11 @@ const Dashboard = () => {
                 {item.isOpen === false && <Lock className="w-4" />}
               </button>
             ))}
+            <div className="px-4 py-2 rounded-full font-semibold transition-all duration-200 border">
+              <span className="font-semibold text-sm tracking-wide">
+                Plan Gratuit
+              </span>
+            </div>
           </div>
         </div>
       </div>
