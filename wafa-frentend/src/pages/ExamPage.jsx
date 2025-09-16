@@ -420,8 +420,8 @@ const ExamPage = () => {
       {/* Left Sidebar */}
       <div
         className={`${
-          isSidebarCollapsed ? "w-0" : "w-50"
-        } bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative transition-all duration-300`}
+          isSidebarCollapsed ? "w-0" : "w-[255px]"
+        } bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative transition-all duration-300 `}
       >
         {/* Collapse/Expand Handle */}
         <button
@@ -482,7 +482,7 @@ const ExamPage = () => {
 
                 {expandedPeriods[period.id] && period.questions.length > 0 && (
                   <div className="ml-8 mt-2">
-                    <div className="flex flex-wrap gap-x-5 gap-y-3">
+                    <div className="grid grid-cols-3 gap-1">
                       {period.questions.map((q, index) => {
                         const isCurrentQuestion = q.id === question?._id;
                         const dotColor = isCurrentQuestion
@@ -512,9 +512,9 @@ const ExamPage = () => {
                             }`}
                           >
                             <span
-                              className={`w-3 h-3 rounded-full ${dotColor}`}
+                              className={`w-5 h-5 rounded-full ${dotColor}`}
                             ></span>
-                            <span>Q{index + 1}</span>
+                            <span>{index + 1}</span>
                           </button>
                         );
                       })}
@@ -571,10 +571,7 @@ const ExamPage = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll w-[80vw]">
         {/* Top Navigation Bar */}
-        <div
-          className="text-white px-8 py-3 w-[80vw] mx-auto mt-[60px]"
-          style={{ backgroundColor: "#00a8f3" }}
-        >
+        <div className="text-white px-8 py-3 w-[1103px] mx-auto mt-[60px] bg-[#00a8f3] rounded-t-2xl">
           <div className="flex items-center justify-between">
             <div className="text-sm">
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
@@ -591,7 +588,7 @@ const ExamPage = () => {
 
         {/* Question Content */}
         <div className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
+          <div className="w-[1103px] mx-auto">
             {/* Question Header */}
             <div className="mb-6">
               <div className="flex items-center justify-between">
@@ -992,8 +989,3 @@ const ExamPage = () => {
 };
 
 export default ExamPage;
-
-// Néphrologie/uro
-// Med Legal-éthique-travail-deontology
-// Synthèse Thérapeutique
-// Santé Publique
