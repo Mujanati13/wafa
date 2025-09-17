@@ -131,7 +131,7 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex flex-col justify-between mb-6  bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-4  sm:px-6 sm:py-5 md:px-8 ">
+      <div className="relative z-10 flex flex-col justify-between mb-6  bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-4  sm:px-6 sm:py-5 md:px-8 w-fit">
         {/* Left: Welcome & Info */}
         <div className="flex flex-col max-w-full lg:max-w-xl">
           <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900 mb-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">

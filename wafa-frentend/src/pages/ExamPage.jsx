@@ -28,13 +28,22 @@ import ExplicationModel from "../components/ExamsPage/ExplicationModel";
 import { api } from "@/lib/utils";
 import { LuAlignVerticalSpaceBetween } from "react-icons/lu";
 import Spinner from "@/components/ui/Spinner";
-import { Bookmark, LogOut, NotebookPen, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  Bookmark,
+  LogOut,
+  Minus,
+  NotebookPen,
+  Plus,
+  TriangleAlert,
+} from "lucide-react";
 import ProfileMenu from "@/components/profile/ProfileMenu";
 import IconWithTooltip from "@/components/ExamsPage/IconWithTooltip";
 
 const ExamPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed on mobile
+  const [areActionsCollapsed, setAreActionsCollapsed] = useState(true); // Start collapsed on mobile
   const { examId } = useParams();
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -53,6 +62,7 @@ const ExamPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
 
   // Get current question from backend data
   const getCurrentQuestion = () => {
@@ -451,27 +461,41 @@ const ExamPage = () => {
       >
         {/* Legend */}
         {!isSidebarCollapsed && (
-          <div className="px-3 md:px-4 pt-4">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-2 md:p-3 flex flex-col  justify-center gap-2 md:gap-4">
-              <div className="flex  items-center gap-2 ">
-                <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                <span className="text-gray-500 text-xs md:text-sm">
-                  not visited
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-400"></span>
-                <span className="text-orange-500 text-xs md:text-sm">
-                  unanswered
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                <span className="text-purple-500 text-xs md:text-sm">
-                  review
-                </span>
-              </div>
+          <div className="px-3 md:px-4 pt-4 relative">
+            <div className="absolute top-0 left-0">
+              <span
+                className="text-gray-500 text-xs md:text-sm cursor-pointer hover:text-gray-700 transition-colors"
+                onClick={() => setIsLegendCollapsed(!isLegendCollapsed)}
+              >
+                {isLegendCollapsed ? (
+                  <Plus className="w-5 h-5 bg-blue-500 rounded-full text-white" />
+                ) : (
+                  <Minus className="w-5 h-5 bg-blue-500 rounded-full text-white" />
+                )}
+              </span>
             </div>
+            {!isLegendCollapsed && (
+              <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-2 md:p-3 flex flex-col  justify-center gap-2 md:gap-4">
+                <div className="flex  items-center gap-2 ">
+                  <span className="w-3 h-3 rounded-full bg-gray-300"></span>
+                  <span className="text-gray-500 text-xs md:text-sm">
+                    not visited
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-400"></span>
+                  <span className="text-orange-500 text-xs md:text-sm">
+                    unanswered
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                  <span className="text-purple-500 text-xs md:text-sm">
+                    review
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -608,7 +632,7 @@ const ExamPage = () => {
       {/* Mobile overlay backdrop */}
       {!isSidebarCollapsed && (
         <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="md:hidden fixed inset-0 bg-black/50 z-30"
           onClick={() => setIsSidebarCollapsed(true)}
         />
       )}
@@ -623,7 +647,52 @@ const ExamPage = () => {
               {examQuestionData?.year || "Année"} -{" "}
               {examQuestionData?.name || "Session"}
             </div>
-            <div className="flex gap-1.5 md:gap-2.5">
+
+            {/* Mobile: Toggle button + collapsible actions */}
+            <div className="md:hidden flex items-center">
+              {/* Collapsible actions - show when not collapsed */}
+              <div
+                className={`flex gap-1.5 mr-2 transition-all duration-300 ease-in-out overflow-hidden ${
+                  areActionsCollapsed
+                    ? "w-0 opacity-0 pointer-events-none"
+                    : "w-auto opacity-100 pointer-events-auto"
+                }`}
+              >
+                <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
+                <IconWithTooltip
+                  Icon={NotebookPen}
+                  label={"ajouter une note"}
+                />
+                <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
+              </div>
+
+              {/* Toggle button */}
+              <button
+                onClick={() => setAreActionsCollapsed(!areActionsCollapsed)}
+                className="p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-95"
+                title={
+                  areActionsCollapsed
+                    ? "Afficher les actions"
+                    : "Masquer les actions"
+                }
+              >
+                {areActionsCollapsed ? (
+                  <div className="flex flex-col items-center justify-center w-4 h-4">
+                    <div className="w-1 h-1 bg-white rounded-full mb-0.5"></div>
+                    <div className="w-1 h-1 bg-white rounded-full mb-0.5"></div>
+                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                  </div>
+                ) : (
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <div className="w-3 h-0.5 bg-white rounded-full transform rotate-45 absolute"></div>
+                    <div className="w-3 h-0.5 bg-white rounded-full transform -rotate-45 absolute"></div>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop: Always show actions */}
+            <div className="hidden md:flex gap-2.5">
               <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
               <IconWithTooltip Icon={NotebookPen} label={"ajouter une note"} />
               <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
@@ -633,7 +702,7 @@ const ExamPage = () => {
 
         {/* Question Content */}
         <div className="flex-1 px-4 md:px-8 pb-8 overflow-y-auto">
-          <div className="w-full max-w-[1103px] mx-auto bg-white rounded-b-2xl p-4 md:p-6">
+          <div className="w-full max-w-[1103px] mx-auto bg-white rounded-b-2xl ">
             {/* Question Header */}
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 ">
@@ -710,7 +779,7 @@ const ExamPage = () => {
 
             {/* Question Box */}
             <div
-              className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 relative"
+              className="rounded-xl p-4 md:p-6 mb-2 relative"
               style={{ backgroundColor: "#f9ddad" }}
             >
               <div className="flex items-start space-x-3 md:space-x-4">
