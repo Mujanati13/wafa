@@ -2,7 +2,7 @@ import React from "react";
 
 const ExplicationModel = ({ question }) => {
   return (
-    <div className="mt-8 p-4 bg-white border border-gray-200 rounded-2xl shadow-sm max-w-2xl mx-auto">
+    <div className="mt-8 p-4 bg-white border border-gray-200 rounded-2xl shadow-sm max-w-2xl mx-auto max-h-[60vh] overflow-y-auto">
       {question?.explicationTitle && (
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           {question.explicationTitle}

@@ -19,7 +19,7 @@ import { RiAdminFill } from "react-icons/ri";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
-const SideBar = () => {
+const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +45,6 @@ const SideBar = () => {
 
     fetchModules();
   }, []);
-
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Static sidebar items (Dashboard and Admin)
   const staticSidebarItems = [
@@ -82,66 +80,73 @@ const SideBar = () => {
   const sidebarItems = [...staticSidebarItems, ...moduleSidebarItems];
   const navigate = useNavigate();
   return (
-    <motion.div
-      initial={{ x: -300 }}
-      animate={{ x: 0 }}
-      className={`relative z-10 ${
-        sidebarOpen ? "w-64" : "w-20"
-      } bg-white/80 backdrop-blur-sm border-r border-blue-200 shadow-lg transition-all duration-300 `}
-    >
-      {/* Header / Toggle */}
-      <div className="flex items-center justify-between p-4 border-b border-blue-200">
-        {sidebarOpen && (
-          <span className="text-sm font-semibold text-gray-700">Menu</span>
-        )}
-        <button
-          onClick={() => setSidebarOpen((prev) => !prev)}
-          className="p-2 rounded-lg hover:bg-blue-50 text-gray-600 hover:text-gray-900"
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          title={sidebarOpen ? "Collapse" : "Expand"}
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          style={{ top: "4rem" }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <motion.div
+        initial={{ x: isMobile ? -300 : 0 }}
+        animate={{ x: isMobile && !sidebarOpen ? -300 : 0 }}
+        className={`${isMobile ? "fixed" : "relative"} z-50 ${
+          isMobile ? "h-[calc(100vh-4rem)]" : "h-screen"
+        } flex flex-col ${
+          sidebarOpen ? "w-64" : isMobile ? "w-64" : "w-20"
+        } bg-white border-r border-gray-200 shadow-xl transition-all duration-300 left-0 ${
+          isMobile ? "top-16" : "top-0"
+        } overflow-hidden`}
+      >
+        {/* Navigation */}
+        <nav
+          className={`space-y-2 ${
+            sidebarOpen ? "p-4 pt-4" : "p-2 pt-4"
+          } flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100`}
         >
-          {sidebarOpen ? (
-            <Icons.ChevronsLeft className="h-5 w-5" />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              {sidebarOpen && (
+                <span className="ml-2 text-gray-600">Loading modules...</span>
+              )}
+            </div>
           ) : (
-            <Icons.ChevronsRight className="h-5 w-5" />
+            sidebarItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  navigate(item.path);
+                  // Close sidebar on mobile after navigation
+                  if (isMobile) {
+                    setSidebarOpen(false);
+                  }
+                }}
+                title={item.label}
+                className={`w-full flex items-center ${
+                  sidebarOpen
+                    ? "space-x-3 justify-start px-4"
+                    : "justify-center px-2"
+                } py-3 rounded-xl transition-all duration-300 ${
+                  activeTab === item.id
+                    ? "bg-blue-600 text-white shadow-lg"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <item.icon className="text-xl flex-shrink-0" />
+                {sidebarOpen && (
+                  <span className="font-medium">{item.label}</span>
+                )}
+              </button>
+            ))
           )}
-        </button>
-      </div>
-      {/* Navigation */}
-      <nav className={`space-y-2 ${sidebarOpen ? "p-4" : "p-2"}`}>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            {sidebarOpen && (
-              <span className="ml-2 text-gray-600">Loading modules...</span>
-            )}
-          </div>
-        ) : (
-          sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                navigate(item.path);
-              }}
-              title={item.label}
-              className={`w-full flex items-center ${
-                sidebarOpen
-                  ? "space-x-3 justify-start px-4"
-                  : "justify-center px-2"
-              } py-3 rounded-xl transition-all duration-300 ${
-                activeTab === item.id
-                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-700 border border-blue-300 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-blue-50"
-              }`}
-            >
-              <item.icon className="text-xl flex-shrink-0" />
-              {sidebarOpen && <span className="font-medium">{item.label}</span>}
-            </button>
-          ))
-        )}
-      </nav>
-    </motion.div>
+        </nav>
+      </motion.div>
+    </>
   );
 };
 

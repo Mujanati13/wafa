@@ -1,16 +1,33 @@
 import React, { useState } from "react";
 import { FaBell, FaSearch, FaUser } from "react-icons/fa";
+import * as Icons from "lucide-react";
 import ProfileMenu from "../profile/ProfileMenu";
 
-const TopBar = () => {
+const TopBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   return (
     <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200 px-6 py-4 shadow-sm  w-full z-1000 cursor-pointer h-16">
       <div className="flex items-center justify-between">
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold">
-          WAFA
-        </span>
+        <div className="flex items-center space-x-4">
+          {/* Sidebar Toggle Button */}
+          <button
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            title={sidebarOpen ? "Collapse" : "Expand"}
+          >
+            {sidebarOpen ? (
+              <Icons.ChevronsLeft className="h-5 w-5" />
+            ) : (
+              <Icons.ChevronsRight className="h-5 w-5" />
+            )}
+          </button>
+
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold">
+            WAFA
+          </span>
+        </div>
         {/* Right Side Icons */}
         <div className="flex items-center space-x-4">
           {/* Theme Toggle Icon */}

@@ -34,7 +34,7 @@ import IconWithTooltip from "@/components/ExamsPage/IconWithTooltip";
 
 const ExamPage = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Start collapsed on mobile
   const { examId } = useParams();
   const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -43,7 +43,7 @@ const ExamPage = () => {
   const [showResults, setShowResults] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [examCompleted, setExamCompleted] = useState(false);
-  const [expandedPeriods, setExpandedPeriods] = useState({ janvier2024: true });
+  const [expandedPeriods, setExpandedPeriods] = useState({});
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [editModelShow, setEditModelShow] = useState(false);
   const [fontSize, setFontSize] = useState(16); // Default font size
@@ -208,6 +208,18 @@ const ExamPage = () => {
     };
     fetchData();
   }, [examId]);
+
+  // Expand all periods by default when exam data is loaded
+  useEffect(() => {
+    if (examQuestionData && examQuestionData.questions) {
+      const allPeriods = {};
+      Object.keys(examQuestionData.questions).forEach((sessionLabel) => {
+        const periodId = sessionLabel.toLowerCase().replace(/\s+/g, "");
+        allPeriods[periodId] = true;
+      });
+      setExpandedPeriods(allPeriods);
+    }
+  }, [examQuestionData]);
 
   // Check if answer is correct
   const isAnswerCorrect = () => {
@@ -379,38 +391,50 @@ const ExamPage = () => {
   }
 
   return (
-    <div className="max-h-screen bg-gray-50 flex relative overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex relative">
       {/* Top Header Bar */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50 h-[50px] md:h-[60px]">
+        <div className="flex items-center justify-between px-3 md:px-6 pt-1.5">
           {/* Left - Logo and App Name */}
-          <div className="flex items-center space-x-3">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold tracking-wide drop-shadow-sm select-none">
+          <div className="flex items-center space-x-2 md:space-x-3">
+            {/* Tree lines icon to collapse sidebar */}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-1 md:p-2 rounded hover:bg-gray-100 transition-colors focus:outline-none"
+              title="Réduire la barre latérale"
+            >
+              <span className="flex flex-col justify-center items-center space-y-0.5">
+                <span className="block w-4 md:w-6 h-0.5 bg-gray-400"></span>
+                <span className="block w-4 md:w-6 h-0.5 bg-gray-400"></span>
+                <span className="block w-4 md:w-6 h-0.5 bg-gray-400"></span>
+              </span>
+            </button>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-lg md:text-2xl font-bold tracking-wide drop-shadow-sm select-none">
               WAFA
             </span>
           </div>
 
-          {/* Center - App Name */}
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-gray-900 text-[25px]">
+          {/* Center - App Name - Hidden on mobile */}
+          <div className="hidden md:flex items-center space-x-2">
+            <span className="font-semibold text-gray-500 text-sm lg:text-base">
               {examQuestionData?.moduleName || "Examen"}
             </span>
           </div>
 
           {/* Right - Controls */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="p-1 md:p-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
               {isDarkMode ? (
-                <FaSun className="w-4 h-4" />
+                <FaSun className="w-3 md:w-4 h-3 md:h-4" />
               ) : (
-                <FaMoon className="w-4 h-4" />
+                <FaMoon className="w-3 md:w-4 h-3 md:h-4" />
               )}
             </button>
-            <span onClick={() => handleExit()} className="cursor-pointer">
-              <LogOut />
+            <span onClick={() => handleExit()} className="cursor-pointer p-1">
+              <LogOut className="w-4 md:w-5 h-4 md:h-5" />
             </span>
             <ProfileMenu isOpen={isOpen} setIsOpen={setIsOpen} />
           </div>
@@ -420,36 +444,32 @@ const ExamPage = () => {
       {/* Left Sidebar */}
       <div
         className={`${
-          isSidebarCollapsed ? "w-0" : "w-[255px]"
-        } bg-white border-r border-gray-200 flex flex-col pt-16 max-h-screen relative transition-all duration-300 `}
+          isSidebarCollapsed
+            ? "-translate-x-full opacity-0 pointer-events-none"
+            : "translate-x-0 opacity-100"
+        } fixed inset-y-0 left-0 w-[280px] md:w-[255px] lg:w-[280px] bg-white border-r border-gray-200 flex flex-col pt-12 md:pt-16 max-h-screen transition-all duration-300 z-40`}
       >
-        {/* Collapse/Expand Handle */}
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-24 z-50 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shadow hover:bg-blue-600 transition-colors"
-          title={isSidebarCollapsed ? "Expand" : "Collapse"}
-        >
-          <FaChevronRight
-            className={`w-3 h-3 transition-transform  ${
-              !isSidebarCollapsed ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </button>
         {/* Legend */}
         {!isSidebarCollapsed && (
-          <div className="px-4 pt-4">
-            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-3 flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
+          <div className="px-3 md:px-4 pt-4">
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-2 md:p-3 flex flex-col  justify-center gap-2 md:gap-4">
+              <div className="flex  items-center gap-2 ">
                 <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-                <span className="text-gray-500 text-sm">not visited</span>
+                <span className="text-gray-500 text-xs md:text-sm">
+                  not visited
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-orange-400"></span>
-                <span className="text-orange-500 text-sm">unanswered</span>
+                <span className="text-orange-500 text-xs md:text-sm">
+                  unanswered
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                <span className="text-purple-500 text-sm">review</span>
+                <span className="text-purple-500 text-xs md:text-sm">
+                  review
+                </span>
               </div>
             </div>
           </div>
@@ -457,19 +477,20 @@ const ExamPage = () => {
 
         {/* Navigation Items */}
         {!isSidebarCollapsed && (
-          <div className="flex-1 overflow-y-auto  space-y-3">
+          <div className="flex-1 overflow-y-auto space-y-3 px-3 md:px-0">
             {examPeriods.map((period) => (
               <div key={period.id}>
+                <div className="h-[2px] w-full bg-gray-200 mt-[5px]"></div>
                 <button
                   onClick={() => togglePeriod(period.id)}
-                  className={`w-full flex items-center space-x-3 text-left text-sm py-2 px-3 rounded-lg transition-all ${
+                  className={`w-full flex items-center space-x-3 text-left text-xs md:text-sm py-2 px-3 rounded-lg transition-all ${
                     period.id === "normal2022"
-                      ? "bg-blue-100 text-blue-700 font-semibold"
+                      ? "bg-blue-100 text-blue-700 font-semibold "
                       : "text-gray-700 hover:text-gray-900"
                   }`}
                 >
                   <IoIosArrowForward
-                    className={`w-4 h-4 transition-transform ${
+                    className={`w-3 md:w-4 h-3 md:h-4 transition-transform ${
                       expandedPeriods[period.id] ? "rotate-90" : "rotate-0"
                     } ${
                       period.id === "normal2022"
@@ -481,8 +502,8 @@ const ExamPage = () => {
                 </button>
 
                 {expandedPeriods[period.id] && period.questions.length > 0 && (
-                  <div className="ml-8 mt-2">
-                    <div className="grid grid-cols-3 gap-1">
+                  <div className="ml-6 md:ml-8 mt-2">
+                    <div className="grid grid-cols-6 gap-1">
                       {period.questions.map((q, index) => {
                         const isCurrentQuestion = q.id === question?._id;
                         const dotColor = isCurrentQuestion
@@ -490,32 +511,48 @@ const ExamPage = () => {
                           : "bg-orange-300";
 
                         return (
-                          <button
-                            key={q.id}
-                            onClick={() => {
-                              const allQuestions = [];
-                              Object.values(examQuestionData.questions).forEach(
-                                (sessionQuestions) => {
+                          <React.Fragment key={q.id}>
+                            <button
+                              onClick={() => {
+                                const allQuestions = [];
+                                Object.values(
+                                  examQuestionData.questions
+                                ).forEach((sessionQuestions) => {
                                   allQuestions.push(...sessionQuestions);
+                                });
+                                const questionIndex = allQuestions.findIndex(
+                                  (eq) => eq._id === q.id
+                                );
+                                if (questionIndex !== -1) {
+                                  setCurrentQuestion(questionIndex);
+                                  setShowResults(false);
+                                  setShowExplanation(false);
+                                  setShowVerifyModal(false);
+                                  // Close sidebar on mobile after selection
+                                  if (window.innerWidth < 768) {
+                                    setIsSidebarCollapsed(true);
+                                  }
                                 }
-                              );
-                              const questionIndex = allQuestions.findIndex(
-                                (eq) => eq._id === q.id
-                              );
-                              if (questionIndex !== -1)
-                                setCurrentQuestion(questionIndex);
-                            }}
-                            className={`flex items-center gap-2 text-[13px] ${
-                              isCurrentQuestion
-                                ? "text-blue-700 font-semibold"
-                                : "text-gray-700 hover:text-gray-900"
-                            }`}
-                          >
-                            <span
-                              className={`w-5 h-5 rounded-full ${dotColor}`}
-                            ></span>
-                            <span>{index + 1}</span>
-                          </button>
+                              }}
+                              className={`flex items-center gap-2 text-xs md:text-[13px] p-1 rounded hover:bg-gray-50 ${
+                                isCurrentQuestion
+                                  ? "text-blue-700 font-semibold"
+                                  : "text-gray-700 hover:text-gray-900"
+                              }`}
+                            >
+                              <span
+                                className={`w-4  h-4  rounded-full ${dotColor}`}
+                              ></span>
+                              <span className="text-[15px]">{index + 1}</span>
+                            </button>
+                            {/* Vertical separator between each question except the last, styled as in the screenshot */}
+                            {index !== period.questions.length - 1 && (
+                              <div
+                                className="h-6 w-px bg-gray-300 mx-1 self-center"
+                                style={{ minHeight: 24 }}
+                              ></div>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </div>
@@ -524,7 +561,7 @@ const ExamPage = () => {
 
                 {expandedPeriods[period.id] &&
                   period.questions.length === 0 && (
-                    <div className="ml-8 text-sm text-gray-400 py-2">
+                    <div className="ml-6 md:ml-8 text-xs md:text-sm text-gray-400 py-2">
                       Aucune question
                     </div>
                   )}
@@ -535,8 +572,8 @@ const ExamPage = () => {
 
         {/* Progress Indicator */}
         {!isSidebarCollapsed && (
-          <div className="p-6 border-t border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
+          <div className="p-3 md:p-6 border-t border-gray-200">
+            <div className="flex justify-between text-xs md:text-sm mb-2">
               <span className="text-red-500 font-medium">fausses</span>
               <span className="text-green-500 font-medium">corrects</span>
             </div>
@@ -553,7 +590,7 @@ const ExamPage = () => {
                 }}
               ></div>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-xs md:text-sm text-gray-600">
               {examQuestionData?.totalQuestions
                 ? Math.round(
                     (currentQuestion / examQuestionData.totalQuestions) * 100
@@ -561,24 +598,32 @@ const ExamPage = () => {
                 : 0}
               % Complete
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs md:text-sm text-gray-500">
               {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
             </div>
           </div>
         )}
       </div>
 
+      {/* Mobile overlay backdrop */}
+      {!isSidebarCollapsed && (
+        <div
+          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-16 min-h-screen overflow-y-scroll w-[80vw]">
+      <div className="flex-1 flex flex-col pt-[50px] md:pt-[60px] h-screen overflow-hidden w-full">
         {/* Top Navigation Bar */}
-        <div className="text-white px-8 py-3 w-[1103px] mx-auto mt-[60px] bg-[#00a8f3] rounded-t-2xl">
+        <div className="text-white px-4 md:px-8 py-3 w-full max-w-[1103px] mx-auto mt-4 bg-[#00a8f3] rounded-t-2xl">
           <div className="flex items-center justify-between">
-            <div className="text-sm">
+            <div className="text-xs md:text-sm truncate flex-1 mr-4">
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
               {examQuestionData?.year || "Année"} -{" "}
               {examQuestionData?.name || "Session"}
             </div>
-            <div className=" flex gap-2.5">
+            <div className="flex gap-1.5 md:gap-2.5">
               <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
               <IconWithTooltip Icon={NotebookPen} label={"ajouter une note"} />
               <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
@@ -587,116 +632,113 @@ const ExamPage = () => {
         </div>
 
         {/* Question Content */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="w-[1103px] mx-auto">
+        <div className="flex-1 px-4 md:px-8 pb-8 overflow-y-auto">
+          <div className="w-full max-w-[1103px] mx-auto bg-white rounded-b-2xl p-4 md:p-6">
             {/* Question Header */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-600 font-medium">
-                    {question?.sessionLabel || "Session"} Q{currentQuestion + 1}
-                  </span>
-                  <span className="text-gray-400">|</span>
-                  <span className="bg-black text-white px-3 py-1 rounded-full text-sm">
-                    collective
-                  </span>
-                </div>
 
-                <div className="flex items-center space-x-3">
-                  <button className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
-                    <div className="w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center">
-                      <span className="text-xs">✓</span>
-                    </div>
-                  </button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 ">
+              <div className="flex items-center space-x-2 md:space-x-4 h-[50px]">
+                <span className="text-gray-600 font-medium text-sm md:text-base">
+                  {question?.sessionLabel || "Session"} Q{currentQuestion + 1}
+                </span>
+                <span className="text-gray-400 hidden md:inline">|</span>
+                <span className="bg-black text-white px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">
+                  collective
+                </span>
+              </div>
 
-                  {/* Font Size Selector */}
-                  <div className="relative font-size-selector">
-                    <button
-                      onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
-                      className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors flex items-center space-x-2"
-                    >
-                      <ImFontSize className="w-4 h-4 text-gray-600" />
-                      <span className="text-xs font-bold">
-                        <span className="text-red-500">A</span>
-                        <span className="text-gray-500">a</span>
-                      </span>
-                      <span className="text-xs text-gray-600 ml-1">
-                        {fontSize}px
-                      </span>
-                    </button>
-
-                    {showFontSizeMenu && (
-                      <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
-                        <div className="p-2 border-b border-gray-100">
-                          <div className="text-xs text-gray-600 mb-2">
-                            Font Size
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={decreaseFontSize}
-                              className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
-                            >
-                              <span className="text-xs">-</span>
-                            </button>
-                            <span className="text-xs font-medium">
-                              {fontSize}px
-                            </span>
-                            <button
-                              onClick={increaseFontSize}
-                              className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
-                            >
-                              <span className="text-xs">+</span>
-                            </button>
-                          </div>
-                        </div>
-                        <button
-                          onClick={resetFontSize}
-                          className="w-full text-left px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
-                        >
-                          Reset to Default
-                        </button>
-                      </div>
-                    )}
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <button className="p-1.5 md:p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                  <div className="w-3 md:w-4 h-3 md:h-4 border-2 border-gray-400 rounded flex items-center justify-center">
+                    <span className="text-xs">✓</span>
                   </div>
+                </button>
 
-                  <button className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
-                    <PiImagesSquareFill className="w-4 h-4 text-gray-600" />
+                {/* Font Size Selector */}
+                <div className="relative font-size-selector">
+                  <button
+                    onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
+                    className="p-1.5 md:p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors flex items-center space-x-1 md:space-x-2"
+                  >
+                    <ImFontSize className="w-3 md:w-4 h-3 md:h-4 text-gray-600" />
+                    <span className="text-xs font-bold hidden md:inline">
+                      <span className="text-red-500">A</span>
+                      <span className="text-gray-500">a</span>
+                    </span>
+                    <span className="text-xs text-gray-600">{fontSize}px</span>
                   </button>
+
+                  {showFontSizeMenu && (
+                    <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                      <div className="p-2 border-b border-gray-100">
+                        <div className="text-xs text-gray-600 mb-2">
+                          Font Size
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={decreaseFontSize}
+                            className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
+                          >
+                            <span className="text-xs">-</span>
+                          </button>
+                          <span className="text-xs font-medium">
+                            {fontSize}px
+                          </span>
+                          <button
+                            onClick={increaseFontSize}
+                            className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center hover:bg-gray-200"
+                          >
+                            <span className="text-xs">+</span>
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        onClick={resetFontSize}
+                        className="w-full text-left px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
+                      >
+                        Reset to Default
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                <button className="p-1.5 md:p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                  <PiImagesSquareFill className="w-3 md:w-4 h-3 md:h-4 text-gray-600" />
+                </button>
               </div>
             </div>
 
             {/* Question Box */}
             <div
-              className="rounded-xl p-6 mb-8 relative"
+              className="rounded-xl p-4 md:p-6 mb-6 md:mb-8 relative"
               style={{ backgroundColor: "#f9ddad" }}
             >
-              <div className="flex items-start space-x-4">
+              <div className="flex items-start space-x-3 md:space-x-4">
                 {question?.images && question.images.length > 0 ? (
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <div className="w-10 md:w-12 h-10 md:h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-xs text-gray-600">IMG</span>
                   </div>
                 ) : (
-                  <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <div className="w-10 md:w-12 h-10 md:h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                     <span className="text-xs text-gray-600">TXT</span>
                   </div>
                 )}
                 <div className="flex-1">
                   <p
-                    className="text-gray-800"
-                    style={{ fontSize: `${fontSize}px` }}
+                    className="text-gray-800 leading-relaxed"
+                    style={{ fontSize: `${Math.max(fontSize - 2, 14)}px` }}
                   >
                     {question?.text || "Question non disponible"}
                   </p>
                 </div>
               </div>
-              <div className="absolute top-[-15px] right-[50%] bg-white text-blue-600 px-2 py-1 rounded-full text-sm">
+              <div className="absolute top-[-12px] md:top-[-15px] right-[50%] transform translate-x-1/2 bg-white text-blue-600 px-2 py-1 rounded-full text-xs md:text-sm shadow-sm">
                 {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
               </div>
             </div>
 
             {/* Answer Options */}
-            <div className="space-y-3 mb-8">
+            <div className="space-y-2 md:space-y-3 mb-6 md:mb-8">
               {question?.options?.map((option, index) => {
                 const answerKey = String.fromCharCode(65 + index);
                 const currentQuestionAnswers =
@@ -711,7 +753,7 @@ const ExamPage = () => {
                       !showResults && handleAnswerSelect(answerKey)
                     }
                     disabled={showResults}
-                    className={`w-full rounded-[10px] text-left transition-all border overflow-hidden ${
+                    className={`w-full rounded-[8px] md:rounded-[10px] text-left transition-all border overflow-hidden touch-manipulation ${
                       showResults
                         ? ""
                         : isSelected
@@ -751,11 +793,11 @@ const ExamPage = () => {
                     }
                   >
                     <div
-                      className="flex items-center gap-3 px-4"
-                      style={{ minHeight: "55px" }}
+                      className="flex items-center gap-3 md:gap-3 px-3 md:px-4"
+                      style={{ minHeight: "48px" }}
                     >
                       <div
-                        className="w-7 h-7 rounded-full border flex items-center justify-center text-xs font-semibold"
+                        className="w-6 md:w-7 h-6 md:h-7 rounded-full border flex items-center justify-center text-xs font-semibold flex-shrink-0"
                         style={{
                           backgroundColor: showResults
                             ? isCorrect && isSelected
@@ -789,13 +831,13 @@ const ExamPage = () => {
                       </div>
 
                       <span
-                        className="font-medium"
-                        style={{ fontSize: `${fontSize}px` }}
+                        className="font-medium leading-relaxed flex-1"
+                        style={{ fontSize: `${Math.max(fontSize - 1, 13)}px` }}
                       >
                         {option.text}
                       </span>
                       {showResults && (
-                        <span className="ml-auto">
+                        <span className="ml-auto flex-shrink-0">
                           {getAnswerIcon(answerKey, index)}
                         </span>
                       )}
@@ -807,23 +849,25 @@ const ExamPage = () => {
 
             {/* Feedback Section */}
             {showResults && (
-              <div className="mb-8">
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="mb-6 md:mb-8">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     {getFeedbackMessage().icon}
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-base md:text-lg font-semibold text-gray-900">
                       Résultat de votre réponse
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     {/* Feedback Element B - Incorrect/Unselected Correct */}
                     <div className="flex items-center space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">B</span>
+                      <div className="w-7 md:w-8 h-7 md:h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-xs md:text-sm">
+                          B
+                        </span>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-red-800">
+                        <p className="text-xs md:text-sm text-red-800">
                           C'est lorsque l'utilisateur n'a pas sélectionné la
                           réponse correcte
                         </p>
@@ -832,11 +876,13 @@ const ExamPage = () => {
 
                     {/* Feedback Element C - Correct Selection */}
                     <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">C</span>
+                      <div className="w-7 md:w-8 h-7 md:h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-xs md:text-sm">
+                          C
+                        </span>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-green-800">
+                        <p className="text-xs md:text-sm text-green-800">
                           C'est lorsque l'utilisateur a sélectionné la réponse
                           correcte
                         </p>
@@ -844,8 +890,8 @@ const ExamPage = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-800 text-sm">
+                  <div className="mt-4 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 text-xs md:text-sm">
                       {getFeedbackMessage().message}
                     </p>
                   </div>
@@ -854,25 +900,26 @@ const ExamPage = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between">
-              <div></div>
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
+              <div className="hidden md:block"></div>
+              <div className="flex items-center justify-center space-x-3 md:space-x-4 w-full md:w-auto">
                 <button
-                  onClick={() =>
-                    currentQuestion > 0 &&
-                    setCurrentQuestion(currentQuestion - 1)
-                  }
+                  onClick={() => {
+                    if (currentQuestion > 0) {
+                      setCurrentQuestion(currentQuestion - 1);
+                      setShowResults(false);
+                      setShowExplanation(false);
+                      setShowVerifyModal(false);
+                    }
+                  }}
                   disabled={currentQuestion === 0}
-                  className="p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 md:p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
                 >
-                  <FaArrowLeft className="w-4 h-4" />
+                  <FaArrowLeft className="w-3 md:w-4 h-3 md:h-4" />
                 </button>
                 <button
                   onClick={handleCheckAnswer}
-                  disabled={
-                    !selectedAnswers[currentQuestion]?.length || showResults
-                  }
-                  className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="bg-blue-500 text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm md:text-base touch-manipulation flex-1 md:flex-none"
                 >
                   {showResults ? "Réponse Vérifiée" : "Vérifier la Réponse"}
                 </button>
@@ -886,15 +933,18 @@ const ExamPage = () => {
                     );
                     if (currentQuestion < allQuestions.length - 1) {
                       setCurrentQuestion(currentQuestion + 1);
+                      setShowResults(false);
+                      setShowExplanation(false);
+                      setShowVerifyModal(false);
                     }
                   }}
                   disabled={
                     currentQuestion >=
                     (examQuestionData?.totalQuestions || 0) - 1
                   }
-                  className="p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 md:p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
                 >
-                  <FaArrowRight className="w-4 h-4" />
+                  <FaArrowRight className="w-3 md:w-4 h-3 md:h-4" />
                 </button>
               </div>
             </div>
@@ -909,76 +959,95 @@ const ExamPage = () => {
       {editModelShow && <ResumeModel />}
       {/* Verify Modal */}
       {showVerifyModal && (
-        <div className="absolute   z-[60] bg-white h-[100px] ">
+        <div className="fixed bottom-3 left-0 w-full z-[60] flex items-end justify-center p-4 pointer-events-none ">
           <div
             className="absolute inset-0"
             onClick={() => setShowVerifyModal(false)}
           ></div>
-          <div className="absolute left-0 right-0 bottom-4 flex items-center justify-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 shadow-lg shadow-red-300/40 flex items-center justify-center text-white text-2xl font-bold">
-                ×
-              </div>
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-green-600 shadow-lg shadow-green-300/40 flex items-center justify-center text-white text-2xl font-bold">
-                ✓
-              </div>
+          <div className="relative bg-white rounded-2xl w-full max-w-2xl p-4 md:p-6 max-h-[80vh] overflow-y-auto transform transition-all duration-300 scale-100 border border-gray-300">
+            {/* Result indicators */}
+            <div className="flex items-center justify-center gap-6 mb-6">
+              {isAnswerCorrect() ? (
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-green-600 shadow-lg shadow-green-300/40 flex items-center justify-center text-white text-xl md:text-2xl font-bold">
+                  ✓
+                </div>
+              ) : (
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 shadow-lg shadow-red-300/40 flex items-center justify-center text-white text-xl md:text-2xl font-bold">
+                  ×
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2 md:gap-4">
-              <button
-                className="w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  const prevIndex = Math.max(0, currentQuestion - 1);
-                  setCurrentQuestion(prevIndex);
-                }}
-              >
-                ←
-              </button>
-              <button
-                className="w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  const allQuestions = [];
-                  Object.values(examQuestionData.questions).forEach(
-                    (sessionQuestions) => {
-                      allQuestions.push(...sessionQuestions);
-                    }
-                  );
-                  const nextIndex = Math.min(
-                    allQuestions.length - 1,
-                    currentQuestion + 1
-                  );
-                  setCurrentQuestion(nextIndex);
-                }}
-              >
-                →
-              </button>
-              <button
-                className="px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm"
-                onClick={() => setShowVerifyModal(false)}
-              >
-                communité
-              </button>
-              <button
-                className="px-5 py-2 rounded-full border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 shadow-sm"
-                onClick={() => {
-                  setShowExplanation(true);
-                  setShowVerifyModal(false);
-                }}
-              >
-                Explication
-              </button>
-              <button
-                className="px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm"
-                onClick={() => {
-                  setSelectedAnswers({
-                    ...selectedAnswers,
-                    [currentQuestion]: [],
-                  });
-                  setShowResults(false);
-                  setShowVerifyModal(false);
-                }}
-              >
-                Ressayer
-              </button>
+
+            {/* Action buttons */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4">
+              {/* Navigation buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  className="w-10 h-10 md:w-9 md:h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 touch-manipulation"
+                  onClick={() => {
+                    const prevIndex = Math.max(0, currentQuestion - 1);
+                    setCurrentQuestion(prevIndex);
+                    setShowResults(false);
+                    setShowExplanation(false);
+                    setShowVerifyModal(false);
+                  }}
+                >
+                  ←
+                </button>
+                <button
+                  className="w-10 h-10 md:w-9 md:h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 touch-manipulation"
+                  onClick={() => {
+                    const allQuestions = [];
+                    Object.values(examQuestionData.questions).forEach(
+                      (sessionQuestions) => {
+                        allQuestions.push(...sessionQuestions);
+                      }
+                    );
+                    const nextIndex = Math.min(
+                      allQuestions.length - 1,
+                      currentQuestion + 1
+                    );
+                    setCurrentQuestion(nextIndex);
+                    setShowResults(false);
+                    setShowExplanation(false);
+                    setShowVerifyModal(false);
+                  }}
+                >
+                  →
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
+                <button
+                  className="w-full md:w-auto px-4 md:px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm text-sm md:text-base touch-manipulation"
+                  onClick={() => setShowVerifyModal(false)}
+                >
+                  communauté
+                </button>
+                <button
+                  className="w-full md:w-auto px-4 md:px-5 py-2 rounded-full border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 shadow-sm text-sm md:text-base touch-manipulation"
+                  onClick={() => {
+                    setShowExplanation(true);
+                    setShowVerifyModal(false);
+                  }}
+                >
+                  Explication
+                </button>
+                <button
+                  className="w-full md:w-auto px-4 md:px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm text-sm md:text-base touch-manipulation"
+                  onClick={() => {
+                    setSelectedAnswers({
+                      ...selectedAnswers,
+                      [currentQuestion]: [],
+                    });
+                    setShowResults(false);
+                    setShowVerifyModal(false);
+                  }}
+                >
+                  Ressayer
+                </button>
+              </div>
             </div>
           </div>
         </div>

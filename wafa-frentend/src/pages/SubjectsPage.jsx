@@ -1173,20 +1173,19 @@ const SubjectsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* Header */}
-      <div className="relative z-10 flex flex-col justify-between mb-8">
+      <div className="relative z-10 flex flex-col justify-between">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate("/dashboard/home")}
             className="text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <FaArrowLeft className="text-xl" />
+            <FaArrowLeft className="text-md" />
           </button>
-          <div className="flex items-center space-x-3">
-            <div className="text-3xl">{course.image}</div>
-
-            <h1 className="text-3xl font-bold text-gray-900">{course.name}</h1>
+          <div className="flex flex-col  space-x-3">
+            <h1 className="text-2xl font-semibold text-gray-700">{course.name}</h1>
+            <div className="bg-blue-600 h-1 w-[100px]  mt-1"></div>
           </div>
         </div>
         <div className="flex h-[80px] w-full bg-white/70 rounded-xl shadow-md mt-6 mb-4 overflow-hidden border border-blue-100">
@@ -1357,20 +1356,10 @@ const SubjectsPage = () => {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-gray-900 font-semibold">{exam.name}</h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
-                        exam.difficulty
-                      )}`}
-                    >
-                      {exam.difficulty}
-                    </span>
+                    
                   </div>
 
-                  {exam.description && (
-                    <div className="text-gray-600 text-sm mb-2">
-                      {exam.description}
-                    </div>
-                  )}
+                
 
                   {exam.correction && (
                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-3">
