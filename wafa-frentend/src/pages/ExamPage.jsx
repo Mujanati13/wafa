@@ -638,9 +638,9 @@ const ExamPage = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-[50px] md:pt-[60px] h-screen overflow-hidden w-full">
+      <div className="flex-1 flex flex-col pt-[50px] md:pt-[60px] h-screen overflow-hidden px-3 md:px-6">
         {/* Top Navigation Bar */}
-        <div className="text-white px-4 md:px-8 py-3 w-full max-w-[1103px] mx-auto mt-4 bg-[#00a8f3] rounded-t-2xl">
+        <div className="text-white px-3 md:px-6 lg:px-8 py-3 w-full mx-auto mt-4 bg-[#00a8f3] rounded-t-2xl max-w-7xl">
           <div className="flex items-center justify-between">
             <div className="text-xs md:text-sm truncate flex-1 mr-4">
               {examQuestionData?.moduleName || "Module"} &gt;{" "}
@@ -701,12 +701,14 @@ const ExamPage = () => {
         </div>
 
         {/* Question Content */}
-        <div className="flex-1 px-4 md:px-8 pb-8 overflow-y-auto">
-          <div className="w-full max-w-[1103px] mx-auto bg-white rounded-b-2xl ">
+        <div className="flex-1 pb-8 overflow-y-auto ">
+          <div className="w-full mx-auto bg-white rounded-b-2xl  p-2 max-w-7xl">
+            {/* Meta Header: question count and tags (layout only, keep colors) */}
+
             {/* Question Header */}
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0 ">
-              <div className="flex items-center space-x-2 md:space-x-4 h-[50px]">
+              <div className="flex items-center space-x-2 md:space-x-4 ">
                 <span className="text-gray-600 font-medium text-sm md:text-base">
                   {question?.sessionLabel || "Session"} Q{currentQuestion + 1}
                 </span>
@@ -800,9 +802,6 @@ const ExamPage = () => {
                     {question?.text || "Question non disponible"}
                   </p>
                 </div>
-              </div>
-              <div className="absolute top-[-12px] md:top-[-15px] right-[50%] transform translate-x-1/2 bg-white text-blue-600 px-2 py-1 rounded-full text-xs md:text-sm shadow-sm">
-                {currentQuestion + 1}/{examQuestionData?.totalQuestions || 0}
               </div>
             </div>
 
@@ -968,10 +967,10 @@ const ExamPage = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-              <div className="hidden md:block"></div>
-              <div className="flex items-center justify-center space-x-3 md:space-x-4 w-full md:w-auto">
+            {/* Bottom Navigation Row */}
+            <div className="mt-6 md:mt-8 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 w-full">
+                {/* Previous */}
                 <button
                   onClick={() => {
                     if (currentQuestion > 0) {
@@ -982,16 +981,26 @@ const ExamPage = () => {
                     }
                   }}
                   disabled={currentQuestion === 0}
-                  className="p-2 md:p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                  className="flex items-center justify-center sm:justify-start gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-lg bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 >
                   <FaArrowLeft className="w-3 md:w-4 h-3 md:h-4" />
+                  <span className="text-sm md:text-base font-medium">
+                    Précédent
+                  </span>
                 </button>
+
+                {/* Voir explication */}
                 <button
-                  onClick={handleCheckAnswer}
-                  className="bg-blue-500 text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm md:text-base touch-manipulation flex-1 md:flex-none"
+                  onClick={() => {
+                    setShowExplanation(true);
+                    setShowVerifyModal(false);
+                  }}
+                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 font-medium text-sm md:text-base touch-manipulation w-full"
                 >
-                  {showResults ? "Réponse Vérifiée" : "Vérifier la Réponse"}
+                  Voir explication
                 </button>
+
+                {/* Next */}
                 <button
                   onClick={() => {
                     const allQuestions = [];
@@ -1011,8 +1020,11 @@ const ExamPage = () => {
                     currentQuestion >=
                     (examQuestionData?.totalQuestions || 0) - 1
                   }
-                  className="p-2 md:p-3 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                  className="flex items-center justify-center sm:justify-end gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-lg bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 >
+                  <span className="text-sm md:text-base font-medium">
+                    Suivant
+                  </span>
                   <FaArrowRight className="w-3 md:w-4 h-3 md:h-4" />
                 </button>
               </div>
