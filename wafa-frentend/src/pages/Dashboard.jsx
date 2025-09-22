@@ -131,24 +131,24 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 flex flex-col justify-between mb-6  bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-4  sm:px-6 sm:py-5 md:px-8 w-fit">
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 bg-white/70 backdrop-blur-md rounded-xl shadow-md border border-blue-100 px-3 py-2 sm:px-4 sm:py-3 md:px-6 w-full">
         {/* Left: Welcome & Info */}
         <div className="flex flex-col max-w-full lg:max-w-xl">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900 mb-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+          <h1 className="text-base sm:text-lg md:text-xl font-extrabold text-gray-900 mb-1.5 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <span className="inline-block bg-gradient-to-r from-blue-500 via-teal-400 to-blue-600 text-transparent bg-clip-text">
               Bienvenue
             </span>
-            <span className="inline-block text-blue-600 text-sm sm:text-base md:text-lg">
+            <span className="inline-block text-blue-600 text-xs sm:text-sm md:text-base">
               Az-eddine serhani
             </span>
           </h1>
-          <p className="text-gray-700 text-sm sm:text-base leading-relaxed mt-1">
+          <p className="text-gray-600 text-xs sm:text-sm leading-snug mt-0.5">
             Bienvenue dans votre interface WAFA,{" "}
             <span className="font-semibold text-blue-600">
               Az-eddine serhani
             </span>
             .<br className="hidden sm:inline" />
-            <span className="text-gray-500 block sm:inline mt-1 sm:mt-0">
+            <span className="text-gray-500 block sm:inline mt-0.5 sm:mt-0">
               Si vous avez des questions ou souhaitez en savoir plus, n'hésitez
               pas à nous{" "}
               <a className="text-blue-500 cursor-pointer hover:underline">
@@ -157,14 +157,14 @@ const Dashboard = () => {
             </span>
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+          <div className="flex flex-row flex-wrap gap-1.5">
             {semesters.map((item, index) => (
               <button
                 key={item.name}
                 disabled={!item.isOpen}
                 onClick={() => setSemester(item.name)}
-                className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition-all duration-200 border text-xs sm:text-sm flex items-center gap-1 sm:gap-2
+                className={`px-2 sm:px-2 md:px-3 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 border text-xs sm:text-xs flex items-center gap-1 sm:gap-2
                   ${
                     semester === item.name
                       ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white border-blue-500 shadow-md scale-105"
@@ -180,8 +180,8 @@ const Dashboard = () => {
               </button>
             ))}
           </div>
-          <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold transition-all duration-200 border bg-white">
-            <span className="font-semibold text-xs sm:text-sm tracking-wide text-gray-700">
+          <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 border bg-white">
+            <span className="font-medium text-xs tracking-wide text-gray-700">
               Plan Gratuit
             </span>
           </div>
@@ -198,7 +198,6 @@ const Dashboard = () => {
 
         {/* Courses Section */}
         <div className="w-full">
-         
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {coursesData &&
               coursesData?.map((course) => (

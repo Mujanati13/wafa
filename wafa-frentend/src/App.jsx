@@ -55,6 +55,9 @@ export default function App() {
           <Route path="home" element={<Dashboard />} />
           <Route path="playlist" element={<Myplaylist />} />
           <Route path="note" element={<p>note</p>} />
+          <Route path="analytics" element={<AnayticsPage />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />

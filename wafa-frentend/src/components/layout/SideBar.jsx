@@ -17,7 +17,7 @@ import {
 } from "react-icons/fa";
 import { RiAdminFill } from "react-icons/ri";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -46,27 +46,13 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     fetchModules();
   }, []);
 
-  // Static sidebar items (Dashboard and Admin)
-  const staticSidebarItems = [
-    {
-      id: "overview",
-      label: "Dashboard",
-      icon: FaHome,
-      path: "/dashboard/home",
-    },
-    {
-      id: "playlist",
-      label: "My playlist",
-      icon: Icons.SquareLibrary,
-      path: "/dashboard/playlist",
-    },
-    {
-      id: "note",
-      label: "My note",
-      icon: Icons.NotebookIcon,
-      path: "/dashboard/note",
-    },
-  ];
+  // Base items
+  const dashboardItem = {
+    id: "overview",
+    label: "Tableau de bord",
+    icon: FaHome,
+    path: "/dashboard/home",
+  };
 
   // Dynamic module items based on fetched modules
   const moduleSidebarItems = modules.map((module) => ({
@@ -76,8 +62,39 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     path: `/dashboard/subjects/${module._id}`,
   }));
 
-  // Combine static and dynamic items
-  const sidebarItems = [...staticSidebarItems, ...moduleSidebarItems];
+  // Other grouped items
+  const analysisItems = [
+    {
+      id: "leaderboard",
+      label: "Classement",
+      icon: Icons.Trophy,
+      path: "/dashboard/leaderboard",
+    },
+  ];
+
+  const libraryItems = [
+    {
+      id: "playlist",
+      label: "Mes playlists",
+      icon: Icons.SquareLibrary,
+      path: "/dashboard/playlist",
+    },
+    {
+      id: "note",
+      label: "Mes notes",
+      icon: Icons.NotebookIcon,
+      path: "/dashboard/note",
+    },
+  ];
+
+  const accountItems = [
+    {
+      id: "settings",
+      label: "Paramètres",
+      icon: Icons.Settings,
+      path: "/dashboard/settings",
+    },
+  ];
   const navigate = useNavigate();
   return (
     <>
@@ -91,13 +108,18 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       )}
 
       <motion.div
-        initial={{ x: isMobile ? -300 : 0 }}
-        animate={{ x: isMobile && !sidebarOpen ? -300 : 0 }}
+        initial={{
+          x: isMobile ? -300 : 0,
+          width: isMobile ? 256 : 256,
+        }}
+        animate={{
+          x: isMobile && !sidebarOpen ? -300 : 0,
+          width: isMobile ? 256 : sidebarOpen ? 256 : 80,
+        }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
         className={`${isMobile ? "fixed" : "relative"} z-50 ${
           isMobile ? "h-[calc(100vh-4rem)]" : "h-screen"
-        } flex flex-col ${
-          sidebarOpen ? "w-64" : isMobile ? "w-64" : "w-20"
-        } bg-white border-r border-gray-200 shadow-xl transition-all duration-300 left-0 ${
+        } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${
           isMobile ? "top-16" : "top-0"
         } overflow-hidden`}
       >
@@ -115,38 +137,237 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               )}
             </div>
           ) : (
-            sidebarItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  navigate(item.path);
-                  // Close sidebar on mobile after navigation
-                  if (isMobile) {
-                    setSidebarOpen(false);
-                  }
-                }}
-                title={item.label}
-                className={`w-full flex items-center ${
-                  sidebarOpen
-                    ? "space-x-3 justify-start px-4"
-                    : "justify-center px-2"
-                } py-3 rounded-xl transition-all duration-300 ${
-                  activeTab === item.id
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                <item.icon className="text-xl flex-shrink-0" />
+            <>
+              {/* Group: Dashboard */}
+              <AnimatePresence initial={false}>
                 {sidebarOpen && (
-                  <span className="font-medium">{item.label}</span>
+                  <motion.div
+                    key="title-dashboard"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-4 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    Tableau de bord
+                  </motion.div>
                 )}
-              </button>
-            ))
+              </AnimatePresence>
+              <SidebarItem
+                item={dashboardItem}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                navigate={navigate}
+                isMobile={isMobile}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+
+              {/* Group: Modules */}
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="title-modules"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-4 mt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    Modules
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {moduleSidebarItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  sidebarOpen={sidebarOpen}
+                  setSidebarOpen={setSidebarOpen}
+                  extraClassName={sidebarOpen ? "pl-2" : ""}
+                />
+              ))}
+
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="sep-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="my-2 border-t border-gray-200"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Group: Analyse */}
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="title-analyse"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    Analyse
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {analysisItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  sidebarOpen={sidebarOpen}
+                  setSidebarOpen={setSidebarOpen}
+                />
+              ))}
+
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="sep-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="my-2 border-t border-gray-200"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Group: Bibliothèque */}
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="title-library"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    Bibliothèque
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {libraryItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  sidebarOpen={sidebarOpen}
+                  setSidebarOpen={setSidebarOpen}
+                />
+              ))}
+
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="sep-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="my-2 border-t border-gray-200"
+                  />
+                )}
+              </AnimatePresence>
+
+              {/* Group: Compte */}
+              <AnimatePresence initial={false}>
+                {sidebarOpen && (
+                  <motion.div
+                    key="title-account"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    Compte
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {accountItems.map((item) => (
+                <SidebarItem
+                  key={item.id}
+                  item={item}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  sidebarOpen={sidebarOpen}
+                  setSidebarOpen={setSidebarOpen}
+                />
+              ))}
+            </>
           )}
         </nav>
       </motion.div>
     </>
+  );
+};
+
+// Reusable item component to keep rendering consistent
+const SidebarItem = ({
+  item,
+  activeTab,
+  setActiveTab,
+  navigate,
+  isMobile,
+  sidebarOpen,
+  setSidebarOpen,
+  extraClassName = "",
+}) => {
+  return (
+    <button
+      key={item.id}
+      onClick={() => {
+        setActiveTab(item.id);
+        navigate(item.path);
+        if (isMobile) {
+          setSidebarOpen(false);
+        }
+      }}
+      title={item.label}
+      className={`w-full flex items-center ${
+        sidebarOpen ? "space-x-3 justify-start px-4" : "justify-center px-2"
+      } py-3 rounded-xl transition-colors duration-200 ${
+        activeTab === item.id
+          ? "bg-blue-600 text-white shadow-lg"
+          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+      } ${extraClassName}`}
+    >
+      <item.icon className="text-xl flex-shrink-0" />
+      <AnimatePresence initial={false}>
+        {sidebarOpen && (
+          <motion.span
+            key={`${item.id}-label`}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -6 }}
+            transition={{ duration: 0.15 }}
+            className="font-medium"
+          >
+            {item.label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
   );
 };
 
