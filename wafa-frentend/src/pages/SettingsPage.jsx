@@ -50,10 +50,10 @@ const SettingsPage = () => {
   };
 
   const profileTabs = [
-    { id: 'personal', label: 'Informations Personnelles', icon: FaUser },
-    { id: 'academic', label: 'Informations Académiques', icon: FaGraduationCap },
+    { id: 'personal', label: 'Personnelles', icon: FaUser },
+    { id: 'academic', label: 'Académiques', icon: FaGraduationCap },
     { id: 'security', label: 'Sécurité', icon: FaLock },
-    { id: 'privacy', label: 'Confidentialité', icon: FaShieldAlt }
+ 
   ];
 
   const InputField = ({ value, onChange, label, type = 'text', placeholder, required = false }) => (
@@ -266,68 +266,10 @@ const SettingsPage = () => {
         required
       />
 
-      <div className="pt-4 border-t border-blue-100">
-        <ToggleSwitch
-          checked={ profile.twoFactorAuth }
-          onChange={ (value) => handleProfileChange('twoFactorAuth', value) }
-          label="Authentification à Deux Facteurs"
-          description="Sécurité supplémentaire pour votre compte"
-        />
-      </div>
-
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
-        <h4 className="text-red-800 font-medium mb-2">Zone de Danger</h4>
-        <p className="text-red-600 text-sm mb-3">
-          Cette action est irréversible et supprimera définitivement votre compte.
-        </p>
-        <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-          Supprimer le Compte
-        </button>
-      </div>
     </div>
   );
 
-  const renderPrivacySettings = () => (
-    <div className="space-y-4">
-      <SelectInput
-        value={ profile.profileVisibility }
-        onChange={ (value) => handleProfileChange('profileVisibility', value) }
-        label="Visibilité du Profil"
-        description="Qui peut voir votre profil et vos informations"
-        options={ [
-          { value: 'public', label: 'Public' },
-          { value: 'friends', label: 'Amis uniquement' },
-          { value: 'private', label: 'Privé' }
-        ] }
-      />
-
-      <ToggleSwitch
-        checked={ profile.shareProgress }
-        onChange={ (value) => handleProfileChange('shareProgress', value) }
-        label="Partager les Progrès"
-        description="Permettre aux autres de voir vos statistiques de progression"
-      />
-
-      <ToggleSwitch
-        checked={ profile.emailNotifications }
-        onChange={ (value) => handleProfileChange('emailNotifications', value) }
-        label="Notifications par Email"
-        description="Recevez des notifications par email pour les mises à jour importantes"
-      />
-
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-6">
-        <h4 className="text-gray-900 font-medium mb-4">Données Personnelles</h4>
-        <div className="space-y-3">
-          <button className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors shadow-sm">
-            <div className="flex items-center space-x-3">
-              <FaDownload />
-              <span>Exporter mes Données</span>
-            </div>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -337,8 +279,7 @@ const SettingsPage = () => {
         return renderAcademicInfo();
       case 'security':
         return renderSecuritySettings();
-      case 'privacy':
-        return renderPrivacySettings();
+     
       default:
         return null;
     }
@@ -370,9 +311,9 @@ const SettingsPage = () => {
             initial={ { opacity: 0, x: -20 } }
             animate={ { opacity: 1, x: 0 } }
             transition={ { delay: 0.1 } }
-            className="lg:col-span-1"
+            className="lg:col-span-1 flex-1"
           >
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-lg">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-lg ">
               <nav className="space-y-2">
                 { profileTabs.map((tab) => (
                   <button
@@ -396,7 +337,7 @@ const SettingsPage = () => {
             initial={ { opacity: 0, x: 20 } }
             animate={ { opacity: 1, x: 0 } }
             transition={ { delay: 0.2 } }
-            className="lg:col-span-3"
+            className="lg:col-span-3 flex-1"
           >
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-100 shadow-lg">
               <div className="flex items-center space-x-3 mb-6">

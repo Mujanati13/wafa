@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/utils";
 import { moduleService } from "@/services/moduleService";
 import { Lock } from "lucide-react";
+import ModuleCard from "@/components/Dashboard/ModuleCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -201,146 +202,11 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {coursesData &&
               coursesData?.map((course) => (
-                <motion.div
-                  key={course._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-4 sm:p-6 cursor-pointer hover:shadow-xl hover:border-blue-300 transition-all duration-300"
-                  onClick={() => handleCourseClick(course._id)}
-                >
-                  {/* Course Icon and Header - Hidden on mobile */}
-                  <div className="hidden sm:flex items-start justify-between mb-3 sm:mb-4">
-                    <img
-                      src={course.imageUrl}
-                      alt={course.name}
-                      className="w-full h-32 sm:h-40 md:h-48 lg:h-50 object-cover rounded-lg"
-                    />
-                  </div>
-
-                  {/* Course Title */}
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
-                    {course.name}
-                  </h3>
-
-                  {/* Progress */}
-                  <div className="flex items-center space-x-2 mb-3 sm:mb-4">
-                    <div className="flex-1 bg-blue-100 rounded-full h-2">
-                      <div
-                        className={`bg-gradient-to-r ${
-                          course.color || "from-blue-500 to-teal-400"
-                        } h-2 rounded-full transition-all duration-300`}
-                        style={{ width: `${course.progress || 0}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-gray-600 text-xs sm:text-sm">
-                      {course.progress || 0}%
-                    </span>
-                  </div>
-
-                  {/* Course Stats */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-gray-600 text-xs sm:text-sm">
-                      0 / {course.exams ? course.totalQuestions : 8} Questions
-                    </div>
-
-                    <span className="text-blue-600 font-bold h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-blue-100 text-sm sm:text-base">
-                      ?
-                    </span>
-                  </div>
-                </motion.div>
+                <ModuleCard key={course.id} course={course} handleCourseClick={handleCourseClick} />
               ))}
           </div>
         </div>
 
-        {/* Rankers Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
-            Rankers
-          </h2>
-
-          {/* Mobile Card Layout */}
-          <div className="block sm:hidden space-y-3">
-            {leaderboard.map((player) => (
-              <div
-                key={player.rank}
-                className="bg-white/60 rounded-lg p-4 border border-blue-100"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <span className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-                      {player.rank}
-                    </span>
-                    <div>
-                      <div className="text-gray-900 font-semibold text-sm">
-                        {player.user}
-                      </div>
-                      <div className="text-gray-600 text-xs">
-                        {player.level}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-gray-900 text-sm font-semibold">
-                      {player.percentage}%
-                    </div>
-                    <div className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold mt-1">
-                      {player.points.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Table Layout */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-gray-600 text-sm border-b border-blue-100">
-                  <th className="text-left py-3">Rank</th>
-                  <th className="text-left py-3">User</th>
-                  <th className="text-left py-3 hidden md:table-cell">
-                    Level Percentage
-                  </th>
-                  <th className="text-left py-3">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((player) => (
-                  <tr key={player.rank} className="border-b border-blue-50">
-                    <td className="py-3 sm:py-4 text-gray-900 font-semibold">
-                      {player.rank}.
-                    </td>
-                    <td className="py-3 sm:py-4">
-                      <div>
-                        <div className="text-gray-900 font-semibold text-sm sm:text-base">
-                          {player.user}
-                        </div>
-                        <div className="text-gray-600 text-xs sm:text-sm">
-                          {player.level}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 sm:py-4 text-gray-900 text-sm sm:text-base hidden md:table-cell">
-                      {player.percentage}%
-                    </td>
-                    <td className="py-3 sm:py-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-0">
-                        <span className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                          {player.points.toLocaleString()}
-                        </span>
-                        <span className="text-gray-600 text-xs md:hidden">
-                          {player.percentage}%
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );

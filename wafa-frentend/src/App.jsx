@@ -42,6 +42,7 @@ import ImportImages from "./pages/ImportImages";
 import ImportExplications from "./pages/ImportExplications";
 import CreateCategoriesForCourses from "./pages/CreateCategoriesForCourses";
 import Myplaylist from "./pages/Myplaylist";
+import LeaderboardClient from "./pages/LeaderboardClient";
 
 export default function App() {
   return (
@@ -56,7 +57,7 @@ export default function App() {
           <Route path="playlist" element={<Myplaylist />} />
           <Route path="note" element={<p>note</p>} />
           <Route path="analytics" element={<AnayticsPage />} />
-          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="leaderboard" element={<LeaderboardClient />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}

@@ -46,6 +46,16 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     fetchModules();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && isMobile && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobile, sidebarOpen, setSidebarOpen]);
+
   // Base items
   const dashboardItem = {
     id: "overview",
@@ -87,21 +97,14 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     },
   ];
 
-  const accountItems = [
-    {
-      id: "settings",
-      label: "Paramètres",
-      icon: Icons.Settings,
-      path: "/dashboard/settings",
-    },
-  ];
+ 
   const navigate = useNavigate();
   return (
     <>
       {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           style={{ top: "4rem" }}
           onClick={() => setSidebarOpen(false)}
         />
@@ -119,15 +122,15 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
         transition={{ duration: 0.25, ease: "easeInOut" }}
         className={`${isMobile ? "fixed" : "relative"} z-50 ${
           isMobile ? "h-[calc(100vh-4rem)]" : "h-screen"
-        } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${
+        } flex flex-col min-h-0 bg-white border-r border-gray-200 shadow-xl left-0 ${
           isMobile ? "top-16" : "top-0"
-        } overflow-hidden`}
+        } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden`}
       >
         {/* Navigation */}
         <nav
           className={`space-y-2 ${
             sidebarOpen ? "p-4 pt-4" : "p-2 pt-4"
-          } flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100`}
+          } flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100`}
         >
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -188,7 +191,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                   isMobile={isMobile}
                   sidebarOpen={sidebarOpen}
                   setSidebarOpen={setSidebarOpen}
-                  extraClassName={sidebarOpen ? "pl-2" : ""}
+                  extraClassName={ sidebarOpen ? "pl-2" : "" }
+                  
                 />
               ))}
 
@@ -287,33 +291,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                 )}
               </AnimatePresence>
 
-              {/* Group: Compte */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="title-account"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Compte
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {accountItems.map((item) => (
-                <SidebarItem
-                  key={item.id}
-                  item={item}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  navigate={navigate}
-                  isMobile={isMobile}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                />
-              ))}
+              
             </>
           )}
         </nav>
@@ -361,7 +339,7 @@ const SidebarItem = ({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.15 }}
-            className="font-medium"
+            className="font-medium text-left"
           >
             {item.label}
           </motion.span>

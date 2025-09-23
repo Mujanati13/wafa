@@ -9,9 +9,9 @@ const DashBoardLayout = () => {
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
-      // Auto-collapse sidebar on mobile
-      if (window.innerWidth < 768) {
+      setIsMobile(window.innerWidth < 1024);
+      // Auto-collapse sidebar on overlay mode (below lg)
+      if (window.innerWidth < 1024) {
         setSidebarOpen(false);
       } else {
         setSidebarOpen(true);
@@ -30,7 +30,7 @@ const DashBoardLayout = () => {
         setSidebarOpen={setSidebarOpen}
         isMobile={isMobile}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         <SideBar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
