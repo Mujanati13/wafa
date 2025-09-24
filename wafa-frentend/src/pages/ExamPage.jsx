@@ -26,9 +26,9 @@ import { PiImagesSquareFill } from "react-icons/pi";
 import ResumeModel from "../components/ExamsPage/ResumeModel";
 import ExplicationModel from "../components/ExamsPage/ExplicationModel";
 import { api } from "@/lib/utils";
-import { LuAlignVerticalSpaceBetween } from "react-icons/lu";
-import Spinner from "@/components/ui/Spinner";
+
 import {
+  Album,
   ArrowLeft,
   Bookmark,
   LogOut,
@@ -39,6 +39,9 @@ import {
 } from "lucide-react";
 import ProfileMenu from "@/components/profile/ProfileMenu";
 import IconWithTooltip from "@/components/ExamsPage/IconWithTooltip";
+import ShowNoDataState from "@/components/ExamsPage/ShowNoDataState";
+import LoadingExam from "@/components/ExamsPage/LoadingExam";
+import FaildStatus from "@/components/ExamsPage/FaildStatus";
 
 const ExamPage = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -146,14 +149,6 @@ const ExamPage = () => {
     };
   }, []);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
   const handleAnswerSelect = (answerKey) => {
     const currentQuestionAnswers = selectedAnswers[currentQuestion] || [];
     const updatedAnswers = currentQuestionAnswers.includes(answerKey)
@@ -194,10 +189,6 @@ const ExamPage = () => {
     setFontSize(16); // Reset to default
   };
 
-  const getQuestionStatus = (questionId) => {
-    if (questionId === question.id) return "active";
-    return "pending";
-  };
   const handleExit = () => {
     navigate("/dashboard/home");
   };
@@ -358,46 +349,17 @@ const ExamPage = () => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Spinner color="black" />
-          <p className="text-gray-600">Chargement de l'examen...</p>
-        </div>
-      </div>
-    );
+    return <LoadingExam />;
   }
 
   // Show error state
   if (error) {
-    return (
-      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <p className="text-red-600 text-lg mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Réessayer
-          </button>
-        </div>
-      </div>
-    );
+    return <FaildStatus error={error} />;
   }
 
   // Show no data state
   if (!examQuestionData || !question) {
-    return (
-      <div className="max-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-500 text-6xl mb-4">📝</div>
-          <p className="text-gray-600 text-lg">
-            Aucune question trouvée pour cet examen.
-          </p>
-        </div>
-      </div>
-    );
+    return <ShowNoDataState />;
   }
 
   return (
@@ -654,16 +616,17 @@ const ExamPage = () => {
               <div
                 className={`flex gap-1.5 mr-2 transition-all duration-300 ease-in-out overflow-hidden ${
                   areActionsCollapsed
-                    ? "w-0 opacity-0 pointer-events-none"
-                    : "w-auto opacity-100 pointer-events-auto"
+                    ? "max-w-0 opacity-0 pointer-events-none"
+                    : "max-w-[500px] opacity-100 pointer-events-auto"
                 }`}
+                style={{
+                  maxWidth: areActionsCollapsed ? 0 : 500,
+                }}
               >
-                <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
-                <IconWithTooltip
-                  Icon={NotebookPen}
-                  label={"ajouter une note"}
-                />
-                <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
+                <IconWithTooltip Icon={Album} label="ajouter à revoir" />
+                <IconWithTooltip Icon={Bookmark} label="ajouter à playlist" />
+                <IconWithTooltip Icon={NotebookPen} label="ajouter une note" />
+                <IconWithTooltip Icon={TriangleAlert} label="Signaler" />
               </div>
 
               {/* Toggle button */}
@@ -693,6 +656,7 @@ const ExamPage = () => {
 
             {/* Desktop: Always show actions */}
             <div className="hidden md:flex gap-2.5">
+              <IconWithTooltip Icon={Album} label={"ajouter à revoir"} />
               <IconWithTooltip Icon={Bookmark} label={"ajouter a playlist"} />
               <IconWithTooltip Icon={NotebookPen} label={"ajouter une note"} />
               <IconWithTooltip Icon={TriangleAlert} label={"Signaler"} />
@@ -915,61 +879,9 @@ const ExamPage = () => {
               })}
             </div>
 
-            {/* Feedback Section */}
-            {showResults && (
-              <div className="mb-6 md:mb-8">
-                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
-                  <div className="flex items-center space-x-3 mb-4">
-                    {getFeedbackMessage().icon}
-                    <h3 className="text-base md:text-lg font-semibold text-gray-900">
-                      Résultat de votre réponse
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                    {/* Feedback Element B - Incorrect/Unselected Correct */}
-                    <div className="flex items-center space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="w-7 md:w-8 h-7 md:h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-xs md:text-sm">
-                          B
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs md:text-sm text-red-800">
-                          C'est lorsque l'utilisateur n'a pas sélectionné la
-                          réponse correcte
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Feedback Element C - Correct Selection */}
-                    <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="w-7 md:w-8 h-7 md:h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-xs md:text-sm">
-                          C
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs md:text-sm text-green-800">
-                          C'est lorsque l'utilisateur a sélectionné la réponse
-                          correcte
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-800 text-xs md:text-sm">
-                      {getFeedbackMessage().message}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Bottom Navigation Row */}
             <div className="mt-6 md:mt-8 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 md:gap-4 w-full">
                 {/* Previous */}
                 <button
                   onClick={() => {
@@ -998,6 +910,12 @@ const ExamPage = () => {
                   className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 font-medium text-sm md:text-base touch-manipulation w-full"
                 >
                   Voir explication
+                </button>
+                <button
+                  onClick={handleCheckAnswer}
+                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 font-medium text-sm md:text-base touch-manipulation w-full"
+                >
+                  Vérifier réponse
                 </button>
 
                 {/* Next */}
@@ -1031,8 +949,11 @@ const ExamPage = () => {
             </div>
 
             {/* Explanation */}
-            {(showResults || showExplanation) && (
-              <ExplicationModel question={question} />
+            {showExplanation && (
+              <ExplicationModel
+                question={question}
+                setShowExplanation={setShowExplanation}
+              />
             )}
           </div>
         </div>
@@ -1061,43 +982,6 @@ const ExamPage = () => {
 
             {/* Action buttons */}
             <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4">
-              {/* Navigation buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  className="w-10 h-10 md:w-9 md:h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 touch-manipulation"
-                  onClick={() => {
-                    const prevIndex = Math.max(0, currentQuestion - 1);
-                    setCurrentQuestion(prevIndex);
-                    setShowResults(false);
-                    setShowExplanation(false);
-                    setShowVerifyModal(false);
-                  }}
-                >
-                  ←
-                </button>
-                <button
-                  className="w-10 h-10 md:w-9 md:h-9 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 touch-manipulation"
-                  onClick={() => {
-                    const allQuestions = [];
-                    Object.values(examQuestionData.questions).forEach(
-                      (sessionQuestions) => {
-                        allQuestions.push(...sessionQuestions);
-                      }
-                    );
-                    const nextIndex = Math.min(
-                      allQuestions.length - 1,
-                      currentQuestion + 1
-                    );
-                    setCurrentQuestion(nextIndex);
-                    setShowResults(false);
-                    setShowExplanation(false);
-                    setShowVerifyModal(false);
-                  }}
-                >
-                  →
-                </button>
-              </div>
-
               {/* Action buttons */}
               <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
                 <button
@@ -1106,15 +990,7 @@ const ExamPage = () => {
                 >
                   communauté
                 </button>
-                <button
-                  className="w-full md:w-auto px-4 md:px-5 py-2 rounded-full border border-blue-400 text-blue-700 bg-white hover:bg-blue-50 shadow-sm text-sm md:text-base touch-manipulation"
-                  onClick={() => {
-                    setShowExplanation(true);
-                    setShowVerifyModal(false);
-                  }}
-                >
-                  Explication
-                </button>
+
                 <button
                   className="w-full md:w-auto px-4 md:px-5 py-2 rounded-full border border-gray-400 text-gray-900 bg-white hover:bg-gray-50 shadow-sm text-sm md:text-base touch-manipulation"
                   onClick={() => {

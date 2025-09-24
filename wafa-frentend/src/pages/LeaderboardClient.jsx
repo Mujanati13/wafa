@@ -13,6 +13,16 @@ const mockUsers = [
   { id: 8, name: "Omar H.", points: 772 },
   { id: 9, name: "Nadia F.", points: 740 },
   { id: 10, name: "Mehdi P.", points: 705 },
+  { id: 11, name: "Hajar S.", points: 690 },
+  { id: 12, name: "Tarik M.", points: 676 },
+  { id: 13, name: "Soukaina B.", points: 662 },
+  { id: 14, name: "Yassine K.", points: 648 },
+  { id: 15, name: "Mouna E.", points: 634 },
+  { id: 16, name: "Adil R.", points: 620 },
+  { id: 17, name: "Zineb L.", points: 606 },
+  { id: 18, name: "Samir D.", points: 592 },
+  { id: 19, name: "Ilham O.", points: 578 },
+  { id: 20, name: "Reda C.", points: 564 },
 ];
 
 function getInitials(fullName) {
@@ -64,8 +74,15 @@ const LeaderboardClient = () => {
   const topTen = sorted.slice(0, 10);
   const maxScore = sorted[0]?.points || 1;
 
+  // Mock current user for design preview (outside Top 10)
+  const currentUserId = 17;
+  const currentUserIndex = sorted.findIndex((u) => u.id === currentUserId);
+  const currentUser = currentUserIndex >= 0 ? sorted[currentUserIndex] : null;
+  const currentUserRank = currentUserIndex >= 0 ? currentUserIndex + 1 : null;
+  const isCurrentInTopTen = currentUserRank != null && currentUserRank <= 10;
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Classement
@@ -149,7 +166,11 @@ const LeaderboardClient = () => {
               return (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between py-3"
+                  className={`flex items-center justify-between py-3 ${
+                    currentUser && user.id === currentUser.id
+                      ? "bg-blue-50/60"
+                      : ""
+                  }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
@@ -203,6 +224,50 @@ const LeaderboardClient = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Current user position (if outside top 10) */}
+      {currentUser && !isCurrentInTopTen && (
+        <div className="mt-6 fixed inset-x-0 bottom-0 z-40 px-3 pb-4 sm:px-6 md:static md:px-0 md:pb-0">
+          <Card className="max-w-md mx-auto md:max-w-none shadow-lg">
+            <CardHeader>
+              <CardTitle>Votre position</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-foreground/70 border-muted">
+                    #{currentUserRank}
+                  </span>
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80">
+                    {getInitials(currentUser.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{currentUser.name}</p>
+                    <div className="mt-1 h-1.5 w-48 max-w-[45vw] rounded-full bg-muted">
+                      <div
+                        className="h-1.5 rounded-full bg-primary/80"
+                        style={{
+                          width: `${Math.round(
+                            (currentUser.points / maxScore) * 100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs px-2 py-1 rounded-md border ${getScoreBadgeClasses(
+                    currentUser.points,
+                    maxScore
+                  )}`}
+                >
+                  {currentUser.points} pts
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

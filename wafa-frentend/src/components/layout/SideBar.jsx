@@ -23,6 +23,16 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Collapsible section open states (all collapsed by default)
+  const [openGroups, setOpenGroups] = useState({
+    dashboard: false,
+    modules: false,
+    analysis: false,
+    library: false,
+  });
+
+  const toggleGroup = (groupKey) =>
+    setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -97,7 +107,6 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     },
   ];
 
- 
   const navigate = useNavigate();
   return (
     <>
@@ -128,7 +137,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       >
         {/* Navigation */}
         <nav
-          className={`space-y-2 ${
+          className={`space-y-1.5 ${
             sidebarOpen ? "p-4 pt-4" : "p-2 pt-4"
           } flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100`}
         >
@@ -142,156 +151,94 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
           ) : (
             <>
               {/* Group: Dashboard */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="title-dashboard"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-4 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Tableau de bord
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <SidebarItem
-                item={dashboardItem}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                navigate={navigate}
-                isMobile={isMobile}
+              <CollapsibleSection
+                id="dashboard"
+                title="Tableau de bord"
+                isOpen={openGroups.dashboard}
+                forceOpen={!sidebarOpen}
+                onToggle={() => toggleGroup("dashboard")}
                 sidebarOpen={sidebarOpen}
-                setSidebarOpen={setSidebarOpen}
-              />
+              >
+                <SidebarItem
+                  item={dashboardItem}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  sidebarOpen={sidebarOpen}
+                  setSidebarOpen={setSidebarOpen}
+                />
+              </CollapsibleSection>
 
               {/* Group: Modules */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="title-modules"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-4 mt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Modules
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {moduleSidebarItems.map((item) => (
-                <SidebarItem
-                  key={item.id}
-                  item={item}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  navigate={navigate}
-                  isMobile={isMobile}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                  extraClassName={ sidebarOpen ? "pl-2" : "" }
-                  
-                />
-              ))}
-
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="sep-1"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="my-2 border-t border-gray-200"
+              <CollapsibleSection
+                id="modules"
+                title="Modules"
+                isOpen={openGroups.modules}
+                forceOpen={!sidebarOpen}
+                onToggle={() => toggleGroup("modules")}
+                sidebarOpen={sidebarOpen}
+              >
+                {moduleSidebarItems.map((item) => (
+                  <SidebarItem
+                    key={item.id}
+                    item={item}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    navigate={navigate}
+                    isMobile={isMobile}
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
+                    extraClassName={sidebarOpen ? "pl-2" : ""}
                   />
-                )}
-              </AnimatePresence>
+                ))}
+              </CollapsibleSection>
 
               {/* Group: Analyse */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="title-analyse"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Analyse
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {analysisItems.map((item) => (
-                <SidebarItem
-                  key={item.id}
-                  item={item}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  navigate={navigate}
-                  isMobile={isMobile}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                />
-              ))}
-
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="sep-2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="my-2 border-t border-gray-200"
+              <CollapsibleSection
+                id="analysis"
+                title="Analyse"
+                isOpen={openGroups.analysis}
+                forceOpen={!sidebarOpen}
+                onToggle={() => toggleGroup("analysis")}
+                sidebarOpen={sidebarOpen}
+              >
+                {analysisItems.map((item) => (
+                  <SidebarItem
+                    key={item.id}
+                    item={item}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    navigate={navigate}
+                    isMobile={isMobile}
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
                   />
-                )}
-              </AnimatePresence>
+                ))}
+              </CollapsibleSection>
 
               {/* Group: Bibliothèque */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="title-library"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="px-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Bibliothèque
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {libraryItems.map((item) => (
-                <SidebarItem
-                  key={item.id}
-                  item={item}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  navigate={navigate}
-                  isMobile={isMobile}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                />
-              ))}
-
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <motion.div
-                    key="sep-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    className="my-2 border-t border-gray-200"
+              <CollapsibleSection
+                id="library"
+                title="Bibliothèque"
+                isOpen={openGroups.library}
+                forceOpen={!sidebarOpen}
+                onToggle={() => toggleGroup("library")}
+                sidebarOpen={sidebarOpen}
+              >
+                {libraryItems.map((item) => (
+                  <SidebarItem
+                    key={item.id}
+                    item={item}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    navigate={navigate}
+                    isMobile={isMobile}
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
                   />
-                )}
-              </AnimatePresence>
-
-              
+                ))}
+              </CollapsibleSection>
             </>
           )}
         </nav>
@@ -323,11 +270,11 @@ const SidebarItem = ({
       }}
       title={item.label}
       className={`w-full flex items-center ${
-        sidebarOpen ? "space-x-3 justify-start px-4" : "justify-center px-2"
-      } py-3 rounded-xl transition-colors duration-200 ${
+        sidebarOpen ? "space-x-3 justify-start px-3.5" : "justify-center px-2"
+      } py-2.5 rounded-lg transition-colors duration-200 ${
         activeTab === item.id
           ? "bg-blue-600 text-white shadow-lg"
-          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"
       } ${extraClassName}`}
     >
       <item.icon className="text-xl flex-shrink-0" />
@@ -339,13 +286,67 @@ const SidebarItem = ({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.15 }}
-            className="font-medium text-left"
+            className="font-medium text-left text-[15px]"
           >
             {item.label}
           </motion.span>
         )}
       </AnimatePresence>
     </button>
+  );
+};
+
+// Collapsible section wrapper with header and chevron toggle
+const CollapsibleSection = ({
+  id,
+  title,
+  isOpen,
+  onToggle,
+  sidebarOpen,
+  children,
+  forceOpen = false,
+}) => {
+  const showChildren = forceOpen || isOpen;
+  return (
+    <div key={`section-${id}`} className="mt-1">
+      <AnimatePresence initial={false}>
+        {sidebarOpen && (
+          <motion.button
+            type="button"
+            key={`header-${id}`}
+            onClick={onToggle}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="w-full px-3.5 py-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-gray-500 hover:text-blue-700"
+            title={title}
+          >
+            <span>{title}</span>
+            <Icons.ChevronDown
+              className={`h-4 w-4 transition-transform duration-200 ${
+                showChildren ? "rotate-180" : "rotate-0"
+              }`}
+            />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {showChildren && (
+          <motion.div
+            key={`content-${id}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className={sidebarOpen ? "space-y-1" : "space-y-0"}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
