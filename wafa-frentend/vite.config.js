@@ -11,8 +11,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-      allowedHosts: ["wafa.albech.me"],
-    port: 3010,
-  },
+ server: {
+  host: true,
+  port: 3010,
+  allowedHosts: ["wafa.albech.me"],
+  hmr: {
+    host: "wafa.albech.me",
+    protocol: "wss"
+  }
+}
 })
