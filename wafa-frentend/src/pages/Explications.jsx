@@ -1,16 +1,27 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { FaFileCircleQuestion } from "react-icons/fa6";
-import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
-import { AiOutlineDelete } from "react-icons/ai";
-import { IoCheckmarkDoneCircle } from "react-icons/io5";
-import { MdPlaylistAddCheck } from "react-icons/md";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader, StatCard } from "@/components/shared";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { api } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
 const Explications = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(10);
   const [explanations, setExplanations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -113,195 +124,215 @@ const Explications = () => {
     return buttons;
   };
   return (
-    <div className="p-6 space-y-6 min-h-screen">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            User Explication Questions Management
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage user explication questions
-          </p>
-        </div>
-      </div>
-      {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Explanations
-                </p>
-                <p className="text-xl font-bold text-gray-900">
-                  {explanations.length}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <MdPlaylistAddCheck className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-6 pb-10">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold text-slate-900">Explications Management</h1>
+        <p className="text-slate-500">Manage user-submitted explanation questions and verify content</p>
       </div>
 
-      <Card>
-        <CardContent>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0 }}
+        >
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-600">Total Explanations</p>
+                  <p className="text-3xl font-bold text-blue-900 mt-2">{explanations.length}</p>
+                </div>
+                <div className="p-3 bg-blue-200 rounded-lg">
+                  <FileQuestion className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-600">Approved</p>
+                  <p className="text-3xl font-bold text-green-900 mt-2">0</p>
+                </div>
+                <div className="p-3 bg-green-200 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-amber-600">Pending Review</p>
+                  <p className="text-3xl font-bold text-amber-900 mt-2">{explanations.length}</p>
+                </div>
+                <div className="p-3 bg-amber-200 rounded-lg">
+                  <AlertCircle className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Main Table Card */}
+      <Card className="shadow-lg border-slate-200">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle>All Explanations</CardTitle>
+          <CardDescription>View and manage all user-submitted explanations</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
           {loading && (
-            <div className="py-8 text-center text-gray-600">Loading…</div>
-          )}
-          {error && !loading && (
-            <div className="py-3 px-4 mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-              {error}
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-3" />
+                <p className="text-slate-600">Loading explanations...</p>
+              </div>
             </div>
           )}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Id
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Username
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Question
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Title
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Date
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Details
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentReports.map((report) => (
-                  <tr
-                    key={report.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-4 px-4 font-medium text-gray-900">
-                      {report.id}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {report.username}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {report.question}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {report.explicationTitle || "—"}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {report.date || "—"}
-                    </td>
-                    <td
-                      className="py-4 px-4 text-gray-700 align-top"
-                      style={{ minWidth: 160 }}
-                    >
-                      {(() => {
-                        const images = Array.isArray(report?.images)
-                          ? report.images.filter(Boolean)
-                          : [];
-                        if (!images.length && report?.image) {
-                          images.push(report.image);
-                        }
-                        if (
-                          !images.length &&
-                          typeof report?.imageOrText === "string" &&
-                          /^https?:\/\//.test(report.imageOrText)
-                        ) {
-                          images.push(report.imageOrText);
-                        }
 
-                        const text =
-                          typeof report?.text === "string" && report.text.trim()
-                            ? report.text
-                            : typeof report?.imageOrText === "string" &&
-                              !/^https?:\/\//.test(report.imageOrText)
-                            ? report.imageOrText
-                            : "";
+          {error && !loading && (
+            <div className="m-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-900">Error loading data</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
 
-                        return (
-                          <div className="flex flex-col gap-2">
-                            {images.length > 0 && (
-                              <div className="grid grid-cols-2 gap-2 max-w-[220px]">
-                                {images.map((src, idx) => (
-                                  <button
-                                    key={`${src}-${idx}`}
-                                    type="button"
-                                    className="relative aspect-video w-full overflow-hidden rounded-md border border-gray-200 bg-gray-50"
-                                    onClick={() =>
-                                      window.open(
-                                        src,
-                                        "_blank",
-                                        "noopener,noreferrer"
-                                      )
-                                    }
-                                    title="Open image in new tab"
-                                  >
-                                    <img
-                                      src={src}
-                                      alt={`detail ${idx + 1}`}
-                                      className="h-full w-full object-cover"
-                                      loading="lazy"
-                                    />
-                                  </button>
-                                ))}
-                              </div>
+          {!loading && !error && explanations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <FileQuestion className="h-12 w-12 text-slate-300 mb-3" />
+              <p className="text-slate-500 font-medium">No explanations found</p>
+            </div>
+          )}
+
+          {!loading && !error && explanations.length > 0 && (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50 border-slate-200">
+                      <TableHead className="font-semibold text-slate-700">User</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Question</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Title</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Date</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Media</TableHead>
+                      <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentReports.map((report, idx) => (
+                      <motion.tr
+                        key={report.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: idx * 0.05 }}
+                        className="border-b border-slate-200 hover:bg-slate-50/50 transition-colors"
+                      >
+                        <TableCell className="py-3">
+                          <div className="flex flex-col">
+                            <p className="font-medium text-slate-900">{report.name}</p>
+                            <p className="text-xs text-slate-500">{report.username}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm text-slate-700 line-clamp-2 max-w-xs">{report.question}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-slate-700 border-slate-300">
+                            {report.explicationTitle || "—"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-600">{report.date}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {report.images?.length > 0 && (
+                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                {report.images.length}
+                              </Badge>
                             )}
-                            {text && (
-                              <div className="text-sm text-gray-800 whitespace-pre-line max-w-xs">
-                                {text}
-                              </div>
-                            )}
-                            {!images.length && !text && (
-                              <span className="text-gray-400 text-sm">
-                                No details provided
-                              </span>
+                            {report.text && (
+                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                Text
+                              </Badge>
                             )}
                           </div>
-                        );
-                      })()}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700 flex gap-2.5">
-                      <IoCheckmarkDoneCircle
-                        className="text-green-600 hover:text-green-300 cursor-pointer"
-                        fontSize={20}
-                      />
-                      <AiOutlineDelete
-                        className="hover:text-red-500 cursor-pointer"
-                        fontSize={20}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="cursor-pointer gap-2">
+                                <Eye className="h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="cursor-pointer gap-2">
+                                <Edit className="h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="cursor-pointer gap-2 text-green-600 focus:text-green-700 focus:bg-green-50">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="cursor-pointer gap-2 text-red-600 focus:text-red-700 focus:bg-red-50">
+                                <Trash className="h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
+                    <span className="font-semibold">{Math.min(endIndex, explanations.length)}</span> of{" "}
+                    <span className="font-semibold">{explanations.length}</span> results
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {renderPaginationButtons()}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
-      {/* Pagination Footer */}
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50 px-6 py-3">
-          <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to{" "}
-            {Math.min(endIndex, explanations.length)} of {explanations.length}{" "}
-            results
-          </div>
-          <div className="flex items-center gap-2">
-            {renderPaginationButtons()}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

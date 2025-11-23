@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/select";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -10,8 +11,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Plus, Trash } from "lucide-react";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Upload, BookOpen, ChevronRight } from "lucide-react";
 
 const ImportExamParCourse = () => {
   // Demo catalog: Module -> Categories -> Courses -> Exams
@@ -128,187 +130,260 @@ const ImportExamParCourse = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-slate-100 p-6">
       <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 p-6 text-white shadow-lg flex justify-between items-center"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Import exam par courses questions
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Select module, category, course, and the exam; upload the Excel
-              file. Optionally integrate questions from a specific exam year.
+            <h1 className="text-3xl font-bold mb-2">Importer Examens par Cours</h1>
+            <p className="text-rose-100">
+              Importez les questions par catégories de cours
             </p>
           </div>
-        </div>
+          <BookOpen className="w-12 h-12 opacity-80" />
+        </motion.div>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Source</CardTitle>
-            <CardDescription>
-              Select the module and category, then the course and exam (par
-              course). Finally upload the questions Excel file.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Select module</Label>
-                <Select
-                  value={selectedModule}
-                  onChange={(e) => {
-                    setSelectedModule(e.target.value);
-                    setSelectedCategory("");
-                    setSelectedCourse("");
-                    setSelectedExam("");
-                  }}
+        {/* Source Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-rose-50 to-orange-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-rose-900">
+                <Upload className="w-5 h-5" />
+                Hiérarchie des Cours
+              </CardTitle>
+              <CardDescription>
+                Sélectionnez le module, la catégorie, le cours et l'examen, puis téléchargez le fichier Excel
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Module Select */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                  className="space-y-2"
                 >
-                  <option value="" disabled>
-                    Choose a module
-                  </option>
-                  {modules.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>select categories</Label>
-                <Select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setSelectedCourse("");
-                    setSelectedExam("");
-                  }}
-                  disabled={!selectedModule}
-                >
-                  <option value="" disabled>
-                    {selectedModule
-                      ? "Choose a category"
-                      : "Select a module first"}
-                  </option>
-                  {categoryOptions.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>select course name</Label>
-                <Select
-                  value={selectedCourse}
-                  onChange={(e) => {
-                    setSelectedCourse(e.target.value);
-                    setSelectedExam("");
-                  }}
-                  disabled={!selectedCategory}
-                >
-                  <option value="" disabled>
-                    {selectedCategory
-                      ? "Choose a course"
-                      : "Select a category first"}
-                  </option>
-                  {courseOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-             
-              <div className="space-y-2">
-                <Label>Excel file of questions</Label>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-                />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button
-              className="bg-black text-white hover:bg-gray-800"
-              disabled={!canImport}
-              onClick={handleImport}
-            >
-              + Import
-            </Button>
-          </CardFooter>
-        </Card>
+                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
+                    <span className="text-rose-600">●</span> Module
+                  </Label>
+                  <Select
+                    value={selectedModule}
+                    onValueChange={(value) => {
+                      setSelectedModule(value);
+                      setSelectedCategory("");
+                      setSelectedCourse("");
+                      setSelectedExam("");
+                    }}
+                  >
+                    <SelectTrigger className="border-rose-200">
+                      <SelectValue placeholder="Choisir un module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              integrate exam year questions
-            </CardTitle>
-            <CardDescription>
-              Map questions from a specific exam year into this exam by
-              providing the year name and the question numbers range/list.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {yearMappings.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end"
+                {/* Category Select */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                  className="space-y-2"
                 >
-                  <div className="sm:col-span-2 space-y-2">
-                    <Label>exam year name</Label>
+                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
+                    <ChevronRight className="w-3 h-3" />
+                    <span className="text-orange-600">●</span> Catégorie
+                  </Label>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => {
+                      setSelectedCategory(value);
+                      setSelectedCourse("");
+                      setSelectedExam("");
+                    }}
+                    disabled={!selectedModule}
+                  >
+                    <SelectTrigger className="border-rose-200">
+                      <SelectValue placeholder={selectedModule ? "Choisir une catégorie" : "Sélectionnez d'abord un module"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+
+                {/* Course Select */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.25 }}
+                  className="space-y-2"
+                >
+                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
+                    <ChevronRight className="w-3 h-3" />
+                    <span className="text-amber-600">●</span> Cours
+                  </Label>
+                  <Select
+                    value={selectedCourse}
+                    onValueChange={(value) => {
+                      setSelectedCourse(value);
+                      setSelectedExam("");
+                    }}
+                    disabled={!selectedCategory}
+                  >
+                    <SelectTrigger className="border-rose-200">
+                      <SelectValue placeholder={selectedCategory ? "Choisir un cours" : "Sélectionnez d'abord une catégorie"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courseOptions.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+
+                {/* File Upload */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                  className="space-y-2"
+                >
+                  <Label className="font-semibold text-gray-700">Fichier Excel</Label>
+                  <div className="relative">
                     <Input
-                      placeholder="e.g. 2023 - Session principale"
-                      value={row.yearName}
-                      onChange={(e) =>
-                        setYearMappings((prev) =>
-                          prev.map((r) =>
-                            r.id === row.id
-                              ? { ...r, yearName: e.target.value }
-                              : r
-                          )
-                        )
-                      }
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
+                      className="border-rose-200"
                     />
+                    {excelFile && (
+                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-100 text-green-800 border-0 text-xs">
+                        ✓ Prêt
+                      </Badge>
+                    )}
                   </div>
-                  <div className="sm:col-span-2 space-y-2">
-                    <Label>questions numbers in</Label>
-                    <Input
-                      placeholder="e.g. 1-5,7,10-12"
-                      value={row.questionNumbers}
-                      onChange={(e) =>
-                        setYearMappings((prev) =>
-                          prev.map((r) =>
-                            r.id === row.id
-                              ? { ...r, questionNumbers: e.target.value }
-                              : r
+                </motion.div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-gray-50 border-t flex justify-end">
+              <Button
+                className="bg-rose-600 hover:bg-rose-700 gap-2"
+                disabled={!canImport}
+                onClick={handleImport}
+              >
+                <Upload className="w-4 h-4" />
+                Importer
+              </Button>
+            </CardFooter>
+          </Card>
+        </motion.div>
+
+        {/* Exam Year Integration */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-orange-900">
+                <BookOpen className="w-5 h-5" />
+                Intégrer Questions d'Examens par Années
+              </CardTitle>
+              <CardDescription>
+                Mappez les questions des examens par années existants vers cet examen par cours
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                {yearMappings.map((row, idx) => (
+                  <motion.div
+                    key={row.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: idx * 0.05 }}
+                    className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end p-3 bg-slate-50 rounded-lg border border-slate-200"
+                  >
+                    <div className="sm:col-span-2 space-y-1">
+                      <Label className="text-xs font-semibold">Nom de l'Année</Label>
+                      <Input
+                        placeholder="ex: 2023 - Principal"
+                        value={row.yearName}
+                        onChange={(e) =>
+                          setYearMappings((prev) =>
+                            prev.map((r) =>
+                              r.id === row.id
+                                ? { ...r, yearName: e.target.value }
+                                : r
+                            )
                           )
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="sm:col-span-1 flex gap-2">
+                        }
+                        className="text-xs"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-1">
+                      <Label className="text-xs font-semibold">Numéros de Questions</Label>
+                      <Input
+                        placeholder="ex: 1-5,7,10-12"
+                        value={row.questionNumbers}
+                        onChange={(e) =>
+                          setYearMappings((prev) =>
+                            prev.map((r) =>
+                              r.id === row.id
+                                ? { ...r, questionNumbers: e.target.value }
+                                : r
+                            )
+                          )
+                        }
+                        className="text-xs"
+                      />
+                    </div>
                     <Button
-                      variant="outline"
-                      className="w-full"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleRemoveYearRow(row.id)}
                       disabled={yearMappings.length === 1}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <Trash className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
-                  </div>
-                </div>
-              ))}
-              <div>
-                <Button variant="outline" onClick={handleAddYearRow}>
-                  <Plus className="w-4 h-4 mr-1" /> Add row
-                </Button>
+                  </motion.div>
+                ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              <Button
+                variant="outline"
+                onClick={handleAddYearRow}
+                className="w-full mt-4 gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+              >
+                <Plus className="w-4 h-4" />
+                Ajouter une Intégration d'Année
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

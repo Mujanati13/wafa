@@ -1,4 +1,6 @@
 import User from "../models/userModel.js";
+import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
+import asyncHandler from "../handlers/asyncHandler.js";
 
 export const UserController = {
     // Get all users with pagination
@@ -234,5 +236,145 @@ export const UserController = {
                 error: error.message
             });
         }
-    }
+    },
+
+    // Upload profile picture
+    uploadProfilePicture: asyncHandler(async (req, res) => {
+        if (!req.file) {
+            res.status(400);
+            throw new Error("Aucun fichier téléchargé");
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            throw new Error("Utilisateur non trouvé");
+        }
+
+        // Delete old profile picture from Cloudinary if exists
+        if (user.profilePicture) {
+            const publicId = user.profilePicture.split("/").pop().split(".")[0];
+            await deleteFromCloudinary(`wafa-profiles/${publicId}`);
+        }
+
+        // Upload new picture to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer);
+
+        user.profilePicture = result.secure_url;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Photo de profil mise à jour avec succès",
+            data: {
+                profilePicture: user.profilePicture,
+            },
+        });
+    }),
+
+    // Update profile
+    updateProfile: asyncHandler(async (req, res) => {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            throw new Error("Utilisateur non trouvé");
+        }
+
+        const { name, email, phone, dateOfBirth, address, university, faculty, currentYear, studentId, bio } = req.body;
+
+        // Update only provided fields
+        if (name) user.name = name;
+        if (email && email !== user.email) {
+            // Check if email is already taken
+            const emailExists = await User.findOne({ email });
+            if (emailExists) {
+                res.status(400);
+                throw new Error("Cet email est déjà utilisé");
+            }
+            user.email = email;
+            user.emailVerified = false; // Require re-verification
+        }
+        if (phone !== undefined) user.phone = phone;
+        if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+        if (address !== undefined) user.address = address;
+        if (university !== undefined) user.university = university;
+        if (faculty !== undefined) user.faculty = faculty;
+        if (currentYear !== undefined) user.currentYear = currentYear;
+        if (studentId !== undefined) user.studentId = studentId;
+        if (bio !== undefined) user.bio = bio;
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Profil mis à jour avec succès",
+            data: {
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    dateOfBirth: user.dateOfBirth,
+                    address: user.address,
+                    university: user.university,
+                    faculty: user.faculty,
+                    currentYear: user.currentYear,
+                    studentId: user.studentId,
+                    bio: user.bio,
+                    profilePicture: user.profilePicture,
+                    emailVerified: user.emailVerified,
+                },
+            },
+        });
+    }),
+
+    // Get current user profile
+    getProfile: asyncHandler(async (req, res) => {
+        const user = await User.findById(req.user._id).select("-password -emailVerificationToken -emailVerificationExpires -resetPasswordToken -resetPasswordExpires");
+        
+        if (!user) {
+            res.status(404);
+            throw new Error("Utilisateur non trouvé");
+        }
+
+        res.status(200).json({
+            success: true,
+            data: { user },
+        });
+    }),
+
+    // Get current user's stats and achievements
+    getMyStats: asyncHandler(async (req, res) => {
+        const UserStats = (await import("../models/userStatsModel.js")).default;
+        
+        let userStats = await UserStats.findOne({ userId: req.user._id });
+        
+        // If no stats exist, create default stats
+        if (!userStats) {
+            userStats = await UserStats.create({
+                userId: req.user._id,
+                totalExams: 0,
+                averageScore: 0,
+                totalScore: 0,
+                studyHours: 0,
+                rank: 0,
+                achievements: []
+            });
+        }
+
+        // Calculate additional stats
+        const stats = {
+            examsCompleted: userStats.totalExams || 0,
+            averageScore: userStats.averageScore || 0,
+            studyHours: userStats.studyHours || 0,
+            rank: userStats.rank || 0,
+            achievements: userStats.achievements || [],
+            moduleProgress: userStats.moduleProgress || []
+        };
+
+        res.status(200).json({
+            success: true,
+            data: { stats },
+        });
+    })
 };

@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-
-import { api } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
-import { Lock } from "lucide-react";
+import { Lock, Sparkles, TrendingUp, Award, Clock } from "lucide-react";
 import ModuleCard from "@/components/Dashboard/ModuleCard";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader, StatCard } from "@/components/shared";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [semester, setSemester] = useState("S1");
-  const [coursesData, setCoursesData] = useState();
+  const [coursesData, setCoursesData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalProgress: 0,
+    questionsAnswered: 0,
+    currentStreak: 0,
+    rank: 0,
+  });
+
   const semesters = [
     { name: "S1", isOpen: true },
     { name: "S2", isOpen: false },
@@ -23,190 +35,188 @@ const Dashboard = () => {
     { name: "S9", isOpen: false },
     { name: "S10", isOpen: false },
   ];
+
   useEffect(() => {
     const fetchData = async () => {
-      const { data } = await moduleService.getAllmodules();
-      localStorage.setItem("modules", JSON.stringify(data.data));
-      setCoursesData(data.data);
+      try {
+        setLoading(true);
+        const { data } = await moduleService.getAllmodules();
+        localStorage.setItem("modules", JSON.stringify(data.data));
+        setCoursesData(data.data);
+        
+        // Mock stats - replace with actual API call
+        setStats({
+          totalProgress: 65,
+          questionsAnswered: 1234,
+          currentStreak: 7,
+          rank: 45,
+        });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, []);
-  // Course data based on the uploaded images
-  const courses = [
-    {
-      id: "nephro-uro",
-      name: "Néphrologie/uro",
-      img: "https://res.cloudinary.com/void-elsan/image/upload/f_auto/q_90/v1/inline-images/nephrologie-%28personnalise%29.jpg?_a=BAAAV6Bs", // kidney emoji
-      difficulty: "hard",
-      progress: 0,
-      color: "from-blue-500 to-indigo-500",
-      bgColor: "bg-blue-600",
-      exams: [
-        { name: "Amylose", questions: 11, completed: 0 },
-        { name: "Intro néphrologie", questions: 2, completed: 0 },
-        { name: "Nephro héréditaire", questions: 35, completed: 0 },
-        { name: "Nephro diabétique", questions: 40, completed: 0 },
-        { name: "Nephro lupique", questions: 30, completed: 0 },
-        {
-          name: "Glomérulonéphrite extra capillaire",
-          questions: 19,
-          completed: 0,
-        },
-        { name: "Lgm", questions: 20, completed: 0 },
-        { name: "HSF", questions: 20, completed: 0 },
-      ],
-    },
-    {
-      id: "med-legal",
-      name: "Med legal-éthique-travail-...",
-      img: "https://medecinelegale.com/wp-content/uploads/2021/09/Me%CC%81decin-et-marteau-_1047750205-scaled.jpg", // scales emoji
-      difficulty: "medium",
-      progress: 0,
-      color: "from-teal-500 to-blue-500",
-      bgColor: "bg-teal-600",
-    },
-    {
-      id: "synthese",
-      name: "Synthèse thérapeutique",
-      img: "💊", // pill emoji
-      difficulty: "medium",
-      progress: 0,
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "bg-blue-500",
-    },
-    {
-      id: "sante-publique",
-      name: "Santé publique",
-      img: "📊", // chart emoji
-      difficulty: "medium",
-      progress: 0,
-      color: "from-indigo-500 to-purple-500",
-      bgColor: "bg-indigo-600",
-    },
-  ];
-
-  // Leaderboard data based on uploaded images
-  const leaderboard = [
-    {
-      rank: 1,
-      user: "Tired",
-      level: "Level 707",
-      percentage: 80,
-      points: 70680,
-    },
-    { rank: 2, user: "N.A", level: "Level 527", percentage: 0, points: 52600 },
-    {
-      rank: 3,
-      user: "scarface",
-      level: "Level 507",
-      percentage: 30,
-      points: 50630,
-    },
-    {
-      rank: 4,
-      user: "we r cheating",
-      level: "Level 506",
-      percentage: 80,
-      points: 50580,
-    },
-    {
-      rank: 5,
-      user: "objectif validation",
-      level: "Level 398",
-      percentage: 90,
-      points: 39790,
-    },
-  ];
-
   const handleCourseClick = (courseId) => {
     navigate(`/dashboard/subjects/${courseId}`);
   };
 
+  const user = { name: "Az-eddine serhani", plan: "Plan Gratuit" };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 p-4 md:p-6">
       {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-blue-100 rounded-full opacity-30 animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-40 h-40 sm:w-60 sm:h-60 md:w-80 md:h-80 bg-teal-100 rounded-full opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-blue-200 rounded-full opacity-25 animate-pulse delay-500"></div>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-blue-100 rounded-full opacity-20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-teal-100 rounded-full opacity-15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-200 rounded-full opacity-20 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
-      {/* Header */}
-      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 bg-white/70 backdrop-blur-md rounded-xl shadow-md border border-blue-100 px-3 py-2 sm:px-4 sm:py-3 md:px-6 w-full">
-        {/* Left: Welcome & Info */}
-        <div className="flex flex-col max-w-full lg:max-w-xl">
-          <h1 className="text-base sm:text-lg md:text-xl font-extrabold text-gray-900 mb-1.5 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <span className="inline-block bg-gradient-to-r from-blue-500 via-teal-400 to-blue-600 text-transparent bg-clip-text">
-              Bienvenue
-            </span>
-            <span className="inline-block text-blue-600 text-xs sm:text-sm md:text-base">
-              Az-eddine serhani
-            </span>
-          </h1>
-          <p className="text-gray-600 text-xs sm:text-sm leading-snug mt-0.5">
-            Bienvenue dans votre interface WAFA,{" "}
-            <span className="font-semibold text-blue-600">
-              Az-eddine serhani
-            </span>
-            .<br className="hidden sm:inline" />
-            <span className="text-gray-500 block sm:inline mt-0.5 sm:mt-0">
-              Si vous avez des questions ou souhaitez en savoir plus, n'hésitez
-              pas à nous{" "}
-              <a className="text-blue-500 cursor-pointer hover:underline">
-                contacter.
-              </a>{" "}
-            </span>
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
-          <div className="flex flex-row flex-wrap gap-1.5">
-            {semesters.map((item, index) => (
-              <button
-                key={item.name}
-                disabled={!item.isOpen}
-                onClick={() => setSemester(item.name)}
-                className={`px-2 sm:px-2 md:px-3 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 border text-xs sm:text-xs flex items-center gap-1 sm:gap-2
-                  ${
-                    semester === item.name
-                      ? "bg-gradient-to-r from-blue-500 to-teal-400 text-white border-blue-500 shadow-md scale-105"
-                      : "bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:scale-105"
-                  }
-                `}
-                style={{
-                  minWidth: 40,
-                }}
-              >
-                {item.name}
-                {item.isOpen === false && <Lock className="w-3 sm:w-4" />}
-              </button>
+      <div className="relative z-10 space-y-6">
+        {/* Header Section */}
+        <Card className="border-primary/20 bg-gradient-to-br from-white to-blue-50/30">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Welcome Message */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-yellow-500" />
+                  <h1 className="text-2xl md:text-3xl font-bold">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-teal-500 to-blue-600">
+                      Bienvenue
+                    </span>
+                    <span className="text-primary ml-2">{user.name}</span>
+                  </h1>
+                </div>
+                <p className="text-muted-foreground text-sm md:text-base">
+                  Bienvenue dans votre interface WAFA. Si vous avez des questions,{" "}
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-primary"
+                    onClick={() => navigate("/contact")}
+                  >
+                    contactez-nous
+                  </Button>
+                  .
+                </p>
+              </div>
+
+              {/* Semester Selector & Plan Badge */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {semesters.slice(0, 6).map((item) => (
+                    <Button
+                      key={item.name}
+                      variant={semester === item.name ? "default" : "outline"}
+                      size="sm"
+                      disabled={!item.isOpen}
+                      onClick={() => setSemester(item.name)}
+                      className="min-w-[60px]"
+                    >
+                      {item.name}
+                      {!item.isOpen && <Lock className="ml-1 h-3 w-3" />}
+                    </Button>
+                  ))}
+                </div>
+                <Badge variant="secondary" className="self-start">
+                  {user.plan}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Grid */}
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-20 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium transition-all duration-200 border bg-white">
-            <span className="font-medium text-xs tracking-wide text-gray-700">
-              Plan Gratuit
-            </span>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Progression totale"
+              value={`${stats.totalProgress}%`}
+              icon={<TrendingUp className="h-4 w-4" />}
+              trend="up"
+              trendValue="+12%"
+              description="ce mois"
+            />
+            <StatCard
+              title="Questions répondues"
+              value={stats.questionsAnswered}
+              icon={<Award className="h-4 w-4" />}
+              description="au total"
+            />
+            <StatCard
+              title="Série actuelle"
+              value={`${stats.currentStreak} jours`}
+              icon={<Clock className="h-4 w-4" />}
+              trend="up"
+              trendValue="Record!"
+              description="Continuez comme ça"
+            />
+            <StatCard
+              title="Classement"
+              value={`#${stats.rank}`}
+              icon={<Award className="h-4 w-4" />}
+              trend="up"
+              trendValue="+3"
+              description="cette semaine"
+            />
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="relative z-10 flex flex-col gap-4 sm:gap-6">
-        <div className="">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Dashboard <span className="text-blue-600">{semester}</span>
-          </h2>
-          <div className="bg-blue-600 h-1 w-8 sm:w-10 mt-1"></div>
-        </div>
+        {/* Modules Section */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              Modules <Badge variant="outline">{semester}</Badge>
+            </h2>
+            <div className="h-1 w-12 bg-primary mt-2 rounded-full" />
+          </div>
 
-        {/* Courses Section */}
-        <div className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {coursesData &&
-              coursesData?.map((course) => (
-                <ModuleCard key={course.id} course={course} handleCourseClick={handleCourseClick} />
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-32 w-full mb-4 rounded-lg" />
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
               ))}
-          </div>
+            </div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {coursesData?.map((course, index) => (
+                <ModuleCard
+                  key={course.id || index}
+                  course={course}
+                  handleCourseClick={handleCourseClick}
+                  index={index}
+                />
+              ))}
+            </motion.div>
+          )}
         </div>
-
       </div>
     </div>
   );

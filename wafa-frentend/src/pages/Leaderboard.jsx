@@ -1,13 +1,11 @@
-import React, { useState } from "react";
-import {
-  FiSearch,
-  FiFilter,
-  FiArrowUp,
-  FiArrowDown,
-  FiAward,
-  FiUsers,
-  FiTrendingUp,
-} from "react-icons/fi";
+import { useState } from "react";
+import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader, StatCard } from "@/components/shared";
 
 const leaderboardData = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
@@ -74,7 +72,7 @@ const Leaderboard = () => {
               <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
-              <FiUsers className="w-6 h-6 text-blue-600" />
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
           </div>
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
@@ -83,7 +81,7 @@ const Leaderboard = () => {
               <p className="text-2xl font-bold text-gray-900">{topPoints}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
-              <FiAward className="w-6 h-6 text-green-600" />
+              <Award className="w-6 h-6 text-green-600" />
             </div>
           </div>
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
@@ -92,7 +90,7 @@ const Leaderboard = () => {
               <p className="text-2xl font-bold text-gray-900">{avgPoints}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
-              <FiTrendingUp className="w-6 h-6 text-yellow-600" />
+              <TrendingUp className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
         </div>
@@ -101,7 +99,7 @@ const Leaderboard = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by name or username..."
@@ -147,7 +145,7 @@ const Leaderboard = () => {
                 ))}
               </select>
               <button className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 flex items-center gap-2 text-gray-600">
-                <FiFilter className="w-4 h-4" /> Filters
+                <Filter className="w-4 h-4" /> Filters
               </button>
             </div>
           </div>

@@ -10,6 +10,8 @@ build/
 coverage/
 *.tgz
 
+# Firebase
+
 # OS
 .DS_Store
 Thumbs.db

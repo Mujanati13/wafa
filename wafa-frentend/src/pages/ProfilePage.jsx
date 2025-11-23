@@ -1,64 +1,159 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  FaUser,
-  FaEdit,
-  FaCamera,
-  FaEnvelope,
-  FaPhone,
-  FaGraduationCap,
-  FaMapMarkerAlt,
-  FaBirthdayCake,
-  FaTrophy,
-  FaMedal,
-  FaStar,
-  FaCalendarAlt,
-  FaBook,
-  FaSave,
-  FaTimes,
-  FaCheck
-} from 'react-icons/fa';
+import { 
+  User, Mail, Phone, MapPin, Calendar, GraduationCap, 
+  BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { PageHeader, StatCard } from '@/components/shared';
+import { toast } from 'sonner';
+import { userService } from '@/services/userService';
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [userStats, setUserStats] = useState(null);
   const [profileData, setProfileData] = useState({
-    firstName: 'Ahmed',
-    lastName: 'Benali',
-    email: 'ahmed.benali@example.com',
-    phone: '+213 555 123 456',
-    birthDate: '1998-03-15',
-    university: 'Université d\'Alger',
-    faculty: 'Faculté de Médecine',
-    year: '3ème Année',
-    specialization: 'Médecine Générale',
-    location: 'Alger, Algérie',
-    bio: 'Étudiant passionné en médecine avec un intérêt particulier pour la cardiologie et la recherche médicale.'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    birthDate: '',
+    university: '',
+    faculty: '',
+    year: '',
+    specialization: '',
+    location: '',
+    bio: ''
   });
 
   const [editData, setEditData] = useState({ ...profileData });
 
-  const achievements = [
-    { icon: FaTrophy, title: 'Top Performer', description: 'Classé 1er du semestre', color: 'from-yellow-400 to-orange-500' },
-    { icon: FaMedal, title: 'Expert Anatomie', description: '95% de réussite', color: 'from-blue-400 to-purple-500' },
-    { icon: FaStar, title: 'Séquence Parfaite', description: '20 examens consécutifs', color: 'from-green-400 to-blue-500' },
-    { icon: FaBook, title: 'Studieux', description: '200h d\'étude ce mois', color: 'from-purple-400 to-pink-500' }
-  ];
+  // Fetch user profile and stats on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch profile and stats in parallel
+        const [userData, statsData] = await Promise.all([
+          userService.getUserProfile(),
+          userService.getMyStats()
+        ]);
+        
+        setUser(userData);
+        setUserStats(statsData);
+        
+        // Map backend user data to profile form
+        const mappedData = {
+          firstName: userData.name?.split(' ')[0] || '',
+          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          birthDate: userData.birthDate || '',
+          university: userData.university || '',
+          faculty: userData.faculty || '',
+          year: userData.year || '',
+          specialization: userData.specialization || '',
+          location: userData.location || '',
+          bio: userData.bio || ''
+        };
+        
+        setProfileData(mappedData);
+        setEditData(mappedData);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        toast.error('Impossible de charger votre profil');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const stats = [
-    { label: 'Examens Passés', value: '145', icon: FaBook },
-    { label: 'Moyenne Générale', value: '16.8/20', icon: FaStar },
-    { label: 'Heures d\'Étude', value: '1,240h', icon: FaCalendarAlt },
-    { label: 'Classement', value: '3/156', icon: FaTrophy }
-  ];
+    fetchData();
+  }, []);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditData({ ...profileData });
+  // Map achievement types to icons
+  const getAchievementIcon = (achievementId) => {
+    const iconMap = {
+      'top_performer': <Trophy className="h-6 w-6 text-white" />,
+      'expert': <Medal className="h-6 w-6 text-white" />,
+      'perfect_streak': <Star className="h-6 w-6 text-white" />,
+      'studious': <BookOpen className="h-6 w-6 text-white" />,
+    };
+    return iconMap[achievementId] || <Trophy className="h-6 w-6 text-white" />;
   };
 
-  const handleSave = () => {
-    setProfileData({ ...editData });
-    setIsEditing(false);
+  // Get achievements from user stats or show empty state
+  const achievements = userStats?.achievements?.length > 0 
+    ? userStats.achievements.map(ach => ({
+        icon: getAchievementIcon(ach.achievementId),
+        title: ach.achievementName,
+        description: ach.description || 'Débloquer',
+        variant: 'default'
+      }))
+    : [];
+
+  // Calculate stats from user data
+  const stats = [
+    { 
+      label: 'Examens Passés', 
+      value: userStats?.examsCompleted || 0, 
+      icon: <BookOpen className="h-4 w-4" /> 
+    },
+    { 
+      label: 'Moyenne Générale', 
+      value: userStats?.averageScore ? `${userStats.averageScore.toFixed(1)}/20` : '0/20', 
+      icon: <Star className="h-4 w-4" /> 
+    },
+    { 
+      label: 'Heures d\'Étude', 
+      value: userStats?.studyHours ? `${userStats.studyHours}h` : '0h', 
+      icon: <Clock className="h-4 w-4" /> 
+    },
+    { 
+      label: 'Classement', 
+      value: userStats?.rank || 'N/A', 
+      icon: <Trophy className="h-4 w-4" /> 
+    }
+  ];
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      
+      // Combine firstName and lastName back into name field for backend
+      const updateData = {
+        name: `${editData.firstName} ${editData.lastName}`.trim(),
+        phone: editData.phone,
+        birthDate: editData.birthDate,
+        university: editData.university,
+        faculty: editData.faculty,
+        year: editData.year,
+        specialization: editData.specialization,
+        location: editData.location,
+        bio: editData.bio
+      };
+      
+      const updatedUser = await userService.updateUserProfile(updateData);
+      setUser(updatedUser);
+      setProfileData({ ...editData });
+      setIsEditing(false);
+      toast.success('Profil mis à jour avec succès!');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toast.error('Échec de la mise à jour du profil');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -66,182 +161,283 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
-  const handleInputChange = (field, value) => {
-    setEditData(prev => ({ ...prev, [field]: value }));
+  const getInitials = () => {
+    if (!profileData.firstName || !profileData.lastName) return 'U';
+    return `${profileData.firstName[0]}${profileData.lastName[0]}`.toUpperCase();
   };
 
+  if (loading && !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600">Chargement de votre profil...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold text-white mb-2">Profil Utilisateur</h1>
-        <p className="text-gray-400">Gérez vos informations personnelles et suivez vos accomplissements</p>
-      </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <PageHeader
+          title="Mon Profil"
+          description="Gérez vos informations personnelles et suivez vos accomplissements"
+        />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Info Card */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2 bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-white">Informations Personnelles</h2>
-            {!isEditing ? (
-              <button
-                onClick={handleEdit}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
-              >
-                <FaEdit className="text-sm" />
-                <span>Modifier</span>
-              </button>
-            ) : (
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleSave}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg text-white hover:from-green-600 hover:to-blue-600 transition-all duration-300"
-                >
-                  <FaSave className="text-sm" />
-                  <span>Sauvegarder</span>
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-600 rounded-lg text-white hover:bg-gray-700 transition-all duration-300"
-                >
-                  <FaTimes className="text-sm" />
-                  <span>Annuler</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Avatar Section */}
-          <div className="flex items-center space-x-6 mb-8">
-            <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <FaUser className="text-3xl text-white" />
-              </div>
-              <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-600 hover:bg-gray-600 transition-colors">
-                <FaCamera className="text-white text-sm" />
-              </button>
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">
-                {profileData.firstName} {profileData.lastName}
-              </h3>
-              <p className="text-gray-400">{profileData.year} - {profileData.specialization}</p>
-              <p className="text-gray-500 text-sm">{profileData.university}</p>
-            </div>
-          </div>
-
-          {/* Personal Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { icon: FaEnvelope, label: 'Email', field: 'email', type: 'email' },
-              { icon: FaPhone, label: 'Téléphone', field: 'phone', type: 'tel' },
-              { icon: FaBirthdayCake, label: 'Date de Naissance', field: 'birthDate', type: 'date' },
-              { icon: FaMapMarkerAlt, label: 'Localisation', field: 'location', type: 'text' },
-              { icon: FaGraduationCap, label: 'Université', field: 'university', type: 'text' },
-              { icon: FaBook, label: 'Faculté', field: 'faculty', type: 'text' }
-            ].map((item, index) => (
-              <div key={item.field} className="space-y-2">
-                <label className="flex items-center space-x-2 text-gray-300 font-medium">
-                  <item.icon className="text-gray-400" />
-                  <span>{item.label}</span>
-                </label>
-                {isEditing ? (
-                  <input
-                    type={item.type}
-                    value={editData[item.field]}
-                    onChange={(e) => handleInputChange(item.field, e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none transition-colors"
-                  />
-                ) : (
-                  <p className="text-white bg-gray-800/50 px-4 py-2 rounded-lg">{profileData[item.field]}</p>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Bio Section */}
-          <div className="mt-6 space-y-2">
-            <label className="text-gray-300 font-medium">Bio</label>
-            {isEditing ? (
-              <textarea
-                value={editData.bio}
-                onChange={(e) => handleInputChange('bio', e.target.value)}
-                rows={4}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none transition-colors resize-none"
-              />
-            ) : (
-              <p className="text-white bg-gray-800/50 px-4 py-2 rounded-lg">{profileData.bio}</p>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Stats and Achievements */}
-        <div className="space-y-6">
-          {/* Quick Stats */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Statistiques</h3>
-            <div className="space-y-4">
-              {stats.map((stat, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                      <stat.icon className="text-white text-sm" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Profile Card */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Informations Personnelles</CardTitle>
+                  {!isEditing ? (
+                    <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      Modifier
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button onClick={handleSave} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Enregistrer
+                      </Button>
+                      <Button onClick={handleCancel} variant="outline" className="gap-2">
+                        <X className="h-4 w-4" />
+                        Annuler
+                      </Button>
                     </div>
-                    <span className="text-gray-300 text-sm">{stat.label}</span>
-                  </div>
-                  <span className="text-white font-semibold">{stat.value}</span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </motion.div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="personal" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="personal">Personnel</TabsTrigger>
+                    <TabsTrigger value="academic">Académique</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="personal" className="space-y-4 mt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">Prénom</Label>
+                        <Input
+                          id="firstName"
+                          value={isEditing ? editData.firstName : profileData.firstName}
+                          onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Nom</Label>
+                        <Input
+                          id="lastName"
+                          value={isEditing ? editData.lastName : profileData.lastName}
+                          onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
 
-          {/* Achievements */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50"
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Accomplissements</h3>
-            <div className="space-y-3">
-              {achievements.map((achievement, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg hover:bg-gray-800/70 transition-colors"
-                >
-                  <div className={`w-10 h-10 bg-gradient-to-r ${achievement.color} rounded-lg flex items-center justify-center`}>
-                    <achievement.icon className="text-white" />
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={isEditing ? editData.email : profileData.email}
+                        onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Téléphone</Label>
+                        <Input
+                          id="phone"
+                          value={isEditing ? editData.phone : profileData.phone}
+                          onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="birthDate">Date de naissance</Label>
+                        <Input
+                          id="birthDate"
+                          type="date"
+                          value={isEditing ? editData.birthDate : profileData.birthDate}
+                          onChange={(e) => setEditData({ ...editData, birthDate: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Localisation</Label>
+                      <Input
+                        id="location"
+                        value={isEditing ? editData.location : profileData.location}
+                        onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Biographie</Label>
+                      <Textarea
+                        id="bio"
+                        value={isEditing ? editData.bio : profileData.bio}
+                        onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                        disabled={!isEditing}
+                        rows={4}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="academic" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="university">Université</Label>
+                      <Input
+                        id="university"
+                        value={isEditing ? editData.university : profileData.university}
+                        onChange={(e) => setEditData({ ...editData, university: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="faculty">Faculté</Label>
+                      <Input
+                        id="faculty"
+                        value={isEditing ? editData.faculty : profileData.faculty}
+                        onChange={(e) => setEditData({ ...editData, faculty: e.target.value })}
+                        disabled={!isEditing}
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="year">Année</Label>
+                        <Input
+                          id="year"
+                          value={isEditing ? editData.year : profileData.year}
+                          onChange={(e) => setEditData({ ...editData, year: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="specialization">Spécialisation</Label>
+                        <Input
+                          id="specialization"
+                          value={isEditing ? editData.specialization : profileData.specialization}
+                          onChange={(e) => setEditData({ ...editData, specialization: e.target.value })}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Achievements */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Accomplissements</CardTitle>
+                <CardDescription>Vos badges et récompenses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {achievements.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {achievements.map((achievement, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                                {achievement.icon}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold">{achievement.title}</p>
+                                <p className="text-sm text-muted-foreground">{achievement.description}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-white font-medium text-sm">{achievement.title}</h4>
-                    <p className="text-gray-400 text-xs">{achievement.description}</p>
+                ) : (
+                  <div className="text-center py-8">
+                    <Trophy className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">Aucun accomplissement pour le moment</p>
+                    <p className="text-sm text-slate-400 mt-1">Continuez à étudier pour débloquer des badges!</p>
                   </div>
-                  <FaCheck className="text-green-400" />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Avatar Card */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24">
+                      <AvatarImage src={user?.profilePicture} />
+                      <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {user?.name || `${profileData.firstName} ${profileData.lastName}`}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{user?.email || profileData.email}</p>
+                  </div>
+                  <Badge variant="secondary">{profileData.year}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Stats Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Statistiques</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {stats.map((stat, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {stat.icon}
+                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                    </div>
+                    <span className="font-semibold">{stat.value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

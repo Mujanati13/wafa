@@ -1,23 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiFilter,
-  FiSearch,
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-} from "react-icons/fi";
+import { useMemo, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Filter, Search, Plus, Edit, Trash2, Layers, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const CreateCategoriesForCourses = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,7 +81,7 @@ const CreateCategoriesForCourses = () => {
     setCurrentPage(page);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, moduleFilter]);
 
@@ -112,7 +102,7 @@ const CreateCategoriesForCourses = () => {
         disabled={currentPage === 1}
         className="flex items-center gap-1"
       >
-        <FiChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-4 h-4" />
         Previous
       </Button>
     );
@@ -141,7 +131,7 @@ const CreateCategoriesForCourses = () => {
         className="flex items-center gap-1"
       >
         Next
-        <FiChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-4 h-4" />
       </Button>
     );
 
@@ -149,258 +139,302 @@ const CreateCategoriesForCourses = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create categories for courses
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Create a category for a course and browse existing ones
-            </p>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" size="sm">
-              <FiFilter className="w-4 h-4" />
-              Filters
-            </Button>
-            <Button
-              size="sm"
-              className="bg-black text-white hover:bg-gray-800"
-              onClick={() => setShowCreateForm(true)}
-            >
-              <FiPlus className="w-4 h-4 mr-2" />
-              Create
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-white">
+      {/* Gradient Header */}
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              Categories filter
-            </CardTitle>
-            <CardDescription>Search and filter by module</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by id, module or sub module..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Action Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        >
+          <div>
+            <h2 className="text-2xl font-bold text-black mb-1">Course Categories</h2>
+            <p className="text-gray-600">Total: <span className="font-semibold text-black">{filtered.length}</span> categories</p>
+          </div>
+          <Button
+            size="lg"
+            className="bg-black hover:bg-gray-900 text-white shadow-lg"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Category
+          </Button>
+        </motion.div>
+
+        {/* Filter Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Card className="bg-white border-gray-200 shadow-md">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-black" />
+                <div>
+                  <CardTitle className="text-black">Search & Filter</CardTitle>
+                  <CardDescription className="text-gray-600">Find categories by name, module, or ID</CardDescription>
+                </div>
               </div>
-              <div>
-                <Select
-                  value={moduleFilter}
-                  onChange={(e) => setModuleFilter(e.target.value)}
-                  className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                >
-                  <option value="all">All modules</option>
-                  {Array.from(
-                    new Set(categoriesForCourses.map((c) => c.moduleId))
-                  ).map((moduleId) => {
-                    const module = categoriesForCourses.find(
-                      (c) => c.moduleId === moduleId
-                    );
-                    return (
-                      <option key={moduleId} value={moduleId}>
-                        {module?.moduleName}
-                      </option>
-                    );
-                  })}
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search by ID, module or sub-module..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
+                  />
+                </div>
+                <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                  <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                    <SelectValue placeholder="Select module" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-200">
+                    <SelectItem value="all" className="text-black">All Modules</SelectItem>
+                    {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId))).map((moduleId) => {
+                      const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
+                      return (
+                        <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
+                          {module?.moduleName}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              Categories of courses ({filtered.length})
-            </CardTitle>
-            <CardDescription>
-              Id | module name | sous module name | Image | total of questions |
-              operate
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Id
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Module name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Sous module name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Image
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Total of questions
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Operate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4 text-gray-700">{row.id}</td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {row.moduleName}
-                      </td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {row.subModuleName}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
-                          <img
-                            src={row.imageUrl}
-                            alt={row.subModuleName}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {row.totalQuestions}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 flex gap-2 items-center">
-                        <FiEdit
-                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                          size={18}
-                        />
-                        <FiTrash2
-                          className="text-red-600 hover:text-red-800 cursor-pointer"
-                          size={18}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
-            <div className="text-sm text-gray-600">
-              Showing {filtered.length === 0 ? 0 : startIndex + 1} to{" "}
-              {Math.min(endIndex, filtered.length)} of {filtered.length} results
-            </div>
-            {renderPagination()}
-          </CardFooter>
-        </Card>
+        {/* Data Table Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <Card className="bg-white border-gray-200 shadow-md overflow-hidden">
+            <CardHeader className="pb-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-black text-xl">Categories List</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    {filtered.length === 0 ? "No categories found" : `Showing ${Math.min(currentRows.length, itemsPerPage)} of ${filtered.length}`}
+                  </CardDescription>
+                </div>
+                <Badge className="bg-gray-200 text-black border border-gray-300">
+                  {filtered.length} Total
+                </Badge>
+              </div>
+            </CardHeader>
+
+            {currentRows.length > 0 ? (
+              <>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left py-4 px-6 font-semibold text-black">ID</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Sub-Module</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Image</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Questions</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <AnimatePresence>
+                          {currentRows.map((row, idx) => (
+                            <motion.tr
+                              key={row.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.3, delay: idx * 0.05 }}
+                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="py-4 px-6">
+                                <Badge className="bg-gray-200 text-black border border-gray-300">
+                                  #{row.id}
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-6 text-black font-medium">{row.moduleName}</td>
+                              <td className="py-4 px-6 text-gray-700">{row.subModuleName}</td>
+                              <td className="py-4 px-6">
+                                <motion.div
+                                  whileHover={{ scale: 1.05 }}
+                                  className="w-12 h-12 rounded-lg overflow-hidden bg-gray-200 border border-gray-300 cursor-pointer"
+                                >
+                                  <img
+                                    src={row.imageUrl}
+                                    alt={row.subModuleName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </motion.div>
+                              </td>
+                              <td className="py-4 px-6">
+                                <Badge className="bg-gray-200 text-black border border-gray-300">
+                                  {row.totalQuestions}
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-6">
+                                <div className="flex gap-2 items-center">
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                  >
+                                    <Edit size={18} />
+                                  </motion.button>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="p-2 text-red-600 hover:text-red-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={18} />
+                                  </motion.button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </AnimatePresence>
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+
+                {/* Pagination Footer */}
+                <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-200 bg-gray-50 p-6">
+                  <div className="text-sm text-gray-600">
+                    Showing <span className="font-semibold text-black">{startIndex + 1}</span> to{" "}
+                    <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> of{" "}
+                    <span className="font-semibold text-black">{filtered.length}</span> results
+                  </div>
+                  {renderPagination()}
+                </CardFooter>
+              </>
+            ) : (
+              <CardContent className="py-12">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center"
+                >
+                  <Layers className="w-12 h-12 text-gray-400 mx-auto mb-4 opacity-50" />
+                  <p className="text-gray-700 text-lg">No categories found</p>
+                  <p className="text-gray-500 text-sm">Try adjusting your search or filters</p>
+                </motion.div>
+              </CardContent>
+            )}
+          </Card>
+        </motion.div>
       </div>
 
-      {showCreateForm && (
-        <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] absolute top-0 left-0 w-full h-full">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-              <h1 className="text-xl font-semibold text-gray-900 mb-1">
-                Create category for course
-              </h1>
-              <p className="text-sm text-gray-600">
-                Name, image, and module with optional sub module
-              </p>
-            </div>
+      {/* Create Category Dialog */}
+      <AnimatePresence>
+        {showCreateForm && (
+          <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-black text-xl">Create New Category</DialogTitle>
+                  <DialogDescription className="text-gray-600">
+                    Add a new category with module and sub-module information
+                  </DialogDescription>
+                </DialogHeader>
 
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Category name"
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://..."
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Select module
-                </label>
-                <Select className="mt-1 w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400">
-                  <option value="" disabled>
-                    Choose module
-                  </option>
-                  {Array.from(
-                    new Set(categoriesForCourses.map((c) => c.moduleId))
-                  ).map((moduleId) => {
-                    const module = categoriesForCourses.find(
-                      (c) => c.moduleId === moduleId
-                    );
-                    return (
-                      <option key={moduleId} value={moduleId}>
-                        {module?.moduleName}
-                      </option>
-                    );
-                  })}
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Sous module which is in (optional)
-                </label>
-                <Select className="mt-1 w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400">
-                  <option value="">None</option>
-                  <option value="Système cardiovasculaire">
-                    Système cardiovasculaire
-                  </option>
-                  <option value="Système respiratoire">
-                    Système respiratoire
-                  </option>
-                  <option value="Système digestif">Système digestif</option>
-                  <option value="Système nerveux">Système nerveux</option>
-                  <option value="Système endocrinien">
-                    Système endocrinien
-                  </option>
-                </Select>
-              </div>
+                <form className="space-y-4 py-4" onSubmit={(e) => e.preventDefault()}>
+                  <div className="space-y-2">
+                    <Label className="text-black">Category Name</Label>
+                    <Input
+                      placeholder="Enter category name"
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
+                    />
+                  </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-gray-700 hover:text-gray-900"
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-gray-800 hover:bg-gray-900 text-white"
-                >
-                  Create
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <div className="space-y-2">
+                    <Label className="text-black">Image URL</Label>
+                    <Input
+                      placeholder="https://..."
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black">Select Module</Label>
+                    <Select>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Choose module" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId))).map((moduleId) => {
+                          const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
+                          return (
+                            <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
+                              {module?.moduleName}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black">Sub-Module (Optional)</Label>
+                    <Select defaultValue="none">
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Select a sub-module" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="none" className="text-black">None</SelectItem>
+                        <SelectItem value="Système cardiovasculaire" className="text-black">Système cardiovasculaire</SelectItem>
+                        <SelectItem value="Système respiratoire" className="text-black">Système respiratoire</SelectItem>
+                        <SelectItem value="Système digestif" className="text-black">Système digestif</SelectItem>
+                        <SelectItem value="Système nerveux" className="text-black">Système nerveux</SelectItem>
+                        <SelectItem value="Système endocrinien" className="text-black">Système endocrinien</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <DialogFooter className="gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
+                      onClick={() => setShowCreateForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        type="submit"
+                        className="bg-black hover:bg-gray-900 text-white"
+                      >
+                        Create Category
+                      </Button>
+                    </motion.div>
+                  </DialogFooter>
+                </form>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

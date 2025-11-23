@@ -1,77 +1,302 @@
-import React, { useState } from "react";
-import { FaBell, FaSearch, FaUser } from "react-icons/fa";
-import * as Icons from "lucide-react";
-import ProfileMenu from "../profile/ProfileMenu";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Menu, Sun, Moon, Bell, Search, X, BookOpen, FileText, Trophy, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import logoImage from "@/assets/logo.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import NotificationDropdown from "./NotificationDropdown";
+import { userService } from "@/services/userService";
 
-const TopBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [user, setUser] = useState(null);
+  const searchRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await userService.getUserProfile();
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to fetch user in TopBar:', error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const getUserInitials = () => {
+    if (!user?.name) return 'U';
+    const parts = user.name.split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return user.name.substring(0, 2).toUpperCase();
+  };
+
+  // Define searchable items
+  const searchableItems = [
+    // Pages
+    { type: 'page', title: 'Tableau de bord', icon: BookOpen, path: '/dashboard/home', description: 'Vue d\'ensemble' },
+    { type: 'page', title: 'Examens', icon: FileText, path: '/dashboard/exams', description: 'Pratiquer les examens' },
+    { type: 'page', title: 'Résultats', icon: Trophy, path: '/dashboard/results', description: 'Voir vos résultats' },
+    { type: 'page', title: 'Classement', icon: Trophy, path: '/dashboard/leaderboard', description: 'Tableau des scores' },
+    { type: 'page', title: 'Profil', icon: User, path: '/dashboard/profile', description: 'Gérer votre profil' },
+    { type: 'page', title: 'Paramètres', icon: User, path: '/dashboard/settings', description: 'Configuration' },
+    { type: 'page', title: 'Abonnement', icon: User, path: '/dashboard/subscription', description: 'Gérer l\'abonnement' },
+    { type: 'page', title: 'Mes playlists', icon: BookOpen, path: '/dashboard/playlist', description: 'Vos playlists' },
+    { type: 'page', title: 'Mes notes', icon: FileText, path: '/dashboard/note', description: 'Vos notes' },
+  ];
+
+  // Get modules from localStorage
+  useEffect(() => {
+    const storedModules = localStorage.getItem('modules');
+    if (storedModules) {
+      try {
+        const modules = JSON.parse(storedModules);
+        const moduleItems = modules.map(module => ({
+          type: 'module',
+          title: module.name,
+          icon: BookOpen,
+          path: `/dashboard/subjects/${module._id}`,
+          description: 'Module de cours'
+        }));
+        setSearchResults([...searchableItems, ...moduleItems]);
+      } catch (error) {
+        setSearchResults(searchableItems);
+      }
+    } else {
+      setSearchResults(searchableItems);
+    }
+  }, []);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim() && filteredResults.length > 0) {
+      // Navigate to first result
+      navigate(filteredResults[0].path);
+      setSearchQuery("");
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSearchResults(value.trim().length > 0);
+  };
+
+  const handleResultClick = (path) => {
+    navigate(path);
+    setSearchQuery("");
+    setShowSearchResults(false);
+  };
+
+  const filteredResults = searchQuery.trim()
+    ? searchResults.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
   return (
-    <div className="bg-white/80 backdrop-blur-sm border-b border-blue-200 px-6 py-4 shadow-sm  w-full z-1000 cursor-pointer h-16">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          {/* Sidebar Toggle Button */}
-          <button
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            title={sidebarOpen ? "Collapse" : "Expand"}
+    <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm h-16">
+      <div className="flex items-center justify-between h-full px-4 md:px-6">
+        <div className="flex items-center gap-4">
+          {/* Mobile Menu Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuClick}
+            className="md:hidden flex-shrink-0"
           >
-            {sidebarOpen ? (
-              <Icons.ChevronsLeft className="h-5 w-5" />
-            ) : (
-              <Icons.ChevronsRight className="h-5 w-5" />
-            )}
-          </button>
+            <Menu className="h-5 w-5" />
+          </Button>
 
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-blue-600 text-2xl font-bold">
-            WAFA
-          </span>
-        </div>
-        {/* Right Side Icons */}
-        <div className="flex items-center space-x-4">
-          {/* Theme Toggle Icon */}
-          <button
-            className="p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 focus:outline-none"
-            title="Changer le thème"
-            onClick={() => {
-              setDarkMode(!darkMode);
-            }}
-          >
-            {/* Sun/Moon icon depending on theme */}
-            {darkMode ? (
-              // Sun icon for light mode
-              <svg
-                className="w-5 h-5 text-yellow-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M10 15a5 5 0 100-10 5 5 0 000 10zm0 2a7 7 0 100-14 7 7 0 000 14zm0-18a1 1 0 011 1v2a1 1 0 11-2 0V0a1 1 0 011-1zm0 18a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zm10-8a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM2 10a1 1 0 01-1 1H0a1 1 0 110-2h1a1 1 0 011 1zm15.071-7.071a1 1 0 010 1.414l-1.414 1.414a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zM4.343 15.657a1 1 0 010 1.414l-1.414 1.414a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zm12.728 0a1 1 0 00-1.414 0l-1.414 1.414a1 1 0 101.414 1.414l1.414-1.414a1 1 0 000-1.414zM4.343 4.343a1 1 0 00-1.414 0L1.515 5.757a1 1 0 101.414 1.414l1.414-1.414a1 1 0 000-1.414z" />
-              </svg>
-            ) : (
-              // Moon icon for dark mode
-              <svg
-                className="w-5 h-5 text-blue-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-              </svg>
-            )}
-          </button>
+          {/* Logo */}
+          <img src={logoImage} alt="WAFA Logo" className="h-10 w-auto flex-shrink-0" />
 
-          {/* User Info */}
-          <div className="flex items-center space-x-3 cursor-pointer">
-            <ProfileMenu isOpen={isOpen} setIsOpen={setIsOpen} />
+          {/* Search Bar - Compact */}
+          <div ref={searchRef} className="relative hidden md:block">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all w-64">
+              <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <Input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto text-sm flex-1"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchResults(false);
+                  }}
+                  className="flex-shrink-0 hover:bg-slate-200 rounded p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3 text-slate-500" />
+                </button>
+              )}
+            </form>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && filteredResults.length > 0 && createPortal(
+              <div className="fixed mt-2 w-96" style={{
+                top: '4rem',
+                left: searchRef.current?.getBoundingClientRect().left,
+                zIndex: 9999
+              }}>
+                <Card className="bg-white border border-slate-200 shadow-2xl">
+                  <div className="max-h-[500px] overflow-y-auto">
+                    <CardContent className="p-2">
+                      {filteredResults.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleResultClick(item.path)}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors text-left group"
+                          >
+                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+                              <Icon className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">
+                                {item.title}
+                              </p>
+                              {item.description && (
+                                <p className="text-xs text-slate-500 truncate">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="secondary" className="text-xs flex-shrink-0">
+                              {item.type === 'module' ? 'Module' : 'Page'}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </CardContent>
+                  </div>
+                </Card>
+              </div>,
+              document.body
+            )}
+
+            {showSearchResults && filteredResults.length === 0 && searchQuery.trim() && createPortal(
+              <div className="fixed mt-2 w-96" style={{
+                top: '4rem',
+                left: searchRef.current?.getBoundingClientRect().left,
+                zIndex: 9999
+              }}>
+                <Card className="bg-white border border-slate-200 shadow-2xl">
+                  <CardContent className="p-8 text-center">
+                    <Search className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-slate-900 mb-1">Aucun résultat trouvé</p>
+                    <p className="text-xs text-slate-500">Essayez de chercher avec d'autres mots-clés</p>
+                  </CardContent>
+                </Card>
+              </div>,
+              document.body
+            )}
           </div>
         </div>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDarkMode(!darkMode)}
+            title="Toggle theme"
+          >
+            {darkMode ? (
+              <Sun className="h-5 w-5 text-yellow-500" />
+            ) : (
+              <Moon className="h-5 w-5 text-blue-600" />
+            )}
+          </Button>
+
+          {/* Notifications */}
+          <NotificationDropdown />
+
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.profilePicture} alt={user?.name} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 max-h-[400px] overflow-y-auto" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name || 'Utilisateur'}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email || ''}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/dashboard/profile")}>
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/dashboard/subscription")}>
+                Subscription
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      {isOpen && (
-        <div
-          className="absolute h-screen w-screen top-0 left-0 "
-          onClick={() => setIsOpen(false)}
-        ></div>
-      )}
     </div>
   );
 };

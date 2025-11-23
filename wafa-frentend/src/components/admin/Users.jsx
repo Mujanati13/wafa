@@ -8,29 +8,38 @@ import {
   CardContent,
   CardFooter,
 } from "../ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { cn } from "../../lib/utils";
 import {
-  FiDownload,
-  FiUserPlus,
-  FiSearch,
-  FiFilter,
-  FiMail,
-  FiPhone,
-  FiCalendar,
-  FiMoreVertical,
-  FiChevronLeft,
-  FiChevronRight,
-  FiUsers,
-  FiUserCheck,
-  FiTrendingUp,
-  FiActivity,
-  FiArrowUp,
-  FiArrowDown,
-} from "react-icons/fi";
-import { FaCrown } from "react-icons/fa6";
+  Download,
+  UserPlus,
+  Search,
+  Filter,
+  Mail,
+  Phone,
+  Calendar,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  UserCheck,
+  TrendingUp,
+  Activity,
+  ArrowUp,
+  ArrowDown,
+  Edit,
+  Trash2,
+  Eye,
+  Crown,
+} from "lucide-react";
 import NewUserForm from "./NewUserForm";
 
-const Users = () => {
+const UsersComponent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
@@ -228,7 +237,7 @@ const Users = () => {
         disabled={currentPage === 1}
         className="flex items-center gap-1"
       >
-        <FiChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-4 h-4" />
         Previous
       </Button>
     );
@@ -259,7 +268,7 @@ const Users = () => {
         className="flex items-center gap-1"
       >
         Next
-        <FiChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-4 h-4" />
       </Button>
     );
 
@@ -281,7 +290,7 @@ const Users = () => {
           </div>
           <div className="flex gap-3 flex-wrap">
             <Button variant="outline" size="sm">
-              <FiDownload className="w-4 h-4" />
+              <Download className="w-4 h-4" />
               Export
             </Button>
             <Button
@@ -289,7 +298,7 @@ const Users = () => {
               className="bg-black text-white hover:bg-gray-800"
               onClick={() => setShowNewUserForm(!showNewUserForm)}
             >
-              <FiUserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" />
               Add
             </Button>
           </div>
@@ -309,7 +318,7 @@ const Users = () => {
                     {totalUsers}
                   </p>
                   <div className="flex items-center mt-2">
-                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
                     <span className="text-sm text-green-600 font-medium">
                       +{userGrowth}%
                     </span>
@@ -319,7 +328,7 @@ const Users = () => {
                   </div>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <FiUsers className="w-6 h-6 text-blue-600" />
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -337,7 +346,7 @@ const Users = () => {
                     {activeUsers}
                   </p>
                   <div className="flex items-center mt-2">
-                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
                     <span className="text-sm text-green-600 font-medium">
                       +{activeGrowth}%
                     </span>
@@ -347,7 +356,7 @@ const Users = () => {
                   </div>
                 </div>
                 <div className="p-3 bg-green-100 rounded-lg">
-                  <FiUserCheck className="w-6 h-6 text-green-600" />
+                  <UserCheck className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -365,7 +374,7 @@ const Users = () => {
                     {premiumUsers}
                   </p>
                   <div className="flex items-center mt-2">
-                    <FiArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                    <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
                     <span className="text-sm text-green-600 font-medium">
                       +{premiumGrowth}%
                     </span>
@@ -375,7 +384,7 @@ const Users = () => {
                   </div>
                 </div>
                 <div className="p-3 bg-purple-100 rounded-lg">
-                  <FaCrown className="w-6 h-6 text-purple-600" />
+                  <Crown className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -400,7 +409,7 @@ const Users = () => {
                   </p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <FiUsers className="w-6 h-6 text-blue-600" />
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -418,7 +427,7 @@ const Users = () => {
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search users by name or email..."
@@ -428,7 +437,7 @@ const Users = () => {
                 />
               </div>
               <Button variant="outline" className="sm:w-auto">
-                <FiFilter className="w-4 h-4" />
+                <Filter className="w-4 h-4" />
                 Filters
               </Button>
             </div>
@@ -500,13 +509,13 @@ const Users = () => {
                       <td className="py-4 px-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm">
-                            <FiMail className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                            <Mail className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                             <span className="text-gray-700 truncate">
                               {user.email}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <FiPhone className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                            <Phone className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                             <span className="text-gray-700">{user.phone}</span>
                           </div>
                         </div>
@@ -534,16 +543,34 @@ const Users = () => {
 
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
-                          <FiCalendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                          <Calendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                           <span className="text-gray-700">
                             {user.registerDate}
                           </span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                          <FiMoreVertical className="w-4 h-4" />
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="flex items-center gap-2">
+                              <Eye className="w-4 h-4" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex items-center gap-2">
+                              <Edit className="w-4 h-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -574,4 +601,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default UsersComponent;

@@ -95,6 +95,32 @@ export const reportQuestionsController = {
         }));
 
         res.status(200).json({ success: true, data: shaped });
+    }),
+
+    approve: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const updated = await ReportQuestions.findByIdAndUpdate(
+            id,
+            { status: "approved" },
+            { new: true, runValidators: true }
+        )
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
+        
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: "Report approved successfully",
+            data: {
+                ...updated,
+                username: updated.userId?.username,
+                questionTitle: updated.questionId?.text,
+            }
+        });
     })
 };
 

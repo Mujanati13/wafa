@@ -1,0 +1,155 @@
+{
+  "hero_badge": "#1 Platform for Medical Students",
+  "hero_title_part1": "Excel in your",
+  "hero_title_highlight": "exams",
+  "hero_title_part2": "with WAFA",
+  "hero_description": "Prepare effectively for exams without stress with our platform of exams by years and courses, designed for medical students.",
+  "hero_benefit_1": "No commitment",
+  "hero_benefit_2": "Free trial",
+  "hero_card_title": "Medical Student",
+  "hero_card_subtitle": "Optimal preparation",
+  "hero_card_feature_1": "500+ Questions",
+  "hero_card_feature_2": "Certifications",
+  "hero_card_feature_3": "Active Community",
+  "hero_rating": "4.9/5",
+  
+  "features_badge": "Features",
+  "features_title": "Everything you need to succeed",
+  "features_subtitle": "Powerful tools to optimize your learning",
+  "feature_1_title": "Stable Platform",
+  "feature_1_desc": "A secure and reliable platform. Your data remains private.",
+  "feature_2_title": "Direct Ranking",
+  "feature_2_desc": "Track your performance and evaluate your level among the best.",
+  "feature_3_title": "Continuous Improvement",
+  "feature_3_desc": "Listening to our users to constantly improve the platform.",
+  "feature_4_title": "Highlighter",
+  "feature_4_desc": "Highlight what is important in your revisions.",
+  "feature_5_title": "Playlists",
+  "feature_5_desc": "Organize yourself effectively for your last-minute revisions.",
+  "feature_6_title": "Personal Notes",
+  "feature_6_desc": "Never lose your important thoughts and annotations again.",
+  
+  "stat_1_value": "50K+",
+  "stat_1_label": "Active Users",
+  "stat_2_value": "10K+",
+  "stat_2_label": "Questions",
+  "stat_3_value": "95%",
+  "stat_3_label": "Success Rate",
+  "stat_4_value": "24/7",
+  "stat_4_label": "Support",
+  
+  "pricing_badge": "Pricing",
+  "pricing_title": "Simple, Transparent Pricing",
+  "pricing_subtitle": "Choose the plan that fits your needs",
+  "pricing_period": "/month",
+  "pricing_popular_badge": "Most Popular",
+  
+  "plan_1_name": "Basic",
+  "plan_1_price": "9.99",
+  "plan_1_desc": "Perfect for beginners",
+  "plan_1_feature_1": "Access to 500 questions",
+  "plan_1_feature_2": "Basic progress tracking",
+  "plan_1_feature_3": "Email support",
+  "plan_1_feature_4": "Mobile app access",
+  "plan_1_cta": "Get Started",
+  
+  "plan_2_name": "Pro",
+  "plan_2_price": "19.99",
+  "plan_2_desc": "For serious learners",
+  "plan_2_feature_1": "Access to 5000+ questions",
+  "plan_2_feature_2": "Advanced analytics",
+  "plan_2_feature_3": "Priority email support",
+  "plan_2_feature_4": "Custom learning paths",
+  "plan_2_feature_5": "Offline access",
+  "plan_2_feature_6": "Exclusive webinars",
+  "plan_2_cta": "Get Pro",
+  
+  "plan_3_name": "Premium",
+  "plan_3_price": "29.99",
+  "plan_3_desc": "For exam masters",
+  "plan_3_feature_1": "Unlimited question access",
+  "plan_3_feature_2": "AI-powered recommendations",
+  "plan_3_feature_3": "24/7 Live support",
+  "plan_3_feature_4": "One-on-one coaching",
+  "plan_3_cta": "Go Premium",
+  
+  "testimonials_badge": "Testimonials",
+  "testimonials_title": "What Our Students Say",
+  
+  "testimonial_1_author": "Ahmed Hassan",
+  "testimonial_1_role": "Medical Student",
+  "testimonial_1_content": "WAFA helped me score 95% on my final exams. The explanations are incredibly detailed!",
+  
+  "testimonial_2_author": "Fatima Mohamed",
+  "testimonial_2_role": "Medical Student",
+  "testimonial_2_content": "The practice exams are so realistic. They prepared me perfectly for the actual exam.",
+  
+  "testimonial_3_author": "Omar Ahmed",
+  "testimonial_3_role": "Medical Student",
+  "testimonial_3_content": "Amazing platform! The progress tracking keeps me motivated throughout my studies.",
+  
+  "faq_badge": "FAQ",
+  "faq_title": "Frequently Asked Questions",
+  
+  "faq_1_question": "What is WAFA?",
+  "faq_1_answer": "WAFA is an online exam preparation platform designed specifically for medical students. It offers thousands of practice questions, detailed explanations, and performance analytics.",
+  
+  "faq_2_question": "Do you offer a free trial?",
+  "faq_2_answer": "Yes! We offer a 7-day free trial with access to all Pro features. No credit card required.",
+  
+  "faq_3_question": "Can I download questions for offline study?",
+  "faq_3_answer": "Offline access is available with Pro and Premium plans. Download questions and study anywhere without internet.",
+  
+  "faq_4_question": "What is your refund policy?",
+  "faq_4_answer": "We offer a 30-day money-back guarantee if you're not satisfied with your purchase. No questions asked.",
+  
+  "contact_badge": "Contact Us",
+  "contact_title": "Get in Touch",
+  "contact_subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+  
+  "contact_email_label": "Email",
+  "contact_email_value": "support@wafa.com",
+  
+  "contact_phone_label": "Phone",
+  "contact_phone_value": "+212 6 00 00 00 00",
+  
+  "contact_address_label": "Address",
+  "contact_address_value": "Marrakech, Morocco",
+  
+  "contact_form_title": "Send us a Message",
+  "contact_form_subtitle": "Fill out the form and we'll get back to you within 24 hours.",
+  
+  "contact_form_name": "Your Name",
+  "contact_form_name_placeholder": "John Doe",
+  
+  "contact_form_email": "Email Address",
+  "contact_form_email_placeholder": "john@example.com",
+  
+  "contact_form_subject": "Subject",
+  "contact_form_subject_placeholder": "How can we help?",
+  
+  "contact_form_message": "Message",
+  "contact_form_message_placeholder": "Your message here...",
+  
+  "contact_form_submit": "Send Message",
+  "contact_success_message": "Message sent successfully! We'll get back to you soon.",
+  
+  "footer_brand": "WAFA",
+  "footer_brand_description": "Your ultimate platform for exam preparation and success.",
+  
+  "footer_product_title": "Product",
+  "footer_product_link_1": "Features",
+  "footer_product_link_2": "Pricing",
+  "footer_product_link_3": "Security",
+  
+  "footer_support_title": "Support",
+  "footer_support_link_1": "Help Center",
+  "footer_support_link_2": "Contact Us",
+  "footer_support_link_3": "FAQ",
+  
+  "footer_social_title": "Follow Us",
+  
+  "footer_copyright": "© 2024 WAFA. All rights reserved.",
+  "footer_terms": "Terms of Service",
+  "footer_privacy": "Privacy Policy"
+}

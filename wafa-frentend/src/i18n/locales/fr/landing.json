@@ -1,0 +1,155 @@
+{
+  "hero_badge": "Plateforme #1 pour étudiants en médecine",
+  "hero_title_part1": "Exceller dans vos",
+  "hero_title_highlight": "examens",
+  "hero_title_part2": "avec WAFA",
+  "hero_description": "Préparez-vous efficacement pour les examens sans stress avec notre plateforme d'examens par années et par cours, conçue pour les étudiants en médecine.",
+  "hero_benefit_1": "Sans engagement",
+  "hero_benefit_2": "Essai gratuit",
+  "hero_card_title": "Étudiant en médecine",
+  "hero_card_subtitle": "Préparation optimale",
+  "hero_card_feature_1": "500+ Questions",
+  "hero_card_feature_2": "Certifications",
+  "hero_card_feature_3": "Communauté active",
+  "hero_rating": "4.9/5",
+  
+  "features_badge": "Fonctionnalités",
+  "features_title": "Tout ce dont vous avez besoin pour réussir",
+  "features_subtitle": "Des outils puissants pour optimiser votre apprentissage",
+  "feature_1_title": "Plateforme stable",
+  "feature_1_desc": "Une plateforme sécurisée et fiable. Vos données restent privées.",
+  "feature_2_title": "Classement direct",
+  "feature_2_desc": "Suivez vos performances et évaluez votre niveau parmi les meilleurs.",
+  "feature_3_title": "Amélioration continue",
+  "feature_3_desc": "À l'écoute de nos utilisateurs pour constamment améliorer la plateforme.",
+  "feature_4_title": "Surligneur",
+  "feature_4_desc": "Mettez en évidence ce qui est important dans vos révisions.",
+  "feature_5_title": "Playlists",
+  "feature_5_desc": "Organisez-vous efficacement pour vos révisions de dernière minute.",
+  "feature_6_title": "Notes personnelles",
+  "feature_6_desc": "Ne perdez plus jamais vos pensées et annotations importantes.",
+  
+  "stat_1_value": "50 000+",
+  "stat_1_label": "Utilisateurs actifs",
+  "stat_2_value": "10 000+",
+  "stat_2_label": "Questions",
+  "stat_3_value": "95%",
+  "stat_3_label": "Taux de réussite",
+  "stat_4_value": "24/7",
+  "stat_4_label": "Support",
+  
+  "pricing_badge": "Tarification",
+  "pricing_title": "Tarification Simple et Transparente",
+  "pricing_subtitle": "Choisissez le plan qui vous convient",
+  "pricing_period": "/mois",
+  "pricing_popular_badge": "Le plus populaire",
+  
+  "plan_1_name": "Basique",
+  "plan_1_price": "9.99",
+  "plan_1_desc": "Parfait pour les débutants",
+  "plan_1_feature_1": "Accès à 500 questions",
+  "plan_1_feature_2": "Suivi de la progression de base",
+  "plan_1_feature_3": "Support par e-mail",
+  "plan_1_feature_4": "Accès à l'application mobile",
+  "plan_1_cta": "Commencer",
+  
+  "plan_2_name": "Pro",
+  "plan_2_price": "19.99",
+  "plan_2_desc": "Pour les apprenants sérieux",
+  "plan_2_feature_1": "Accès à 5000+ questions",
+  "plan_2_feature_2": "Analyse avancée",
+  "plan_2_feature_3": "Support par e-mail prioritaire",
+  "plan_2_feature_4": "Chemins d'apprentissage personnalisés",
+  "plan_2_feature_5": "Accès hors ligne",
+  "plan_2_feature_6": "Webinaires exclusifs",
+  "plan_2_cta": "Obtenir Pro",
+  
+  "plan_3_name": "Premium",
+  "plan_3_price": "29.99",
+  "plan_3_desc": "Pour les maîtres des examens",
+  "plan_3_feature_1": "Accès illimité aux questions",
+  "plan_3_feature_2": "Recommandations alimentées par l'IA",
+  "plan_3_feature_3": "Support en direct 24/7",
+  "plan_3_feature_4": "Coaching individuel",
+  "plan_3_cta": "Aller Premium",
+  
+  "testimonials_badge": "Témoignages",
+  "testimonials_title": "Ce que disent nos étudiants",
+  
+  "testimonial_1_author": "Ahmed Hassan",
+  "testimonial_1_role": "Étudiant en médecine",
+  "testimonial_1_content": "WAFA m'a aidé à obtenir 95% à mes examens finaux. Les explications sont incroyablement détaillées!",
+  
+  "testimonial_2_author": "Fatima Mohamed",
+  "testimonial_2_role": "Étudiante en médecine",
+  "testimonial_2_content": "Les examens pratiques sont si réalistes. Ils m'ont parfaitement préparée à l'examen réel.",
+  
+  "testimonial_3_author": "Omar Ahmed",
+  "testimonial_3_role": "Étudiant en médecine",
+  "testimonial_3_content": "Plateforme incroyable! Le suivi de la progression me motive tout au long de mes études.",
+  
+  "faq_badge": "FAQ",
+  "faq_title": "Questions Fréquemment Posées",
+  
+  "faq_1_question": "Qu'est-ce que WAFA?",
+  "faq_1_answer": "WAFA est une plateforme de préparation aux examens en ligne conçue spécifiquement pour les étudiants en médecine. Elle offre des milliers de questions pratiques, des explications détaillées et une analyse des performances.",
+  
+  "faq_2_question": "Proposez-vous un essai gratuit?",
+  "faq_2_answer": "Oui! Nous proposons un essai gratuit de 7 jours avec accès à toutes les fonctionnalités Pro. Aucune carte de crédit requise.",
+  
+  "faq_3_question": "Puis-je télécharger des questions pour étudier hors ligne?",
+  "faq_3_answer": "L'accès hors ligne est disponible avec les plans Pro et Premium. Téléchargez des questions et étudiez n'importe où sans Internet.",
+  
+  "faq_4_question": "Quelle est votre politique de remboursement?",
+  "faq_4_answer": "Nous offrons une garantie de remboursement de 30 jours si vous n'êtes pas satisfait de votre achat. Aucune question posée.",
+  
+  "contact_badge": "Nous Contacter",
+  "contact_title": "Entrez en Contact",
+  "contact_subtitle": "Vous avez des questions? Nous serions ravis de vous entendre. Envoyez-nous un message et nous vous répondrons dans les meilleurs délais.",
+  
+  "contact_email_label": "E-mail",
+  "contact_email_value": "support@wafa.com",
+  
+  "contact_phone_label": "Téléphone",
+  "contact_phone_value": "+212 6 00 00 00 00",
+  
+  "contact_address_label": "Adresse",
+  "contact_address_value": "Marrakech, Maroc",
+  
+  "contact_form_title": "Envoyez-nous un Message",
+  "contact_form_subtitle": "Remplissez le formulaire et nous vous répondrons dans les 24 heures.",
+  
+  "contact_form_name": "Votre Nom",
+  "contact_form_name_placeholder": "Jean Dupont",
+  
+  "contact_form_email": "Adresse E-mail",
+  "contact_form_email_placeholder": "jean@exemple.com",
+  
+  "contact_form_subject": "Sujet",
+  "contact_form_subject_placeholder": "Comment pouvons-nous vous aider?",
+  
+  "contact_form_message": "Message",
+  "contact_form_message_placeholder": "Votre message ici...",
+  
+  "contact_form_submit": "Envoyer le Message",
+  "contact_success_message": "Message envoyé avec succès! Nous vous répondrons bientôt.",
+  
+  "footer_brand": "WAFA",
+  "footer_brand_description": "Votre plateforme ultime de préparation aux examens et de réussite.",
+  
+  "footer_product_title": "Produit",
+  "footer_product_link_1": "Fonctionnalités",
+  "footer_product_link_2": "Tarification",
+  "footer_product_link_3": "Sécurité",
+  
+  "footer_support_title": "Support",
+  "footer_support_link_1": "Centre d'aide",
+  "footer_support_link_2": "Nous Contacter",
+  "footer_support_link_3": "FAQ",
+  
+  "footer_social_title": "Suivez-nous",
+  
+  "footer_copyright": "© 2024 WAFA. Tous les droits réservés.",
+  "footer_terms": "Conditions de Service",
+  "footer_privacy": "Politique de Confidentialité"
+}

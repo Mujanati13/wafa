@@ -12,7 +12,7 @@ Passport.deserializeUser(async (id, done) => {
     const foundUser = await user.findById(id);
     if (!foundUser) throw new Error("User not found");
 
-    done(null, id);
+    done(null, foundUser);
   } catch (error) {
     done(error, null);
   }
@@ -23,6 +23,11 @@ export default Passport.use(
     try {
       const foundUser = await user.findOne({ email: email });
       if (!foundUser) throw new Error("User not found");
+
+      // Check if email is verified
+      if (!foundUser.emailVerified) {
+        throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
+      }
 
       const comparePassword = await bcrypt.compare(
         password,

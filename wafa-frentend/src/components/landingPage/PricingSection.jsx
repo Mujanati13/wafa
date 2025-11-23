@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { FiCheck, FiStar, FiZap, FiTrendingUp } from 'react-icons/fi'
 import { HiSparkles } from 'react-icons/hi'
 import { BiSolidBadgeCheck } from 'react-icons/bi'
+import OfferCountdown from '../OfferCountdown'
 
 const PricingSection = () => {
   const plans = [
@@ -258,6 +259,32 @@ const PricingSection = () => {
           })}
         </motion.div>
         
+        {/* Offer Countdown Section */}
+        <motion.div 
+          className="mt-16 bg-gradient-to-r from-red-50 to-orange-50 rounded-3xl p-8 border-2 border-red-200"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+        >
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="flex-1 text-center lg:text-left">
+              <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                🔥 Offre Limitée - 50% de Réduction!
+              </h3>
+              <p className="text-gray-600 text-lg">
+                Ne manquez pas cette opportunité exceptionnelle. L'offre expire bientôt!
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <OfferCountdown 
+                endDate={new Date("2025-02-28T23:59:59")} 
+                discountPercentage={50} 
+              />
+            </div>
+          </div>
+        </motion.div>
+
         <motion.div 
           className="text-center mt-16"
           initial={{ opacity: 0, y: 20 }}

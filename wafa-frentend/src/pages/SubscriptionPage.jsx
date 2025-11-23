@@ -1,8 +1,16 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import PlanModal from "@/components/admin/PlanModal";
-import { DollarSign, SquareChartGantt, UserRoundCheck } from "lucide-react";
+import { DollarSign, SquareChartGantt, UserRoundCheck, Trash2, Edit, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const SubscriptionPage = () => {
   // Helpers for persistence
@@ -182,302 +190,237 @@ const SubscriptionPage = () => {
     totalSubscribers > 0 ? monthlyRevenue / totalSubscribers : 0;
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Subscription Plans
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage pricing plans and subscription tiers
-          </p>
-        </div>
-        <Button
-          onClick={openCreateModal}
-          className="bg-black hover:bg-gray-800 text-white px-4 py-2"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-100 p-6">
+      <div className="w-full space-y-6">
+        {/* Header with gradient background */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-400 p-6 text-white shadow-lg flex justify-between items-center"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Create Plan
-        </Button>
-      </div>
-
-      {/* Metrics Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Plans Card */}
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-600">Total Plans</p>
-                <SquareChartGantt className="w-6 h-6" />
-              </div>
-              <div className="flex items-center justify-between gap-2 mt-2">
-                <span className="text-3xl font-bold text-gray-900">
-                  {totalPlans}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Active subscription tiers
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Subscribers Card */}
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-600">
-                  Total Subscribers
-                </p>
-                <UserRoundCheck className="w-6 h-6" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                {totalSubscribers.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">Across all plans</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Monthly Revenue Card */}
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-600">
-                  Monthly Revenue
-                </p>
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                $
-                {monthlyRevenue.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Estimated monthly recurring revenue
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Average Revenue Per User Card */}
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-600">
-                  Average Revenue Per User
-                </p>
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mt-2">
-                ${averageRevenuePerUser.toFixed(2)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                ARPU across all plans
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Subscription Plans Table Section */}
-      <Card className="bg-white border-gray-200">
-        <CardHeader className="pb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              All Subscription Plans
-            </h2>
-            <p className="text-gray-600 mt-1">
-              Manage your platform's pricing and subscription tiers
+            <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
+            <p className="text-indigo-100">
+              Manage pricing plans and subscription tiers
             </p>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-4 px-6 font-medium text-gray-900">
-                    Plan Details
-                  </th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">
-                    Pricing
-                  </th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">
-                    Subscribers
-                  </th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">
-                    Revenue
-                  </th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">
-                    Status
-                  </th>
-                  <th className="text-right py-4 px-6 font-medium text-gray-900">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {subscriptionPlans.map((plan, index) => (
-                  <tr
-                    key={plan.id}
-                    className={
-                      index < subscriptionPlans.length - 1
-                        ? "border-b border-gray-200"
-                        : ""
-                    }
-                  >
-                    <td className="py-4 px-6">
+          <Button
+            onClick={openCreateModal}
+            className="bg-white hover:bg-indigo-50 text-indigo-600 shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Plan
+          </Button>
+        </motion.div>
+
+        {/* Metrics Cards Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          {/* Total Plans Card */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">Total Plans</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{totalPlans}</p>
+                  <p className="text-xs text-gray-500 mt-1">Active subscription tiers</p>
+                </div>
+                <SquareChartGantt className="w-8 h-8 text-indigo-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Subscribers Card */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">Total Subscribers</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{totalSubscribers.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-1">Across all plans</p>
+                </div>
+                <UserRoundCheck className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Monthly Revenue Card */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">Monthly Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                    ${monthlyRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Monthly recurring revenue</p>
+                </div>
+                <DollarSign className="w-8 h-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Average Revenue Per User Card */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">Avg Revenue/User</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">${averageRevenuePerUser.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Per subscription</p>
+                </div>
+                <DollarSign className="w-8 h-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Plans Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          {subscriptionPlans.map((plan, index) => (
+            <motion.div
+              key={plan.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+              className="group relative"
+            >
+              <Card className="shadow-lg border-0 hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 group-hover:h-2 transition-all duration-300" />
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {/* Plan Header */}
+                    <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-gray-900">
-                          {plan.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {plan.description}
-                        </p>
-                        {Array.isArray(plan.features) &&
-                          plan.features.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {plan.features.map((f, i) => (
-                                <span
-                                  key={`${plan.id}-feature-${i}`}
-                                  className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
-                                >
-                                  {f}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                        <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
                       </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div>
-                        {plan.oldPrice != null && plan.oldPrice > plan.price ? (
-                          <p className="text-sm text-gray-500">
-                            <span className="line-through mr-2">
-                              ${plan.oldPrice}
-                            </span>
-                            <span className="font-semibold text-gray-900">
-                              ${plan.price}
-                            </span>
-                          </p>
-                        ) : (
-                          <p className="font-semibold text-gray-900">
-                            ${plan.price}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-500">per month</p>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <svg
-                          className="w-4 h-4 text-gray-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                          />
-                        </svg>
-                        <span className="text-gray-900">
-                          {plan.subscribers.toLocaleString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className="text-gray-900">
-                        $
-                        {plan.revenue.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-black text-white">
-                        {plan.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <>
-                          <button
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4 text-indigo-600 hover:text-indigo-700" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
                             onClick={() => openEditModal(plan)}
-                            className="p-1 text-gray-500 hover:text-gray-700"
+                            className="flex items-center gap-2"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          <button
+                            <Edit className="h-4 w-4" />
+                            Edit Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => handleDelete(plan.id)}
-                            className="p-1 text-gray-500 hover:text-red-600"
+                            className="flex items-center gap-2 text-red-600 hover:text-red-700"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </>
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="space-y-1">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900">
+                          ${plan.price}
+                        </span>
+                        <span className="text-sm text-gray-500">/month</span>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-      <PlanModal
-        open={isPlanModalOpen}
-        title={planModalTitle}
-        initialPlan={planModalInitial}
-        onSave={handleModalSave}
-        onCancel={handleModalCancel}
-      />
+                      {plan.oldPrice != null && plan.oldPrice > plan.price && (
+                        <p className="text-sm text-gray-500">
+                          <span className="line-through">${plan.oldPrice}</span>
+                          <Badge className="ml-2 bg-red-100 text-red-800">
+                            Save ${(plan.oldPrice - plan.price).toFixed(2)}
+                          </Badge>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                      <div className="bg-indigo-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 uppercase font-semibold">
+                          Subscribers
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 mt-1">
+                          {plan.subscribers.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 uppercase font-semibold">
+                          Revenue
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 mt-1">
+                          ${plan.revenue.toLocaleString("en-US", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Features */}
+                    {Array.isArray(plan.features) && plan.features.length > 0 && (
+                      <div className="pt-2 border-t border-gray-200">
+                        <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
+                          Features
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {plan.features.map((f, i) => (
+                            <Badge
+                              key={`${plan.id}-feature-${i}`}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {f}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                      <Badge
+                        className={
+                          plan.status === "Active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }
+                      >
+                        {plan.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <PlanModal
+          open={isPlanModalOpen}
+          title={planModalTitle}
+          initialPlan={planModalInitial}
+          onSave={handleModalSave}
+          onCancel={handleModalCancel}
+        />
+      </div>
     </div>
   );
 };

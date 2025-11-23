@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { api } from "../lib/utils.js";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BookOpen, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 const Semesters = () => {
   const [board, setBoard] = useState({});
@@ -179,145 +184,185 @@ const Semesters = () => {
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Semestres</h1>
-            <p className="text-gray-600 mt-1">
-              Organisez les modules par semestre (Kanban)
-            </p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+        <div className="w-full space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg"
+          >
+            <h1 className="text-3xl font-bold mb-2">Semestres</h1>
+            <p className="text-blue-100">Organisez les modules par semestre</p>
+          </motion.div>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">Chargement des modules...</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Chargement des modules...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Semestres</h1>
-          <p className="text-gray-600 mt-1">
-            Organisez les modules par semestre (Kanban)
-          </p>
-          {totalModules > 0 && (
-            <p className="text-sm text-gray-500 mt-1">
-              {totalModules} module(s) chargé(s)
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+      <div className="w-full space-y-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex justify-between items-center"
+        >
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Semestres</h1>
+            <p className="text-blue-100">
+              Organisez les modules par semestre (Glisser-Déposer)
             </p>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Erreur:</span>
-            {error}
+            {totalModules > 0 && (
+              <Badge className="mt-3 bg-blue-200 text-blue-900">
+                {totalModules} module(s)
+              </Badge>
+            )}
           </div>
-          <button
-            onClick={() => setError(null)}
-            className="text-red-500 hover:text-red-700 text-sm mt-2"
+          <BookOpen className="w-12 h-12 opacity-80" />
+        </motion.div>
+
+        {/* Alerts */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            Fermer
-          </button>
-        </div>
-      )}
+            <Alert className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
-      {updating && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-700">
-          Mise à jour en cours...
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Succès:</span>
-            {successMessage}
-          </div>
-          <button
-            onClick={() => setSuccessMessage(null)}
-            className="text-green-500 hover:text-green-700 text-sm mt-2"
+        {updating && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            Fermer
-          </button>
-        </div>
-      )}
+            <Alert className="bg-blue-50 border-blue-200">
+              <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+              <AlertDescription className="text-blue-800">Mise à jour en cours...</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
-      {totalModules === 0 && !loading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700">
-          <div className="text-center">
-            <p className="font-medium">Aucun module trouvé</p>
-            <p className="text-sm mt-1">
-              Il n'y a pas encore de modules dans la base de données. Créez des
-              modules via la page d'administration.
-            </p>
-          </div>
-        </div>
-      )}
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert className="bg-green-50 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg p-4">
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-6 min-w-max">
-            {columns.map((columnId) => {
-              const items = board[columnId];
-              return (
-                <div
-                  key={columnId}
-                  className="w-72 shrink-0 bg-white rounded-2xl border border-blue-100 shadow-md"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, columnId)}
-                >
-                  {/* Column header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-blue-100 bg-white/60 rounded-t-2xl">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-white border border-gray-300 shadow-sm flex items-center justify-center font-semibold text-gray-700">
-                        {columnId}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {items.length} modules
-                      </span>
-                    </div>
-                    <span className="text-gray-400">⋯</span>
-                  </div>
+        {totalModules === 0 && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-yellow-50 border-yellow-200">
+              <CardContent className="p-6 text-center">
+                <p className="font-semibold text-yellow-900 mb-2">Aucun module trouvé</p>
+                <p className="text-sm text-yellow-800">
+                  Il n'y a pas encore de modules. Créez des modules via la page d'administration.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-                  {/* Column body */}
-                  <div className="p-3 flex flex-col gap-3 min-h-[280px]">
-                    {items.map((item) => (
-                      <div
-                        key={item.id}
-                        draggable
-                        onDragStart={(e) =>
-                          handleDragStart(e, columnId, item.id)
-                        }
-                        className="bg-white/90 border border-gray-200 rounded-xl px-4 py-3 shadow-sm hover:shadow cursor-grab active:cursor-grabbing"
-                      >
-                        <div className="text-gray-800 font-medium text-sm mb-1">
-                          {item.title}
+        {/* Kanban Board */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white/80 backdrop-blur-sm rounded-xl border border-blue-100 shadow-lg p-4"
+        >
+          <div className="overflow-x-auto pb-4">
+            <div className="flex gap-4 min-w-max">
+              {columns.map((columnId, idx) => {
+                const items = board[columnId];
+                return (
+                  <motion.div
+                    key={columnId}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: idx * 0.05 }}
+                    className="w-80 shrink-0 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-blue-100 shadow-md overflow-hidden"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, columnId)}
+                  >
+                    {/* Column Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-blue-100 px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-blue-600 text-white font-bold">
+                            {columnId}
+                          </Badge>
+                          <span className="text-sm text-gray-600">
+                            {items.length} module{items.length !== 1 ? 's' : ''}
+                          </span>
                         </div>
-                        {item.totalQuestions > 0 && (
-                          <div className="text-xs text-gray-500">
-                            {item.totalQuestions} questions
-                          </div>
-                        )}
                       </div>
-                    ))}
+                    </div>
 
-                    {/* Empty state dropzone */}
-                    {items.length === 0 && (
-                      <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center text-gray-400">
-                        Déposer un module ici
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                    {/* Column Content */}
+                    <div className="p-3 flex flex-col gap-2 min-h-[300px]">
+                      {items.map((item, itemIdx) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: itemIdx * 0.05 }}
+                          draggable
+                          onDragStart={(e) =>
+                            handleDragStart(e, columnId, item.id)
+                          }
+                          className="bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md hover:border-blue-300 cursor-grab active:cursor-grabbing transition-all group"
+                        >
+                          <h4 className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                            {item.title}
+                          </h4>
+                          {item.totalQuestions > 0 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {item.totalQuestions} questions
+                            </p>
+                          )}
+                        </motion.div>
+                      ))}
+
+                      {/* Empty State */}
+                      {items.length === 0 && (
+                        <div className="border-2 border-dashed border-blue-200 rounded-lg p-6 text-center text-gray-400 flex-1 flex items-center justify-center">
+                          <div>
+                            <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                            <p className="text-xs">Glissez ici</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

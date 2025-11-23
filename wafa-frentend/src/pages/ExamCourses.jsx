@@ -1,71 +1,39 @@
-import React, { useMemo, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import { cn } from "../lib/utils";
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiFilter,
-  FiMoreVertical,
-  FiSearch,
-  FiPlus,
-} from "react-icons/fi";
-import { IoCheckmarkDoneCircle } from "react-icons/io5";
-import { Trash, Edit, Eye } from "lucide-react";
-import NewExamCourseForm from "../components/admin/NewExamCourseForm";
+import { useMemo, useState, useEffect } from "react";
+import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/shared";
+import NewExamCourseForm from "@/components/admin/NewExamCourseForm";
 
 const ExamCourses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddCourseForm, setShowAddCourseForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [formData, setFormData] = useState({
+    courseName: "",
+    moduleName: "",
+    subModuleName: "",
+    category: "",
+    imageUrl: "",
+    helpText: "",
+  });
 
-  // Sample data generator for exam courses
   const examCourses = useMemo(() => {
-    const placeholderImage =
-      "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Course";
-    const modules = [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-      "Biostatistiques 1",
-      "Génétique",
-      "Sémiologie 1",
-      "Microbiologie 1",
-      "Immunologie",
-      "Hématologie",
-    ];
-    const subModules = [
-      "Système cardiovasculaire",
-      "Système respiratoire",
-      "Système digestif",
-      "Système nerveux",
-      "Système musculo-squelettique",
-      "Système endocrinien",
-      "Système urinaire",
-      "Système reproducteur",
-    ];
-    const categories = [
-      "Théorique",
-      "Pratique",
-      "Clinique",
-      "Laboratoire",
-      "Recherche",
-      "Évaluation",
-    ];
+    const placeholderImage = "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Course";
+    const modules = ["Anatomie 1", "Biophysique", "Embryologie", "Histologie", "Physiologie 1", "Biochimie 1", "Biostatistiques 1", "Génétique", "Sémiologie 1", "Microbiologie 1", "Immunologie", "Hématologie"];
+    const subModules = ["Système cardiovasculaire", "Système respiratoire", "Système digestif", "Système nerveux", "Système musculo-squelettique", "Système endocrinien", "Système urinaire", "Système reproducteur"];
+    const categories = ["Théorique", "Pratique", "Clinique", "Laboratoire", "Recherche", "Évaluation"];
 
     let id = 1;
     const list = [];
@@ -73,9 +41,7 @@ const ExamCourses = () => {
     modules.forEach((module, moduleIdx) => {
       subModules.forEach((subModule, subModuleIdx) => {
         if (Math.random() > 0.4) {
-          // 60% chance to create a course
-          const category =
-            categories[Math.floor(Math.random() * categories.length)];
+          const category = categories[Math.floor(Math.random() * categories.length)];
           list.push({
             id: id++,
             moduleName: module,
@@ -97,17 +63,14 @@ const ExamCourses = () => {
   const filteredCourses = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return examCourses.filter((course) => {
-      const passesModule =
-        moduleFilter === "all" || course.moduleName === moduleFilter;
-      const passesCategory =
-        categoryFilter === "all" || course.category === categoryFilter;
+      const passesModule = moduleFilter === "all" || course.moduleName === moduleFilter;
+      const passesCategory = categoryFilter === "all" || course.category === categoryFilter;
       const passesSearch =
         course.courseName.toLowerCase().includes(term) ||
         course.moduleName.toLowerCase().includes(term) ||
         course.subModuleName.toLowerCase().includes(term) ||
         course.category.toLowerCase().includes(term) ||
         String(course.id).includes(term);
-
       return passesModule && passesCategory && passesSearch;
     });
   }, [searchTerm, moduleFilter, categoryFilter, examCourses]);
@@ -122,7 +85,7 @@ const ExamCourses = () => {
     setCurrentPage(page);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, moduleFilter, categoryFilter]);
 
@@ -135,254 +98,310 @@ const ExamCourses = () => {
     if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
 
     buttons.push(
-      <Button
-        key="prev"
-        variant="outline"
-        size="sm"
-        onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex items-center gap-1"
-      >
-        <FiChevronLeft className="w-4 h-4" />
-        Previous
+      <Button key="prev" variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="gap-1">
+        <ChevronLeft className="h-4 w-4" />
+        Précédent
       </Button>
     );
 
     for (let i = start; i <= end; i++) {
       buttons.push(
-        <Button
-          key={i}
-          variant={i === currentPage ? "default" : "outline"}
-          size="sm"
-          onClick={() => goToPage(i)}
-          className="min-w-[40px]"
-        >
+        <Button key={i} variant={i === currentPage ? "default" : "outline"} size="sm" onClick={() => goToPage(i)} className="min-w-[40px]">
           {i}
         </Button>
       );
     }
 
     buttons.push(
-      <Button
-        key="next"
-        variant="outline"
-        size="sm"
-        onClick={() => goToPage(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-1"
-      >
-        Next
-        <FiChevronRight className="w-4 h-4" />
+      <Button key="next" variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="gap-1">
+        Suivant
+        <ChevronRight className="h-4 w-4" />
       </Button>
     );
 
     return <div className="flex items-center gap-2">{buttons}</div>;
   };
 
-  // Get unique modules and categories for the form
-  const uniqueModules = Array.from(
-    new Set(examCourses.map((c) => c.moduleName))
-  );
-  const uniqueCategories = Array.from(
-    new Set(examCourses.map((c) => c.category))
-  );
+  const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName)));
+  const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category)));
+
+  const handleAddCourse = () => {
+    if (!formData.courseName || !formData.moduleName || !formData.category) {
+      alert("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    setShowAddCourseForm(false);
+    setFormData({
+      courseName: "",
+      moduleName: "",
+      subModuleName: "",
+      category: "",
+      imageUrl: "",
+      helpText: "",
+    });
+    alert("Cours ajouté avec succès");
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Action Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Exam Courses</h1>
-            <p className="text-gray-600 mt-1">
-              Manage exam courses organized by modules and categories
-            </p>
+            <h2 className="text-2xl font-bold text-black mb-1">Répertoire des Cours</h2>
+            <p className="text-gray-600">Total: <span className="font-semibold text-black">{filteredCourses.length}</span> cours</p>
           </div>
-          <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" size="sm">
-              <FiFilter className="w-4 h-4" />
-              Filters
-            </Button>
-            <Button
-              size="sm"
-              className="bg-black text-white hover:bg-gray-800"
-              onClick={() => setShowCreateForm(true)}
-            >
-              <FiPlus className="w-4 h-4 mr-2" />
-              Create Exam Course
-            </Button>
-          </div>
-        </div>
+          <Button
+            size="lg"
+            className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+            onClick={() => setShowAddCourseForm(true)}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Créer Cours
+          </Button>
+        </motion.div>
 
-        {/* Create Exam Courses Form */}
-        {showCreateForm && (
-          <NewExamCourseForm
-            setShowNewExamCourseForm={setShowCreateForm}
-            modules={uniqueModules}
-            categories={uniqueCategories}
-          />
-        )}
-
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Exam Directory</CardTitle>
-            <CardDescription>Search and manage exam courses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name, module, or category..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <Select
-                  value={moduleFilter}
-                  onChange={(e) => setModuleFilter(e.target.value)}
-                  className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                >
-                  <option value="all">All modules</option>
-                  {uniqueModules.map((module) => (
-                    <option key={module} value={module}>
-                      {module}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <Select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                >
-                  <option value="all">All categories</option>
-                  {uniqueCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              Exam Courses ({filteredCourses.length})
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Répertoire des Cours
             </CardTitle>
-            <CardDescription>
-              List of exam courses with module and category information
-            </CardDescription>
+            <CardDescription>Rechercher et gérer les cours d'examens</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      ID
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Module Name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Sub Module Name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Categories
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Course Name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Image
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      "?"
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Total Questions
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Operate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCourses.map((course) => (
-                    <tr
-                      key={course.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4 text-gray-700">{course.id}</td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {course.moduleName}
-                      </td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {course.subModuleName}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200">
-                          {course.category}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {course.courseName}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="w-16 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
-                          <img
-                            src={course.imageUrl}
-                            alt={course.courseName}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </td>
-                      <td
-                        className="py-4 px-4 text-gray-600 max-w-[300px] truncate"
-                        title={course.helpText}
-                      >
-                        {course.helpText}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {course.totalQuestions}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 flex gap-2 items-center">
-                        <Eye
-                          size={18}
-                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                        />
-                        <Edit
-                          size={18}
-                          className="text-green-600 hover:text-green-800 cursor-pointer"
-                        />
-                        <Trash
-                          size={18}
-                          className="text-red-600 hover:text-red-800 cursor-pointer"
-                        />
-                      </td>
-                    </tr>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input type="text" placeholder="Rechercher par nom, module ou catégorie..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              </div>
+              <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les modules" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les modules</SelectItem>
+                  {uniqueModules.map((module) => (
+                    <SelectItem key={module} value={module}>
+                      {module}
+                    </SelectItem>
                   ))}
-                </tbody>
-              </table>
+                </SelectContent>
+              </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Toutes les catégories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  {uniqueCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Sous-Module</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Nom du Cours</TableHead>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Aide</TableHead>
+                    <TableHead>Questions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentCourses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                        Aucun cours trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentCourses.map((course) => (
+                      <TableRow key={course.id}>
+                        <TableCell className="font-mono text-sm">{course.id}</TableCell>
+                        <TableCell className="font-medium">{course.moduleName}</TableCell>
+                        <TableCell className="font-medium">{course.subModuleName}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{course.category}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{course.courseName}</TableCell>
+                        <TableCell>
+                          <div className="w-16 h-12 rounded-md overflow-hidden bg-slate-100 border">
+                            <img src={course.imageUrl} alt={course.courseName} className="w-full h-full object-cover" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate" title={course.helpText}>
+                          {course.helpText}
+                        </TableCell>
+                        <TableCell>{course.totalQuestions}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
-            <div className="text-sm text-gray-600">
-              Showing {filteredCourses.length === 0 ? 0 : startIndex + 1} to{" "}
-              {Math.min(endIndex, filteredCourses.length)} of{" "}
-              {filteredCourses.length} results
+          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-slate-50/50">
+            <div className="text-sm text-muted-foreground">
+              Affichage de {filteredCourses.length === 0 ? 0 : startIndex + 1} à {Math.min(endIndex, filteredCourses.length)} sur {filteredCourses.length} résultats
             </div>
             {renderPagination()}
           </CardFooter>
         </Card>
       </div>
+
+      {showCreateForm && <NewExamCourseForm setShowNewExamCourseForm={setShowCreateForm} modules={uniqueModules} categories={uniqueCategories} />}
+
+      {/* Add/Edit Course Dialog */}
+      <AnimatePresence>
+        {showAddCourseForm && (
+          <Dialog open={showAddCourseForm} onOpenChange={setShowAddCourseForm}>
+            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DialogHeader>
+                  <DialogTitle className="text-black text-xl">Créer un nouveau cours</DialogTitle>
+                  <DialogDescription className="text-gray-600">
+                    Ajouter un cours avec tous les détails nécessaires
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); handleAddCourse(); }}>
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Nom du cours *</Label>
+                    <Input
+                      placeholder="Ex: Système Cardiovasculaire - Anatomie 1"
+                      value={formData.courseName}
+                      onChange={(e) => handleFormChange("courseName", e.target.value)}
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Module *</Label>
+                    <Select value={formData.moduleName} onValueChange={(value) => handleFormChange("moduleName", value)}>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Sélectionner un module" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {uniqueModules.map((module) => (
+                          <SelectItem key={module} value={module} className="text-black">
+                            {module}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Sous-Module</Label>
+                    <Input
+                      placeholder="Ex: Système cardiovasculaire"
+                      value={formData.subModuleName}
+                      onChange={(e) => handleFormChange("subModuleName", e.target.value)}
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Catégorie *</Label>
+                    <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Sélectionner une catégorie" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {uniqueCategories.map((category) => (
+                          <SelectItem key={category} value={category} className="text-black">
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">URL de l'image</Label>
+                    <Input
+                      placeholder="https://..."
+                      value={formData.imageUrl}
+                      onChange={(e) => handleFormChange("imageUrl", e.target.value)}
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Texte d'aide (description)</Label>
+                    <textarea
+                      placeholder="Entrez une description ou des informations supplémentaires..."
+                      value={formData.helpText}
+                      onChange={(e) => handleFormChange("helpText", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500 min-h-[80px] resize-none"
+                    />
+                  </div>
+
+                  <DialogFooter className="gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
+                      onClick={() => setShowAddCourseForm(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        type="submit"
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        Créer Cours
+                      </Button>
+                    </motion.div>
+                  </DialogFooter>
+                </form>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

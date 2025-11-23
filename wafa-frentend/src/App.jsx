@@ -6,6 +6,7 @@ import {
   Route,
   Outlet,
 } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "./components/LandingPage";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
@@ -21,7 +22,6 @@ import SubjectsPage from "./pages/SubjectsPage";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminPage from "./pages/AdminPage";
 import AnayticsPage from "./pages/AnayticsPage";
-import Users from "./components/admin/Users";
 import UsersWithTabs from "./components/admin/UsersWithTabs";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import ReportQuestionsAdmin from "./pages/ReportQuestionsAdmin";
@@ -43,19 +43,38 @@ import ImportExplications from "./pages/ImportExplications";
 import CreateCategoriesForCourses from "./pages/CreateCategoriesForCourses";
 import Myplaylist from "./pages/Myplaylist";
 import LeaderboardClient from "./pages/LeaderboardClient";
+import VerifyEmail from "./pages/VerifyEmail";
+import VerifyEmailFirebase from "./pages/VerifyEmailFirebase";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ContactPage from "./pages/ContactPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+import PlaylistsPage from "./pages/PlaylistsPage";
+import NotesPage from "./pages/NotesPage";
 
 export default function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-email-firebase" element={<VerifyEmailFirebase />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/cancel" element={<PaymentCancel />} />
 
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard />} />
           <Route path="playlist" element={<Myplaylist />} />
-          <Route path="note" element={<p>note</p>} />
+          <Route path="playlists" element={<PlaylistsPage />} />
+          <Route path="notes" element={<NotesPage />} />
+          <Route path="note" element={<NotesPage />} />
           <Route path="analytics" element={<AnayticsPage />} />
           <Route path="leaderboard" element={<LeaderboardClient />} />
           <Route path="subscription" element={<SubscriptionPage />} />

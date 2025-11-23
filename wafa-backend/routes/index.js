@@ -8,6 +8,12 @@ import authRoute from "./authRoute.js";
 import explanationsRoute from "./explanationRoute.js";
 import resumesRoute from "./resumeRoute.js";
 import userRoute from "./userRoute.js";
+import contactRoute from "./contactRoute.js";
+import playlistRoute from "./playlistRoute.js";
+import noteRoute from "./noteRoute.js";
+import paymentRoute from "./paymentRoute.js";
+import notificationRoute from "./notificationRoute.js";
+
 const router = Router();
 
 router.use("/exams", examRoute);
@@ -18,5 +24,10 @@ router.use("/auth", authRoute);
 router.use("/explanations", explanationsRoute);
 router.use("/resumes", resumesRoute);
 router.use("/users", userRoute);
+router.use("/contact", contactRoute);
+router.use("/playlists", playlistRoute);
+router.use("/notes", noteRoute);
+router.use("/payments", paymentRoute);
+router.use("/notifications", notificationRoute);
 
 export default router;

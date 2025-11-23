@@ -1,18 +1,32 @@
 import React, { useEffect, useState } from "react";
+import { FileText, Download, Check, X, Eye, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { FaFileCircleQuestion } from "react-icons/fa6";
-import { FiDownload, FiUserPlus, FiUsers } from "react-icons/fi";
-import { AiOutlineDelete } from "react-icons/ai";
-import { IoCheckmarkDoneCircle } from "react-icons/io5";
-import { MdPlaylistAddCheck } from "react-icons/md";
-import { FaBook } from "react-icons/fa";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { PageHeader, StatCard } from "@/components/shared";
+import { toast } from "sonner";
 import { api } from "@/lib/utils";
+
 const Resumes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [resumes, setResumes] = useState([]);
-  const [uploadFile, setUploadFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,12 +45,13 @@ const Resumes = () => {
           pdf: item?.pdfUrl || "",
           approved: String(item?.status || "").toLowerCase() === "approved",
           date: item?.createdAt
-            ? new Date(item.createdAt).toISOString().slice(0, 10)
+            ? new Date(item.createdAt).toLocaleDateString('fr-FR')
             : "—",
         }));
         setResumes(mapped);
       } catch (e) {
-        setError("Failed to load resumes");
+        setError("Échec du chargement des résumés");
+        toast.error("Erreur lors du chargement");
       } finally {
         setLoading(false);
       }
@@ -62,34 +77,32 @@ const Resumes = () => {
           resume.id === id ? { ...resume, approved: true } : resume
         )
       );
+      toast.success("Résumé approuvé avec succès");
     } catch (e) {
-      // noop: keep current state if request fails
+      toast.error("Échec de l'approbation");
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await api.delete(`/resumes/${id}`);
+      setResumes((prev) => prev.filter((resume) => resume.id !== id));
+      toast.success("Résumé supprimé");
+    } catch (e) {
+      toast.error("Échec de la suppression");
     }
   };
 
   const handleSeePDF = (pdfUrl) => {
+    if (!pdfUrl) {
+      toast.error("URL du PDF non disponible");
+      return;
+    }
     window.open(pdfUrl, "_blank");
   };
 
-  const handleFileChange = (e) => {
-    setUploadFile(e.target.files[0]);
-  };
-
-  const handleUpload = () => {
-    if (!uploadFile) return;
-    // Simulate upload: create a new resume entry
-    const newResume = {
-      id: resumes.length + 1,
-      username: "DemoUser",
-      name: "Demo User",
-      title: uploadFile.name,
-      pdf: URL.createObjectURL(uploadFile),
-      approved: false,
-      date: new Date().toISOString().slice(0, 10),
-    };
-    setResumes([newResume, ...resumes]);
-    setUploadFile(null);
-  };
+  const approvedCount = resumes.filter(r => r.approved).length;
+  const pendingCount = resumes.filter(r => !r.approved).length;
 
   const renderPaginationButtons = () => {
     const buttons = [];
@@ -99,6 +112,7 @@ const Resumes = () => {
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
+    
     buttons.push(
       <Button
         key="prev"
@@ -106,12 +120,11 @@ const Resumes = () => {
         size="sm"
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="flex items-center gap-1"
       >
-        <span className="sr-only">Previous</span>
-        &#8592;
+        Précédent
       </Button>
     );
+    
     for (let i = startPage; i <= endPage; i++) {
       buttons.push(
         <Button
@@ -125,6 +138,7 @@ const Resumes = () => {
         </Button>
       );
     }
+    
     buttons.push(
       <Button
         key="next"
@@ -132,150 +146,157 @@ const Resumes = () => {
         size="sm"
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="flex items-center gap-1"
       >
-        <span className="sr-only">Next</span>
-        &#8594;
+        Suivant
       </Button>
     );
+    
     return buttons;
   };
-  return (
-    <div className="p-6 space-y-6 min-h-screen">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            User Resumes Management
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage user uploaded resumes, approve them, and view PDF files.
-          </p>
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto" />
+          <p className="text-muted-foreground">Chargement des résumés...</p>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Resumes
-                </p>
-                <p className="text-xl font-bold text-gray-900">
-                  {resumes.length}
-                </p>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <PageHeader
+          title="Gestion des Résumés"
+          description="Gérez les résumés téléchargés par les utilisateurs, approuvez-les et consultez les PDF"
+        />
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            title="Total Résumés"
+            value={resumes.length.toString()}
+            icon={<BookOpen className="w-6 h-6" />}
+          />
+          <StatCard
+            title="Approuvés"
+            value={approvedCount.toString()}
+            icon={<Check className="w-6 h-6" />}
+          />
+          <StatCard
+            title="En Attente"
+            value={pendingCount.toString()}
+            icon={<FileText className="w-6 h-6" />}
+          />
+        </div>
+
+        {/* Resumes Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Liste des Résumés</CardTitle>
+            <CardDescription>
+              {resumes.length} résumé{resumes.length > 1 ? 's' : ''} au total
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                {error}
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FaBook className="w-6 h-6 text-blue-600" />
-              </div>
+            )}
+            
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Utilisateur</TableHead>
+                    <TableHead>Titre</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>PDF</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentResumes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        Aucun résumé disponible
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentResumes.map((resume) => (
+                      <TableRow key={resume.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{resume.name}</div>
+                            <div className="text-xs text-muted-foreground">{resume.username}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{resume.title}</TableCell>
+                        <TableCell>{resume.date}</TableCell>
+                        <TableCell>
+                          <Badge variant={resume.approved ? "default" : "secondary"}>
+                            {resume.approved ? "Approuvé" : "En attente"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSeePDF(resume.pdf)}
+                            className="gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Voir
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {!resume.approved && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleApprove(resume.id)}
+                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleReject(resume.id)}
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Affichage de {startIndex + 1} à {Math.min(endIndex, resumes.length)} sur{" "}
+                  {resumes.length} résultats
+                </div>
+                <div className="flex items-center gap-2">
+                  {renderPaginationButtons()}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardContent>
-          {loading && (
-            <div className="py-8 text-center text-gray-600">Loading…</div>
-          )}
-          {error && !loading && (
-            <div className="py-3 px-4 mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
-              {error}
-            </div>
-          )}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Id
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Username
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Resume Title
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    PDF
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Date
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Status
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentResumes.map((resume) => (
-                  <tr
-                    key={resume.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-4 px-4 font-medium text-gray-900">
-                      {resume.id}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {resume.username}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">{resume.title}</td>
-                    <td
-                      className="py-4 px-4 text-gray-700"
-                      style={{ minWidth: 120 }}
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSeePDF(resume.pdf)}
-                      >
-                        See PDF
-                      </Button>
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {resume.date || "—"}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700">
-                      {resume.approved ? (
-                        <span className="text-green-600 font-semibold">
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="text-yellow-600 font-semibold">
-                          Pending
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-gray-700 flex gap-2.5">
-                      <IoCheckmarkDoneCircle
-                        className="text-green-600 hover:text-green-300 cursor-pointer"
-                        fontSize={20}
-                        onClick={() => handleApprove(resume.id)}
-                      />
-                      <AiOutlineDelete
-                        className="hover:text-red-500 cursor-pointer"
-                        fontSize={20}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50 px-6 py-3">
-          <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(endIndex, resumes.length)} of{" "}
-            {resumes.length} results
-          </div>
-          <div className="flex items-center gap-2">
-            {renderPaginationButtons()}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -6,6 +6,8 @@ import routes from "./routes/index.js";
 import MongoStore from "connect-mongo";
 import session from "express-session";
 import passport from "passport";
+import "./strategies/local-strategy.js";
+import "./strategies/google-strategy.js";
 
 dotenv.config();
 
@@ -18,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
+  origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:3010"],
   credentials: true
 }));
 
@@ -49,15 +51,35 @@ app.use(
     }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days in milliseconds
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true in production only
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     },
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Debug middleware to log authentication status
+app.use((req, res, next) => {
+  console.log('Session ID:', req.sessionID);
+  console.log('Is Authenticated:', req.isAuthenticated ? req.isAuthenticated() : false);
+  console.log('User:', req.user ? { id: req.user._id, email: req.user.email } : 'Not authenticated');
+  next();
+});
+
 // Test route for debugging
 app.get("/api/v1/test", (req, res) => {
   res.json({ message: "Backend is working!", timestamp: new Date().toISOString() });
+});
+
+// Auth check route
+app.get("/api/v1/auth-check", (req, res) => {
+  res.json({
+    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+    user: req.user ? { id: req.user._id, email: req.user.email, name: req.user.name } : null,
+    sessionID: req.sessionID
+  });
 });
 
 

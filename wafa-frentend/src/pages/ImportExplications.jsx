@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/select";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -11,7 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Save } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { Badge } from "../components/ui/badge";
+import { Save, Upload, FileText, ImageIcon, Type } from "lucide-react";
 
 // Demo data used for options. Replace with real API data later.
 const examNamesByModule = {
@@ -150,37 +158,65 @@ const ImportExplications = () => {
     alert("Import explications (demo)\n" + JSON.stringify(payload, null, 2));
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Import explications
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Select module and exam context, then pick question numbers, add
-              text and/or images, give it a name and submit.
-            </p>
-          </div>
-        </div>
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Context</CardTitle>
-            <CardDescription>
-              Choose the exam context: par years, par courses, TP or QCM.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Select module</Label>
-                <Select
-                  value={selectedModule}
-                  onChange={(e) => {
-                    setSelectedModule(e.target.value);
-                    // reset downstream selections
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length > 0) {
+      setImageFiles(prev => [...prev, ...imageFiles]);
+    }
+  };
+
+  const removeImage = (index) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100 p-6">
+      <div className="w-full space-y-6">
+        {/* Header with gradient background */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-white shadow-lg"
+        >
+          <h1 className="text-3xl font-bold mb-2">Import Explications</h1>
+          <p className="text-purple-100">
+            Select module and exam context, then add question numbers, text and/or images, give it a name and submit.
+          </p>
+        </motion.div>
+
+        {/* Main Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="space-y-6"
+        >
+          {/* Context Card */}
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
+              <CardTitle className="text-xl font-bold text-gray-900">
+                Exam Context
+              </CardTitle>
+              <CardDescription>
+                Choose the exam context: par years, par courses, TP or QCM
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Module Select */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700">Module *</Label>
+                  <Select value={selectedModule} onValueChange={(e) => {
+                    setSelectedModule(e);
                     setExamType("");
                     setSelectedExamNameYears("");
                     setSelectedCategory("");
@@ -188,248 +224,288 @@ const ImportExplications = () => {
                     setSelectedYearName("");
                     setSelectedTPName("");
                     setSelectedQCMName("");
-                  }}
-                >
-                  <option value="" disabled>
-                    Choose a module
-                  </option>
-                  {modules.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+                  }}>
+                    <SelectTrigger className="border-gray-300 h-10">
+                      <SelectValue placeholder="Choose a module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Exam type</Label>
-                <Select
-                  value={examType}
-                  onChange={(e) => {
-                    setExamType(e.target.value);
+                {/* Exam Type Select */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700">Exam Type *</Label>
+                  <Select value={examType} onValueChange={(e) => {
+                    setExamType(e);
                     setSelectedExamNameYears("");
                     setSelectedCategory("");
                     setSelectedCourse("");
                     setSelectedYearName("");
                     setSelectedTPName("");
                     setSelectedQCMName("");
-                  }}
-                  disabled={!selectedModule}
-                >
-                  <option value="" disabled>
-                    {selectedModule
-                      ? "Choose exam type"
-                      : "Select a module first"}
-                  </option>
-                  <option value="years">exam par years</option>
-                  <option value="courses">exam par courses</option>
-                  <option value="tp">exam TP</option>
-                  <option value="qcm">exam QCM</option>
-                </Select>
-              </div>
-
-              {examType === "years" && (
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Exam name</Label>
-                  <Select
-                    value={selectedExamNameYears}
-                    onChange={(e) => setSelectedExamNameYears(e.target.value)}
-                    disabled={!selectedModule}
-                  >
-                    <option value="" disabled>
-                      Choose an exam name
-                    </option>
-                    {(selectedModule
-                      ? examNamesByModule[selectedModule] || []
-                      : []
-                    ).map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
+                  }} disabled={!selectedModule}>
+                    <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
+                      <SelectValue placeholder={selectedModule ? "Choose exam type" : "Select module first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="years">Exam Par Years</SelectItem>
+                      <SelectItem value="courses">Exam Par Courses</SelectItem>
+                      <SelectItem value="tp">Exam TP</SelectItem>
+                      <SelectItem value="qcm">Exam QCM</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
-              )}
 
-              {examType === "courses" && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Exam par courses category</Label>
-                    <Select
-                      value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value);
+                {/* Conditional renders based on exam type */}
+                {examType === "years" && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="font-semibold text-gray-700">Exam Name *</Label>
+                    <Select value={selectedExamNameYears} onValueChange={setSelectedExamNameYears}>
+                      <SelectTrigger className="border-gray-300 h-10">
+                        <SelectValue placeholder="Choose an exam name" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedModule ? examNamesByModule[selectedModule] || [] : []).map((name) => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {examType === "courses" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="font-semibold text-gray-700">Category *</Label>
+                      <Select value={selectedCategory} onValueChange={(e) => {
+                        setSelectedCategory(e);
                         setSelectedCourse("");
                         setSelectedYearName("");
-                      }}
-                      disabled={!selectedModule}
-                    >
-                      <option value="" disabled>
-                        {selectedModule
-                          ? "Choose a category"
-                          : "Select a module first"}
-                      </option>
-                      {categoryOptions.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
+                      }}>
+                        <SelectTrigger className="border-gray-300 h-10">
+                          <SelectValue placeholder="Choose a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoryOptions.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold text-gray-700">Course *</Label>
+                      <Select value={selectedCourse} onValueChange={(e) => {
+                        setSelectedCourse(e);
+                        setSelectedYearName("");
+                      }} disabled={!selectedCategory}>
+                        <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
+                          <SelectValue placeholder="Choose a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courseOptions.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-semibold text-gray-700">Year *</Label>
+                      <Select value={selectedYearName} onValueChange={setSelectedYearName} disabled={!selectedCourse}>
+                        <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
+                          <SelectValue placeholder="Choose a year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {yearNames.map((y) => (
+                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {examType === "tp" && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="font-semibold text-gray-700">TP Name *</Label>
+                    <Select value={selectedTPName} onValueChange={setSelectedTPName}>
+                      <SelectTrigger className="border-gray-300 h-10">
+                        <SelectValue placeholder="Choose a TP name" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedModule ? tpNamesByModule[selectedModule] || [] : []).map((name) => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Course name</Label>
-                    <Select
-                      value={selectedCourse}
-                      onChange={(e) => setSelectedCourse(e.target.value)}
-                      disabled={!selectedCategory}
-                    >
-                      <option value="" disabled>
-                        {selectedCategory
-                          ? "Choose a course"
-                          : "Select a category first"}
-                      </option>
-                      {courseOptions.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
+                )}
+
+                {examType === "qcm" && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="font-semibold text-gray-700">QCM Name *</Label>
+                    <Select value={selectedQCMName} onValueChange={setSelectedQCMName}>
+                      <SelectTrigger className="border-gray-300 h-10">
+                        <SelectValue placeholder="Choose a QCM name" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(selectedModule ? qcmNamesByModule[selectedModule] || [] : []).map((name) => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Year name</Label>
-                    <Select
-                      value={selectedYearName}
-                      onChange={(e) => setSelectedYearName(e.target.value)}
-                      disabled={!selectedCourse}
-                    >
-                      <option value="" disabled>
-                        {selectedCourse
-                          ? "Choose a year"
-                          : "Select a course first"}
-                      </option>
-                      {yearNames.map((y) => (
-                        <option key={y} value={y}>
-                          {y}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                </>
-              )}
-
-              {examType === "tp" && (
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Exam TP name</Label>
-                  <Select
-                    value={selectedTPName}
-                    onChange={(e) => setSelectedTPName(e.target.value)}
-                    disabled={!selectedModule}
-                  >
-                    <option value="" disabled>
-                      Choose a TP name
-                    </option>
-                    {(selectedModule
-                      ? tpNamesByModule[selectedModule] || []
-                      : []
-                    ).map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-
-              {examType === "qcm" && (
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Exam QCM name</Label>
-                  <Select
-                    value={selectedQCMName}
-                    onChange={(e) => setSelectedQCMName(e.target.value)}
-                    disabled={!selectedModule}
-                  >
-                    <option value="" disabled>
-                      Choose a QCM name
-                    </option>
-                    {(selectedModule
-                      ? qcmNamesByModule[selectedModule] || []
-                      : []
-                    ).map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Details</CardTitle>
-            <CardDescription>
-              Select question numbers, add text and/or upload images.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-              <div className="space-y-2">
-                <Label>select question number</Label>
-                <Input
-                  placeholder="e.g. 1-5,7,10"
-                  value={questionNumbers}
-                  onChange={(e) => setQuestionNumbers(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label>import text</Label>
-                <textarea
-                  className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm"
-                  rows={5}
-                  placeholder="Enter explanation text..."
-                  value={explicationText}
-                  onChange={(e) => setExplicationText(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-3">
-                <Label>upload images</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) =>
-                    setImageFiles(Array.from(e.target.files || []))
-                  }
-                />
-                {imageFiles.length > 0 && (
-                  <p className="text-sm text-gray-500">
-                    Selected {imageFiles.length} file(s)
-                  </p>
                 )}
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col md:flex-row gap-3 md:gap-6 md:items-center md:justify-end">
-            <div className="w-full md:w-1/2 space-y-2">
-              <Label>make name</Label>
-              <Input
-                type="text"
-                placeholder="e.g. Explication - ECG Q1"
-                value={explicationName}
-                onChange={(e) => setExplicationName(e.target.value)}
-              />
-            </div>
-            <Button
-              className="bg-black text-white hover:bg-gray-800 self-end"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-            >
-              <Save className="w-4 h-4" /> Submit
-            </Button>
-          </CardFooter>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Details Card */}
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg">
+              <CardTitle className="text-xl font-bold text-gray-900">
+                Content Details
+              </CardTitle>
+              <CardDescription>
+                Add question numbers, text and/or upload images
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                {/* Question Numbers */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700 flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    Question Numbers *
+                  </Label>
+                  <Input
+                    placeholder="e.g. 1-5,7,10"
+                    value={questionNumbers}
+                    onChange={(e) => setQuestionNumbers(e.target.value)}
+                    className="h-10 border-gray-300"
+                  />
+                  <p className="text-xs text-gray-500">Specify which questions this explanation covers</p>
+                </div>
+
+                {/* Explication Text */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Explanation Text
+                  </Label>
+                  <textarea
+                    className="w-full rounded-md border border-gray-300 bg-white p-3 text-sm font-mono"
+                    rows={5}
+                    placeholder="Enter explanation text..."
+                    value={explicationText}
+                    onChange={(e) => setExplicationText(e.target.value)}
+                  />
+                </div>
+
+                {/* Image Upload */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Upload Images
+                  </Label>
+                  <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <Upload className="w-8 h-8 text-purple-600" />
+                      <div className="text-center">
+                        <p className="font-semibold text-gray-800">Drop images here or click to browse</p>
+                        <p className="text-sm text-gray-600">Supports JPG, PNG, GIF, WebP</p>
+                      </div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+                        className="hidden"
+                        id="images"
+                      />
+                      <label htmlFor="images">
+                        <Button variant="outline" className="bg-white hover:bg-purple-50" type="button">
+                          Browse Files
+                        </Button>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Image Preview */}
+                  {imageFiles.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3"
+                    >
+                      {imageFiles.map((file, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="relative group"
+                        >
+                          <div className="bg-gray-200 rounded-lg overflow-hidden aspect-square flex items-center justify-center">
+                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1 truncate">{file.name}</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </Button>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                  
+                  {imageFiles.length > 0 && (
+                    <Badge className="mt-2 bg-purple-100 text-purple-800">
+                      {imageFiles.length} image{imageFiles.length !== 1 ? 's' : ''} selected
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Explication Name */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700">Explication Name *</Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. Explication - ECG Q1"
+                    value={explicationName}
+                    onChange={(e) => setExplicationName(e.target.value)}
+                    className="h-10 border-gray-300"
+                  />
+                  <p className="text-xs text-gray-500">This will be used to identify the imported explication</p>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="bg-gray-50 rounded-b-lg border-t flex justify-end gap-3">
+              <Button variant="outline" className="border-gray-300">
+                Cancel
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:from-purple-700 hover:to-pink-600 shadow-md"
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Submit Explication
+              </Button>
+            </CardFooter>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

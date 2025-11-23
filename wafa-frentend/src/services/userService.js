@@ -71,6 +71,61 @@ export const userService = {
         }
     },
 
+    // Get current user profile
+    getUserProfile: async () => {
+        try {
+            console.log('Fetching user profile from: /users/profile');
+            const response = await api.get('/users/profile');
+            return response.data.data.user;
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            throw error;
+        }
+    },
+
+    // Update user profile
+    updateUserProfile: async (profileData) => {
+        try {
+            console.log('Updating user profile at: /users/profile');
+            const response = await api.put('/users/profile', profileData);
+            return response.data.data.user;
+        } catch (error) {
+            console.error('Error updating user profile:', error);
+            throw error;
+        }
+    },
+
+    // Upload profile picture
+    uploadProfilePicture: async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('profilePicture', file);
+
+            console.log('Uploading profile picture to: /users/upload-photo');
+            const response = await api.post('/users/upload-photo', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data.data.user;
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            throw error;
+        }
+    },
+
+    // Get current user stats and achievements
+    getMyStats: async () => {
+        try {
+            console.log('Fetching user stats from: /users/my-stats');
+            const response = await api.get('/users/my-stats');
+            return response.data.data.stats;
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+            throw error;
+        }
+    },
+
     // Test connection
     testConnection: async () => {
         try {

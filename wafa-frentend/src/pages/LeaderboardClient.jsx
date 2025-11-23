@@ -49,7 +49,7 @@ function getPodiumStyles(rank) {
       wrapper: "bg-gradient-to-b from-yellow-50 to-amber-100 border-amber-200",
       accent: "text-amber-600",
       ring: "ring-amber-300",
-      icon: Crown,
+      icon: <Crown className="h-5 w-5" />,
     };
   }
   if (rank === 2) {
@@ -57,14 +57,14 @@ function getPodiumStyles(rank) {
       wrapper: "bg-gradient-to-b from-slate-50 to-slate-100 border-slate-200",
       accent: "text-slate-600",
       ring: "ring-slate-300",
-      icon: Medal,
+      icon: <Medal className="h-5 w-5" />,
     };
   }
   return {
     wrapper: "bg-gradient-to-b from-orange-50 to-amber-100 border-amber-200",
     accent: "text-amber-700",
     ring: "ring-amber-200",
-    icon: Trophy,
+    icon: <Trophy className="h-5 w-5" />,
   };
 }
 
@@ -97,7 +97,6 @@ const LeaderboardClient = () => {
         {topThree.map((user, index) => {
           const rank = index + 1;
           const styles = getPodiumStyles(rank);
-          const Icon = styles.icon;
           const badge = getScoreBadgeClasses(user.points, maxScore);
 
           return (
@@ -112,7 +111,7 @@ const LeaderboardClient = () => {
                   <span
                     className={`inline-flex items-center gap-2 ${styles.accent}`}
                   >
-                    <Icon className="h-5 w-5" />
+                    {styles.icon}
                     {rank === 1
                       ? "Champion"
                       : rank === 2

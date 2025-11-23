@@ -8,24 +8,33 @@ import {
   CardContent,
   CardFooter,
 } from "../ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { cn } from "../../lib/utils";
 import {
-  FiDownload,
-  FiUserPlus,
-  FiSearch,
-  FiFilter,
-  FiMail,
-  FiPhone,
-  FiCalendar,
-  FiMoreVertical,
-  FiChevronLeft,
-  FiChevronRight,
-  FiUsers,
-  FiUserCheck,
-  FiDollarSign,
-  FiGift,
-} from "react-icons/fi";
-import { FaCrown } from "react-icons/fa6";
+  Download,
+  UserPlus,
+  Search,
+  Filter,
+  Mail,
+  Phone,
+  Calendar,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  UserCheck,
+  DollarSign,
+  Gift,
+  Crown,
+  Edit,
+  Trash2,
+  Eye,
+} from "lucide-react";
 import NewUserForm from "./NewUserForm";
 import { userService } from "../../services/userService";
 
@@ -160,7 +169,7 @@ const UsersWithTabs = () => {
         disabled={!pagination.hasPrevPage}
         className="flex items-center gap-1"
       >
-        <FiChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-4 h-4" />
         Previous
       </Button>
     );
@@ -191,7 +200,7 @@ const UsersWithTabs = () => {
         className="flex items-center gap-1"
       >
         Next
-        <FiChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-4 h-4" />
       </Button>
     );
 
@@ -216,7 +225,7 @@ const UsersWithTabs = () => {
               Test API
             </Button>
             <Button variant="outline" size="sm">
-              <FiDownload className="w-4 h-4" />
+              <Download className="w-4 h-4" />
               Export
             </Button>
             <Button
@@ -224,7 +233,7 @@ const UsersWithTabs = () => {
               className="bg-black text-white hover:bg-gray-800"
               onClick={() => setShowNewUserForm(!showNewUserForm)}
             >
-              <FiUserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4" />
               Add
             </Button>
           </div>
@@ -245,7 +254,7 @@ const UsersWithTabs = () => {
                   </p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <FiUsers className="w-6 h-6 text-blue-600" />
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -270,7 +279,7 @@ const UsersWithTabs = () => {
                   </p>
                 </div>
                 <div className="p-3 bg-gray-100 rounded-lg">
-                  <FiGift className="w-6 h-6 text-gray-600" />
+                  <Gift className="w-6 h-6 text-gray-600" />
                 </div>
               </div>
             </CardContent>
@@ -297,7 +306,7 @@ const UsersWithTabs = () => {
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-lg">
-                  <FiDollarSign className="w-6 h-6 text-green-600" />
+                  <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -324,7 +333,7 @@ const UsersWithTabs = () => {
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-lg">
-                  <FiUserCheck className="w-6 h-6 text-green-600" />
+                  <UserCheck className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -340,7 +349,7 @@ const UsersWithTabs = () => {
                 onClick={() => handleTabChange("free")}
                 className="flex items-center gap-2"
               >
-                <FiGift className="w-4 h-4" />
+                <Gift className="w-4 h-4" />
                 Free Users ({stats.freeUsers || 0})
               </Button>
               <Button
@@ -348,7 +357,7 @@ const UsersWithTabs = () => {
                 onClick={() => handleTabChange("paying")}
                 className="flex items-center gap-2"
               >
-                <FiDollarSign className="w-4 h-4" />
+                <DollarSign className="w-4 h-4" />
                 Paying Users ({stats.payingUsers || 0})
               </Button>
             </div>
@@ -360,7 +369,7 @@ const UsersWithTabs = () => {
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search users by name, username or email..."
@@ -370,7 +379,7 @@ const UsersWithTabs = () => {
                 />
               </div>
               <Button variant="outline" className="sm:w-auto">
-                <FiFilter className="w-4 h-4" />
+                <Filter className="w-4 h-4" />
                 Filters
               </Button>
             </div>
@@ -406,9 +415,7 @@ const UsersWithTabs = () => {
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
                         Contact
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        Plan
-                      </th>
+                     
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
                         Status
                       </th>
@@ -455,23 +462,14 @@ const UsersWithTabs = () => {
                         <td className="py-4 px-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-sm">
-                              <FiMail className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                              <Mail className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                               <span className="text-gray-700 truncate">
                                 {user.email}
                               </span>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={cn(
-                              "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                              getPlanBadgeColor(user.plan)
-                            )}
-                          >
-                            {user.plan}
-                          </span>
-                        </td>
+                     
                         <td className="py-4 px-4">
                           <span
                             className={cn(
@@ -484,21 +482,39 @@ const UsersWithTabs = () => {
                         </td>
                         <td className="py-4 px-4">
                           <span className="text-sm text-gray-700">
-                            {user.semester || "N/A"}
+                            {user.semesters.map((s) => s).join(", ") || "N/A"}
                           </span>
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
-                            <FiCalendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
+                            <Calendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
                             <span className="text-gray-700">
                               {new Date(user.createdAt).toLocaleDateString()}
                             </span>
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                            <FiMoreVertical className="w-4 h-4" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="flex items-center gap-2">
+                                <Eye className="w-4 h-4" />
+                                View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="flex items-center gap-2">
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}

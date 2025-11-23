@@ -1,25 +1,13 @@
-import React, { useMemo, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Select } from "../components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import { cn } from "../lib/utils";
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiFilter,
-  FiSearch,
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-} from "react-icons/fi";
-import NewCategoryForm from "../components/admin/NewCategoryForm";
+import { useMemo, useState, useEffect } from "react";
+import { Folders, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader } from "@/components/shared";
+import { toast } from "sonner";
+import NewCategoryForm from "@/components/admin/NewCategoryForm";
 
 const CategoriesOfModules = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,10 +16,8 @@ const CategoriesOfModules = () => {
   const [filterModule, setFilterModule] = useState("all");
   const itemsPerPage = 8;
 
-  // Sample data generator for categories
   const categories = useMemo(() => {
-    const placeholderImage =
-      "https://via.placeholder.com/150x150?text=Category";
+    const placeholderImage = "https://via.placeholder.com/150x150?text=Category";
     const modules = [
       { id: 1, name: "Anatomie 1" },
       { id: 2, name: "Biophysique" },
@@ -62,10 +48,9 @@ const CategoriesOfModules = () => {
     const list = [];
 
     modules.forEach((module) => {
-      const numCategories = 2 + (module.id % 4); // 2-5 categories per module
+      const numCategories = 2 + (module.id % 4);
       for (let i = 0; i < numCategories; i++) {
-        const categoryType =
-          categoryTypes[(module.id + i) % categoryTypes.length];
+        const categoryType = categoryTypes[(module.id + i) % categoryTypes.length];
         list.push({
           id: id++,
           moduleId: module.id,
@@ -83,8 +68,7 @@ const CategoriesOfModules = () => {
   const filteredCategories = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return categories.filter((c) => {
-      const passesModule =
-        filterModule === "all" || c.moduleId.toString() === filterModule;
+      const passesModule = filterModule === "all" || c.moduleId.toString() === filterModule;
       const passesSearch =
         c.name.toLowerCase().includes(term) ||
         c.moduleName.toLowerCase().includes(term) ||
@@ -103,7 +87,7 @@ const CategoriesOfModules = () => {
     setCurrentPage(page);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterModule]);
 
@@ -122,10 +106,10 @@ const CategoriesOfModules = () => {
         size="sm"
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}
-        className="flex items-center gap-1"
+        className="gap-1"
       >
-        <FiChevronLeft className="w-4 h-4" />
-        Previous
+        <ChevronLeft className="h-4 w-4" />
+        Précédent
       </Button>
     );
 
@@ -150,10 +134,10 @@ const CategoriesOfModules = () => {
         size="sm"
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="flex flex-row items-center gap-1"
+        className="gap-1"
       >
-        Next
-        <FiChevronRight className="w-4 h-4" />
+        Suivant
+        <ChevronRight className="h-4 w-4" />
       </Button>
     );
 
@@ -161,161 +145,115 @@ const CategoriesOfModules = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Categories of Modules
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Manage categories for each module
-            </p>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" size="sm">
-              <FiFilter className="w-4 h-4" />
-              Filters
-            </Button>
-            <Button
-              size="sm"
-              className="bg-black text-white hover:bg-gray-800"
-              onClick={() => setShowNewCategoryForm(true)}
-            >
-              <FiPlus className="w-4 h-4 mr-2" />
-              Create Category
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <PageHeader title="Catégories des Modules" description="Gérer les catégories pour chaque module" />
+          
+          <Button onClick={() => setShowNewCategoryForm(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Créer Catégorie
+          </Button>
         </div>
 
-        <Card className="shadow-sm">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              Category Directory
+            <CardTitle className="flex items-center gap-2">
+              <Folders className="h-5 w-5" />
+              Répertoire des Catégories
             </CardTitle>
-            <CardDescription>
-              Search and manage module categories
-            </CardDescription>
+            <CardDescription>Rechercher et gérer les catégories de modules</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
                   type="text"
-                  placeholder="Search by name, module, or id..."
+                  placeholder="Rechercher par nom, module ou ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10"
                 />
               </div>
-              <div>
-                <Select
-                  value={filterModule}
-                  onChange={(e) => setFilterModule(e.target.value)}
-                  className="w-full border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                >
-                  <option value="all">All modules</option>
-                  {Array.from(new Set(categories.map((c) => c.moduleId))).map(
-                    (moduleId) => {
-                      const module = categories.find(
-                        (c) => c.moduleId === moduleId
-                      );
-                      return (
-                        <option key={moduleId} value={moduleId}>
-                          {module.moduleName}
-                        </option>
-                      );
-                    }
-                  )}
-                </Select>
-              </div>
+              <Select value={filterModule} onValueChange={setFilterModule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les modules" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les modules</SelectItem>
+                  {Array.from(new Set(categories.map((c) => c.moduleId))).map((moduleId) => {
+                    const module = categories.find((c) => c.moduleId === moduleId);
+                    return (
+                      <SelectItem key={moduleId} value={moduleId.toString()}>
+                        {module.moduleName}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
-              Categories of Modules ({filteredCategories.length})
-            </CardTitle>
-            <CardDescription>
-              List of categories with their associated modules and metadata
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      ID
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Module Name
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Categories of Modules Names
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Image
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Total of Questions
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      Operate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCategories.map((c) => (
-                    <tr
-                      key={c.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4 text-gray-700">{c.id}</td>
-                      <td className="py-4 px-4">
-                        <span className="text-gray-900 font-medium">
-                          {c.moduleName}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-gray-900 font-medium">
-                        {c.name}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
-                          <img
-                            src={c.imageUrl}
-                            alt={c.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {c.totalQuestions}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 flex gap-2.5 items-center">
-                        <FiEdit
-                          className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                          size={18}
-                        />
-                        <FiTrash2
-                          className="text-red-600 hover:text-red-800 cursor-pointer"
-                          size={18}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Nom du Module</TableHead>
+                    <TableHead>Nom de la Catégorie</TableHead>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Questions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentCategories.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                        Aucune catégorie trouvée
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentCategories.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-mono text-sm">{c.id}</TableCell>
+                        <TableCell className="font-medium">{c.moduleName}</TableCell>
+                        <TableCell className="font-medium">{c.name}</TableCell>
+                        <TableCell>
+                          <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border">
+                            <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover" />
+                          </div>
+                        </TableCell>
+                        <TableCell>{c.totalQuestions}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
-            <div className="text-sm text-gray-600">
-              Showing {filteredCategories.length === 0 ? 0 : startIndex + 1} to{" "}
-              {Math.min(endIndex, filteredCategories.length)} of{" "}
-              {filteredCategories.length} results
+          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-slate-50/50">
+            <div className="text-sm text-muted-foreground">
+              Affichage de {filteredCategories.length === 0 ? 0 : startIndex + 1} à{" "}
+              {Math.min(endIndex, filteredCategories.length)} sur {filteredCategories.length} résultats
             </div>
             {renderPagination()}
           </CardFooter>
@@ -323,10 +261,7 @@ const CategoriesOfModules = () => {
       </div>
 
       {showNewCategoryForm && (
-        <NewCategoryForm
-          setShowNewCategoryForm={setShowNewCategoryForm}
-          modules={categories}
-        />
+        <NewCategoryForm setShowNewCategoryForm={setShowNewCategoryForm} modules={categories} />
       )}
     </div>
   );

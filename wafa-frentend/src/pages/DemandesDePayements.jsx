@@ -1,14 +1,18 @@
-import React from "react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "../components/ui/card";
-import { AiOutlineDelete } from "react-icons/ai";
-import { IoCheckmarkDoneCircle } from "react-icons/io5";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PageHeader } from "@/components/shared";
 
 const DemandesDePayements = () => {
   // Sample data for demonstration
@@ -76,8 +80,8 @@ const DemandesDePayements = () => {
   ];
 
   // Pagination logic
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage] = React.useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const totalPages = Math.ceil(demandes.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -137,129 +141,229 @@ const DemandesDePayements = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-100 p-6">
       <div className="w-full space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Header with gradient background */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-lg bg-gradient-to-r from-amber-600 to-orange-500 p-6 text-white shadow-lg"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold mb-2">
               Demandes de Payements
             </h1>
-            <p className="text-gray-600 mt-1">
-              Liste des demandes de payement des utilisateurs
+            <p className="text-amber-100">
+              Gérez et traitez les demandes de paiement des utilisateurs
             </p>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Table Section in Card */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Demandes</CardTitle>
-            <CardDescription>Tableau des demandes de payement</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Id
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Image profile
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      User name
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Name
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Email
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Registered date
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Mode de payement utilisé
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Semestres wanted
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentDemandes.map((d) => (
-                    <tr
-                      key={d.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4">{d.id}</td>
-                      <td className="py-4 px-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                          <img
-                            src={d.profileImg}
-                            alt={d.name}
-                            className="w-10 h-10 object-cover"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 font-medium text-gray-900">
-                        {d.username}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">{d.name}</td>
-                      <td className="py-4 px-4 text-gray-700">{d.email}</td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {d.registered}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-100 text-blue-800 border-blue-200">
-                          {d.paymentMode}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {d.semesters.map((s, i) => (
-                          <span
-                            key={i}
-                            className="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs mr-1 mb-1"
-                          >
-                            {s}
-                          </span>
-                        ))}
-                      </td>
-                      <td className="py-4 px-4 text-gray-700 flex gap-2.5">
-                        <IoCheckmarkDoneCircle
-                          className="text-green-600 hover:text-green-300 cursor-pointer"
-                          fontSize={20}
-                        />
-                        <AiOutlineDelete
-                          className="hover:text-red-500 cursor-pointer"
-                          fontSize={20}
-                        />
-                      </td>
+        {/* Stats Overview */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          {/* Total Requests */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">
+                    Total Demandes
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                    {demandes.length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Payment requests
+                  </p>
+                </div>
+                <Clock className="w-8 h-8 text-amber-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pending Requests */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">
+                    En attente
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                    {demandes.length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Awaiting approval
+                  </p>
+                </div>
+                <DollarSign className="w-8 h-8 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Users */}
+          <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase">
+                    Utilisateurs
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                    {new Set(demandes.map((d) => d.username)).size}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Unique users
+                  </p>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Table Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b">
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Liste des Demandes
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Tableau des demandes de paiement des utilisateurs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-700">
+                        Utilisateur
+                      </th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-700">
+                        Email
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Enregistré
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Mode de Paiement
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Semestres
+                      </th>
+                      <th className="text-right py-4 px-6 font-semibold text-gray-700">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-          {/* Pagination Footer */}
-          {totalPages > 1 && (
-            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} to{" "}
-                {Math.min(endIndex, demandes.length)} of {demandes.length}{" "}
-                results
+                  </thead>
+                  <tbody>
+                    {currentDemandes.map((d, index) => (
+                      <motion.tr
+                        key={d.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className="border-b border-gray-100 hover:bg-amber-50/50 transition-colors"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={d.profileImg} alt={d.name} />
+                              <AvatarFallback>
+                                {d.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {d.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                @{d.username}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-gray-600">{d.email}</td>
+                        <td className="py-4 px-6 text-center">
+                          <Badge variant="outline" className="text-xs">
+                            {d.registered}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          <Badge className="bg-blue-100 text-blue-800 border-0">
+                            <CreditCard className="w-3 h-3 mr-1" />
+                            {d.paymentMode}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {d.semesters.map((s, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {s}
+                              </Badge>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 hover:text-green-700" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="flex items-center gap-2">
+                                  <Check className="h-4 w-4" />
+                                  Approver
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
+                            </Button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex items-center gap-2">
-                {renderPaginationButtons()}
-              </div>
-            </CardFooter>
-          )}
-        </Card>
+            </CardContent>
+
+            {/* Pagination Footer */}
+            {totalPages > 1 && (
+              <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gradient-to-r from-amber-50 to-orange-50 py-4">
+                <div className="text-sm text-gray-600 font-medium">
+                  Affichage {startIndex + 1} à{" "}
+                  {Math.min(endIndex, demandes.length)} sur {demandes.length}
+                </div>
+                <div className="flex items-center gap-1">
+                  {renderPaginationButtons()}
+                </div>
+              </CardFooter>
+            )}
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

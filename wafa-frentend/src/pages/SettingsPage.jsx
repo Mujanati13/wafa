@@ -1,359 +1,319 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  FaBell,
-  FaLock,
-  FaUser,
-  FaShieldAlt,
-  FaDownload,
-  FaSave,
-  FaTimes,
-  FaCamera,
-  FaKey,
-  FaGraduationCap,
-} from "react-icons/fa";
+import React, { useState } from 'react';
+import { 
+  User, Lock, Bell, Shield, Download, Save, Camera, 
+  Mail, Phone, MapPin, GraduationCap, Eye, EyeOff
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/shared';
+import { toast } from 'sonner';
 
 const SettingsPage = () => {
-  const [profile, setProfile] = useState({
-    // Personal Information
-    firstName: "Az-eddine",
-    lastName: "Serhani",
-    email: "azeddine.serhani@email.com",
-    phone: "+212 6 12 34 56 78",
-    dateOfBirth: "1995-03-15",
-    address: "Casablanca, Maroc",
-    profilePicture: null,
-
-    // Academic Information
-    university: "Université Hassan II",
-    faculty: "Faculté de Médecine",
-    currentYear: "6ème année",
-    studentId: "MED2024001",
-    specialization: "Médecine Générale",
-
-    // Account Settings
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-
-    // Privacy & Notifications
+  const [showPassword, setShowPassword] = useState(false);
+  const [settings, setSettings] = useState({
+    firstName: 'Az-eddine',
+    lastName: 'Serhani',
+    email: 'azeddine.serhani@email.com',
+    phone: '+212 6 12 34 56 78',
+    university: 'Université Hassan II',
+    faculty: 'Faculté de Médecine',
+    currentYear: '6ème année',
     emailNotifications: true,
-    profileVisibility: "public",
+    pushNotifications: false,
+    profileVisibility: 'public',
     shareProgress: true,
     twoFactorAuth: false,
   });
 
-  const [activeTab, setActiveTab] = useState("personal");
-
-  const handleProfileChange = (key, value) => {
-    setProfile((prev) => ({ ...prev, [key]: value }));
+  const handleSave = () => {
+    toast.success('Paramètres enregistrés avec succès!');
   };
 
-  const profileTabs = [
-    { id: "personal", label: "Personnelles", icon: FaUser },
-    { id: "academic", label: "Académiques", icon: FaGraduationCap },
-    { id: "security", label: "Sécurité", icon: FaLock },
-  ];
-
-  const InputField = ({
-    value,
-    onChange,
-    label,
-    type = "text",
-    placeholder,
-    required = false,
-  }) => (
-    <div className="py-3">
-      <label className="block text-gray-900 font-medium mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 bg-white border border-blue-200 rounded-lg text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all shadow-sm"
-        required={required}
-      />
-    </div>
-  );
-
-  const SelectInput = ({
-    value,
-    onChange,
-    options,
-    label,
-    description,
-    required,
-  }) => (
-    <div className="py-3">
-      <h4 className="text-gray-900 font-medium mb-2">
-        {label} {required && <span className="text-red-500">*</span>}
-      </h4>
-      {description && (
-        <p className="text-gray-600 text-sm mb-3">{description}</p>
-      )}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-2 bg-white border border-blue-200 rounded-lg text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all shadow-sm"
-        required={required}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-
-  const renderPersonalInfo = () => (
-    <div className="space-y-4">
-      {/* Profile Picture */}
-      <div className="flex items-center space-x-6 py-4">
-        <div className="relative">
-          <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-            {profile.firstName?.[0]}
-            {profile.lastName?.[0]}
-          </div>
-          <button className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-lg">
-            <FaCamera size={12} />
-          </button>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Photo de Profil
-          </h3>
-          <p className="text-gray-600 text-sm">
-            Cliquez sur l'icône pour changer votre photo
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InputField
-          value={profile.firstName}
-          onChange={(value) => handleProfileChange("firstName", value)}
-          label="Prénom"
-          required
-        />
-        <InputField
-          value={profile.lastName}
-          onChange={(value) => handleProfileChange("lastName", value)}
-          label="Nom"
-          required
-        />
-      </div>
-
-      <InputField
-        value={profile.email}
-        onChange={(value) => handleProfileChange("email", value)}
-        label="Email"
-        type="email"
-        required
-      />
-
-      <InputField
-        value={profile.phone}
-        onChange={(value) => handleProfileChange("phone", value)}
-        label="Téléphone"
-        type="tel"
-      />
-
-      <InputField
-        value={profile.dateOfBirth}
-        onChange={(value) => handleProfileChange("dateOfBirth", value)}
-        label="Date de Naissance"
-        type="date"
-      />
-
-      <InputField
-        value={profile.address}
-        onChange={(value) => handleProfileChange("address", value)}
-        label="Adresse"
-      />
-    </div>
-  );
-
-  const renderAcademicInfo = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <InputField
-        value={profile.university}
-        onChange={(value) => handleProfileChange("university", value)}
-        label="Université"
-      />
-
-      <InputField
-        value={profile.faculty}
-        onChange={(value) => handleProfileChange("faculty", value)}
-        label="Faculté"
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SelectInput
-          required={true}
-          value={profile.currentYear}
-          onChange={(value) => handleProfileChange("currentYear", value)}
-          label="Année d'Études"
-          options={[
-            { value: "1ère année", label: "1ère année" },
-            { value: "2ème année", label: "2ème année" },
-            { value: "3ème année", label: "3ème année" },
-            { value: "4ème année", label: "4ème année" },
-            { value: "5ème année", label: "5ème année" },
-            { value: "6ème année", label: "6ème année" },
-            { value: "7ème année", label: "7ème année" },
-          ]}
-        />
-      </div>
-    </div>
-  );
-
-  const renderSecuritySettings = () => (
-    <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center space-x-3">
-          <FaKey className="text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">
-            Changer le Mot de Passe
-          </h3>
-        </div>
-        <p className="text-gray-600 text-sm mt-2">
-          Pour votre sécurité, utilisez un mot de passe fort contenant au moins
-          8 caractères.
-        </p>
-      </div>
-
-      <InputField
-        value={profile.currentPassword}
-        onChange={(value) => handleProfileChange("currentPassword", value)}
-        label="Mot de Passe Actuel"
-        type="password"
-        required={true}
-      />
-
-      <InputField
-        value={profile.newPassword}
-        onChange={(value) => handleProfileChange("newPassword", value)}
-        label="Nouveau Mot de Passe"
-        type="password"
-        required
-      />
-
-      <InputField
-        value={profile.confirmPassword}
-        onChange={(value) => handleProfileChange("confirmPassword", value)}
-        label="Confirmer le Nouveau Mot de Passe"
-        type="password"
-        required
-      />
-    </div>
-  );
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "personal":
-        return renderPersonalInfo();
-      case "academic":
-        return renderAcademicInfo();
-      case "security":
-        return renderSecuritySettings();
-
-      default:
-        return null;
-    }
+  const handleChange = (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-blue-100 rounded-full opacity-30 animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-teal-100 rounded-full opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-200 rounded-full opacity-25 animate-pulse delay-500"></div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <PageHeader
+          title="Paramètres"
+          description="Gérez vos préférences et informations de compte"
+        />
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-lg border border-blue-100 px-8 py-6"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mon Profil</h1>
-          <p className="text-gray-700">
-            Gérez vos informations personnelles et académiques
-          </p>
-        </motion.div>
+        <Tabs defaultValue="account" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="account">Compte</TabsTrigger>
+            <TabsTrigger value="academic">Académique</TabsTrigger>
+            <TabsTrigger value="security">Sécurité</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Profile Navigation */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-1 flex-1"
-          >
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-blue-100 shadow-lg ">
-              <nav className="space-y-2">
-                {profileTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                      activeTab === tab.id
-                        ? "bg-gradient-to-r from-blue-500/20 to-teal-500/20 text-blue-700 border border-blue-300 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-blue-50"
-                    }`}
-                  >
-                    <tab.icon className="text-lg" />
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </motion.div>
-
-          {/* Profile Content */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-3 flex-1"
-          >
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-100 shadow-lg">
-              <div className="flex items-center space-x-3 mb-6">
-                {profileTabs.find((tab) => tab.id === activeTab)?.icon &&
-                  React.createElement(
-                    profileTabs.find((tab) => tab.id === activeTab).icon,
-                    {
-                      className: "text-xl text-blue-600",
-                    }
-                  )}
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {profileTabs.find((tab) => tab.id === activeTab)?.label}
-                </h2>
-              </div>
-
-              <div className="">{renderTabContent()}</div>
-
-              {/* Action Buttons */}
-              <div className="pt-6 border-t border-blue-100">
-                <div className="flex space-x-4">
-                  <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg text-white hover:from-blue-600 hover:to-teal-600 transition-all duration-300 shadow-lg">
-                    <FaSave />
-                    <span>Sauvegarder</span>
-                  </button>
-                  <button className="flex items-center space-x-2 px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-200 transition-all duration-300">
-                    <FaTimes />
-                    <span>Annuler</span>
-                  </button>
+          {/* Account Tab */}
+          <TabsContent value="account" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations personnelles</CardTitle>
+                <CardDescription>Mettez à jour vos informations de profil</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Prénom</Label>
+                    <Input
+                      id="firstName"
+                      value={settings.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Nom</Label>
+                    <Input
+                      id="lastName"
+                      value={settings.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={settings.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    value={settings.phone}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                  />
+                </div>
+
+                <Button onClick={handleSave} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Enregistrer les modifications
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Academic Tab */}
+          <TabsContent value="academic" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations académiques</CardTitle>
+                <CardDescription>Gérez vos informations d'études</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="university">Université</Label>
+                  <Input
+                    id="university"
+                    value={settings.university}
+                    onChange={(e) => handleChange('university', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="faculty">Faculté</Label>
+                  <Input
+                    id="faculty"
+                    value={settings.faculty}
+                    onChange={(e) => handleChange('faculty', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currentYear">Année d'études</Label>
+                  <Select value={settings.currentYear} onValueChange={(value) => handleChange('currentYear', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1ère année">1ère année</SelectItem>
+                      <SelectItem value="2ème année">2ème année</SelectItem>
+                      <SelectItem value="3ème année">3ème année</SelectItem>
+                      <SelectItem value="4ème année">4ème année</SelectItem>
+                      <SelectItem value="5ème année">5ème année</SelectItem>
+                      <SelectItem value="6ème année">6ème année</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={handleSave} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Enregistrer les modifications
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Mot de passe</CardTitle>
+                <CardDescription>Changez votre mot de passe</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Input
+                    id="newPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <Button onClick={() => toast.success('Mot de passe mis à jour!')} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Mettre à jour le mot de passe
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Authentification à deux facteurs</CardTitle>
+                <CardDescription>Ajoutez une couche de sécurité supplémentaire</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="twoFactor">Activer 2FA</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Nécessite un code à chaque connexion
+                    </p>
+                  </div>
+                  <Switch
+                    id="twoFactor"
+                    checked={settings.twoFactorAuth}
+                    onCheckedChange={(checked) => handleChange('twoFactorAuth', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Préférences de notification</CardTitle>
+                <CardDescription>Gérez comment vous recevez les notifications</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="emailNotif">Notifications par email</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recevez des emails pour les mises à jour importantes
+                    </p>
+                  </div>
+                  <Switch
+                    id="emailNotif"
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) => handleChange('emailNotifications', checked)}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="pushNotif">Notifications push</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Recevez des notifications sur votre appareil
+                    </p>
+                  </div>
+                  <Switch
+                    id="pushNotif"
+                    checked={settings.pushNotifications}
+                    onCheckedChange={(checked) => handleChange('pushNotifications', checked)}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="shareProgress">Partager mes progrès</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Permettre aux autres de voir votre progression
+                    </p>
+                  </div>
+                  <Switch
+                    id="shareProgress"
+                    checked={settings.shareProgress}
+                    onCheckedChange={(checked) => handleChange('shareProgress', checked)}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label htmlFor="visibility">Visibilité du profil</Label>
+                  <Select value={settings.profileVisibility} onValueChange={(value) => handleChange('profileVisibility', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public</SelectItem>
+                      <SelectItem value="friends">Amis uniquement</SelectItem>
+                      <SelectItem value="private">Privé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button onClick={handleSave} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Enregistrer les préférences
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
