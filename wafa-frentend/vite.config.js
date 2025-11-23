@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   server: {
+      allowedHosts: ["wafa.albech.me"],
     port: 3010,
   },
 })
