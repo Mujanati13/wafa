@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Trophy, TrendingUp, Calendar, Target, Award, Lock,
   ChevronRight, BookOpen, BarChart3
@@ -11,14 +12,15 @@ import { PageHeader, StatCard } from '@/components/shared';
 import { motion } from 'framer-motion';
 
 const ProgressPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [selectedPeriod, setSelectedPeriod] = useState('week');
   const [selectedSubject, setSelectedSubject] = useState('all');
 
   const overallStats = [
-    { label: 'Examens réalisés', value: '127', icon: <BookOpen className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Taux de réussite', value: '87%', icon: <Target className="w-6 h-6" />, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Heures d\'étude', value: '234h', icon: <Calendar className="w-6 h-6" />, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Objectif du mois', value: '76%', icon: <TrendingUp className="w-6 h-6" />, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: t('dashboard:exams_completed'), value: '127', icon: <BookOpen className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t('dashboard:success_rate'), value: '87%', icon: <Target className="w-6 h-6" />, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: t('dashboard:study_hours'), value: '234h', icon: <Calendar className="w-6 h-6" />, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: t('dashboard:monthly_goal'), value: '76%', icon: <TrendingUp className="w-6 h-6" />, color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 
   const subjectProgress = [
@@ -41,29 +43,29 @@ const ProgressPage = () => {
 
   const achievements = [
     { 
-      title: 'Premier 100%', 
-      description: 'Obtenir 100% à un examen',
+      title: t('dashboard:achievement_first_100'), 
+      description: t('dashboard:achievement_first_100_desc'),
       unlocked: true,
       icon: <Trophy className="h-6 w-6 text-white" />,
       color: 'from-yellow-400 to-orange-500'
     },
     { 
-      title: 'Marathon d\'étude', 
-      description: 'Étudier 7 jours consécutifs',
+      title: t('dashboard:achievement_study_marathon'), 
+      description: t('dashboard:achievement_study_marathon_desc'),
       unlocked: true,
       icon: <Calendar className="h-6 w-6 text-white" />,
       color: 'from-blue-400 to-purple-500'
     },
     { 
-      title: 'Expert', 
-      description: 'Maîtriser 5 modules',
+      title: t('dashboard:achievement_expert'), 
+      description: t('dashboard:achievement_expert_desc'),
       unlocked: false,
       icon: <Award className="h-6 w-6 text-gray-400" />,
       color: 'from-green-400 to-teal-500'
     },
     { 
-      title: 'Champion', 
-      description: 'Top 10 du classement',
+      title: t('dashboard:achievement_champion'), 
+      description: t('dashboard:achievement_champion_desc'),
       unlocked: false,
       icon: <Target className="h-6 w-6 text-gray-400" />,
       color: 'from-pink-400 to-red-500'
@@ -77,8 +79,8 @@ const ProgressPage = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <PageHeader
-            title="Mes Progrès"
-            description="Suivez votre évolution et vos performances"
+            title={t('dashboard:my_progress')}
+            description={t('dashboard:track_your_evolution')}
           />
           
           <div className="flex gap-2">
@@ -87,10 +89,10 @@ const ProgressPage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="week">Cette semaine</SelectItem>
-                <SelectItem value="month">Ce mois</SelectItem>
-                <SelectItem value="year">Cette année</SelectItem>
-                <SelectItem value="all">Tout</SelectItem>
+                <SelectItem value="week">{t('dashboard:this_week')}</SelectItem>
+                <SelectItem value="month">{t('dashboard:this_month')}</SelectItem>
+                <SelectItem value="year">{t('dashboard:this_year')}</SelectItem>
+                <SelectItem value="all">{t('common:all')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -108,18 +110,18 @@ const ProgressPage = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Progression par matière</CardTitle>
-                <CardDescription>Vos performances dans chaque module</CardDescription>
+                <CardTitle>{t('dashboard:progress_by_subject')}</CardTitle>
+                <CardDescription>{t('dashboard:your_performance_each_module')}</CardDescription>
               </div>
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                 <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Toutes" />
+                  <SelectValue placeholder={t('common:all')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
-                  <SelectItem value="anatomy">Anatomie</SelectItem>
-                  <SelectItem value="physiology">Physiologie</SelectItem>
-                  <SelectItem value="pharmacology">Pharmacologie</SelectItem>
+                  <SelectItem value="all">{t('common:all')}</SelectItem>
+                  <SelectItem value="anatomy">{t('dashboard:anatomy')}</SelectItem>
+                  <SelectItem value="physiology">{t('dashboard:physiology')}</SelectItem>
+                  <SelectItem value="pharmacology">{t('dashboard:pharmacology')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -139,8 +141,8 @@ const ProgressPage = () => {
                     <span className="font-medium">{subject.name}</span>
                   </div>
                   <div className="flex items-center gap-4 text-muted-foreground">
-                    <span>{subject.exams} examens</span>
-                    <Badge variant="secondary">{subject.avgScore}% moy</Badge>
+                    <span>{subject.exams} {t('dashboard:exams')}</span>
+                    <Badge variant="secondary">{subject.avgScore}% {t('dashboard:avg')}</Badge>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -156,8 +158,8 @@ const ProgressPage = () => {
           {/* Weekly Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Activité hebdomadaire</CardTitle>
-              <CardDescription>Heures d'étude par jour</CardDescription>
+              <CardTitle>{t('dashboard:weekly_activity')}</CardTitle>
+              <CardDescription>{t('dashboard:study_hours_per_day')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -187,7 +189,7 @@ const ProgressPage = () => {
                       </div>
                     </div>
                     <Badge variant="outline" className="w-16 justify-center">
-                      {day.exams} exams
+                      {day.exams} {t('dashboard:exams')}
                     </Badge>
                   </motion.div>
                 ))}
@@ -198,8 +200,8 @@ const ProgressPage = () => {
           {/* Achievements */}
           <Card>
             <CardHeader>
-              <CardTitle>Succès</CardTitle>
-              <CardDescription>Débloquez des badges en progressant</CardDescription>
+              <CardTitle>{t('dashboard:achievements')}</CardTitle>
+              <CardDescription>{t('dashboard:unlock_badges_progress')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">

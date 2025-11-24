@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   SubscrptionChart,
   UserGrowChart,
@@ -29,34 +30,60 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+const AnalyticsPage = () => {
+  const { t } = useTranslation(['admin', 'common']);
+  const [dateRange, setDateRange] = useState("30d");
+
+  const handleExport = () => {
+    // Export functionality would go here
+    console.log("Exporting analytics data...");
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case "user":
+        return <Users className="w-4 h-4 text-blue-500" />;
+      case "exam":
+        return <GraduationCap className="w-4 h-4 text-green-500" />;
+      case "subscription":
+        return <CreditCard className="w-4 h-4 text-purple-500" />;
+      case "payment":
+        return <TrendingUp className="w-4 h-4 text-orange-500" />;
+      case "admin":
+        return <Plus className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Activity className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
 // Stats Cards Data
 const stats = [
   {
-    label: "Total Users",
+    label: t('admin:total_users'),
     value: "12,847",
     change: "+12.5%",
-    changeText: "from last month",
+    changeText: t('admin:from_last_month'),
     icon: <Users className="w-6 h-6 text-gray-400" />,
   },
   {
-    label: "Active Subscriptions",
+    label: t('admin:active_subscriptions'),
     value: "8,432",
     change: "+8.2%",
-    changeText: "from last month",
+    changeText: t('admin:from_last_month'),
     icon: <CreditCard className="w-6 h-6 text-gray-400" />,
   },
   {
-    label: "Exam Attempts",
+    label: t('admin:exam_attempts'),
     value: "3,247",
     change: "+15.3%",
-    changeText: "from last month",
+    changeText: t('admin:from_last_month'),
     icon: <GraduationCap className="w-6 h-6 text-gray-400" />,
   },
   {
-    label: "Monthly Revenue",
+    label: t('admin:monthly_revenue'),
     value: "$28,450",
     change: "+18.7%",
-    changeText: "from last month",
+    changeText: t('admin:from_last_month'),
     icon: <TrendingUp className="w-6 h-6 text-gray-400" />,
   },
 ];
@@ -64,25 +91,25 @@ const stats = [
 // Performance Metrics Data
 const performanceMetrics = [
   {
-    label: "Average Score",
+    label: t('admin:average_score'),
     value: "78.5%",
     change: "+5.2%",
     icon: <Target className="w-5 h-5 text-blue-500" />,
   },
   {
-    label: "Completion Rate",
+    label: t('admin:completion_rate'),
     value: "92.3%",
     change: "+2.1%",
     icon: <Award className="w-5 h-5 text-green-500" />,
   },
   {
-    label: "Study Time",
+    label: t('admin:study_time'),
     value: "4.2h",
     change: "+0.8h",
     icon: <Clock className="w-5 h-5 text-purple-500" />,
   },
   {
-    label: "Active Sessions",
+    label: t('admin:active_sessions'),
     value: "1,847",
     change: "+12.3%",
     icon: <Activity className="w-5 h-5 text-orange-500" />,
@@ -132,41 +159,16 @@ const recentActivity = [
   },
 ];
 
-const AnalyticsPage = () => {
-  const [dateRange, setDateRange] = useState("30d");
-
-  const handleExport = () => {
-    // Export functionality would go here
-    console.log("Exporting analytics data...");
-  };
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case "user":
-        return <Users className="w-4 h-4 text-blue-500" />;
-      case "exam":
-        return <GraduationCap className="w-4 h-4 text-green-500" />;
-      case "subscription":
-        return <CreditCard className="w-4 h-4 text-purple-500" />;
-      case "payment":
-        return <TrendingUp className="w-4 h-4 text-orange-500" />;
-      case "admin":
-        return <Plus className="w-4 h-4 text-gray-500" />;
-      default:
-        return <Activity className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
   return (
     <div className="p-5 space-y-6 flex flex-col">
       {/* Header with Filters and Export */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Analytics Dashboard
+            {t('admin:analytics_dashboard')}
           </h1>
           <p className="text-gray-600">
-            Monitor your platform performance and user engagement
+            {t('admin:monitor_platform_performance')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -177,10 +179,10 @@ const AnalyticsPage = () => {
               onChange={(e) => setDateRange(e.target.value)}
               className="text-sm border-none outline-none bg-transparent"
             >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-              <option value="1y">Last year</option>
+              <option value="7d">{t('admin:last_7_days')}</option>
+              <option value="30d">{t('admin:last_30_days')}</option>
+              <option value="90d">{t('admin:last_90_days')}</option>
+              <option value="1y">{t('admin:last_year')}</option>
             </select>
           </div>
           <Button
@@ -189,7 +191,7 @@ const AnalyticsPage = () => {
             className="flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Export
+            {t('common:export')}
           </Button>
         </div>
       </div>
@@ -267,10 +269,10 @@ const AnalyticsPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
-              Subject Performance
+              {t('admin:subject_performance')}
             </CardTitle>
             <CardDescription>
-              Average scores and attempts by subject
+              {t('admin:avg_scores_attempts_by_subject')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -285,8 +287,8 @@ const AnalyticsPage = () => {
                       {subject.subject}
                     </h4>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>Score: {subject.score}%</span>
-                      <span>Attempts: {subject.attempts}</span>
+                      <span>{t('admin:score')}: {subject.score}%</span>
+                      <span>{t('admin:attempts')}: {subject.attempts}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -305,9 +307,9 @@ const AnalyticsPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="w-5 h-5" />
-              Recent Activity
+              {t('admin:recent_activity')}
             </CardTitle>
-            <CardDescription>Latest platform activities</CardDescription>
+            <CardDescription>{t('admin:latest_platform_activities')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -335,8 +337,8 @@ const AnalyticsPage = () => {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common administrative tasks</CardDescription>
+          <CardTitle>{t('admin:quick_actions')}</CardTitle>
+          <CardDescription>{t('admin:common_admin_tasks')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -345,28 +347,28 @@ const AnalyticsPage = () => {
               className="flex items-center gap-2 h-auto p-4 flex-col"
             >
               <Users className="w-6 h-6" />
-              <span className="text-sm">Manage Users</span>
+              <span className="text-sm">{t('admin:manage_users')}</span>
             </Button>
             <Button
               variant="outline"
               className="flex items-center gap-2 h-auto p-4 flex-col"
             >
               <GraduationCap className="w-6 h-6" />
-              <span className="text-sm">Add Exam</span>
+              <span className="text-sm">{t('admin:add_exam')}</span>
             </Button>
             <Button
               variant="outline"
               className="flex items-center gap-2 h-auto p-4 flex-col"
             >
               <CreditCard className="w-6 h-6" />
-              <span className="text-sm">View Subscriptions</span>
+              <span className="text-sm">{t('admin:view_subscriptions')}</span>
             </Button>
             <Button
               variant="outline"
               className="flex items-center gap-2 h-auto p-4 flex-col"
             >
               <BarChart3 className="w-6 h-6" />
-              <span className="text-sm">Generate Report</span>
+              <span className="text-sm">{t('admin:generate_report')}</span>
             </Button>
           </div>
         </CardContent>

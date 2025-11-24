@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "react-i18next";
 
 import {
   Form,
@@ -16,23 +17,24 @@ import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import { api } from "@/lib/utils";
 
-const newExamSchema = z.object({
-  name: z.string().min(2, "Exam name is required"),
-  moduleName: z.string().min(1, "Select a module"),
-  year: z.string().min(1, "Select a year"),
-  imageUrl: z
-    .string()
-    .url("Enter a valid image URL")
-    .or(z.string().length(0))
-    .transform((v) => v || ""),
-  helpText: z
-    .string()
-    .optional()
-    .transform((v) => (v == null ? "" : v)),
-});
-
 const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
+  const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const newExamSchema = z.object({
+    name: z.string().min(2, t("admin:exam_name_required")),
+    moduleName: z.string().min(1, t("admin:module_required")),
+    year: z.string().min(1, t("admin:year_required")),
+    imageUrl: z
+      .string()
+      .url(t("admin:image_url_invalid"))
+      .or(z.string().length(0))
+      .transform((v) => v || ""),
+    helpText: z
+      .string()
+      .optional()
+      .transform((v) => (v == null ? "" : v)),
+  });
 
   const form = useForm({
     resolver: zodResolver(newExamSchema),
@@ -63,10 +65,10 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
       await new Promise((r) => setTimeout(r, 800));
       form.reset();
       setShowNewExamForm(false);
-      alert("Exam created successfully!");
+      alert(t("admin:exam_created_success"));
     } catch (e) {
       console.error(e);
-      alert("Failed to create exam");
+      alert(t("admin:failed_create_exam"));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,10 +79,10 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
       <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            Create Exam par Years
+            {t("admin:create_exam_par_years")}
           </h1>
           <p className="text-sm text-gray-600">
-            Add a new exam for a specific year
+            {t("admin:add_new_exam_year")}
           </p>
         </div>
 
@@ -92,11 +94,11 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Name
+                    {t("admin:exam_name")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. Anatomie 1 - 2024"
+                      placeholder={t("admin:exam_name_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -112,7 +114,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Select Module
+                    {t("admin:select_module")}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -120,7 +122,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
-                        Choose a module
+                        {t("admin:choose_module")}
                       </option>
                       {modules.map((module) => (
                         <option key={module} value={module}>
@@ -140,7 +142,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Year
+                    {t("admin:select_year")}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -148,7 +150,7 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
-                        Choose a year
+                        {t("admin:choose_year")}
                       </option>
                       {years.map((year) => (
                         <option key={year} value={year}>
@@ -168,11 +170,11 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Image URL (optional)
+                    {t("admin:image_url_optional")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="https://..."
+                      placeholder={t("admin:image_url_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -188,11 +190,11 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Text Info "?" (Optional)
+                    {t("admin:help_text_tooltip")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Additional information or help text"
+                      placeholder={t("admin:help_text_tooltip_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -212,14 +214,14 @@ const NewExamForm = ({ setShowNewExamForm, modules, years }) => {
                   setShowNewExamForm(false);
                 }}
               >
-                Cancel
+                {t("admin:cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-gray-800 hover:bg-gray-900 text-white"
               >
-                {isSubmitting ? "Saving..." : "Create Exam"}
+                {isSubmitting ? t("admin:saving") : t("admin:create")}
               </Button>
             </div>
           </form>

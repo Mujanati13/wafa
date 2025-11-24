@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowLeft, Loader2, Check, X } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
@@ -13,8 +14,10 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { registerWithEmail, loginWithGoogle } from '@/services/authService';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Register = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,15 +60,15 @@ const Register = () => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Erreur', {
-        description: 'Les mots de passe ne correspondent pas',
+      toast.error(t('common:error'), {
+        description: t('auth:password_mismatch'),
       });
       return;
     }
     
     if (!formData.acceptTerms) {
-      toast.error('Erreur', {
-        description: 'Veuillez accepter les conditions d\'utilisation',
+      toast.error(t('common:error'), {
+        description: t('auth:terms_and_conditions'),
       });
       return;
     }
@@ -86,16 +89,16 @@ const Register = () => {
       );
       
       if (result.needsVerification) {
-        toast.success('Inscription réussie!', {
-          description: result.message || 'Veuillez vérifier votre email pour activer votre compte.',
+        toast.success(t('auth:account_created'), {
+          description: result.message || t('auth:email_verified'),
           duration: 5000,
         });
         
         // Redirect to Firebase email verification page
         navigate('/verify-email-firebase', { state: { email: formData.email } });
       } else {
-        toast.success('Inscription réussie!', {
-          description: 'Votre compte a été créé avec succès.',
+        toast.success(t('auth:account_created'), {
+          description: t('auth:account_created'),
         });
         
         navigate('/dashboard/home');
@@ -105,16 +108,16 @@ const Register = () => {
       
       // Check if error mentions Google sign-in
       if (errorMessage.includes('Google') || errorMessage.includes('google')) {
-        toast.error('Email déjà utilisé', {
+        toast.error(t('auth:email_already_exists'), {
           description: errorMessage,
           duration: 6000,
           action: {
-            label: 'Connexion Google',
+            label: t('auth:google_login'),
             onClick: () => handleGoogleSignUp()
           }
         });
       } else {
-        toast.error('Erreur d\'inscription', {
+        toast.error(t('auth:authentication_error'), {
           description: errorMessage,
           duration: 5000,
         });
@@ -130,8 +133,8 @@ const Register = () => {
     try {
       const result = await loginWithGoogle();
       
-      toast.success('Inscription réussie avec Google!', {
-        description: 'Vous allez être redirigé vers votre dashboard.',
+      toast.success(t('auth:account_created'), {
+        description: t('auth:account_created'),
       });
       
       // Redirect to dashboard
@@ -139,8 +142,8 @@ const Register = () => {
         navigate('/dashboard/home');
       }, 1000);
     } catch (error) {
-      toast.error('Erreur d\'inscription Google', {
-        description: error.message || 'Une erreur est survenue lors de l\'inscription.',
+      toast.error(t('auth:authentication_error'), {
+        description: error.message || t('auth:authentication_error'),
       });
     } finally {
       setIsLoading(false);
@@ -155,17 +158,17 @@ const Register = () => {
 
   const getPasswordStrengthText = () => {
     if (passwordStrength === 0) return '';
-    if (passwordStrength <= 2) return 'Faible';
-    if (passwordStrength <= 3) return 'Moyen';
-    return 'Fort';
+    if (passwordStrength <= 2) return t('auth:weak');
+    if (passwordStrength <= 3) return t('auth:medium');
+    return t('auth:strong');
   };
 
   const passwordRequirements = [
-    { met: formData.password.length >= 8, text: 'Au moins 8 caractères' },
-    { met: /[A-Z]/.test(formData.password), text: 'Une lettre majuscule' },
-    { met: /[a-z]/.test(formData.password), text: 'Une lettre minuscule' },
-    { met: /[0-9]/.test(formData.password), text: 'Un chiffre' },
-    { met: /[^A-Za-z0-9]/.test(formData.password), text: 'Un caractère spécial' },
+    { met: formData.password.length >= 8, text: t('auth:password_min_8') },
+    { met: /[A-Z]/.test(formData.password), text: t('auth:password_uppercase') },
+    { met: /[a-z]/.test(formData.password), text: t('auth:password_lowercase') },
+    { met: /[0-9]/.test(formData.password), text: t('auth:password_number') },
+    { met: /[^A-Za-z0-9]/.test(formData.password), text: t('auth:password_special') },
   ];
 
   return (
@@ -183,7 +186,7 @@ const Register = () => {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-2xl"
       >
-        {/* Logo */}
+        {/* Logo & Language Switcher */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block group">
             <motion.div 
@@ -197,14 +200,17 @@ const Register = () => {
               />
             </motion.div>
           </Link>
+          <div className="flex justify-center mt-4">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Register Card */}
         <Card className="shadow-2xl border-primary/10">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Créer un compte</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth:register')}</CardTitle>
             <CardDescription>
-              Rejoignez WAFA et commencez votre parcours d'apprentissage
+              {t('auth:signup')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -212,27 +218,27 @@ const Register = () => {
               {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Prénom</Label>
+                  <Label htmlFor="firstName">{t('common:name')}</Label>
                   <Input
                     type="text"
                     id="firstName"
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    placeholder="Jean"
+                    placeholder={t('common:name')}
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Nom</Label>
+                  <Label htmlFor="lastName">{t('common:name')}</Label>
                   <Input
                     type="text"
                     id="lastName"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    placeholder="Dupont"
+                    placeholder={t('common:name')}
                     required
                     disabled={isLoading}
                   />
@@ -241,14 +247,14 @@ const Register = () => {
 
               {/* Email Input */}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('common:email')}</Label>
                 <Input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="votre@email.com"
+                  placeholder={t('auth:enter_email')}
                   required
                   disabled={isLoading}
                 />
@@ -256,7 +262,7 @@ const Register = () => {
 
               {/* Password Input */}
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">{t('common:password')}</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -290,7 +296,7 @@ const Register = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
-                        Force du mot de passe: <span className={passwordStrength <= 2 ? 'text-red-500' : passwordStrength <= 3 ? 'text-yellow-500' : 'text-green-500'}>
+                        {t('auth:password_strength')}: <span className={passwordStrength <= 2 ? 'text-red-500' : passwordStrength <= 3 ? 'text-yellow-500' : 'text-green-500'}>
                           {getPasswordStrengthText()}
                         </span>
                       </span>
@@ -318,7 +324,7 @@ const Register = () => {
 
               {/* Confirm Password Input */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                <Label htmlFor="confirmPassword">{t('auth:confirm_password')}</Label>
                 <div className="relative">
                   <Input
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -347,7 +353,7 @@ const Register = () => {
                   </Button>
                 </div>
                 {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="text-xs text-red-500">Les mots de passe ne correspondent pas</p>
+                  <p className="text-xs text-red-500">{t('auth:password_mismatch')}</p>
                 )}
               </div>
 
@@ -367,14 +373,7 @@ const Register = () => {
                     htmlFor="acceptTerms"
                     className="text-sm font-normal cursor-pointer leading-tight"
                   >
-                    J'accepte les{' '}
-                    <Link to="/terms" className="text-primary hover:underline">
-                      conditions d'utilisation
-                    </Link>
-                    {' '}et la{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">
-                      politique de confidentialité
-                    </Link>
+                    {t('auth:terms_and_conditions')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -390,7 +389,7 @@ const Register = () => {
                     htmlFor="newsletter"
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Recevoir les actualités et offres par email
+                    {t('auth:newsletter')}
                   </Label>
                 </div>
               </div>
@@ -405,10 +404,10 @@ const Register = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Inscription...
+                    {t('auth:register')}...
                   </>
                 ) : (
-                  'S\'inscrire'
+                  t('auth:register')
                 )}
               </Button>
 
@@ -417,7 +416,7 @@ const Register = () => {
                 <Separator />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="bg-card px-2 text-xs text-muted-foreground">
-                    Ou continuer avec
+                    {t('auth:or_continue_with')}
                   </span>
                 </div>
               </div>
@@ -435,16 +434,16 @@ const Register = () => {
                 ) : (
                   <FcGoogle className="mr-2 h-5 w-5" />
                 )}
-                S'inscrire avec Google
+                {t('auth:google_login')}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Separator />
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">Vous avez déjà un compte? </span>
+              <span className="text-muted-foreground">{t('auth:already_have_account')} </span>
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Se connecter
+                {t('auth:login')}
               </Link>
             </div>
           </CardFooter>
@@ -457,7 +456,7 @@ const Register = () => {
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour à l'accueil
+            {t('common:back_to_home')}
           </Link>
         </div>
       </motion.div>

@@ -48,5 +48,22 @@
   "ok": "D'accord",
   "submit": "Soumettre",
   "skip": "Passer",
-  "continue": "Continuer"
+  "continue": "Continuer",
+  "back_to_home": "Retour à l'accueil",
+  "no_results": "Aucun résultat trouvé",
+  "try_different_keywords": "Essayez de chercher avec d'autres mots-clés",
+  "user": "Utilisateur",
+  "all": "Tout",
+  "export": "Exporter",
+  "previous": "Précédent",
+  "next": "Suivant",
+  "error_loading": "Erreur lors du chargement",
+  "error": "Erreur",
+  "error_occurred_try_again": "Une erreur est survenue. Veuillez réessayer.",
+  "nav_home": "Accueil",
+  "nav_about": "À propos",
+  "nav_pricing": "Tarifs",
+  "nav_contact": "Contact",
+  "log_in": "Se connecter",
+  "sign_up": "S'inscrire"
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Loader2, Mail, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,8 +10,10 @@ import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import { auth } from '@/config/firebase';
 import { sendEmailVerification, applyActionCode } from 'firebase/auth';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const VerifyEmailFirebase = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
   const [status, setStatus] = useState('checking'); // checking, pending, success, error
   const [message, setMessage] = useState('');
@@ -38,7 +41,7 @@ const VerifyEmailFirebase = () => {
       
       if (!user) {
         setStatus('error');
-        setMessage('Aucun utilisateur connecté. Veuillez vous inscrire.');
+        setMessage(t('auth:no_user_connected'));
         return;
       }
 
@@ -49,7 +52,7 @@ const VerifyEmailFirebase = () => {
 
       if (user.emailVerified) {
         setStatus('success');
-        setMessage('✅ Votre email a été vérifié avec succès!');
+        setMessage(t('auth:account_verified'));
         
         // Redirect to login after 2 seconds
         setTimeout(() => {
@@ -57,12 +60,12 @@ const VerifyEmailFirebase = () => {
         }, 2000);
       } else {
         setStatus('pending');
-        setMessage(`Un email de vérification a été envoyé à ${user.email}. Veuillez vérifier votre boîte de réception et cliquer sur le lien.`);
+        setMessage(`${t('auth:email_verification_sent')} ${user.email}. ${t('auth:check_inbox_click_link')}`);
       }
     } catch (error) {
       console.error('Error checking verification status:', error);
       setStatus('error');
-      setMessage('Erreur lors de la vérification du statut.');
+      setMessage(t('auth:authentication_error'));
     }
   };
 
@@ -73,8 +76,8 @@ const VerifyEmailFirebase = () => {
       const user = auth.currentUser;
       
       if (!user) {
-        toast.error('Erreur', {
-          description: 'Aucun utilisateur connecté. Veuillez vous inscrire à nouveau.',
+        toast.error(t('common:error'), {
+          description: t('auth:no_user_connected'),
         });
         return;
       }
@@ -87,8 +90,8 @@ const VerifyEmailFirebase = () => {
 
       await sendEmailVerification(user, actionCodeSettings);
 
-      toast.success('Email envoyé!', {
-        description: 'Un nouveau lien de vérification a été envoyé à votre boîte de réception.',
+      toast.success(t('auth:email_sent'), {
+        description: t('auth:new_verification_link_sent'),
         duration: 5000,
       });
       
@@ -98,13 +101,13 @@ const VerifyEmailFirebase = () => {
     } catch (error) {
       console.error('Error resending verification:', error);
       
-      let errorMessage = 'Impossible de renvoyer l\'email. Veuillez réessayer.';
+      let errorMessage = t('auth:cannot_resend_email');
       
       if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Trop de tentatives. Veuillez attendre quelques minutes avant de réessayer.';
+        errorMessage = t('auth:too_many_attempts');
       }
       
-      toast.error('Erreur', {
+      toast.error(t('common:error'), {
         description: errorMessage,
       });
     } finally {
@@ -114,7 +117,7 @@ const VerifyEmailFirebase = () => {
 
   const handleCheckAgain = async () => {
     setStatus('checking');
-    setMessage('Vérification du statut...');
+    setMessage(t('auth:checking_status'));
     await checkVerificationStatus();
   };
 
@@ -163,8 +166,11 @@ const VerifyEmailFirebase = () => {
       >
         <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/90">
           {/* Logo */}
-          <div className="flex justify-center pt-8 pb-4">
+          <div className="flex justify-center pt-8 pb-2">
             <img src={logo} alt="Logo" className="h-16 w-auto" />
+          </div>
+          <div className="flex justify-center pb-4">
+            <LanguageSwitcher />
           </div>
 
           <CardHeader className="text-center pb-4">
@@ -178,10 +184,10 @@ const VerifyEmailFirebase = () => {
             </motion.div>
 
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-              {status === 'checking' && 'Vérification...'}
-              {status === 'pending' && 'Vérification de l\'email'}
-              {status === 'success' && 'Email vérifié!'}
-              {status === 'error' && 'Erreur de vérification'}
+              {status === 'checking' && t('auth:verifying')}
+              {status === 'pending' && t('auth:email_verification')}
+              {status === 'success' && t('auth:verification_complete')}
+              {status === 'error' && t('auth:verification_failed')}
             </CardTitle>
 
             <CardDescription className="text-gray-600 mt-2">
@@ -195,7 +201,7 @@ const VerifyEmailFirebase = () => {
                 <Alert className="border-blue-200 bg-blue-50">
                   <Mail className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800 ml-2">
-                    Consultez votre boîte de réception (y compris les spams) et cliquez sur le lien de vérification.
+                    {t('auth:check_inbox_click_link')}
                   </AlertDescription>
                 </Alert>
 
@@ -206,7 +212,7 @@ const VerifyEmailFirebase = () => {
                     className="w-full"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    J'ai vérifié mon email
+                    {t('auth:refresh_status')}
                   </Button>
 
                   <Button
@@ -221,14 +227,14 @@ const VerifyEmailFirebase = () => {
                       <Mail className="mr-2 h-4 w-4" />
                     )}
                     {countdown > 0
-                      ? `Renvoyer dans ${countdown}s`
-                      : 'Renvoyer l\'email'}
+                      ? `${t('auth:resend_in')} ${countdown}s`
+                      : t('auth:resend_verification')}
                   </Button>
                 </div>
 
                 {userEmail && (
                   <p className="text-sm text-gray-500 text-center">
-                    Email envoyé à: <span className="font-medium text-gray-700">{userEmail}</span>
+                    {t('auth:email_sent')}: <span className="font-medium text-gray-700">{userEmail}</span>
                   </p>
                 )}
               </>
@@ -241,13 +247,13 @@ const VerifyEmailFirebase = () => {
                 className="text-center space-y-4"
               >
                 <p className="text-green-600 font-medium">
-                  Redirection vers la page de connexion...
+                  {t('auth:redirecting_to_login')}
                 </p>
                 <Button
                   onClick={() => navigate('/login')}
                   className={`w-full bg-gradient-to-r ${getStatusColor()} hover:opacity-90 text-white`}
                 >
-                  Se connecter maintenant
+                  {t('auth:login_now')}
                 </Button>
               </motion.div>
             )}
@@ -258,7 +264,7 @@ const VerifyEmailFirebase = () => {
                   onClick={() => navigate('/register')}
                   className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:opacity-90 text-white"
                 >
-                  Retour à l'inscription
+                  {t('auth:back_to_register')}
                 </Button>
               </div>
             )}
@@ -269,7 +275,7 @@ const VerifyEmailFirebase = () => {
                 onClick={() => navigate('/login')}
                 className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
               >
-                ← Retour à la connexion
+                ← {t('auth:back_to_login')}
               </button>
             </div>
           </CardContent>
@@ -282,8 +288,8 @@ const VerifyEmailFirebase = () => {
           transition={{ delay: 0.5 }}
           className="mt-6 text-center text-sm text-gray-600"
         >
-          <p>Vous ne trouvez pas l'email?</p>
-          <p className="mt-1">Vérifiez votre dossier spam ou courrier indésirable</p>
+          <p>{t('auth:cant_find_email')}</p>
+          <p className="mt-1">{t('auth:check_spam_folder')}</p>
         </motion.div>
       </motion.div>
     </div>

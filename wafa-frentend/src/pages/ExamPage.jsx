@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -45,6 +46,7 @@ import NoteModal from "@/components/ExamsPage/NoteModal";
 import ReportModal from "@/components/ExamsPage/ReportModal";
 
 const ExamPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { examId } = useParams();
   const navigate = useNavigate();
   
@@ -100,11 +102,11 @@ const ExamPage = () => {
           setCurrentQuestion(currentQ || 0);
           setTimeElapsed(timeSpent || 0);
           setFlaggedQuestions(new Set(flags || []));
-          toast.success("Progression restaurée");
+          toast.success(t('dashboard:progress_restored'));
         }
       } catch (err) {
-        setError("Erreur de chargement de l'examen");
-        toast.error("Impossible de charger l'examen");
+        setError(t('dashboard:failed_load_exam'));
+        toast.error(t('dashboard:failed_load_exam'));
       } finally {
         setLoading(false);
       }
@@ -262,7 +264,7 @@ const ExamPage = () => {
   const handleSubmit = () => {
     setShowResults(true);
     localStorage.removeItem(`exam_progress_${examId}`);
-    toast.success("Examen terminé!");
+    toast.success(t('dashboard:exam_completed'));
   };
 
   // Retry exam
@@ -273,7 +275,7 @@ const ExamPage = () => {
     setShowResults(false);
     setFlaggedQuestions(new Set());
     localStorage.removeItem(`exam_progress_${examId}`);
-    toast.info("Nouvel essai commencé");
+    toast.info(t('dashboard:new_attempt_started'));
   };
 
   // Calculate score
@@ -347,7 +349,7 @@ const ExamPage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Chargement de l'examen...</p>
+          <p className="text-muted-foreground">{t('dashboard:exam_loading')}</p>
         </div>
       </div>
     );
@@ -359,11 +361,11 @@ const ExamPage = () => {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Erreur</h3>
-            <p className="text-muted-foreground mb-4">{error || "Examen introuvable"}</p>
+            <h3 className="text-lg font-semibold mb-2">{t('dashboard:exam_error')}</h3>
+            <p className="text-muted-foreground mb-4">{error || t('dashboard:exam_not_found')}</p>
             <Button onClick={() => navigate('/dashboard/home')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour au tableau de bord
+              {t('dashboard:back_to_dashboard')}
             </Button>
           </CardContent>
         </Card>
@@ -384,9 +386,9 @@ const ExamPage = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="font-semibold text-lg">{examData?.title || 'Examen'}</h1>
+                <h1 className="font-semibold text-lg">{examData?.title || t('dashboard:exam')}</h1>
                 <p className="text-xs text-muted-foreground">
-                  Question {currentQuestion + 1} sur {questions.length}
+                  {t('dashboard:question')} {currentQuestion + 1} {t('common:of')} {questions.length}
                 </p>
               </div>
             </div>
@@ -400,7 +402,7 @@ const ExamPage = () => {
                   className="h-7 w-7"
                   onClick={decreaseFontSize}
                   disabled={fontSize <= 14}
-                  title="Diminuer (Ctrl -)"
+                  title={`${t('dashboard:decrease')} (Ctrl -)`}
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
@@ -411,7 +413,7 @@ const ExamPage = () => {
                   className="h-7 w-7"
                   onClick={increaseFontSize}
                   disabled={fontSize >= 20}
-                  title="Augmenter (Ctrl +)"
+                  title={`${t('dashboard:increase')} (Ctrl +)`}
                 >
                   <Plus className="h-3 w-3" />
                 </Button>
@@ -420,7 +422,7 @@ const ExamPage = () => {
                   size="icon"
                   className="h-7 w-7"
                   onClick={resetFontSize}
-                  title="Réinitialiser (Ctrl 0)"
+                  title={`${t('dashboard:reset')} (Ctrl 0)`}
                 >
                   <RotateCcw className="h-3 w-3" />
                 </Button>
@@ -431,11 +433,11 @@ const ExamPage = () => {
                 {formatTime(timeElapsed)}
               </Badge>
               <Button variant="outline" size="sm" className="hidden lg:flex" onClick={() => setShowSidebar(!showSidebar)}>
-                Vue d'ensemble
+                {t('dashboard:overview')}
               </Button>
               {!showResults && (
                 <Button onClick={handleSubmit}>
-                  Terminer l'examen
+                  {t('dashboard:finish_exam')}
                 </Button>
               )}
             </div>
@@ -452,7 +454,7 @@ const ExamPage = () => {
               <CardContent className="pt-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Progression</span>
+                    <span className="text-muted-foreground">{t('dashboard:progression')}</span>
                     <span className="font-medium">{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} />
@@ -467,15 +469,15 @@ const ExamPage = () => {
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
-                        Question {currentQuestion + 1}
+                        {t('dashboard:question')} {currentQuestion + 1}
                       </Badge>
                       {isMultipleChoice && (
-                        <Badge variant="outline">Choix multiple</Badge>
+                        <Badge variant="outline">{t('dashboard:multiple_choice')}</Badge>
                       )}
                       {flaggedQuestions.has(currentQuestion) && (
                         <Badge variant="destructive" className="gap-1">
                           <Flag className="h-3 w-3" />
-                          Signalée
+                          {t('dashboard:flagged')}
                         </Badge>
                       )}
                     </div>
@@ -621,7 +623,7 @@ const ExamPage = () => {
                 disabled={currentQuestion === 0}
               >
                 <ChevronLeft className="mr-2 h-4 w-4" />
-                Précédent
+                {t('dashboard:previous')}
               </Button>
 
               <span className="text-sm text-muted-foreground">
@@ -632,7 +634,7 @@ const ExamPage = () => {
                 onClick={goToNext}
                 disabled={currentQuestion === questions.length - 1}
               >
-                Suivant
+                {t('dashboard:next')}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -643,7 +645,7 @@ const ExamPage = () => {
             <Card className="sticky top-24">
               <CardHeader>
                 <CardTitle className="text-base flex items-center justify-between">
-                  <span>Questions par Session</span>
+                  <span>{t('dashboard:questions_by_session')}</span>
                   <Badge variant="secondary">{questions.length}</Badge>
                 </CardTitle>
               </CardHeader>
@@ -707,14 +709,14 @@ const ExamPage = () => {
                     <Separator />
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Score</span>
+                        <span className="text-muted-foreground">{t('dashboard:score')}</span>
                         <span className="font-bold text-lg">
                           {score.correct}/{score.total}
                         </span>
                       </div>
                       <Progress value={(score.correct / score.total) * 100} />
                       <p className="text-xs text-center text-muted-foreground">
-                        {Math.round((score.correct / score.total) * 100)}% de réussite
+                        {Math.round((score.correct / score.total) * 100)}% {t('dashboard:success_rate')}
                       </p>
                     </div>
                     <Button
@@ -723,7 +725,7 @@ const ExamPage = () => {
                       onClick={handleRetry}
                     >
                       <RotateCcw className="h-4 w-4" />
-                      Réessayer
+                      {t('dashboard:retry')}
                     </Button>
                   </div>
                 )}
@@ -759,7 +761,7 @@ const ExamPage = () => {
           >
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Questions</h3>
+                <h3 className="font-semibold">{t('dashboard:questions')}</h3>
                 <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)}>
                   <X className="h-5 w-5" />
                 </Button>

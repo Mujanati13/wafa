@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Medal, Trophy } from "lucide-react";
 
@@ -85,10 +86,10 @@ const LeaderboardClient = () => {
     <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Classement
+          {t('dashboard:leaderboard')}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Top 10 des étudiants par points
+          {t('dashboard:top_10_students_by_points')}
         </p>
       </div>
 
@@ -113,16 +114,16 @@ const LeaderboardClient = () => {
                   >
                     {styles.icon}
                     {rank === 1
-                      ? "Champion"
+                      ? t('dashboard:champion')
                       : rank === 2
-                      ? "Deuxième"
-                      : "Troisième"}
+                      ? t('dashboard:second')
+                      : t('dashboard:third')}
                   </span>
                 </CardTitle>
                 <span
                   className={`text-xs px-2 py-1 rounded-md border ${badge}`}
                 >
-                  {user.points} pts
+                  {user.points} {t('dashboard:pts')}
                 </span>
               </CardHeader>
               <CardContent>
@@ -155,7 +156,7 @@ const LeaderboardClient = () => {
       {/* Top 10 List */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 10</CardTitle>
+          <CardTitle>{t('dashboard:top_10')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="divide-y">
@@ -215,7 +216,7 @@ const LeaderboardClient = () => {
                   <span
                     className={`text-xs px-2 py-1 rounded-md border ${badge}`}
                   >
-                    {user.points} pts
+                    {user.points} {t('dashboard:pts')}
                   </span>
                 </div>
               );
@@ -229,7 +230,7 @@ const LeaderboardClient = () => {
         <div className="mt-6 fixed inset-x-0 bottom-0 z-40 px-3 pb-4 sm:px-6 md:static md:px-0 md:pb-0">
           <Card className="max-w-md mx-auto md:max-w-none shadow-lg">
             <CardHeader>
-              <CardTitle>Votre position</CardTitle>
+              <CardTitle>{t('dashboard:your_position')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between py-3">
@@ -260,7 +261,7 @@ const LeaderboardClient = () => {
                     maxScore
                   )}`}
                 >
-                  {currentUser.points} pts
+                  {currentUser.points} {t('dashboard:pts')}
                 </span>
               </div>
             </CardContent>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { api } from "../lib/utils.js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BookOpen, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 const Semesters = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [board, setBoard] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,7 +77,7 @@ const Semesters = () => {
         console.error("Response status:", err.response.status);
         console.error("Response data:", err.response.data);
       }
-      setError(`Failed to load modules: ${err.message}`);
+      setError(`${t('admin:failed_to_load_modules')}: ${err.message}`);
       // Fallback to empty semesters
       setBoard(initializeSemesters());
     } finally {
@@ -192,13 +194,13 @@ const Semesters = () => {
             transition={{ duration: 0.5 }}
             className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg"
           >
-            <h1 className="text-3xl font-bold mb-2">Semestres</h1>
-            <p className="text-blue-100">Organisez les modules par semestre</p>
+            <h1 className="text-3xl font-bold mb-2">{t('admin:semesters')}</h1>
+            <p className="text-blue-100">{t('admin:organize_modules_by_semester')}</p>
           </motion.div>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">Chargement des modules...</p>
+              <p className="text-gray-600 font-medium">{t('admin:loading_modules')}</p>
             </div>
           </div>
         </div>
@@ -217,13 +219,13 @@ const Semesters = () => {
           className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex justify-between items-center"
         >
           <div>
-            <h1 className="text-3xl font-bold mb-2">Semestres</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('admin:semesters')}</h1>
             <p className="text-blue-100">
-              Organisez les modules par semestre (Glisser-Déposer)
+              {t('admin:organize_modules_drag_drop')}
             </p>
             {totalModules > 0 && (
               <Badge className="mt-3 bg-blue-200 text-blue-900">
-                {totalModules} module(s)
+                {totalModules} {t('admin:modules_count')}
               </Badge>
             )}
           </div>

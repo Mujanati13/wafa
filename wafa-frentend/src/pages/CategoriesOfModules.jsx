@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { Folders, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import NewCategoryForm from "@/components/admin/NewCategoryForm";
 
 const CategoriesOfModules = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,7 +111,7 @@ const CategoriesOfModules = () => {
         className="gap-1"
       >
         <ChevronLeft className="h-4 w-4" />
-        Précédent
+        {t('common:previous')}
       </Button>
     );
 
@@ -136,7 +138,7 @@ const CategoriesOfModules = () => {
         disabled={currentPage === totalPages}
         className="gap-1"
       >
-        Suivant
+        {t('common:next')}
         <ChevronRight className="h-4 w-4" />
       </Button>
     );
@@ -148,11 +150,11 @@ const CategoriesOfModules = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title="Catégories des Modules" description="Gérer les catégories pour chaque module" />
+          <PageHeader title={t('admin:categories_modules')} description={t('admin:manage_categories_each_module')} />
           
           <Button onClick={() => setShowNewCategoryForm(true)} className="gap-2">
             <Plus className="h-4 w-4" />
-            Créer Catégorie
+            {t('admin:create_category')}
           </Button>
         </div>
 
@@ -160,9 +162,9 @@ const CategoriesOfModules = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Folders className="h-5 w-5" />
-              Répertoire des Catégories
+              {t('admin:category_directory')}
             </CardTitle>
-            <CardDescription>Rechercher et gérer les catégories de modules</CardDescription>
+            <CardDescription>{t('admin:search_manage_categories')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -170,7 +172,7 @@ const CategoriesOfModules = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   type="text"
-                  placeholder="Rechercher par nom, module ou ID..."
+                  placeholder={t('admin:search_by_name_module_id')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -178,10 +180,10 @@ const CategoriesOfModules = () => {
               </div>
               <Select value={filterModule} onValueChange={setFilterModule}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les modules" />
+                  <SelectValue placeholder={t('admin:all_modules')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les modules</SelectItem>
+                  <SelectItem value="all">{t('admin:all_modules')}</SelectItem>
                   {Array.from(new Set(categories.map((c) => c.moduleId))).map((moduleId) => {
                     const module = categories.find((c) => c.moduleId === moduleId);
                     return (
@@ -198,19 +200,19 @@ const CategoriesOfModules = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nom du Module</TableHead>
-                    <TableHead>Nom de la Catégorie</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Questions</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('common:id')}</TableHead>
+                    <TableHead>{t('admin:module_name')}</TableHead>
+                    <TableHead>{t('admin:category_name')}</TableHead>
+                    <TableHead>{t('admin:image')}</TableHead>
+                    <TableHead>{t('admin:questions')}</TableHead>
+                    <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentCategories.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                        Aucune catégorie trouvée
+                        {t('admin:no_categories_found')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -252,8 +254,7 @@ const CategoriesOfModules = () => {
           </CardContent>
           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-slate-50/50">
             <div className="text-sm text-muted-foreground">
-              Affichage de {filteredCategories.length === 0 ? 0 : startIndex + 1} à{" "}
-              {Math.min(endIndex, filteredCategories.length)} sur {filteredCategories.length} résultats
+              {t('common:showing')} {filteredCategories.length === 0 ? 0 : startIndex + 1} {t('common:to')} {Math.min(endIndex, filteredCategories.length)} {t('common:of')} {filteredCategories.length} {t('common:results')}
             </div>
             {renderPagination()}
           </CardFooter>

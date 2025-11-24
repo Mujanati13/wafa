@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +11,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { sendPasswordResetEmail } from '@/services/authService';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const ForgotPassword = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,15 +30,15 @@ const ForgotPassword = () => {
 
       if (result.success) {
         setIsSubmitted(true);
-        toast.success('Email envoyé!', {
-          description: 'Vérifiez votre boîte de réception pour réinitialiser votre mot de passe.',
+        toast.success(t('auth:email_sent'), {
+          description: t('auth:check_email_reset'),
           duration: 5000,
         });
       }
     } catch (err) {
-      const errorMessage = err.message || 'Une erreur est survenue. Veuillez réessayer.';
+      const errorMessage = err.message || t('auth:authentication_error');
       setError(errorMessage);
-      toast.error('Erreur', {
+      toast.error(t('common:error'), {
         description: errorMessage,
       });
     } finally {
@@ -64,6 +67,9 @@ const ForgotPassword = () => {
               <div className="flex justify-center pt-8 pb-2">
                 <img src={logo} alt="Logo" className="h-16 w-auto" />
               </div>
+              <div className="flex justify-center pb-4">
+                <LanguageSwitcher />
+              </div>
 
               <CardHeader className="text-center space-y-2 pb-4">
                 <motion.div
@@ -77,17 +83,17 @@ const ForgotPassword = () => {
                   </div>
                 </motion.div>
                 <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-                  Mot de passe oublié ?
+                  {t('auth:forgot_password')}
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  Entrez votre email et nous vous enverrons un lien Firebase pour réinitialiser votre mot de passe.
+                  {t('auth:reset_password_instructions')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-medium">
-                      Adresse email
+                      {t('common:email')}
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -96,7 +102,7 @@ const ForgotPassword = () => {
                         id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="votre@email.com"
+                        placeholder={t('auth:enter_email')}
                         className="pl-10"
                         required
                       />
@@ -124,12 +130,12 @@ const ForgotPassword = () => {
                         >
                           <Mail className="h-4 w-4" />
                         </motion.div>
-                        Envoi en cours...
+                        {t('common:loading')}
                       </>
                     ) : (
                       <>
                         <Mail className="mr-2 h-4 w-4" />
-                        Envoyer le lien de réinitialisation
+                        {t('auth:send_reset_link')}
                       </>
                     )}
                   </Button>
@@ -140,14 +146,14 @@ const ForgotPassword = () => {
                       onClick={() => window.location.href = '/login'}
                       className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                     >
-                      ← Retour à la connexion
+                      ← {t('auth:back_to_login')}
                     </button>
                   </div>
                 </form>
 
                 <div className="pt-4 border-t">
                   <p className="text-xs text-center text-gray-500">
-                    Vous recevrez un email avec un lien sécurisé pour réinitialiser votre mot de passe.
+                    {t('auth:reset_email_info')}
                   </p>
                 </div>
               </CardContent>
@@ -157,6 +163,9 @@ const ForgotPassword = () => {
               {/* Logo */}
               <div className="flex justify-center pt-8 pb-2">
                 <img src={logo} alt="Logo" className="h-16 w-auto" />
+              </div>
+              <div className="flex justify-center pb-4">
+                <LanguageSwitcher />
               </div>
 
               <CardContent className="p-8 text-center space-y-6">
@@ -178,27 +187,27 @@ const ForgotPassword = () => {
                   className="space-y-3"
                 >
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    Email envoyé avec succès ! 📧
+                    {t('auth:email_sent_success')}
                   </h2>
                   <p className="text-gray-600">
-                    Un lien de réinitialisation Firebase a été envoyé à <span className="font-semibold text-gray-900">{email}</span>
+                    {t('auth:reset_link_sent')} <span className="font-semibold text-gray-900">{email}</span>
                   </p>
                 </motion.div>
 
                 <Alert className="border-blue-200 bg-blue-50 text-left">
                   <Mail className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800 ml-2">
-                    <strong>Prochaines étapes :</strong>
+                    <strong>{t('auth:next_steps')}</strong>
                     <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
-                      <li>Consultez votre boîte de réception</li>
-                      <li>Cliquez sur le lien dans l'email</li>
-                      <li>Créez un nouveau mot de passe</li>
+                      <li>{t('auth:check_inbox')}</li>
+                      <li>{t('auth:click_link')}</li>
+                      <li>{t('auth:create_new_password')}</li>
                     </ol>
                   </AlertDescription>
                 </Alert>
 
                 <p className="text-sm text-gray-500">
-                  Vous n'avez pas reçu l'email ? Vérifiez votre dossier <strong>spam</strong> ou <strong>courrier indésirable</strong>.
+                  {t('auth:no_email_check_spam')}
                 </p>
 
                 <div className="space-y-2">
@@ -207,7 +216,7 @@ const ForgotPassword = () => {
                     className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:opacity-90 text-white"
                   >
                     <Link to="/login">
-                      Retour à la connexion
+                      {t('auth:back_to_login')}
                     </Link>
                   </Button>
                   
@@ -219,7 +228,7 @@ const ForgotPassword = () => {
                     }}
                     className="w-full"
                   >
-                    Envoyer à une autre adresse
+                    {t('auth:send_to_different_email')}
                   </Button>
                 </div>
               </CardContent>
@@ -234,7 +243,7 @@ const ForgotPassword = () => {
           transition={{ delay: 0.5 }}
           className="mt-6 text-center text-sm text-gray-600"
         >
-          <p>Besoin d'aide ? Contactez notre support</p>
+          <p>{t('auth:need_help_contact_support')}</p>
         </motion.div>
       </motion.div>
     </div>

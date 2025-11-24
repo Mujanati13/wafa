@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +11,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { verifyPasswordResetCodeService, confirmPasswordResetService } from '@/services/authService';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const ResetPassword = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +36,7 @@ const ResetPassword = () => {
   useEffect(() => {
     const verifyCode = async () => {
       if (!oobCode) {
-        setError('Code de réinitialisation manquant. Le lien est invalide.');
+        setError(t('auth:reset_code_missing'));
         setIsVerifying(false);
         return;
       }
@@ -45,7 +48,7 @@ const ResetPassword = () => {
           setIsVerifying(false);
         }
       } catch (err) {
-        setError(err.message || 'Le lien de réinitialisation est invalide ou a expiré.');
+        setError(err.message || t('auth:reset_link_invalid'));
         setIsVerifying(false);
       }
     };
@@ -75,23 +78,23 @@ const ResetPassword = () => {
 
     // Validation
     if (formData.newPassword.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
-      toast.error('Mot de passe trop court', {
-        description: 'Le mot de passe doit contenir au moins 6 caractères',
+      setError(t('auth:password_too_short'));
+      toast.error(t('auth:password_too_short'), {
+        description: t('auth:password_min_6'),
       });
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      toast.error('Erreur de confirmation', {
-        description: 'Les mots de passe ne correspondent pas',
+      setError(t('auth:password_mismatch'));
+      toast.error(t('auth:password_mismatch'), {
+        description: t('auth:password_mismatch'),
       });
       return;
     }
 
     if (!oobCode) {
-      setError('Code de réinitialisation manquant');
+      setError(t('auth:reset_code_missing'));
       return;
     }
 
@@ -102,8 +105,8 @@ const ResetPassword = () => {
 
       if (result.success) {
         setIsSuccess(true);
-        toast.success('Succès!', {
-          description: 'Votre mot de passe a été réinitialisé avec succès.',
+        toast.success(t('common:success'), {
+          description: t('auth:password_reset_success'),
           duration: 3000,
         });
         
@@ -112,9 +115,9 @@ const ResetPassword = () => {
         }, 3000);
       }
     } catch (err) {
-      const errorMessage = err.message || 'Erreur lors de la réinitialisation du mot de passe';
+      const errorMessage = err.message || t('auth:password_reset_error');
       setError(errorMessage);
-      toast.error('Erreur', {
+      toast.error(t('common:error'), {
         description: errorMessage,
       });
     } finally {
@@ -129,7 +132,7 @@ const ResetPassword = () => {
         <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/90 w-full max-w-md">
           <CardContent className="p-12 text-center space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-            <p className="text-gray-600 font-medium">Vérification du lien...</p>
+            <p className="text-gray-600 font-medium">{t('auth:verifying_link')}</p>
           </CardContent>
         </Card>
       </div>
@@ -149,6 +152,9 @@ const ResetPassword = () => {
             <div className="flex justify-center pt-8">
               <img src={logo} alt="Logo" className="h-16 w-auto" />
             </div>
+            <div className="flex justify-center pb-4">
+              <LanguageSwitcher />
+            </div>
             <CardContent className="p-8 text-center space-y-6">
               <motion.div
                 initial={{ scale: 0 }}
@@ -165,15 +171,15 @@ const ResetPassword = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"
               >
-                Mot de passe réinitialisé ! 🎉
+                {t('auth:password_reset_complete')}
               </motion.h2>
               <p className="text-gray-600">
-                Votre mot de passe a été changé avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.
+                {t('auth:password_changed_success')}
               </p>
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800 ml-2">
-                  Redirection vers la page de connexion...
+                  {t('auth:redirecting_to_login')}
                 </AlertDescription>
               </Alert>
               <Button 
@@ -181,7 +187,7 @@ const ResetPassword = () => {
                 className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:opacity-90 text-white"
               >
                 <Link to="/login">
-                  Se connecter maintenant
+                  {t('auth:login_now')}
                 </Link>
               </Button>
             </CardContent>
@@ -204,19 +210,22 @@ const ResetPassword = () => {
             <div className="flex justify-center pt-8">
               <img src={logo} alt="Logo" className="h-16 w-auto" />
             </div>
+            <div className="flex justify-center pb-4">
+              <LanguageSwitcher />
+            </div>
             <CardContent className="p-8 text-center space-y-6">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-12 h-12 text-red-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Lien invalide ou expiré
+                {t('auth:link_invalid_expired')}
               </h2>
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
               <Button asChild className="w-full">
                 <Link to="/forgot-password">
-                  Demander un nouveau lien
+                  {t('auth:request_new_link')}
                 </Link>
               </Button>
             </CardContent>
@@ -245,6 +254,9 @@ const ResetPassword = () => {
           <div className="flex justify-center pt-8 pb-2">
             <img src={logo} alt="Logo" className="h-16 w-auto" />
           </div>
+          <div className="flex justify-center pb-4">
+            <LanguageSwitcher />
+          </div>
 
           <CardHeader className="text-center space-y-2 pb-4">
             <motion.div
@@ -258,17 +270,17 @@ const ResetPassword = () => {
               </div>
             </motion.div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">
-              Nouveau mot de passe
+              {t('auth:new_password')}
             </CardTitle>
             <CardDescription className="text-gray-600">
-              {userEmail && `Pour ${userEmail}`}
+              {userEmail && `${t('auth:for')} ${userEmail}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="newPassword" className="text-sm font-medium">
-                  Nouveau mot de passe
+                  {t('auth:new_password')}
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -313,19 +325,19 @@ const ResetPassword = () => {
                       passwordStrength.strength < 75 ? 'text-yellow-600' :
                       'text-green-600'
                     }`}>
-                      Force: {passwordStrength.label}
+                      {t('auth:password_strength')}: {passwordStrength.label}
                     </p>
                   </div>
                 )}
                 
                 <p className="text-xs text-gray-500">
-                  Minimum 6 caractères recommandés
+                  {t('auth:password_min_6')}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                  Confirmer le mot de passe
+                  {t('auth:confirm_password')}
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -360,9 +372,9 @@ const ResetPassword = () => {
                       : 'text-red-600'
                   }`}>
                     {formData.newPassword === formData.confirmPassword ? (
-                      <>✓ Les mots de passe correspondent</>
+                      <>✓ {t('auth:passwords_match')}</>
                     ) : (
-                      <>✗ Les mots de passe ne correspondent pas</>
+                      <>✗ {t('auth:password_mismatch')}</>
                     )}
                   </p>
                 )}
@@ -383,12 +395,12 @@ const ResetPassword = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Réinitialisation en cours...
+                    {t('auth:resetting_password')}
                   </>
                 ) : (
                   <>
                     <Lock className="mr-2 h-4 w-4" />
-                    Réinitialiser le mot de passe
+                    {t('auth:reset_password')}
                   </>
                 )}
               </Button>
@@ -399,13 +411,13 @@ const ResetPassword = () => {
                   onClick={() => navigate('/login')}
                   className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                 >
-                  ← Retour à la connexion
+                  ← {t('auth:back_to_login')}
                 </button>
               </div>
             </form>
             <div className="pt-4 border-t mt-4">
               <p className="text-xs text-center text-gray-500">
-                Assurez-vous de choisir un mot de passe fort et unique
+                {t('auth:choose_strong_password')}
               </p>
             </div>
           </CardContent>
@@ -416,7 +428,7 @@ const ResetPassword = () => {
           transition={{ delay: 0.5 }}
           className="mt-6 text-center text-sm text-gray-600"
         >
-          <p>Besoin d'aide ? Contactez notre support</p>
+          <p>{t('auth:need_help_contact_support')}</p>
         </motion.div>
       </motion.div>
     </div>

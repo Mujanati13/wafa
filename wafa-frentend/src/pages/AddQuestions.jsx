@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Save, Eye, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ const qcmNamesByModule = {
 const yearNames = ["2021", "2022", "2023", "2024"];
 
 const AddQuestions = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const modules = ["Anatomie 1", "Biophysique", "Embryologie", "Histologie", "Physiologie 1", "Biochimie 1"];
 
   const catalog = {
@@ -99,7 +101,7 @@ const AddQuestions = () => {
       question: { text: questionText, imageAttached: !!imageFile, options, note },
     };
 
-    toast.success("Question soumise avec succès");
+    toast.success(t('admin:question_submitted'));
     console.log("Submit payload:", payload);
   };
 
@@ -107,28 +109,28 @@ const AddQuestions = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title="Ajouter des Questions" description="Sélectionner le contexte et ajouter le contenu de la question" />
+          <PageHeader title={t('admin:add_questions')} description={t('admin:select_context_add_content')} />
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => setShowPreview((p) => !p)}>
               <Eye className="h-4 w-4 mr-2" />
-              Aperçu
+              {t('admin:preview')}
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               <Save className="h-4 w-4 mr-2" />
-              Soumettre
+              {t('admin:submit')}
             </Button>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Contexte</CardTitle>
-            <CardDescription>Sélectionner le module, le type d'examen et les détails spécifiques au contexte</CardDescription>
+            <CardTitle>{t('admin:context')}</CardTitle>
+            <CardDescription>{t('admin:select_module_exam_type')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label>Module</Label>
+                <Label>{t('admin:module')}</Label>
                 <Select
                   value={selectedModule}
                   onValueChange={(val) => {
@@ -143,7 +145,7 @@ const AddQuestions = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisir un module" />
+                    <SelectValue placeholder={t('admin:choose_module')} />
                   </SelectTrigger>
                   <SelectContent>
                     {modules.map((m) => (
@@ -156,7 +158,7 @@ const AddQuestions = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Type d'examen</Label>
+                <Label>{t('admin:exam_type')}</Label>
                 <Select
                   value={examType}
                   onValueChange={(val) => {
@@ -171,23 +173,23 @@ const AddQuestions = () => {
                   disabled={!selectedModule}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisir le type" />
+                    <SelectValue placeholder={t('admin:choose_type')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="years">Exam par years</SelectItem>
-                    <SelectItem value="courses">Exam par courses</SelectItem>
-                    <SelectItem value="tp">Exam TP</SelectItem>
-                    <SelectItem value="qcm">Exam QCM</SelectItem>
+                    <SelectItem value="years">{t('admin:exam_by_years')}</SelectItem>
+                    <SelectItem value="courses">{t('admin:exam_by_courses')}</SelectItem>
+                    <SelectItem value="tp">{t('admin:exam_tp')}</SelectItem>
+                    <SelectItem value="qcm">{t('admin:exam_qcm')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {examType === "years" && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Nom de l'examen</Label>
+                  <Label>{t('admin:exam_name')}</Label>
                   <Select value={selectedExamNameYears} onValueChange={setSelectedExamNameYears} disabled={!selectedModule}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choisir un examen" />
+                      <SelectValue placeholder={t('admin:choose_exam')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(examNamesByModule[selectedModule] || []).map((name) => (
@@ -203,7 +205,7 @@ const AddQuestions = () => {
               {examType === "courses" && (
                 <>
                   <div className="space-y-2">
-                    <Label>Catégorie</Label>
+                    <Label>{t('admin:category')}</Label>
                     <Select
                       value={selectedCategory}
                       onValueChange={(val) => {
@@ -214,7 +216,7 @@ const AddQuestions = () => {
                       disabled={!selectedModule}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Choisir une catégorie" />
+                        <SelectValue placeholder={t('admin:choose_category')} />
                       </SelectTrigger>
                       <SelectContent>
                         {categoryOptions.map((cat) => (
@@ -226,10 +228,10 @@ const AddQuestions = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Cours</Label>
+                    <Label>{t('admin:course')}</Label>
                     <Select value={selectedCourse} onValueChange={setSelectedCourse} disabled={!selectedCategory}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choisir un cours" />
+                        <SelectValue placeholder={t('admin:choose_course')} />
                       </SelectTrigger>
                       <SelectContent>
                         {courseOptions.map((c) => (
@@ -241,10 +243,10 @@ const AddQuestions = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Année</Label>
+                    <Label>{t('admin:year')}</Label>
                     <Select value={selectedYearName} onValueChange={setSelectedYearName} disabled={!selectedCourse}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choisir une année" />
+                        <SelectValue placeholder={t('admin:choose_year')} />
                       </SelectTrigger>
                       <SelectContent>
                         {yearNames.map((y) => (
@@ -260,10 +262,10 @@ const AddQuestions = () => {
 
               {examType === "tp" && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Nom du TP</Label>
+                  <Label>{t('admin:tp_name')}</Label>
                   <Select value={selectedTPName} onValueChange={setSelectedTPName} disabled={!selectedModule}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choisir un TP" />
+                      <SelectValue placeholder={t('admin:choose_tp')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(tpNamesByModule[selectedModule] || []).map((name) => (
@@ -278,10 +280,10 @@ const AddQuestions = () => {
 
               {examType === "qcm" && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Nom du QCM</Label>
+                  <Label>{t('admin:qcm_name')}</Label>
                   <Select value={selectedQCMName} onValueChange={setSelectedQCMName} disabled={!selectedModule}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choisir un QCM" />
+                      <SelectValue placeholder={t('admin:choose_qcm')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(qcmNamesByModule[selectedModule] || []).map((name) => (
@@ -299,21 +301,21 @@ const AddQuestions = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Question</CardTitle>
-            <CardDescription>Ajouter le texte de la question, les options et les réponses correctes</CardDescription>
+            <CardTitle>{t('admin:question')}</CardTitle>
+            <CardDescription>{t('admin:add_question_text_options')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label>Texte de la question</Label>
-              <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} placeholder="Tapez la question ici..." rows={4} />
+              <Label>{t('admin:question_text')}</Label>
+              <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} placeholder={t('admin:type_question_here')} rows={4} />
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Options</Label>
+                <Label>{t('admin:options')}</Label>
                 <Button variant="outline" size="sm" onClick={handleAddOption}>
                   <Plus className="h-4 w-4 mr-1" />
-                  Ajouter option
+                  {t('admin:add_option')}
                 </Button>
               </div>
               <div className="space-y-3">
@@ -330,7 +332,7 @@ const AddQuestions = () => {
                       }
                     />
                     <Input
-                      placeholder={`Option ${index + 1}`}
+                      placeholder={`${t('admin:option')} ${index + 1}`}
                       value={opt.text}
                       onChange={(e) =>
                         setOptions((prev) =>
@@ -347,29 +349,29 @@ const AddQuestions = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">Cocher toutes les réponses correctes. Minimum 2 options et 1 correcte requises.</p>
+              <p className="text-xs text-muted-foreground">{t('admin:check_correct_answers')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Note (optionnel)</Label>
-                <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note ou explication supplémentaire" rows={3} />
+                <Label>{t('admin:note_optional')}</Label>
+                <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('admin:note_explanation')} rows={3} />
               </div>
               <div className="space-y-2">
-                <Label>Images (optionnel)</Label>
+                <Label>{t('admin:images_optional')}</Label>
                 <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
-                {imageFile && <p className="text-sm text-muted-foreground">Sélectionné: {imageFile.name}</p>}
+                {imageFile && <p className="text-sm text-muted-foreground">{t('admin:selected')}: {imageFile.name}</p>}
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowPreview((p) => !p)}>
               <Eye className="h-4 w-4 mr-2" />
-              Aperçu
+              {t('admin:preview')}
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               <Save className="h-4 w-4 mr-2" />
-              Soumettre
+              {t('admin:submit')}
             </Button>
           </CardFooter>
         </Card>
@@ -377,14 +379,14 @@ const AddQuestions = () => {
         {showPreview && (
           <Card>
             <CardHeader>
-              <CardTitle>Aperçu</CardTitle>
-              <CardDescription>Aperçu de l'affichage de la question pour les étudiants</CardDescription>
+              <CardTitle>{t('admin:preview_title')}</CardTitle>
+              <CardDescription>{t('admin:preview_description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="font-medium text-foreground">{questionText || "—"}</div>
               {imageFile && (
                 <div className="border rounded-md p-3 bg-muted">
-                  <span className="text-sm text-muted-foreground">Image jointe: {imageFile.name}</span>
+                  <span className="text-sm text-muted-foreground">{t('admin:image_attached')}: {imageFile.name}</span>
                 </div>
               )}
               <ol className="space-y-2 list-decimal list-inside">
@@ -398,7 +400,7 @@ const AddQuestions = () => {
               </ol>
               {note && (
                 <div className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Note: </span>
+                  <span className="font-semibold text-foreground">{t('admin:note_optional')}: </span>
                   {note}
                 </div>
               )}

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   Form,
@@ -16,47 +17,48 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 
-// Validation schema
-const newUserSchema = z
-  .object({
-    firstName: z
-      .string()
-      .min(2, "First name must be at least 2 characters")
-      .max(50, "First name must be less than 50 characters")
-      .regex(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces"),
-    lastName: z
-      .string()
-      .min(2, "Last name must be at least 2 characters")
-      .max(50, "Last name must be less than 50 characters")
-      .regex(/^[a-zA-Z\s]+$/, "Last name can only contain letters and spaces"),
-    email: z
-      .string()
-      .email("Please enter a valid email address")
-      .min(1, "Email is required"),
-    phone: z
-      .string()
-      .min(10, "Phone number must be at least 10 digits")
-      .max(15, "Phone number must be less than 15 digits")
-      .regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number"),
-    role: z.string().min(1, "Please select a role"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-      ),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
 const NewUserForm = ({setShowNewUserForm}) => {
+  const { t } = useTranslation(["admin"]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validation schema
+  const newUserSchema = z
+    .object({
+      firstName: z
+        .string()
+        .min(2, t("admin:first_name_required"))
+        .max(50, t("admin:first_name_max"))
+        .regex(/^[a-zA-Z\s]+$/, t("admin:first_name_letters")),
+      lastName: z
+        .string()
+        .min(2, t("admin:last_name_required"))
+        .max(50, t("admin:last_name_max"))
+        .regex(/^[a-zA-Z\s]+$/, t("admin:last_name_letters")),
+      email: z
+        .string()
+        .email(t("admin:email_invalid"))
+        .min(1, t("admin:email_required")),
+      phone: z
+        .string()
+        .min(10, t("admin:phone_min"))
+        .max(15, t("admin:phone_max"))
+        .regex(/^[\+]?[1-9][\d]{0,15}$/, t("admin:phone_invalid")),
+      role: z.string().min(1, t("admin:role_required")),
+      password: z
+        .string()
+        .min(8, t("admin:password_min"))
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+          t("admin:password_strength")
+        ),
+      confirmPassword: z.string().min(1, t("admin:confirm_password_required")),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("admin:passwords_no_match"),
+      path: ["confirmPassword"],
+    });
 
   const form = useForm({
     resolver: zodResolver(newUserSchema),
@@ -80,10 +82,10 @@ const NewUserForm = ({setShowNewUserForm}) => {
 
       // Reset form on success
       form.reset();
-      alert("User created successfully!");
+      alert(t("admin:user_created_success"));
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Error creating user. Please try again.");
+      alert(t("admin:failed_create_user"));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,10 +96,10 @@ const NewUserForm = ({setShowNewUserForm}) => {
       <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            Add New User
+            {t("admin:add_new_user")}
           </h1>
           <p className="text-sm text-gray-600">
-            Create a new user account with the required information
+            {t("admin:create_user_subtitle")}
           </p>
         </div>
 
@@ -111,11 +113,11 @@ const NewUserForm = ({setShowNewUserForm}) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700">
-                      First Name
+                      {t("admin:first_name")}
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter first name"
+                        placeholder={t("admin:first_name_placeholder")}
                         className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                         {...field}
                       />
@@ -131,11 +133,11 @@ const NewUserForm = ({setShowNewUserForm}) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700">
-                      Last Name
+                      {t("admin:last_name")}
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter last name"
+                        placeholder={t("admin:last_name_placeholder")}
                         className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                         {...field}
                       />
@@ -153,12 +155,12 @@ const NewUserForm = ({setShowNewUserForm}) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Email Address
+                    {t("admin:email")}
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="user@example.com"
+                      placeholder={t("admin:email_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -175,12 +177,12 @@ const NewUserForm = ({setShowNewUserForm}) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Phone Number
+                    {t("admin:phone")}
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="tel"
-                      placeholder="+1234567890"
+                      placeholder={t("admin:phone_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -197,7 +199,7 @@ const NewUserForm = ({setShowNewUserForm}) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Role
+                    {t("admin:role")}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -206,10 +208,10 @@ const NewUserForm = ({setShowNewUserForm}) => {
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
-                        Select a role
+                        {t("admin:choose_role")}
                       </option>
-                      <option value="admin">Administrator</option>
-                      <option value="student">Student</option>
+                      <option value="admin">{t("admin:admin")}</option>
+                      <option value="student">{t("admin:student")}</option>
                     </Select>
                   </FormControl>
                   <FormMessage />
@@ -225,13 +227,13 @@ const NewUserForm = ({setShowNewUserForm}) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700">
-                      Password
+                      {t("admin:password")}
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter password"
+                          placeholder={t("admin:password_placeholder")}
                           className="border-gray-300 focus:border-gray-400 focus:ring-gray-400 pr-10"
                           {...field}
                         />
@@ -259,13 +261,13 @@ const NewUserForm = ({setShowNewUserForm}) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700">
-                      Confirm Password
+                      {t("admin:confirm_password")}
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm password"
+                          placeholder={t("admin:confirm_password_placeholder")}
                           className="border-gray-300 focus:border-gray-400 focus:ring-gray-400 pr-10"
                           {...field}
                         />
@@ -301,7 +303,7 @@ const NewUserForm = ({setShowNewUserForm}) => {
                   setShowNewUserForm(false);
                 }}
               >
-                Cancel
+                {t("admin:cancel")}
               </Button>
               <Button
                 type="submit"
@@ -311,10 +313,10 @@ const NewUserForm = ({setShowNewUserForm}) => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Creating...
+                    {t("admin:saving")}
                   </>
                 ) : (
-                  "Submit"
+                  t("admin:create")
                 )}
               </Button>
             </div>

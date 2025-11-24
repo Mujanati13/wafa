@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Upload, BookOpen, ChevronRight } from "lucide-react";
 
 const ImportExamParCourse = () => {
+  const { t } = useTranslation(['admin', 'common']);
   // Demo catalog: Module -> Categories -> Courses -> Exams
   const modules = useMemo(
     () => [

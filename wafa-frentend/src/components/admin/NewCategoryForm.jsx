@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "react-i18next";
 
 import {
   Form,
@@ -15,18 +16,19 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 
-const newCategorySchema = z.object({
-  name: z.string().min(2, "Category name is required"),
-  moduleId: z.string().min(1, "Select a module"),
-  imageUrl: z
-    .string()
-    .url("Enter a valid image URL")
-    .or(z.string().length(0))
-    .transform((v) => v || ""),
-});
-
 const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
+  const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const newCategorySchema = z.object({
+    name: z.string().min(2, t("admin:category_name_required")),
+    moduleId: z.string().min(1, t("admin:module_required")),
+    imageUrl: z
+      .string()
+      .url(t("admin:image_url_invalid"))
+      .or(z.string().length(0))
+      .transform((v) => v || ""),
+  });
 
   const form = useForm({
     resolver: zodResolver(newCategorySchema),
@@ -45,10 +47,10 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
       await new Promise((r) => setTimeout(r, 800));
       form.reset();
       setShowNewCategoryForm(false);
-      alert("Category created successfully!");
+      alert(t("admin:category_created_success"));
     } catch (e) {
       console.error(e);
-      alert("Failed to create category");
+      alert(t("admin:failed_create_category"));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,10 +61,10 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
       <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            Add Category
+            {t("admin:add_category")}
           </h1>
           <p className="text-sm text-gray-600">
-            Create a new category and assign it to a module
+            {t("admin:create_category_subtitle")}
           </p>
         </div>
 
@@ -74,11 +76,11 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Category name
+                    {t("admin:category_name")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. Exam par years"
+                      placeholder={t("admin:category_name_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -94,7 +96,7 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Select module
+                    {t("admin:select_module")}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -103,7 +105,7 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
-                        Choose module
+                        {t("admin:choose_module")}
                       </option>
                       {Array.from(new Set(modules.map((c) => c.moduleId))).map(
                         (moduleId) => {
@@ -130,11 +132,11 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Image URL (optional)
+                    {t("admin:image_url_optional")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="https://..."
+                      placeholder={t("admin:image_url_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -154,14 +156,14 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                   setShowNewCategoryForm(false);
                 }}
               >
-                Cancel
+                {t("admin:cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-gray-800 hover:bg-gray-900 text-white"
               >
-                {isSubmitting ? "Saving..." : "Create"}
+                {isSubmitting ? t("admin:saving") : t("admin:create")}
               </Button>
             </div>
           </form>

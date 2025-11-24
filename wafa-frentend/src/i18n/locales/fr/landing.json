@@ -151,5 +151,9 @@
   
   "footer_copyright": "© 2024 WAFA. Tous les droits réservés.",
   "footer_terms": "Conditions de Service",
-  "footer_privacy": "Politique de Confidentialité"
+  "footer_privacy": "Politique de Confidentialité",
+  "message_sent_success": "Message envoyé avec succès!",
+  "will_respond_soon": "Nous vous répondrons dans les plus brefs délais.",
+  "contact_us": "Contactez-nous",
+  "contact_description": "Une question ? Un problème technique ? Notre équipe est là pour vous aider. Envoyez-nous un message et nous vous répondrons dans les plus brefs délais."
 }

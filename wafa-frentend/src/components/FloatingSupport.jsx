@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FaWhatsapp, FaInstagram, FaFacebookF, FaHeadset } from 'react-icons/fa';
 
 const FloatingSupport = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   const supportButtons = [
@@ -101,7 +103,7 @@ const FloatingSupport = () => {
           animate={{ opacity: 1, x: 0 }}
           className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg pointer-events-none"
         >
-          Besoin d'aide ?
+          {t('dashboard:need_help')}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-l-8 border-l-gray-900"></div>
         </motion.div>
       )}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Clock, FileQuestion, Trophy, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PageHeader } from '@/components/shared';
 
 const ExamCard = ({ exam, handleStartExam }) => {
+  const { t } = useTranslation(['dashboard', 'common']);
+  
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Facile': return 'bg-green-100 text-green-700 border-green-200';
@@ -49,14 +52,14 @@ const ExamCard = ({ exam, handleStartExam }) => {
             <div className="flex justify-between text-muted-foreground">
               <span className="flex items-center gap-1">
                 <FileQuestion className="h-4 w-4" />
-                Questions
+                {t('dashboard:questions')}
               </span>
               <span className="font-medium text-foreground">{exam.questions}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                Durée
+                {t('dashboard:exam_duration')}
               </span>
               <span className="font-medium text-foreground">{exam.duration}</span>
             </div>
@@ -64,7 +67,7 @@ const ExamCard = ({ exam, handleStartExam }) => {
               <div className="flex justify-between text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Trophy className="h-4 w-4" />
-                  Dernier score
+                  {t('dashboard:last_score')}
                 </span>
                 <span className="font-semibold text-green-600">{exam.lastScore}</span>
               </div>
@@ -80,10 +83,10 @@ const ExamCard = ({ exam, handleStartExam }) => {
             {exam.available ? (
               <>
                 <Play className="h-4 w-4" />
-                Commencer l'examen
+                {t('dashboard:start_exam')}
               </>
             ) : (
-              'Indisponible'
+              t('dashboard:unavailable')
             )}
           </Button>
         </CardContent>
@@ -93,6 +96,7 @@ const ExamCard = ({ exam, handleStartExam }) => {
 };
 
 const ExamsPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [selectedSemester, setSelectedSemester] = useState('S1');
   const navigate = useNavigate();
   
@@ -152,8 +156,8 @@ const ExamsPage = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <PageHeader
-            title="Examens QCM"
-            description="Sélectionnez un semestre et commencez vos examens"
+            title={t('dashboard:exams_qcm')}
+            description={t('dashboard:select_semester_start')}
           />
           
           <Select value={selectedSemester} onValueChange={setSelectedSemester}>
@@ -180,7 +184,7 @@ const ExamsPage = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold">{currentExams.length}</div>
-                  <div className="text-sm text-white/90">Examens</div>
+                  <div className="text-sm text-white/90">{t('dashboard:exams')}</div>
                 </div>
               </div>
             </CardContent>
@@ -197,9 +201,9 @@ const ExamsPage = () => {
           <Card>
             <CardContent className="p-12 text-center">
               <FileQuestion className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Aucun examen disponible</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('dashboard:no_exams_available')}</h3>
               <p className="text-muted-foreground">
-                Il n'y a pas d'examens pour ce semestre pour le moment.
+                {t('dashboard:no_exams_for_semester')}
               </p>
             </CardContent>
           </Card>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { FileText, Download, Check, X, Eye, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
 const Resumes = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [resumes, setResumes] = useState([]);
@@ -50,8 +52,8 @@ const Resumes = () => {
         }));
         setResumes(mapped);
       } catch (e) {
-        setError("Échec du chargement des résumés");
-        toast.error("Erreur lors du chargement");
+        setError(t('admin:failed_load_resumes'));
+        toast.error(t('common:error_loading'));
       } finally {
         setLoading(false);
       }
@@ -77,9 +79,9 @@ const Resumes = () => {
           resume.id === id ? { ...resume, approved: true } : resume
         )
       );
-      toast.success("Résumé approuvé avec succès");
+      toast.success(t('admin:resume_approved'));
     } catch (e) {
-      toast.error("Échec de l'approbation");
+      toast.error(t('admin:failed_approval'));
     }
   };
 
@@ -87,15 +89,15 @@ const Resumes = () => {
     try {
       await api.delete(`/resumes/${id}`);
       setResumes((prev) => prev.filter((resume) => resume.id !== id));
-      toast.success("Résumé supprimé");
+      toast.success(t('admin:resume_deleted'));
     } catch (e) {
-      toast.error("Échec de la suppression");
+      toast.error(t('admin:failed_delete'));
     }
   };
 
   const handleSeePDF = (pdfUrl) => {
     if (!pdfUrl) {
-      toast.error("URL du PDF non disponible");
+      toast.error(t('admin:pdf_url_unavailable'));
       return;
     }
     window.open(pdfUrl, "_blank");
@@ -121,7 +123,7 @@ const Resumes = () => {
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
-        Précédent
+        {t('common:previous')}
       </Button>
     );
     
@@ -147,7 +149,7 @@ const Resumes = () => {
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
-        Suivant
+        {t('common:next')}
       </Button>
     );
     
@@ -159,7 +161,7 @@ const Resumes = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto" />
-          <p className="text-muted-foreground">Chargement des résumés...</p>
+          <p className="text-muted-foreground">{t('admin:loading_resumes')}</p>
         </div>
       </div>
     );
@@ -169,24 +171,24 @@ const Resumes = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <PageHeader
-          title="Gestion des Résumés"
-          description="Gérez les résumés téléchargés par les utilisateurs, approuvez-les et consultez les PDF"
+          title={t('admin:resume_management')}
+          description={t('admin:manage_user_uploaded_resumes')}
         />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
-            title="Total Résumés"
+            title={t('admin:total_resumes')}
             value={resumes.length.toString()}
             icon={<BookOpen className="w-6 h-6" />}
           />
           <StatCard
-            title="Approuvés"
+            title={t('admin:approved')}
             value={approvedCount.toString()}
             icon={<Check className="w-6 h-6" />}
           />
           <StatCard
-            title="En Attente"
+            title={t('admin:pending')}
             value={pendingCount.toString()}
             icon={<FileText className="w-6 h-6" />}
           />
@@ -195,7 +197,7 @@ const Resumes = () => {
         {/* Resumes Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Liste des Résumés</CardTitle>
+            <CardTitle>{t('admin:resume_list')}</CardTitle>
             <CardDescription>
               {resumes.length} résumé{resumes.length > 1 ? 's' : ''} au total
             </CardDescription>

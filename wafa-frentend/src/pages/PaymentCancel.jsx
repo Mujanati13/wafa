@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from 'react-i18next';
 import { XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const PaymentCancel = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
 
   return (
@@ -29,10 +31,10 @@ const PaymentCancel = () => {
 
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">
-                Paiement annulé
+                {t('dashboard:payment_cancel')}
               </h2>
               <p className="text-muted-foreground">
-                Votre paiement a été annulé. Aucun montant n'a été débité de votre compte.
+                {t('dashboard:payment_cancel_message')}
               </p>
             </div>
 
@@ -41,7 +43,7 @@ const PaymentCancel = () => {
                 onClick={() => navigate("/subscription")}
                 className="w-full"
               >
-                Réessayer
+                {t('dashboard:try_again')}
               </Button>
 
               <Button
@@ -49,7 +51,7 @@ const PaymentCancel = () => {
                 onClick={() => navigate("/dashboard/home")}
                 className="w-full"
               >
-                Retour au tableau de bord
+                {t('dashboard:return_to_dashboard')}
               </Button>
             </div>
           </CardContent>

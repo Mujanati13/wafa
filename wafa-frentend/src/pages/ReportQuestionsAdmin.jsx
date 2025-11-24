@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { FileQuestion, Trash2, Check, AlertCircle, FilePenLine, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
 const ReportQuestionsAdmin = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -41,8 +43,8 @@ const ReportQuestionsAdmin = () => {
     } catch (e) {
       console.error("Error fetching reports:", e);
       console.error("Error response:", e.response);
-      setError("Échec du chargement des rapports");
-      toast.error("Erreur lors du chargement");
+      setError(t('admin:failed_load_reports'));
+      toast.error(t('common:error_loading'));
     } finally {
       setLoading(false);
     }
@@ -51,24 +53,24 @@ const ReportQuestionsAdmin = () => {
   const handleApprove = async (id) => {
     try {
       await api.patch(`/report-questions/${id}/approve`);
-      toast.success("Rapport approuvé");
+      toast.success(t('admin:report_approved'));
       fetchReports();
     } catch (error) {
       console.error("Error approving report:", error);
-      toast.error("Échec d'approbation");
+      toast.error(t('admin:failed_approval'));
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce rapport ?")) return;
+    if (!confirm(t('admin:confirm_delete_report'))) return;
     
     try {
       await api.delete(`/report-questions/${id}`);
-      toast.success("Rapport supprimé");
+      toast.success(t('admin:report_deleted'));
       fetchReports();
     } catch (error) {
       console.error("Error deleting report:", error);
-      toast.error("Échec de suppression");
+      toast.error(t('admin:failed_delete'));
     }
   };
 

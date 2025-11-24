@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ const PlanModal = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation(["admin"]);
   const [form, setForm] = React.useState({
     name: "",
     description: "",
@@ -51,14 +53,14 @@ const PlanModal = ({
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">{title}</h1>
           <p className="text-sm text-gray-600">
-            Define plan details, pricing, and features
+            {t("admin:plan_details")}
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="plan-name">Plan title</Label>
+              <Label htmlFor="plan-name">{t("admin:plan_title")}</Label>
               <Input
                 id="plan-name"
                 value={form.name}
@@ -68,7 +70,7 @@ const PlanModal = ({
               />
             </div>
             <div>
-              <Label htmlFor="plan-desc">Description</Label>
+              <Label htmlFor="plan-desc">{t("admin:description")}</Label>
               <textarea
                 id="plan-desc"
                 value={form.description}
@@ -82,7 +84,7 @@ const PlanModal = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="old-price">Old price</Label>
+              <Label htmlFor="old-price">{t("admin:old_price")}</Label>
               <Input
                 id="old-price"
                 type="number"
@@ -94,7 +96,7 @@ const PlanModal = ({
               />
             </div>
             <div>
-              <Label htmlFor="price">New price</Label>
+              <Label htmlFor="price">{t("admin:new_price")}</Label>
               <Input
                 id="price"
                 type="number"
@@ -108,11 +110,11 @@ const PlanModal = ({
           </div>
 
           <div>
-            <Label htmlFor="features-input">Features</Label>
+            <Label htmlFor="features-input">{t("admin:features")}</Label>
             <div className="flex gap-2">
               <Input
                 id="features-input"
-                placeholder="Add a feature and press Enter or click Add"
+                placeholder={t("admin:features_placeholder")}
                 value={form.featuresInput}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, featuresInput: e.target.value }))
@@ -145,7 +147,7 @@ const PlanModal = ({
                   }));
                 }}
               >
-                Add
+                {t("admin:add")}
               </Button>
             </div>
 
@@ -182,14 +184,14 @@ const PlanModal = ({
               className="bg-gray-200 hover:bg-gray-300 text-gray-900"
               onClick={onCancel}
             >
-              Cancel
+              {t("admin:cancel")}
             </Button>
             <Button
               type="button"
               className="bg-gray-900 hover:bg-black text-white"
               onClick={() => onSave(form)}
             >
-              Save
+              {t("admin:save")}
             </Button>
           </div>
         </div>

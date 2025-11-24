@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Trash2, Search, Pin, NotebookPen, Plus, Calendar, Clock, FileText, Zap } from "lucide-react";
 import axios from "axios";
 import { debounce } from "lodash";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const NotesPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,7 +39,7 @@ const NotesPage = () => {
       setNotes(data.notes || []);
     } catch (error) {
       console.error("Error fetching notes:", error);
-      toast.error("Erreur lors du chargement des notes");
+      toast.error(t('dashboard:error_loading_notes'));
     } finally {
       setLoading(false);
     }
@@ -53,10 +55,10 @@ const NotesPage = () => {
           { content },
           { withCredentials: true }
         );
-        toast.success("Note sauvegardée automatiquement");
+        toast.success(t('dashboard:note_auto_saved'));
       } catch (error) {
         console.error("Auto-save failed:", error);
-        toast.error("Échec de la sauvegarde automatique");
+        toast.error(t('dashboard:auto_save_failed'));
       } finally {
         setTimeout(() => setAutoSaving(false), 500);
       }
@@ -84,7 +86,7 @@ const NotesPage = () => {
   };
 
   const deleteNote = async (noteId) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette note?")) return;
+    if (!confirm(t('dashboard:confirm_delete_note'))) return;
     
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/notes/${noteId}`, {
@@ -95,10 +97,10 @@ const NotesPage = () => {
         setSelectedNote(null);
         setEditContent("");
       }
-      toast.success("Note supprimée avec succès");
+      toast.success(t('dashboard:note_deleted_success'));
     } catch (error) {
       console.error("Delete failed:", error);
-      toast.error("Échec de la suppression de la note");
+      toast.error(t('dashboard:note_delete_failed'));
     }
   };
 
@@ -130,15 +132,15 @@ const NotesPage = () => {
     try {
       const { data } = await axios.post(
         `${import.meta.env.VITE_API_URL}/notes`,
-        { content: "Nouvelle note...", questionId: "default" },
+        { content: t('dashboard:new_note_placeholder'), questionId: "default" },
         { withCredentials: true }
       );
       setNotes((prevNotes) => [data.note, ...prevNotes]);
       selectNote(data.note);
-      toast.success("Nouvelle note créée");
+      toast.success(t('dashboard:new_note_created'));
     } catch (error) {
       console.error("Create note failed:", error);
-      toast.error("Échec de la création de la note");
+      toast.error(t('dashboard:note_create_failed'));
     }
   };
 
@@ -160,13 +162,13 @@ const NotesPage = () => {
                 <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
                   <NotebookPen className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900">Mes Notes</h1>
+                <h1 className="text-3xl font-bold text-slate-900">{t('dashboard:my_notes')}</h1>
               </div>
-              <p className="text-slate-500">Organisez et gérez vos notes personnelles</p>
+              <p className="text-slate-500">{t('dashboard:organize_manage_notes')}</p>
             </div>
             <Button onClick={createNewNote} className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
               <Plus className="h-4 w-4" />
-              Nouvelle note
+              {t('dashboard:new_note')}
             </Button>
           </div>
         </div>
@@ -177,7 +179,7 @@ const NotesPage = () => {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 font-medium">Total des notes</span>
+                  <span className="text-sm text-slate-600 font-medium">{t('dashboard:total_notes')}</span>
                   <NotebookPen className="h-4 w-4 text-blue-600" />
                 </div>
                 <p className="text-3xl font-bold text-slate-900">{notes.length}</p>
@@ -188,7 +190,7 @@ const NotesPage = () => {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 font-medium">Épinglées</span>
+                  <span className="text-sm text-slate-600 font-medium">{t('dashboard:pinned')}</span>
                   <Pin className="h-4 w-4 text-yellow-500" />
                 </div>
                 <p className="text-3xl font-bold text-slate-900">{pinnedNotes.length}</p>
@@ -199,7 +201,7 @@ const NotesPage = () => {
             <CardContent className="pt-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600 font-medium">En cours d'édition</span>
+                  <span className="text-sm text-slate-600 font-medium">{t('dashboard:currently_editing')}</span>
                   <Zap className="h-4 w-4 text-green-500" />
                 </div>
                 <p className="text-3xl font-bold text-slate-900">{selectedNote ? editContent.length : 0}</p>
@@ -214,8 +216,8 @@ const NotesPage = () => {
           <div className="lg:col-span-1">
             <Card className="h-fit border-slate-200">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Vos notes</CardTitle>
-                <CardDescription>Sélectionnez une note pour l'éditer</CardDescription>
+                <CardTitle className="text-lg">{t('dashboard:your_notes')}</CardTitle>
+                <CardDescription>{t('dashboard:select_note_to_edit')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Search */}

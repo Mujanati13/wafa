@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +25,7 @@ const studentYears = ["1st", "2nd", "3rd", "4th"];
 const periods = ["All", "Monthly", "Daily"];
 
 const Leaderboard = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [filter, setFilter] = useState("All");
   const [year, setYear] = useState("All");
   const [studentYear, setStudentYear] = useState("All");
@@ -57,9 +59,9 @@ const Leaderboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Leaderboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('dashboard:leaderboard')}</h1>
             <p className="text-gray-600 mt-1">
-              View top students and their achievements
+              {t('dashboard:view_top_students')}
             </p>
           </div>
         </div>
@@ -68,7 +70,7 @@ const Leaderboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-sm font-medium text-gray-600">{t('dashboard:total_users')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
@@ -77,7 +79,7 @@ const Leaderboard = () => {
           </div>
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Top Points</p>
+              <p className="text-sm font-medium text-gray-600">{t('dashboard:top_points')}</p>
               <p className="text-2xl font-bold text-gray-900">{topPoints}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
@@ -86,7 +88,7 @@ const Leaderboard = () => {
           </div>
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg. Points</p>
+              <p className="text-sm font-medium text-gray-600">{t('dashboard:avg_points')}</p>
               <p className="text-2xl font-bold text-gray-900">{avgPoints}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
@@ -102,7 +104,7 @@ const Leaderboard = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by name or username..."
+                placeholder={t('dashboard:search_by_name')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -125,7 +127,7 @@ const Leaderboard = () => {
                 onChange={(e) => setYear(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50"
               >
-                <option value="All">All Years</option>
+                <option value="All">{t('dashboard:all_years')}</option>
                 {years.map((y) => (
                   <option key={y} value={y}>
                     {y}
@@ -137,7 +139,7 @@ const Leaderboard = () => {
                 onChange={(e) => setStudentYear(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50"
               >
-                <option value="All">All Student Years</option>
+                <option value="All">{t('dashboard:all_student_years')}</option>
                 {studentYears.map((sy) => (
                   <option key={sy} value={sy}>
                     {sy}
@@ -145,7 +147,7 @@ const Leaderboard = () => {
                 ))}
               </select>
               <button className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 flex items-center gap-2 text-gray-600">
-                <Filter className="w-4 h-4" /> Filters
+                <Filter className="w-4 h-4" /> {t('dashboard:filters')}
               </button>
             </div>
           </div>
@@ -158,20 +160,20 @@ const Leaderboard = () => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Id
+                    {t('dashboard:id')}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    User Name
+                    {t('dashboard:user_name')}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Name
+                    {t('dashboard:name')}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Points
+                    {t('dashboard:points')}
                   </th>
                   
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    Rank
+                    {t('dashboard:rank')}
                   </th>
                 </tr>
               </thead>
@@ -179,7 +181,7 @@ const Leaderboard = () => {
                 {filteredData.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-gray-500">
-                      No data found.
+                      {t('dashboard:no_data_found')}
                     </td>
                   </tr>
                 ) : (

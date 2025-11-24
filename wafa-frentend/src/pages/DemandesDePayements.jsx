@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 import { PageHeader } from "@/components/shared";
 
 const DemandesDePayements = () => {
+  const { t } = useTranslation(['admin', 'common']);
   // Sample data for demonstration
   const demandes = [
     {

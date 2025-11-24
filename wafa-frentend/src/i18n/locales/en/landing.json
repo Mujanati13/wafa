@@ -151,5 +151,9 @@
   
   "footer_copyright": "© 2024 WAFA. All rights reserved.",
   "footer_terms": "Terms of Service",
-  "footer_privacy": "Privacy Policy"
+  "footer_privacy": "Privacy Policy",
+  "message_sent_success": "Message sent successfully!",
+  "will_respond_soon": "We will respond as soon as possible.",
+  "contact_us": "Contact Us",
+  "contact_description": "Have a question? A technical issue? Our team is here to help. Send us a message and we will respond as soon as possible."
 }

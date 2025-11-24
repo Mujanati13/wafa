@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { PageHeader } from "@/components/shared";
 import NewExamCourseForm from "@/components/admin/NewExamCourseForm";
 
 const ExamCourses = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddCourseForm, setShowAddCourseForm] = useState(false);
@@ -100,7 +102,7 @@ const ExamCourses = () => {
     buttons.push(
       <Button key="prev" variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="gap-1">
         <ChevronLeft className="h-4 w-4" />
-        Précédent
+        {t('common:previous')}
       </Button>
     );
 
@@ -114,7 +116,7 @@ const ExamCourses = () => {
 
     buttons.push(
       <Button key="next" variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="gap-1">
-        Suivant
+        {t('common:next')}
         <ChevronRight className="h-4 w-4" />
       </Button>
     );
@@ -127,7 +129,7 @@ const ExamCourses = () => {
 
   const handleAddCourse = () => {
     if (!formData.courseName || !formData.moduleName || !formData.category) {
-      alert("Veuillez remplir tous les champs obligatoires");
+      alert(t('admin:fill_required_fields'));
       return;
     }
     setShowAddCourseForm(false);
@@ -139,7 +141,7 @@ const ExamCourses = () => {
       imageUrl: "",
       helpText: "",
     });
-    alert("Cours ajouté avec succès");
+    alert(t('admin:course_added_success'));
   };
 
   const handleFormChange = (field, value) => {
@@ -157,8 +159,8 @@ const ExamCourses = () => {
           className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div>
-            <h2 className="text-2xl font-bold text-black mb-1">Répertoire des Cours</h2>
-            <p className="text-gray-600">Total: <span className="font-semibold text-black">{filteredCourses.length}</span> cours</p>
+            <h2 className="text-2xl font-bold text-black mb-1">{t('admin:course_directory')}</h2>
+            <p className="text-gray-600">{t('admin:total')}: <span className="font-semibold text-black">{filteredCourses.length}</span> {t('admin:courses')}</p>
           </div>
           <Button
             size="lg"
@@ -166,7 +168,7 @@ const ExamCourses = () => {
             onClick={() => setShowAddCourseForm(true)}
           >
             <Plus className="w-5 h-5 mr-2" />
-            Créer Cours
+            {t('admin:create_course')}
           </Button>
         </motion.div>
 
@@ -174,22 +176,22 @@ const ExamCourses = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
-              Répertoire des Cours
+              {t('admin:course_directory')}
             </CardTitle>
-            <CardDescription>Rechercher et gérer les cours d'examens</CardDescription>
+            <CardDescription>{t('admin:search_manage_exam_courses')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input type="text" placeholder="Rechercher par nom, module ou catégorie..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                <Input type="text" placeholder={t('admin:search_by_name_module_category')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les modules" />
+                  <SelectValue placeholder={t('admin:all_modules')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les modules</SelectItem>
+                  <SelectItem value="all">{t('admin:all_modules')}</SelectItem>
                   {uniqueModules.map((module) => (
                     <SelectItem key={module} value={module}>
                       {module}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { Menu, Sun, Moon, Bell, Search, X, BookOpen, FileText, Trophy, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +20,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NotificationDropdown from "./NotificationDropdown";
 import { userService } from "@/services/userService";
+import LanguageSwitcher from "@/components/shared/LanguageSwitcher";
 
 const TopBar = ({ onMenuClick, sidebarOpen }) => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -54,15 +57,15 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
   // Define searchable items
   const searchableItems = [
     // Pages
-    { type: 'page', title: 'Tableau de bord', icon: BookOpen, path: '/dashboard/home', description: 'Vue d\'ensemble' },
-    { type: 'page', title: 'Examens', icon: FileText, path: '/dashboard/exams', description: 'Pratiquer les examens' },
-    { type: 'page', title: 'Résultats', icon: Trophy, path: '/dashboard/results', description: 'Voir vos résultats' },
-    { type: 'page', title: 'Classement', icon: Trophy, path: '/dashboard/leaderboard', description: 'Tableau des scores' },
-    { type: 'page', title: 'Profil', icon: User, path: '/dashboard/profile', description: 'Gérer votre profil' },
-    { type: 'page', title: 'Paramètres', icon: User, path: '/dashboard/settings', description: 'Configuration' },
-    { type: 'page', title: 'Abonnement', icon: User, path: '/dashboard/subscription', description: 'Gérer l\'abonnement' },
-    { type: 'page', title: 'Mes playlists', icon: BookOpen, path: '/dashboard/playlist', description: 'Vos playlists' },
-    { type: 'page', title: 'Mes notes', icon: FileText, path: '/dashboard/note', description: 'Vos notes' },
+    { type: 'page', title: t('dashboard:dashboard'), icon: BookOpen, path: '/dashboard/home', description: t('dashboard:dashboard') },
+    { type: 'page', title: t('dashboard:exams'), icon: FileText, path: '/dashboard/exams', description: t('dashboard:exams') },
+    { type: 'page', title: t('dashboard:results'), icon: Trophy, path: '/dashboard/results', description: t('dashboard:results') },
+    { type: 'page', title: t('dashboard:leaderboard'), icon: Trophy, path: '/dashboard/leaderboard', description: t('dashboard:leaderboard') },
+    { type: 'page', title: t('dashboard:profile'), icon: User, path: '/dashboard/profile', description: t('dashboard:profile') },
+    { type: 'page', title: t('dashboard:settings'), icon: User, path: '/dashboard/settings', description: t('dashboard:settings') },
+    { type: 'page', title: t('dashboard:subscription'), icon: User, path: '/dashboard/subscription', description: t('dashboard:subscription') },
+    { type: 'page', title: t('dashboard:my_playlists'), icon: BookOpen, path: '/dashboard/playlist', description: t('dashboard:my_playlists') },
+    { type: 'page', title: t('dashboard:my_notes'), icon: FileText, path: '/dashboard/note', description: t('dashboard:my_notes') },
   ];
 
   // Get modules from localStorage
@@ -156,7 +159,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
               <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
               <Input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder={t('common:search')}
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
@@ -208,7 +211,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                               )}
                             </div>
                             <Badge variant="secondary" className="text-xs flex-shrink-0">
-                              {item.type === 'module' ? 'Module' : 'Page'}
+                              {item.type === 'module' ? t('dashboard:module') : t('dashboard:page')}
                             </Badge>
                           </button>
                         );
@@ -229,8 +232,8 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                 <Card className="bg-white border border-slate-200 shadow-2xl">
                   <CardContent className="p-8 text-center">
                     <Search className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-slate-900 mb-1">Aucun résultat trouvé</p>
-                    <p className="text-xs text-slate-500">Essayez de chercher avec d'autres mots-clés</p>
+                    <p className="text-sm font-medium text-slate-900 mb-1">{t('common:no_results')}</p>
+                    <p className="text-xs text-slate-500">{t('common:try_different_keywords')}</p>
                   </CardContent>
                 </Card>
               </div>,
@@ -241,6 +244,9 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Theme Toggle */}
           <Button
             variant="ghost"
@@ -273,7 +279,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
             <DropdownMenuContent className="w-56 max-h-[400px] overflow-y-auto" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name || 'Utilisateur'}</p>
+                  <p className="text-sm font-medium leading-none">{user?.name || t('common:user')}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user?.email || ''}
                   </p>
@@ -281,17 +287,17 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/dashboard/profile")}>
-                Profile
+                {t('dashboard:profile')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
-                Settings
+                {t('dashboard:settings')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/dashboard/subscription")}>
-                Subscription
+                {t('dashboard:subscription')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                Log out
+                {t('common:logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

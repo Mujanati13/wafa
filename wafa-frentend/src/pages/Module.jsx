@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import EditModuleForm from "@/components/admin/EditModuleForm";
 import { api } from "@/lib/utils";
 
 const Module = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewModuleForm, setShowNewModuleForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,8 +50,8 @@ const Module = () => {
       setModules(list);
     } catch (e) {
       console.error("Error fetching modules:", e);
-      setError("Échec du chargement des modules");
-      toast.error("Erreur lors du chargement");
+      setError(t('admin:failed_load_modules'));
+      toast.error(t('common:error_loading'));
     } finally {
       setLoading(false);
     }
@@ -66,15 +68,15 @@ const Module = () => {
   };
 
   const handleDeleteModule = async (id) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce module ?")) return;
+    if (!confirm(t('admin:confirm_delete_module'))) return;
 
     try {
       await api.delete(`/modules/${id}`);
-      toast.success("Module supprimé");
+      toast.success(t('admin:module_deleted'));
       fetchModules();
     } catch (error) {
       console.error("Error deleting module:", error);
-      toast.error("Échec de suppression");
+      toast.error(t('admin:failed_delete'));
     }
   };
 
@@ -123,7 +125,7 @@ const Module = () => {
         className="gap-1"
       >
         <ChevronLeft className="h-4 w-4" />
-        Précédent
+        {t('common:previous')}
       </Button>
     );
 
@@ -150,7 +152,7 @@ const Module = () => {
         disabled={currentPage === totalPages}
         className="gap-1"
       >
-        Suivant
+        {t('common:next')}
         <ChevronRight className="h-4 w-4" />
       </Button>
     );
@@ -170,11 +172,11 @@ const Module = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title="Modules" description="Gérer les modules par semestre" />
+          <PageHeader title={t('admin:modules')} description={t('admin:manage_modules_by_semester')} />
           
           <Button onClick={() => setShowNewModuleForm(true)} className="gap-2">
             <Plus className="h-4 w-4" />
-            Ajouter Module
+            {t('admin:add_module')}
           </Button>
         </div>
 
@@ -182,9 +184,9 @@ const Module = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Répertoire des Modules
+              {t('admin:module_directory')}
             </CardTitle>
-            <CardDescription>Rechercher et gérer les modules</CardDescription>
+            <CardDescription>{t('admin:search_manage_modules')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,7 +194,7 @@ const Module = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   type="text"
-                  placeholder="Rechercher par nom, semestre ou ID..."
+                  placeholder={t('admin:search_by_name_semester_id')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -200,10 +202,10 @@ const Module = () => {
               </div>
               <Select value={semesterFilter} onValueChange={setSemesterFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les semestres" />
+                  <SelectValue placeholder={t('admin:all_semesters')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les semestres</SelectItem>
+                  <SelectItem value="all">{t('admin:all_semesters')}</SelectItem>
                   {Array.from({ length: 10 }, (_, i) => `S${i + 1}`)
                     .reverse()
                     .map((s) => (
@@ -226,19 +228,19 @@ const Module = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Semestre</TableHead>
-                    <TableHead>Module</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Questions</TableHead>
-                    <TableHead>Texte d'aide</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin:semester')}</TableHead>
+                    <TableHead>{t('admin:module')}</TableHead>
+                    <TableHead>{t('admin:image')}</TableHead>
+                    <TableHead>{t('admin:questions')}</TableHead>
+                    <TableHead>{t('admin:help_text')}</TableHead>
+                    <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                        Aucun module trouvé
+                        {t('admin:no_modules_found')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -291,8 +293,11 @@ const Module = () => {
           </CardContent>
           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-slate-50/50">
             <div className="text-sm text-muted-foreground">
-              Affichage de {filteredModules.length === 0 ? 0 : startIndex + 1} à{" "}
-              {Math.min(endIndex, filteredModules.length)} sur {filteredModules.length} résultats
+              {t('admin:showing_results', {
+                start: filteredModules.length === 0 ? 0 : startIndex + 1,
+                end: Math.min(endIndex, filteredModules.length),
+                total: filteredModules.length
+              })}
             </div>
             {renderPagination()}
           </CardFooter>

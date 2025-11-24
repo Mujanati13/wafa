@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 import { Lock, Sparkles, TrendingUp, Award, Clock } from "lucide-react";
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader, StatCard } from "@/components/shared";
 
 const Dashboard = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
   const [semester, setSemester] = useState("S1");
   const [coursesData, setCoursesData] = useState(null);
@@ -85,19 +87,19 @@ const Dashboard = () => {
                   <Sparkles className="h-5 w-5 text-yellow-500" />
                   <h1 className="text-2xl md:text-3xl font-bold">
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-teal-500 to-blue-600">
-                      Bienvenue
+                      {t('dashboard:welcome')}
                     </span>
                     <span className="text-primary ml-2">{user.name}</span>
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm md:text-base">
-                  Bienvenue dans votre interface WAFA. Si vous avez des questions,{" "}
+                  {t('dashboard:welcome_message')}{" "}
                   <Button
                     variant="link"
                     className="p-0 h-auto text-primary"
                     onClick={() => navigate("/contact")}
                   >
-                    contactez-nous
+                    {t('common:contact')}
                   </Button>
                   .
                 </p>
@@ -146,34 +148,34 @@ const Dashboard = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              title="Progression totale"
+              title={t('dashboard:total_progress')}
               value={`${stats.totalProgress}%`}
               icon={<TrendingUp className="h-4 w-4" />}
               trend="up"
               trendValue="+12%"
-              description="ce mois"
+              description={t('dashboard:this_month')}
             />
             <StatCard
-              title="Questions répondues"
+              title={t('dashboard:questions_answered')}
               value={stats.questionsAnswered}
               icon={<Award className="h-4 w-4" />}
-              description="au total"
+              description={t('dashboard:in_total')}
             />
             <StatCard
-              title="Série actuelle"
-              value={`${stats.currentStreak} jours`}
+              title={t('dashboard:current_streak')}
+              value={`${stats.currentStreak} ${t('dashboard:days')}`}
               icon={<Clock className="h-4 w-4" />}
               trend="up"
-              trendValue="Record!"
-              description="Continuez comme ça"
+              trendValue={t('dashboard:record')}
+              description={t('dashboard:keep_it_up')}
             />
             <StatCard
-              title="Classement"
+              title={t('dashboard:ranking')}
               value={`#${stats.rank}`}
               icon={<Award className="h-4 w-4" />}
               trend="up"
               trendValue="+3"
-              description="cette semaine"
+              description={t('dashboard:this_week')}
             />
           </div>
         )}
@@ -182,7 +184,7 @@ const Dashboard = () => {
         <div className="space-y-4">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
-              Modules <Badge variant="outline">{semester}</Badge>
+              {t('dashboard:modules')} <Badge variant="outline">{semester}</Badge>
             </h2>
             <div className="h-1 w-12 bg-primary mt-2 rounded-full" />
           </div>

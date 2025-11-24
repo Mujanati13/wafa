@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,10 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import axios from "axios";
 
 const PaymentSuccess = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("processing"); // processing, success, error
-  const [message, setMessage] = useState("Vérification du paiement...");
+  const [message, setMessage] = useState(t('dashboard:verifying_payment'));
 
   useEffect(() => {
     const capturePayment = async () => {
@@ -21,7 +23,7 @@ const PaymentSuccess = () => {
 
       if (!token) {
         setStatus("error");
-        setMessage("ID de commande manquant");
+        setMessage(t('dashboard:missing_order_id'));
         return;
       }
 
@@ -34,7 +36,7 @@ const PaymentSuccess = () => {
 
         if (data.success) {
           setStatus("success");
-          setMessage("Paiement réussi! Votre abonnement Premium est maintenant actif.");
+          setMessage(t('dashboard:payment_success_premium_active'));
 
           // Redirect to dashboard after 3 seconds
           setTimeout(() => {
@@ -46,7 +48,7 @@ const PaymentSuccess = () => {
         setStatus("error");
         setMessage(
           error.response?.data?.message ||
-            "Échec de la validation du paiement. Veuillez contacter le support."
+            t('dashboard:payment_validation_failed')
         );
       }
     };
@@ -69,7 +71,7 @@ const PaymentSuccess = () => {
                   <Loader2 className="h-16 w-16 text-blue-500 animate-spin" />
                 </div>
                 <h2 className="text-2xl font-bold">
-                  Traitement du paiement
+                  {t('dashboard:processing_payment')}
                 </h2>
                 <p className="text-muted-foreground">{message}</p>
               </>
@@ -88,7 +90,7 @@ const PaymentSuccess = () => {
                   </div>
                 </motion.div>
                 <h2 className="text-2xl font-bold">
-                  Paiement réussi!
+                  {t('dashboard:payment_success')}
                 </h2>
                 <Alert className="bg-green-50 border-green-200">
                   <AlertDescription className="text-green-800">
@@ -98,7 +100,7 @@ const PaymentSuccess = () => {
                 <div className="space-y-2">
                   <Progress value={100} className="h-2" />
                   <p className="text-sm text-muted-foreground">
-                    Redirection vers le tableau de bord...
+                    {t('dashboard:redirecting_to_dashboard')}
                   </p>
                 </div>
               </>
@@ -112,7 +114,7 @@ const PaymentSuccess = () => {
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold">
-                  Erreur de paiement
+                  {t('dashboard:payment_error')}
                 </h2>
                 <Alert variant="destructive">
                   <AlertDescription>{message}</AlertDescription>
@@ -121,7 +123,7 @@ const PaymentSuccess = () => {
                   onClick={() => navigate("/subscription")}
                   className="w-full"
                 >
-                  Réessayer
+                  {t('dashboard:try_again')}
                 </Button>
               </>
             )}

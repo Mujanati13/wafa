@@ -48,5 +48,22 @@
   "ok": "OK",
   "submit": "Submit",
   "skip": "Skip",
-  "continue": "Continue"
+  "continue": "Continue",
+  "back_to_home": "Back to home",
+  "no_results": "No results found",
+  "try_different_keywords": "Try searching with different keywords",
+  "user": "User",
+  "all": "All",
+  "export": "Export",
+  "previous": "Previous",
+  "next": "Next",
+  "error_loading": "Error loading",
+  "error": "Error",
+  "error_occurred_try_again": "An error occurred. Please try again.",
+  "nav_home": "Home",
+  "nav_about": "About",
+  "nav_pricing": "Pricing",
+  "nav_contact": "Contact",
+  "log_in": "Log In",
+  "sign_up": "Sign Up"
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Mail, Clock, Send, CheckCircle2, User, AtSign } from 'lucide-react';
 import axios from 'axios';
@@ -11,6 +12,7 @@ import { AlertMessage } from '@/components/shared';
 import { toast } from 'sonner';
 
 const ContactPage = () => {
+  const { t } = useTranslation(['common', 'landing']);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,8 +44,8 @@ const ContactPage = () => {
       if (response.data.success) {
         setIsSubmitted(true);
         setFormData({ name: '', email: '', subject: '', message: '' });
-        toast.success('Message envoyé avec succès!', {
-          description: 'Nous vous répondrons dans les plus brefs délais.',
+        toast.success(t('landing:message_sent_success'), {
+          description: t('landing:will_respond_soon'),
         });
         
         // Reset success message after 5 seconds
@@ -52,9 +54,9 @@ const ContactPage = () => {
         }, 5000);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.';
+      const errorMsg = err.response?.data?.message || t('common:error_occurred_try_again');
       setError(errorMsg);
-      toast.error('Erreur', {
+      toast.error(t('common:error'), {
         description: errorMsg,
       });
     } finally {
@@ -72,11 +74,10 @@ const ContactPage = () => {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Contactez-nous
+            {t('landing:contact_us')}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Une question ? Un problème technique ? Notre équipe est là pour vous aider. 
-            Envoyez-nous un message et nous vous répondrons dans les plus brefs délais.
+            {t('landing:contact_description')}
           </p>
         </motion.div>
 

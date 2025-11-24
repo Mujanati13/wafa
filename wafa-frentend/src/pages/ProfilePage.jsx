@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { 
   User, Mail, Phone, MapPin, Calendar, GraduationCap, 
   BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 import { userService } from '@/services/userService';
 
 const ProfilePage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -72,7 +74,7 @@ const ProfilePage = () => {
         setEditData(mappedData);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
-        toast.error('Impossible de charger votre profil');
+        toast.error(t('dashboard:failed_to_load_profile'));
       } finally {
         setLoading(false);
       }
@@ -105,22 +107,22 @@ const ProfilePage = () => {
   // Calculate stats from user data
   const stats = [
     { 
-      label: 'Examens Passés', 
+      label: t('dashboard:exams_taken'), 
       value: userStats?.examsCompleted || 0, 
       icon: <BookOpen className="h-4 w-4" /> 
     },
     { 
-      label: 'Moyenne Générale', 
+      label: t('dashboard:overall_average'), 
       value: userStats?.averageScore ? `${userStats.averageScore.toFixed(1)}/20` : '0/20', 
       icon: <Star className="h-4 w-4" /> 
     },
     { 
-      label: 'Heures d\'Étude', 
+      label: t('dashboard:study_hours'), 
       value: userStats?.studyHours ? `${userStats.studyHours}h` : '0h', 
       icon: <Clock className="h-4 w-4" /> 
     },
     { 
-      label: 'Classement', 
+      label: t('dashboard:ranking'), 
       value: userStats?.rank || 'N/A', 
       icon: <Trophy className="h-4 w-4" /> 
     }
@@ -147,10 +149,10 @@ const ProfilePage = () => {
       setUser(updatedUser);
       setProfileData({ ...editData });
       setIsEditing(false);
-      toast.success('Profil mis à jour avec succès!');
+      toast.success(t('dashboard:profile_updated_success'));
     } catch (error) {
       console.error('Failed to update profile:', error);
-      toast.error('Échec de la mise à jour du profil');
+      toast.error(t('dashboard:failed_to_update_profile'));
     } finally {
       setLoading(false);
     }
@@ -171,7 +173,7 @@ const ProfilePage = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600">Chargement de votre profil...</p>
+          <p className="text-slate-600">{t('dashboard:loading_profile')}</p>
         </div>
       </div>
     );
@@ -181,8 +183,8 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <PageHeader
-          title="Mon Profil"
-          description="Gérez vos informations personnelles et suivez vos accomplissements"
+          title={t('dashboard:my_profile')}
+          description={t('dashboard:manage_info_track_achievements')}
         />
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -191,21 +193,21 @@ const ProfilePage = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Informations Personnelles</CardTitle>
+                  <CardTitle>{t('dashboard:personal_information')}</CardTitle>
                   {!isEditing ? (
                     <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
                       <Edit className="h-4 w-4" />
-                      Modifier
+                      {t('common:edit')}
                     </Button>
                   ) : (
                     <div className="flex gap-2">
                       <Button onClick={handleSave} className="gap-2">
                         <Save className="h-4 w-4" />
-                        Enregistrer
+                        {t('common:save')}
                       </Button>
                       <Button onClick={handleCancel} variant="outline" className="gap-2">
                         <X className="h-4 w-4" />
-                        Annuler
+                        {t('common:cancel')}
                       </Button>
                     </div>
                   )}
@@ -214,14 +216,14 @@ const ProfilePage = () => {
               <CardContent>
                 <Tabs defaultValue="personal" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="personal">Personnel</TabsTrigger>
-                    <TabsTrigger value="academic">Académique</TabsTrigger>
+                    <TabsTrigger value="personal">{t('dashboard:personal')}</TabsTrigger>
+                    <TabsTrigger value="academic">{t('dashboard:academic')}</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="personal" className="space-y-4 mt-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="firstName">Prénom</Label>
+                        <Label htmlFor="firstName">{t('dashboard:first_name')}</Label>
                         <Input
                           id="firstName"
                           value={isEditing ? editData.firstName : profileData.firstName}
@@ -230,7 +232,7 @@ const ProfilePage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="lastName">Nom</Label>
+                        <Label htmlFor="lastName">{t('dashboard:last_name')}</Label>
                         <Input
                           id="lastName"
                           value={isEditing ? editData.lastName : profileData.lastName}
@@ -241,7 +243,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t('common:email')}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -253,7 +255,7 @@ const ProfilePage = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Téléphone</Label>
+                        <Label htmlFor="phone">{t('dashboard:phone')}</Label>
                         <Input
                           id="phone"
                           value={isEditing ? editData.phone : profileData.phone}
@@ -262,7 +264,7 @@ const ProfilePage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="birthDate">Date de naissance</Label>
+                        <Label htmlFor="birthDate">{t('dashboard:birth_date')}</Label>
                         <Input
                           id="birthDate"
                           type="date"
@@ -274,7 +276,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="location">Localisation</Label>
+                      <Label htmlFor="location">{t('dashboard:location')}</Label>
                       <Input
                         id="location"
                         value={isEditing ? editData.location : profileData.location}
@@ -284,7 +286,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="bio">Biographie</Label>
+                      <Label htmlFor="bio">{t('dashboard:bio')}</Label>
                       <Textarea
                         id="bio"
                         value={isEditing ? editData.bio : profileData.bio}
@@ -297,7 +299,7 @@ const ProfilePage = () => {
 
                   <TabsContent value="academic" className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="university">Université</Label>
+                      <Label htmlFor="university">{t('dashboard:university')}</Label>
                       <Input
                         id="university"
                         value={isEditing ? editData.university : profileData.university}
@@ -307,7 +309,7 @@ const ProfilePage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="faculty">Faculté</Label>
+                      <Label htmlFor="faculty">{t('dashboard:faculty')}</Label>
                       <Input
                         id="faculty"
                         value={isEditing ? editData.faculty : profileData.faculty}
@@ -318,7 +320,7 @@ const ProfilePage = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="year">Année</Label>
+                        <Label htmlFor="year">{t('dashboard:year')}</Label>
                         <Input
                           id="year"
                           value={isEditing ? editData.year : profileData.year}
@@ -327,7 +329,7 @@ const ProfilePage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="specialization">Spécialisation</Label>
+                        <Label htmlFor="specialization">{t('dashboard:specialization')}</Label>
                         <Input
                           id="specialization"
                           value={isEditing ? editData.specialization : profileData.specialization}
@@ -344,8 +346,8 @@ const ProfilePage = () => {
             {/* Achievements */}
             <Card>
               <CardHeader>
-                <CardTitle>Accomplissements</CardTitle>
-                <CardDescription>Vos badges et récompenses</CardDescription>
+                <CardTitle>{t('dashboard:achievements')}</CardTitle>
+                <CardDescription>{t('dashboard:your_badges_rewards')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {achievements.length > 0 ? (
@@ -376,8 +378,8 @@ const ProfilePage = () => {
                 ) : (
                   <div className="text-center py-8">
                     <Trophy className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500">Aucun accomplissement pour le moment</p>
-                    <p className="text-sm text-slate-400 mt-1">Continuez à étudier pour débloquer des badges!</p>
+                    <p className="text-slate-500">{t('dashboard:no_achievements_yet')}</p>
+                    <p className="text-sm text-slate-400 mt-1">{t('dashboard:keep_studying_unlock_badges')}</p>
                   </div>
                 )}
               </CardContent>
@@ -419,7 +421,7 @@ const ProfilePage = () => {
             {/* Stats Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Statistiques</CardTitle>
+                <CardTitle className="text-base">{t('dashboard:statistics')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {stats.map((stat, index) => (

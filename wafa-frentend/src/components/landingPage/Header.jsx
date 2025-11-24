@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import logo from '@/assets/logo.png';
 
 const Header = () => {
-  const { t } = useTranslation('landing');
+  const { t } = useTranslation(['common', 'landing']);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -22,10 +22,10 @@ const Header = () => {
   }, []);
 
   const navItems = [
-    { label: t('nav_home'), href: '#accueil' },
-    { label: t('nav_about'), href: '#apropos' },
-    { label: t('nav_pricing'), href: '#tarifs' },
-    { label: t('nav_contact'), href: '#contact' }
+    { label: t('common:nav_home'), href: '#accueil' },
+    { label: t('common:nav_about'), href: '#apropos' },
+    { label: t('common:nav_pricing'), href: '#tarifs' },
+    { label: t('common:nav_contact'), href: '#contact' }
   ];
 
   return (
@@ -67,13 +67,13 @@ const Header = () => {
             <Button variant="ghost" asChild>
               <Link to="/login">
                 <LogIn className="mr-2 h-4 w-4" />
-                {t('log_in')}
+                {t('common:log_in')}
               </Link>
             </Button>
             <Button asChild className="shadow-md">
               <Link to="/register">
                 <UserPlus className="mr-2 h-4 w-4" />
-                {t('sign_up')}
+                {t('common:sign_up')}
               </Link>
             </Button>
           </div>
@@ -121,13 +121,13 @@ const Header = () => {
                 <Button variant="outline" asChild className="w-full">
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                     <LogIn className="mr-2 h-4 w-4" />
-                    {t('log_in')}
+                    {t('common:log_in')}
                   </Link>
                 </Button>
                 <Button asChild className="w-full">
                   <Link to="/register" onClick={() => setIsMenuOpen(false)}>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    {t('sign_up')}
+                    {t('common:sign_up')}
                   </Link>
                 </Button>
               </div>

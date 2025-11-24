@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Edit, Play, Album, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const PlaylistsPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,7 +36,7 @@ const PlaylistsPage = () => {
       setPlaylists(data.playlists || []);
     } catch (error) {
       console.error("Error fetching playlists:", error);
-      toast.error("Erreur lors du chargement");
+      toast.error(t('common:error_loading'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ const PlaylistsPage = () => {
   const createPlaylist = async (e) => {
     e.preventDefault();
     if (!newPlaylistName.trim()) {
-      toast.error("Le nom est requis");
+      toast.error(t('dashboard:name_required'));
       return;
     }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "react-i18next";
 
 import {
   Form,
@@ -16,22 +17,23 @@ import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import { api } from "@/lib/utils";
 
-const editModuleSchema = z.object({
-  name: z.string().min(2, "Module name is required"),
-  semester: z.string().min(1, "Select a semester"),
-  imageUrl: z
-    .string()
-    .url("Enter a valid image URL")
-    .or(z.string().length(0))
-    .transform((v) => v || ""),
-  helpText: z
-    .string()
-    .optional()
-    .transform((v) => (v == null ? "" : v)),
-});
-
 const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
+  const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const editModuleSchema = z.object({
+    name: z.string().min(2, t("admin:module_name_required")),
+    semester: z.string().min(1, t("admin:semester_required")),
+    imageUrl: z
+      .string()
+      .url(t("admin:image_url_invalid"))
+      .or(z.string().length(0))
+      .transform((v) => v || ""),
+    helpText: z
+      .string()
+      .optional()
+      .transform((v) => (v == null ? "" : v)),
+  });
 
   const form = useForm({
     resolver: zodResolver(editModuleSchema),
@@ -74,10 +76,10 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
         onModuleUpdated();
       }
 
-      alert("Module updated successfully!");
+      alert(t("admin:module_updated_success"));
     } catch (e) {
       console.error(e);
-      alert("Failed to update module");
+      alert(t("admin:failed_update_module"));
     } finally {
       setIsSubmitting(false);
     }
@@ -88,10 +90,10 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            Edit Module
+            {t("admin:edit_module")}
           </h1>
           <p className="text-sm text-gray-600">
-            Update module information and settings
+            {t("admin:update_module_subtitle")}
           </p>
         </div>
 
@@ -103,11 +105,11 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Module name
+                    {t("admin:module_name")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g. Anatomie 1"
+                      placeholder={t("admin:module_name_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -123,7 +125,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Select semester
+                    {t("admin:select_semester")}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -131,7 +133,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                     >
                       <option value="" disabled>
-                        Choose semester
+                        {t("admin:choose_semester")}
                       </option>
                       {Array.from({ length: 10 }, (_, i) => `S${i + 1}`)
                         .reverse()
@@ -153,11 +155,11 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Image URL (optional)
+                    {t("admin:image_url_optional")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="https://..."
+                      placeholder={t("admin:image_url_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -173,11 +175,11 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">
-                    Text for the "?"
+                    {t("admin:help_text_tooltip")}
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Short explanation shown in the tooltip"
+                      placeholder={t("admin:help_text_tooltip_placeholder")}
                       className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
                       {...field}
                     />
@@ -194,14 +196,14 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                 className="text-gray-700 hover:text-gray-900"
                 onClick={() => setShowEditForm(false)}
               >
-                Cancel
+                {t("admin:cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-gray-800 hover:bg-gray-900 text-white"
               >
-                {isSubmitting ? "Updating..." : "Update Module"}
+                {isSubmitting ? t("admin:saving") : t("admin:create")}
               </Button>
             </div>
           </form>

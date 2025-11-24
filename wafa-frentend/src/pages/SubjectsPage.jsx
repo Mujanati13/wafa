@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 const SubjectsPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ const SubjectsPage = () => {
         }));
 
         // Minimal categories for filters
-        const categories = [{ id: "all", name: "Tous" }];
+        const categories = [{ id: "all", name: t('common:all') }];
 
         setCourse({
           id: moduleData._id,
@@ -63,7 +65,7 @@ const SubjectsPage = () => {
         });
       } catch (error) {
         console.error(error);
-        toast.error("Erreur lors du chargement du module");
+        toast.error(t('dashboard:error_loading_module'));
       } finally {
         setIsLoading(false);
       }
@@ -108,12 +110,12 @@ const SubjectsPage = () => {
                   <BookOpen className="h-10 w-10 text-red-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Module introuvable</h3>
-                  <p className="text-muted-foreground">Ce module n'existe pas ou a été supprimé</p>
+                  <h3 className="text-lg font-semibold mb-1">{t('dashboard:module_not_found')}</h3>
+                  <p className="text-muted-foreground">{t('dashboard:module_not_exist')}</p>
                 </div>
                 <Button onClick={() => navigate(-1)} className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Retour
+                  {t('common:back')}
                 </Button>
               </div>
             </CardContent>
@@ -138,7 +140,7 @@ const SubjectsPage = () => {
           <div className="flex-1">
             <PageHeader
               title={course.name}
-              description={`${course.exams.length} examens disponibles`}
+              description={`${course.exams.length} ${t('dashboard:exams_available')}`}
             />
           </div>
         </div>
@@ -152,7 +154,7 @@ const SubjectsPage = () => {
                   <BookOpen className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Questions</p>
+                  <p className="text-sm text-muted-foreground">{t('dashboard:total_questions')}</p>
                   <p className="text-2xl font-bold">{totalQuestions}</p>
                 </div>
               </div>
@@ -166,7 +168,7 @@ const SubjectsPage = () => {
                   <GraduationCap className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Examens</p>
+                  <p className="text-sm text-muted-foreground">{t('dashboard:exams')}</p>
                   <p className="text-2xl font-bold">{course.exams.length}</p>
                 </div>
               </div>
@@ -180,7 +182,7 @@ const SubjectsPage = () => {
                   <Play className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Complétés</p>
+                  <p className="text-sm text-muted-foreground">{t('dashboard:completed')}</p>
                   <p className="text-2xl font-bold">{completedExams}</p>
                 </div>
               </div>
@@ -193,7 +195,7 @@ const SubjectsPage = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Catégorie:</span>
+                <span className="text-sm font-medium">{t('dashboard:category')}:</span>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue />
@@ -239,7 +241,7 @@ const SubjectsPage = () => {
                   {exam.progress > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progression</span>
+                        <span className="text-muted-foreground">{t('dashboard:progress')}</span>
                         <span className="font-medium">{exam.progress}%</span>
                       </div>
                       <Progress value={exam.progress} />
@@ -252,13 +254,13 @@ const SubjectsPage = () => {
                       onClick={() => handleStartExam(exam.id)}
                     >
                       <Play className="h-4 w-4" />
-                      {exam.progress > 0 ? 'Continuer' : 'Commencer'}
+                      {exam.progress > 0 ? t('dashboard:continue_exam') : t('dashboard:start')}
                     </Button>
                     {exam.progress > 0 && (
                       <Button 
                         variant="outline" 
                         size="icon"
-                        onClick={() => toast.info('Réinitialisation de la progression')}
+                        onClick={() => toast.info(t('dashboard:resetting_progress'))}
                       >
                         <RotateCcw className="h-4 w-4" />
                       </Button>
@@ -278,11 +280,11 @@ const SubjectsPage = () => {
                   <BookOpen className="h-10 w-10 text-blue-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">Aucun examen disponible</h3>
+                  <h3 className="text-lg font-semibold mb-1">{t('dashboard:no_exams_available')}</h3>
                   <p className="text-muted-foreground">
                     {selectedCategory === "all" 
-                      ? "Il n'y a pas encore d'examens dans ce module"
-                      : "Aucun examen dans cette catégorie"
+                      ? t('dashboard:no_exams_in_module')
+                      : t('dashboard:no_exams_in_category')
                     }
                   </p>
                 </div>

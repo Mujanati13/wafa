@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Loader2, Mail, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,8 +10,10 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import logo from '@/assets/logo.png';
 import { resendVerificationEmail, getCurrentUser } from '@/services/authService';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const VerifyEmail = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,7 +50,7 @@ const VerifyEmail = () => {
     const user = getCurrentUser();
     if (user?.emailVerified) {
       setStatus('success');
-      setMessage('Votre email a été vérifié avec succès!');
+      setMessage(t('auth:email_verified'));
       setTimeout(() => {
         navigate('/dashboard/home');
       }, 2000);
@@ -83,21 +86,21 @@ const VerifyEmail = () => {
       
       // Handle different error types
       if (errorData?.expired) {
-        setMessage('Le lien de vérification a expiré. Cliquez sur "Renvoyer l\'email" pour obtenir un nouveau lien.');
+        setMessage(t('auth:verification_link_expired'));
         // Store email for resend functionality
         if (errorData.email) {
           localStorage.setItem('pendingVerificationEmail', errorData.email);
         }
       } else if (errorData?.alreadyVerified) {
         setStatus('success');
-        setMessage('Votre email est déjà vérifié! Vous pouvez vous connecter maintenant.');
+        setMessage(t('auth:email_already_verified'));
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
         setMessage(
           errorData?.message || 
-          'Erreur lors de la vérification de l\'email'
+          t('auth:authentication_error')
         );
       }
     }
@@ -111,8 +114,8 @@ const VerifyEmail = () => {
       const emailToVerify = email || localStorage.getItem('pendingVerificationEmail');
       
       if (!emailToVerify) {
-        toast.error('Erreur', {
-          description: 'Email non trouvé. Veuillez vous réinscrire.',
+        toast.error(t('common:error'), {
+          description: t('auth:email_not_found_reregister'),
         });
         return;
       }
@@ -124,8 +127,8 @@ const VerifyEmail = () => {
       );
 
       if (response.data.success) {
-        toast.success('Email envoyé!', {
-          description: 'Un nouveau lien de vérification a été envoyé à votre boîte de réception.',
+        toast.success(t('auth:email_sent'), {
+          description: t('auth:new_verification_link_sent'),
           duration: 5000,
         });
         
@@ -134,9 +137,9 @@ const VerifyEmail = () => {
         setCountdown(60);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Impossible de renvoyer l\'email. Veuillez réessayer.';
+      const errorMessage = error.response?.data?.message || t('auth:cannot_resend_email');
       
-      toast.error('Erreur', {
+      toast.error(t('common:error'), {
         description: errorMessage,
       });
     } finally {
@@ -159,10 +162,13 @@ const VerifyEmail = () => {
         className="relative z-10 w-full max-w-md"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <Link to="/" className="inline-block">
             <img src={logo} alt="WAFA Logo" className="h-16 w-auto mx-auto object-contain" />
           </Link>
+        </div>
+        <div className="flex justify-center mb-4">
+          <LanguageSwitcher />
         </div>
 
         <Card className="shadow-2xl border-primary/10">
@@ -172,9 +178,9 @@ const VerifyEmail = () => {
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                   <Mail className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-bold">Vérifiez votre email</CardTitle>
+                <CardTitle className="text-2xl font-bold">{t('auth:verify_email')}</CardTitle>
                 <CardDescription className="text-base">
-                  Un email de vérification a été envoyé à<br />
+                  {t('auth:verification_email_sent')}<br />
                   <span className="font-semibold text-foreground">{email}</span>
                 </CardDescription>
               </CardHeader>
@@ -183,13 +189,13 @@ const VerifyEmail = () => {
                 <Alert className="bg-blue-50 border-blue-200">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-sm text-blue-800">
-                    Veuillez consulter votre boîte de réception et cliquer sur le lien de vérification.
+                    {t('auth:check_inbox_click_link')}
                   </AlertDescription>
                 </Alert>
 
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground text-center">
-                    Vous n'avez pas reçu l'email?
+                    {t('auth:didnt_receive_email')}
                   </p>
                   
                   <div className="space-y-2">
@@ -202,18 +208,18 @@ const VerifyEmail = () => {
                       {isResending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Envoi...
+                          {t('common:loading')}
                         </>
                       ) : (
                         <>
                           <RefreshCw className="mr-2 h-4 w-4" />
-                          {canResend ? 'Renvoyer l\'email' : `Renvoyer dans ${countdown}s`}
+                          {canResend ? t('auth:resend_verification') : `${t('auth:resend_in')} ${countdown}s`}
                         </>
                       )}
                     </Button>
 
                     <Button onClick={() => navigate('/login')} className="w-full">
-                      Aller à la connexion
+                      {t('auth:go_to_login')}
                     </Button>
                   </div>
                 </div>
@@ -227,9 +233,9 @@ const VerifyEmail = () => {
                 <div className="flex justify-center">
                   <Loader2 className="w-16 h-16 text-primary animate-spin" />
                 </div>
-                <h2 className="text-2xl font-bold">Vérification en cours...</h2>
+                <h2 className="text-2xl font-bold">{t('auth:verifying')}</h2>
                 <p className="text-muted-foreground">
-                  Veuillez patienter pendant que nous vérifions votre email.
+                  {t('auth:please_wait_verifying')}
                 </p>
               </div>
             </CardContent>
@@ -248,14 +254,14 @@ const VerifyEmail = () => {
                     <CheckCircle className="w-10 h-10 text-green-500" />
                   </div>
                 </motion.div>
-                <h2 className="text-2xl font-bold">Email vérifié ! 🎉</h2>
+                <h2 className="text-2xl font-bold">{t('auth:verification_complete')}</h2>
                 <Alert className="bg-green-50 border-green-200">
                   <AlertDescription className="text-green-800">
-                    {message || 'Votre email a été vérifié avec succès.'}
+                    {message || t('auth:email_verified')}
                   </AlertDescription>
                 </Alert>
                 <p className="text-sm text-muted-foreground">
-                  Redirection...
+                  {t('auth:redirecting')}
                 </p>
               </div>
             </CardContent>
@@ -269,12 +275,12 @@ const VerifyEmail = () => {
                     <XCircle className="w-10 h-10 text-red-500" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold">Vérification échouée</h2>
+                <h2 className="text-2xl font-bold">{t('auth:verification_failed')}</h2>
                 <Alert variant="destructive">
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
                 <Button asChild className="w-full">
-                  <Link to="/login">Retour à la connexion</Link>
+                  <Link to="/login">{t('auth:back_to_login')}</Link>
                 </Button>
               </div>
             </CardContent>

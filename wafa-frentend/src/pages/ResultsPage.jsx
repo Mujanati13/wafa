@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { 
   Trophy, Clock, Target, TrendingUp, Calendar, 
   Download, Filter, Search, Eye, Star, Award,
@@ -19,6 +20,7 @@ import { DataTable, StatCard, PageHeader } from '@/components/shared';
 import { cn } from '@/lib/utils';
 
 const ResultsPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
   const [examResults, setExamResults] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState('all');
@@ -168,12 +170,12 @@ const ResultsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <PageHeader
-          title="Mes Résultats"
-          description="Consultez vos performances et suivez votre progression"
+          title={t('dashboard:my_results')}
+          description={t('dashboard:check_performance_track_progress')}
           actions={
             <Button variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
-              Exporter
+              {t('common:export')}
             </Button>
           }
         />
@@ -181,7 +183,7 @@ const ResultsPage = () => {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Examens passés"
+            title={t('dashboard:exams_taken')}
             value={stats.totalExams || 0}
             icon={<Trophy className="h-5 w-5" />}
             trend={{ value: 0, isPositive: true }}
@@ -189,7 +191,7 @@ const ResultsPage = () => {
           />
           
           <StatCard
-            title="Moyenne générale"
+            title={t('dashboard:overall_average')}
             value={`${stats.averageScore || '0.0'}/20`}
             icon={<Star className="h-5 w-5" />}
             trend={{ value: 0, isPositive: true }}
@@ -197,7 +199,7 @@ const ResultsPage = () => {
           />
           
           <StatCard
-            title="Taux de réussite"
+            title={t('dashboard:success_rate')}
             value={`${stats.successRate || '0.0'}%`}
             icon={<Target className="h-5 w-5" />}
             trend={{ value: 0, isPositive: true }}
@@ -205,7 +207,7 @@ const ResultsPage = () => {
           />
           
           <StatCard
-            title="Temps total"
+            title={t('dashboard:total_time')}
             value={`${stats.totalTimeSpent || 0}h`}
             icon={<Clock className="h-5 w-5" />}
             trend={{ value: 0, isPositive: false }}
@@ -220,7 +222,7 @@ const ResultsPage = () => {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-base">Meilleure performance</CardTitle>
+                  <CardTitle className="text-base">{t('dashboard:best_performance')}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
@@ -231,7 +233,7 @@ const ResultsPage = () => {
                       {stats.bestScore.score}/20
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {stats.bestScore.correctAnswers}/{stats.bestScore.totalQuestions} bonnes réponses
+                      {stats.bestScore.correctAnswers}/{stats.bestScore.totalQuestions} {t('dashboard:correct_answers_lower')}
                     </span>
                   </div>
                 </div>
@@ -243,7 +245,7 @@ const ResultsPage = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-orange-600" />
-                    <CardTitle className="text-base">À améliorer</CardTitle>
+                    <CardTitle className="text-base">{t('dashboard:to_improve')}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -254,7 +256,7 @@ const ResultsPage = () => {
                         {stats.worstScore.score}/20
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {stats.worstScore.correctAnswers}/{stats.worstScore.totalQuestions} bonnes réponses
+                        {stats.worstScore.correctAnswers}/{stats.worstScore.totalQuestions} {t('dashboard:correct_answers_lower')}
                       </span>
                     </div>
                   </div>
@@ -269,9 +271,9 @@ const ResultsPage = () => {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle>Historique des examens</CardTitle>
+                <CardTitle>{t('dashboard:exam_history')}</CardTitle>
                 <CardDescription>
-                  {filteredResults.length} résultat{filteredResults.length > 1 ? 's' : ''}
+                  {filteredResults.length} {t('dashboard:result')}{filteredResults.length > 1 ? 's' : ''}
                 </CardDescription>
               </div>
               
@@ -279,7 +281,7 @@ const ResultsPage = () => {
                 <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher..."
+                    placeholder={t('common:search')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -288,13 +290,13 @@ const ResultsPage = () => {
                 
                 <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                   <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Période" />
+                    <SelectValue placeholder={t('dashboard:period')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Toutes</SelectItem>
-                    <SelectItem value="week">Cette semaine</SelectItem>
-                    <SelectItem value="month">Ce mois</SelectItem>
-                    <SelectItem value="semester">Ce semestre</SelectItem>
+                    <SelectItem value="all">{t('dashboard:all_periods')}</SelectItem>
+                    <SelectItem value="week">{t('dashboard:this_week')}</SelectItem>
+                    <SelectItem value="month">{t('dashboard:this_month')}</SelectItem>
+                    <SelectItem value="semester">{t('dashboard:this_semester')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -307,7 +309,7 @@ const ResultsPage = () => {
                 {filteredResults.length === 0 ? (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucun résultat trouvé</p>
+                    <p className="text-muted-foreground">{t('common:no_results')}</p>
                   </div>
                 ) : (
                   filteredResults.map((result) => (
@@ -344,7 +346,7 @@ const ResultsPage = () => {
                                   {result.score}/20
                                 </Badge>
                                 <p className="text-xs text-muted-foreground">
-                                  {result.correctAnswers}/{result.totalQuestions} correctes
+                                  {result.correctAnswers}/{result.totalQuestions} {t('dashboard:correct_lower')}
                                 </p>
                                 <Progress 
                                   value={(result.correctAnswers / result.totalQuestions) * 100} 

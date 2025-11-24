@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const SubscriptionPage = () => {
+  const { t } = useTranslation(['admin', 'common']);
   // Helpers for persistence
   const storageKey = "subscriptionPlans";
   const loadPlansFromStorage = () => {

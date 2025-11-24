@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,6 +33,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
+  const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const location = useLocation();
   const [openCategories, setOpenCategories] = useState({
@@ -45,18 +47,18 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
   const sidebarCategories = [
     {
       id: "overview",
-      label: "Overview",
+      label: t('admin:overview'),
       icon: BarChart3,
       items: [
         {
           id: "analytics",
-          label: "Analytics",
+          label: t('admin:analytics'),
           icon: BarChart3,
           path: "/admin/analytics",
         },
         {
           id: "leaderboard",
-          label: "Leaderboard",
+          label: t('admin:leaderboard'),
           icon: Trophy,
           path: "/admin/leaderboard",
         },
@@ -64,12 +66,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     },
     {
       id: "users",
-      label: "Users",
+      label: t('admin:users'),
       icon: Users,
       items: [
         {
           id: "Users",
-          label: "Users",
+          label: t('admin:users'),
           icon: Users,
           path: "/admin/users",
         },
@@ -77,42 +79,42 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     },
     {
       id: "content",
-      label: "Content",
+      label: t('admin:content'),
       icon: Book,
       items: [
         {
           id: "reportQuestions",
-          label: "Report questions",
+          label: t('admin:report_questions'),
           icon: FileQuestion,
           path: "/admin/report-questions",
         },
         {
           id: "explications",
-          label: "Explications",
+          label: t('admin:explications'),
           icon: CheckSquare,
           path: "/admin/explications",
         },
         {
           id: "resumes",
-          label: "Resumes",
+          label: t('admin:resumes'),
           icon: FileText,
           path: "/admin/resumes",
         },
         {
           id: "importResumes",
-          label: "Import Resumes",
+          label: t('admin:import_resumes'),
           icon: FileDown,
           path: "/admin/importResumes",
         },
         {
           id: "importExplications",
-          label: "Import Explications",
+          label: t('admin:import_explications'),
           icon: FileDown,
           path: "/admin/importExplications",
         },
         {
           id: "importImages",
-          label: "Import Images",
+          label: t('admin:import_images'),
           icon: Image,
           path: "/admin/importImages",
         },
@@ -120,18 +122,18 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     },
     {
       id: "payments",
-      label: "Payments",
+      label: t('admin:payments'),
       icon: CreditCard,
       items: [
         {
           id: "subscription",
-          label: "Subscription Plans",
+          label: t('admin:subscription_plans'),
           icon: CreditCard,
           path: "/admin/subscription",
         },
         {
           id: "demandesDePayements",
-          label: "Demandes de Paiements",
+          label: t('admin:payment_requests'),
           icon: DollarSign,
           path: "/admin/demandes-de-paiements",
         },
@@ -139,60 +141,60 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     },
     {
       id: "exams",
-      label: "Exams",
+      label: t('admin:exams'),
       icon: BookOpenCheck,
       items: [
         {
           id: "semesters",
-          label: "Semesters",
+          label: t('admin:semesters'),
           icon: GraduationCap,
           path: "/admin/semesters",
         },
         {
           id: "module",
-          label: "Module",
+          label: t('admin:module'),
           icon: Component,
           path: "/admin/module",
         },
         {
           id: "categoriesOfModules",
-          label: "Categories of Modules",
+          label: t('admin:categories_of_modules'),
           icon: Layers,
           path: "/admin/categoriesOfModules",
         },
         {
           id: "createCategoriesForCourses",
-          label: "Create Categories For Courses",
+          label: t('admin:create_categories_for_courses'),
           icon: Blocks,
           path: "/admin/createCategoriesForCourses",
         },
         {
           id: "examParYears",
-          label: "Exam par years",
+          label: t('admin:exam_par_years'),
           icon: BookOpenCheck,
           path: "/admin/examParYears",
         },
         {
           id: "examCourses",
-          label: "Exam par course",
+          label: t('admin:exam_par_course'),
           icon: BookOpenCheck,
           path: "/admin/examCourses",
         },
         {
           id: "importExamParYears",
-          label: "Import exam par years",
+          label: t('admin:import_exam_par_years'),
           icon: FileDown,
           path: "/admin/importExamParYears",
         },
         {
           id: "importExamParCourse",
-          label: "Import exam par course",
+          label: t('admin:import_exam_par_course'),
           icon: FileDown,
           path: "/admin/importExamParCourse",
         },
         {
           id: "addQuestions",
-          label: "Add Questions",
+          label: t('admin:add_questions'),
           icon: FileQuestion,
           path: "/admin/addQuestions",
         },
@@ -226,7 +228,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           {sidebarOpen && (
             <div>
               <h2 className="text-lg font-bold text-slate-900">WAFA</h2>
-              <p className="text-xs text-slate-500">Admin Panel</p>
+              <p className="text-xs text-slate-500">{t('admin:admin_panel')}</p>
             </div>
           )}
         </motion.div>

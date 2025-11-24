@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -36,6 +37,7 @@ const qcmNamesByModule = {
 const yearNames = ["2021", "2022", "2023", "2024"];
 
 const ImportImages = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const modules = useMemo(
     () => [
       "Anatomie 1",

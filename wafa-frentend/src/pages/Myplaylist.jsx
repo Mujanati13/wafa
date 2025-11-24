@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search, Play, Pencil, Trash2, ListPlus, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 const Myplaylist = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newPlaylist, setNewPlaylist] = useState({ title: '', description: '' });
@@ -54,7 +56,7 @@ const Myplaylist = () => {
 
   const handleCreatePlaylist = () => {
     if (!newPlaylist.title.trim()) {
-      toast.error('Le titre est requis');
+      toast.error(t('dashboard:title_required'));
       return;
     }
     
@@ -69,20 +71,20 @@ const Myplaylist = () => {
     setPlaylists([playlist, ...playlists]);
     setNewPlaylist({ title: '', description: '' });
     setIsCreateDialogOpen(false);
-    toast.success('Playlist créée avec succès!');
+    toast.success(t('dashboard:playlist_created_success'));
   };
 
   const handleDeletePlaylist = (id) => {
     setPlaylists(playlists.filter(p => p.id !== id));
-    toast.success('Playlist supprimée');
+    toast.success(t('dashboard:playlist_deleted'));
   };
 
   const handlePlayPlaylist = (playlist) => {
     if (playlist.questionsCount === 0) {
-      toast.error('Cette playlist est vide');
+      toast.error(t('dashboard:playlist_is_empty'));
       return;
     }
-    toast.info(`Lancement de la playlist "${playlist.title}"`);
+    toast.info(t('dashboard:launching_playlist', { title: playlist.title }));
   };
 
   return (
@@ -95,13 +97,13 @@ const Myplaylist = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <ListPlus className="h-8 w-8" />
-                  <h1 className="text-3xl md:text-4xl font-bold">Mes Playlists</h1>
+                  <h1 className="text-3xl md:text-4xl font-bold">{t('dashboard:my_playlists')}</h1>
                 </div>
                 <p className="text-white/90 text-lg">
-                  Organisez vos questions favorites en collections
+                  {t('dashboard:organize_favorite_questions')}
                 </p>
                 <Badge variant="secondary" className="bg-white text-blue-700 hover:bg-white/90">
-                  {playlists.length} playlist{playlists.length > 1 ? 's' : ''} au total
+                  {playlists.length} {t('dashboard:playlist')}{playlists.length > 1 ? 's' : ''} {t('dashboard:in_total')}
                 </Badge>
               </div>
               
@@ -109,14 +111,14 @@ const Myplaylist = () => {
                 <DialogTrigger asChild>
                   <Button className="bg-white text-blue-700 hover:bg-white/90 gap-2 text-base px-6">
                     <Plus className="h-5 w-5" />
-                    Nouvelle playlist
+                    {t('dashboard:new_playlist')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Créer une nouvelle playlist</DialogTitle>
+                    <DialogTitle>{t('dashboard:create_new_playlist')}</DialogTitle>
                     <DialogDescription>
-                      Donnez un nom à votre playlist pour organiser vos questions
+                      {t('dashboard:give_playlist_name')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">

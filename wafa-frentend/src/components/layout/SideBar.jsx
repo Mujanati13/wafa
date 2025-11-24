@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Home,
   Trophy,
@@ -35,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   // Base items
   const dashboardItem = {
     id: "overview",
-    label: "Tableau de bord",
+    label: t('dashboard:dashboard'),
     icon: Home,
     path: "/dashboard/home",
   };
@@ -115,7 +117,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const analysisItems = [
     {
       id: "leaderboard",
-      label: "Classement",
+      label: t('dashboard:ranking'),
       icon: Trophy,
       path: "/dashboard/leaderboard",
     },
@@ -124,13 +126,13 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const libraryItems = [
     {
       id: "playlist",
-      label: "Mes playlists",
+      label: t('dashboard:my_playlists'),
       icon: SquareLibrary,
       path: "/dashboard/playlist",
     },
     {
       id: "note",
-      label: "Mes notes",
+      label: t('dashboard:my_notes'),
       icon: NotebookPen,
       path: "/dashboard/note",
     },
@@ -182,7 +184,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                     animate={{ opacity: 1 }}
                     className="text-sm text-muted-foreground font-medium"
                   >
-                    Chargement des modules...
+                    {t('dashboard:loading_modules')}
                   </motion.span>
                 )}
               </div>
@@ -191,7 +193,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               {/* Group: Dashboard */}
               <CollapsibleSection
                 id="dashboard"
-                title="Tableau de bord"
+                title={t('dashboard:dashboard')}
                 isOpen={openGroups.dashboard}
                 forceOpen={!sidebarOpen}
                 onToggle={() => toggleGroup("dashboard")}
@@ -212,7 +214,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               {/* Group: Modules */}
               <CollapsibleSection
                 id="modules"
-                title="Modules"
+                title={t('dashboard:modules')}
                 count={moduleSidebarItems.length}
                 isOpen={openGroups.modules}
                 forceOpen={!sidebarOpen}
@@ -238,7 +240,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               {/* Group: Analyse */}
               <CollapsibleSection
                 id="analysis"
-                title="Analyse"
+                title={t('dashboard:analysis')}
                 count={analysisItems.length}
                 isOpen={openGroups.analysis}
                 forceOpen={!sidebarOpen}
@@ -263,7 +265,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               {/* Group: Bibliothèque */}
               <CollapsibleSection
                 id="library"
-                title="Bibliothèque"
+                title={t('dashboard:library')}
                 count={libraryItems.length}
                 isOpen={openGroups.library}
                 forceOpen={!sidebarOpen}

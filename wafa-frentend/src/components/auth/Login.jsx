@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
@@ -12,8 +13,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { loginWithEmail, loginWithGoogle } from '@/services/authService';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Login = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +42,8 @@ const Login = () => {
       const result = await loginWithEmail(formData.email, formData.password);
       
       if (result.needsVerification) {
-        toast.warning('Vérification requise', {
-          description: result.message || 'Veuillez vérifier votre email avant de vous connecter.',
+        toast.warning(t('auth:email_verification'), {
+          description: result.message || t('auth:enter_code'),
           duration: 5000,
         });
         // Store email for resend functionality
@@ -49,8 +52,8 @@ const Login = () => {
         return;
       }
       
-      toast.success('Connexion réussie!', {
-        description: 'Vous allez être redirigé vers votre dashboard.',
+      toast.success(t('auth:login_success'), {
+        description: t('auth:login_success'),
       });
       
       // Redirect to dashboard
@@ -58,8 +61,8 @@ const Login = () => {
         navigate('/dashboard/home');
       }, 1000);
     } catch (error) {
-      toast.error('Erreur de connexion', {
-        description: error.message || 'Email ou mot de passe incorrect.',
+      toast.error(t('auth:authentication_error'), {
+        description: error.message || t('auth:invalid_credentials'),
       });
     } finally {
       setIsLoading(false);
@@ -72,8 +75,8 @@ const Login = () => {
     try {
       const result = await loginWithGoogle();
       
-      toast.success('Connexion réussie avec Google!', {
-        description: 'Vous allez être redirigé vers votre dashboard.',
+      toast.success(t('auth:login_success'), {
+        description: t('auth:login_success'),
       });
       
       // Redirect to dashboard
@@ -81,8 +84,8 @@ const Login = () => {
         navigate('/dashboard/home');
       }, 1000);
     } catch (error) {
-      toast.error('Erreur de connexion Google', {
-        description: error.message || 'Une erreur est survenue lors de la connexion.',
+      toast.error(t('auth:authentication_error'), {
+        description: error.message || t('auth:authentication_error'),
       });
     } finally {
       setIsLoading(false);
@@ -104,7 +107,7 @@ const Login = () => {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md"
       >
-        {/* Logo */}
+        {/* Logo & Language Switcher */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block group">
             <motion.div 
@@ -118,28 +121,31 @@ const Login = () => {
               />
             </motion.div>
           </Link>
+          <div className="flex justify-center mt-4">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Login Card */}
         <Card className="shadow-2xl border-primary/10">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Se connecter</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth:login')}</CardTitle>
             <CardDescription>
-              Accédez à votre espace d'apprentissage
+              {t('auth:enter_email')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email Input */}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('common:email')}</Label>
                 <Input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="votre@email.com"
+                  placeholder={t('auth:enter_email')}
                   required
                   disabled={isLoading}
                 />
@@ -147,7 +153,7 @@ const Login = () => {
 
               {/* Password Input */}
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password">{t('common:password')}</Label>
                 <div className="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -155,7 +161,7 @@ const Login = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="••••••••"
+                    placeholder={t('auth:enter_password')}
                     required
                     disabled={isLoading}
                     className="pr-10"
@@ -192,14 +198,14 @@ const Login = () => {
                     htmlFor="rememberMe"
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Se souvenir de moi
+                    {t('auth:remember_me')}
                   </Label>
                 </div>
                 <Link
                   to="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
-                  Mot de passe oublié?
+                  {t('auth:forgot_password')}
                 </Link>
               </div>
 
@@ -213,10 +219,10 @@ const Login = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connexion...
+                    {t('common:loading')}
                   </>
                 ) : (
-                  'Se connecter'
+                  t('auth:login')
                 )}
               </Button>
 
@@ -225,7 +231,7 @@ const Login = () => {
                 <Separator />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="bg-card px-2 text-xs text-muted-foreground">
-                    Ou continuer avec
+                    {t('auth:or')}
                   </span>
                 </div>
               </div>
@@ -244,7 +250,7 @@ const Login = () => {
                   ) : (
                     <FcGoogle className="mr-2 h-5 w-5" />
                   )}
-                  Continuer avec Google
+                  {t('auth:google_login')}
                 </Button>
               </div>
             </form>
@@ -252,9 +258,9 @@ const Login = () => {
           <CardFooter className="flex flex-col space-y-4">
             <Separator />
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">Pas encore de compte? </span>
+              <span className="text-muted-foreground">{t('auth:dont_have_account')} </span>
               <Link to="/register" className="text-primary hover:underline font-medium">
-                S'inscrire
+                {t('auth:register')}
               </Link>
             </div>
           </CardFooter>
@@ -267,7 +273,7 @@ const Login = () => {
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour à l'accueil
+            {t('common:back')}
           </Link>
         </div>
       </motion.div>

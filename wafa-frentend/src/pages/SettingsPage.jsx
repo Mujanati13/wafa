@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   User, Lock, Bell, Shield, Download, Save, Camera, 
   Mail, Phone, MapPin, GraduationCap, Eye, EyeOff
@@ -15,6 +16,7 @@ import { PageHeader } from '@/components/shared';
 import { toast } from 'sonner';
 
 const SettingsPage = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const [showPassword, setShowPassword] = useState(false);
   const [settings, setSettings] = useState({
     firstName: 'Az-eddine',
@@ -32,7 +34,7 @@ const SettingsPage = () => {
   });
 
   const handleSave = () => {
-    toast.success('Paramètres enregistrés avec succès!');
+    toast.success(t('dashboard:settings_saved_success'));
   };
 
   const handleChange = (key, value) => {
@@ -43,29 +45,29 @@ const SettingsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <PageHeader
-          title="Paramètres"
-          description="Gérez vos préférences et informations de compte"
+          title={t('common:settings')}
+          description={t('dashboard:manage_preferences_account')}
         />
 
         <Tabs defaultValue="account" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="account">Compte</TabsTrigger>
-            <TabsTrigger value="academic">Académique</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="account">{t('dashboard:account')}</TabsTrigger>
+            <TabsTrigger value="academic">{t('dashboard:academic')}</TabsTrigger>
+            <TabsTrigger value="security">{t('dashboard:security')}</TabsTrigger>
+            <TabsTrigger value="notifications">{t('dashboard:notifications')}</TabsTrigger>
           </TabsList>
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Informations personnelles</CardTitle>
-                <CardDescription>Mettez à jour vos informations de profil</CardDescription>
+                <CardTitle>{t('dashboard:personal_information')}</CardTitle>
+                <CardDescription>{t('dashboard:update_profile_info')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">Prénom</Label>
+                    <Label htmlFor="firstName">{t('dashboard:first_name')}</Label>
                     <Input
                       id="firstName"
                       value={settings.firstName}
@@ -73,7 +75,7 @@ const SettingsPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Nom</Label>
+                    <Label htmlFor="lastName">{t('dashboard:last_name')}</Label>
                     <Input
                       id="lastName"
                       value={settings.lastName}
@@ -83,7 +85,7 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('common:email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -93,7 +95,7 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone">{t('dashboard:phone')}</Label>
                   <Input
                     id="phone"
                     value={settings.phone}
@@ -103,7 +105,7 @@ const SettingsPage = () => {
 
                 <Button onClick={handleSave} className="gap-2">
                   <Save className="h-4 w-4" />
-                  Enregistrer les modifications
+                  {t('dashboard:save_changes')}
                 </Button>
               </CardContent>
             </Card>
@@ -113,12 +115,12 @@ const SettingsPage = () => {
           <TabsContent value="academic" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Informations académiques</CardTitle>
-                <CardDescription>Gérez vos informations d'études</CardDescription>
+                <CardTitle>{t('dashboard:academic_information')}</CardTitle>
+                <CardDescription>{t('dashboard:manage_study_info')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="university">Université</Label>
+                  <Label htmlFor="university">{t('dashboard:university')}</Label>
                   <Input
                     id="university"
                     value={settings.university}
@@ -127,7 +129,7 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="faculty">Faculté</Label>
+                  <Label htmlFor="faculty">{t('dashboard:faculty')}</Label>
                   <Input
                     id="faculty"
                     value={settings.faculty}
@@ -136,7 +138,7 @@ const SettingsPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="currentYear">Année d'études</Label>
+                  <Label htmlFor="currentYear">{t('dashboard:study_year')}</Label>
                   <Select value={settings.currentYear} onValueChange={(value) => handleChange('currentYear', value)}>
                     <SelectTrigger>
                       <SelectValue />
@@ -154,7 +156,7 @@ const SettingsPage = () => {
 
                 <Button onClick={handleSave} className="gap-2">
                   <Save className="h-4 w-4" />
-                  Enregistrer les modifications
+                  {t('dashboard:save_changes')}
                 </Button>
               </CardContent>
             </Card>
@@ -164,12 +166,12 @@ const SettingsPage = () => {
           <TabsContent value="security" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Mot de passe</CardTitle>
-                <CardDescription>Changez votre mot de passe</CardDescription>
+                <CardTitle>{t('common:password')}</CardTitle>
+                <CardDescription>{t('dashboard:change_your_password')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                  <Label htmlFor="currentPassword">{t('dashboard:current_password')}</Label>
                   <div className="relative">
                     <Input
                       id="currentPassword"
@@ -206,24 +208,24 @@ const SettingsPage = () => {
                   />
                 </div>
 
-                <Button onClick={() => toast.success('Mot de passe mis à jour!')} className="gap-2">
+                <Button onClick={() => toast.success(t('dashboard:password_updated'))} className="gap-2">
                   <Save className="h-4 w-4" />
-                  Mettre à jour le mot de passe
+                  {t('dashboard:update_password')}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Authentification à deux facteurs</CardTitle>
-                <CardDescription>Ajoutez une couche de sécurité supplémentaire</CardDescription>
+                <CardTitle>{t('dashboard:two_factor_auth')}</CardTitle>
+                <CardDescription>{t('dashboard:add_security_layer')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="twoFactor">Activer 2FA</Label>
+                    <Label htmlFor="twoFactor">{t('dashboard:enable_2fa')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Nécessite un code à chaque connexion
+                      {t('dashboard:requires_code_each_login')}
                     </p>
                   </div>
                   <Switch
@@ -240,15 +242,15 @@ const SettingsPage = () => {
           <TabsContent value="notifications" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Préférences de notification</CardTitle>
-                <CardDescription>Gérez comment vous recevez les notifications</CardDescription>
+                <CardTitle>{t('dashboard:notification_preferences')}</CardTitle>
+                <CardDescription>{t('dashboard:manage_how_receive_notifications')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="emailNotif">Notifications par email</Label>
+                    <Label htmlFor="emailNotif">{t('dashboard:email_notifications')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Recevez des emails pour les mises à jour importantes
+                      {t('dashboard:receive_emails_important_updates')}
                     </p>
                   </div>
                   <Switch
@@ -262,9 +264,9 @@ const SettingsPage = () => {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="pushNotif">Notifications push</Label>
+                    <Label htmlFor="pushNotif">{t('dashboard:push_notifications')}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Recevez des notifications sur votre appareil
+                      {t('dashboard:receive_notifications_device')}
                     </p>
                   </div>
                   <Switch

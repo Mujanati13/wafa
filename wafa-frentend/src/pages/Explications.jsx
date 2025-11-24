@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const Explications = () => {
+  const { t } = useTranslation(['admin', 'common']);
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -47,7 +49,7 @@ const Explications = () => {
         }));
         setExplanations(mapped);
       } catch (e) {
-        setError("Failed to load explanations");
+        setError(t('admin:failed_load_explanations'));
       } finally {
         setLoading(false);
       }

@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { Calendar, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import NewExamForm from "@/components/admin/NewExamForm";
 import { api } from "@/lib/utils";
 
 const ExamParYears = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddExamForm, setShowAddExamForm] = useState(false);
@@ -41,7 +43,7 @@ const ExamParYears = () => {
 
   const handleAddExam = () => {
     if (!formData.examName || !formData.moduleName || !formData.year) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+      toast.error(t('admin:fill_required_fields'));
       return;
     }
     setShowAddExamForm(false);
@@ -52,7 +54,7 @@ const ExamParYears = () => {
       imageUrl: "",
       helpText: "",
     });
-    toast.success("Examen ajouté avec succès");
+    toast.success(t('admin:exam_added_success'));
   };
 
   const handleFormChange = (field, value) => {
@@ -78,8 +80,8 @@ const ExamParYears = () => {
       setExams(list);
     } catch (err) {
       console.error("Error fetching exams:", err);
-      setError("Échec du chargement des examens");
-      toast.error("Erreur lors du chargement");
+      setError(t('admin:failed_load_exams'));
+      toast.error(t('common:error_loading'));
     } finally {
       setLoading(false);
     }
