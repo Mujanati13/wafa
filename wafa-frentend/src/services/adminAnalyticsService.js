@@ -1,0 +1,59 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+// Create axios instance with credentials
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const adminAnalyticsService = {
+  // Get dashboard statistics
+  getDashboardStats: async () => {
+    const response = await api.get('/admin/analytics/dashboard-stats');
+    return response.data;
+  },
+
+  // Get user growth data
+  getUserGrowth: async (period = '30d') => {
+    const response = await api.get('/admin/analytics/user-growth', {
+      params: { period }
+    });
+    return response.data;
+  },
+
+  // Get recent activity
+  getRecentActivity: async (limit = 10) => {
+    const response = await api.get('/admin/analytics/recent-activity', {
+      params: { limit }
+    });
+    return response.data;
+  },
+
+  // Get subscription analytics
+  getSubscriptionAnalytics: async () => {
+    const response = await api.get('/admin/analytics/subscriptions');
+    return response.data;
+  },
+
+  // Get user demographics
+  getUserDemographics: async () => {
+    const response = await api.get('/admin/analytics/demographics');
+    return response.data;
+  },
+};
+
+export default adminAnalyticsService;

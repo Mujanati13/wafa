@@ -1,0 +1,18 @@
+import express from "express";
+import AdminAnalyticsController from "../controllers/adminAnalyticsController.js";
+import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+// Apply auth middleware to all routes
+router.use(isAuthenticated);
+router.use(isAdmin);
+
+// Analytics routes
+router.get("/dashboard-stats", AdminAnalyticsController.getDashboardStats);
+router.get("/user-growth", AdminAnalyticsController.getUserGrowth);
+router.get("/recent-activity", AdminAnalyticsController.getRecentActivity);
+router.get("/subscriptions", AdminAnalyticsController.getSubscriptionAnalytics);
+router.get("/demographics", AdminAnalyticsController.getUserDemographics);
+
+export default router;

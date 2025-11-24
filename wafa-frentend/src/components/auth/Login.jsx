@@ -52,13 +52,20 @@ const Login = () => {
         return;
       }
       
+      // Store user data
+      localStorage.setItem('user', JSON.stringify(result.user));
+      
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
       
-      // Redirect to dashboard
+      // Redirect based on user role
       setTimeout(() => {
-        navigate('/dashboard/home');
+        if (result.user?.isAdmin) {
+          navigate('/admin/analytics');
+        } else {
+          navigate('/dashboard/home');
+        }
       }, 1000);
     } catch (error) {
       toast.error(t('auth:authentication_error'), {
@@ -75,13 +82,20 @@ const Login = () => {
     try {
       const result = await loginWithGoogle();
       
+      // Store user data
+      localStorage.setItem('user', JSON.stringify(result.user));
+      
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
       
-      // Redirect to dashboard
+      // Redirect based on user role
       setTimeout(() => {
-        navigate('/dashboard/home');
+        if (result.user?.isAdmin) {
+          navigate('/admin/analytics');
+        } else {
+          navigate('/dashboard/home');
+        }
       }, 1000);
     } catch (error) {
       toast.error(t('auth:authentication_error'), {
@@ -267,13 +281,19 @@ const Login = () => {
         </Card>
 
         {/* Back to Home Link */}
-        <div className="text-center mt-6">
+        <div className="flex items-center justify-between mt-6">
           <Link 
             to="/" 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common:back')}
+          </Link>
+          <Link 
+            to="/admin/login" 
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            Admin
           </Link>
         </div>
       </motion.div>

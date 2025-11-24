@@ -52,6 +52,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import PlaylistsPage from "./pages/PlaylistsPage";
 import NotesPage from "./pages/NotesPage";
+import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
+import AdminLogin from "./components/auth/AdminLogin";
 
 export default function App() {
   return (
@@ -60,6 +62,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/verify-email-firebase" element={<VerifyEmailFirebase />} />
@@ -75,7 +78,6 @@ export default function App() {
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="notes" element={<NotesPage />} />
           <Route path="note" element={<NotesPage />} />
-          <Route path="analytics" element={<AnayticsPage />} />
           <Route path="leaderboard" element={<LeaderboardClient />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<ExamsPage />} />
@@ -91,7 +93,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
           <Route path="analytics" element={<AnayticsPage />} />
           <Route path="users" element={<UsersWithTabs />} />
 

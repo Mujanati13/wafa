@@ -12,14 +12,41 @@ const Header = () => {
   const { t } = useTranslation(['common', 'landing']);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const currentScrollY = window.scrollY;
+      
+      // Set scrolled state
+      setIsScrolled(currentScrollY > 20);
+      
+      // Hide/show header on mobile based on scroll direction
+      if (window.innerWidth < 768) {
+        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+          // Scrolling down & past 100px
+          setIsVisible(false);
+        } else {
+          // Scrolling up
+          setIsVisible(true);
+        }
+      } else {
+        // Always visible on desktop
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
     };
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('resize', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [lastScrollY]);
 
   const navItems = [
     { label: t('common:nav_home'), href: '#accueil' },
@@ -29,10 +56,12 @@ const Header = () => {
   ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <header className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
         ? 'bg-white/95 backdrop-blur-md shadow-lg border-b' 
         : 'bg-white/90 backdrop-blur-sm'
+    } ${
+      isVisible ? 'top-0' : '-top-20'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -85,29 +114,27 @@ const Header = () => {
                 {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="flex items-center gap-2 mb-8">
+            <SheetContent side="right" className="w-[320px] sm:w-[380px] flex flex-col p-0">
+              <div className="flex items-center justify-between p-6 pb-4">
                 <img 
                   src={logo} 
                   alt="WAFA Logo" 
-                  className="h-10 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
               </div>
               
-              <Separator className="mb-6" />
-              
-              <div className="mb-6">
+              <div className="px-6 pb-4">
                 <LanguageSwitcher />
               </div>
               
-              <Separator className="mb-6" />
+              <Separator />
               
-              <nav className="flex flex-col gap-2">
+              <nav className="flex flex-col py-2 flex-1">
                 {navItems.map((item) => (
                   <a 
                     key={item.label}
                     href={item.href}
-                    className="text-base font-medium hover:text-primary transition-colors px-3 py-2 rounded-md hover:bg-accent"
+                    className="text-[15px] font-medium text-foreground/90 hover:text-primary hover:bg-accent/80 transition-all px-6 py-4 border-b border-border/40 last:border-b-0"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.label}
@@ -115,16 +142,16 @@ const Header = () => {
                 ))}
               </nav>
               
-              <Separator className="my-6" />
+              <Separator />
               
-              <div className="flex flex-col gap-3">
-                <Button variant="outline" asChild className="w-full">
+              <div className="flex flex-col gap-3 p-6 bg-muted/30">
+                <Button variant="outline" asChild className="w-full h-12 font-medium shadow-sm hover:shadow">
                   <Link to="/login" onClick={() => setIsMenuOpen(false)}>
                     <LogIn className="mr-2 h-4 w-4" />
                     {t('common:log_in')}
                   </Link>
                 </Button>
-                <Button asChild className="w-full">
+                <Button asChild className="w-full h-12 font-medium shadow-md hover:shadow-lg">
                   <Link to="/register" onClick={() => setIsMenuOpen(false)}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     {t('common:sign_up')}

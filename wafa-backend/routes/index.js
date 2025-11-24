@@ -13,6 +13,7 @@ import playlistRoute from "./playlistRoute.js";
 import noteRoute from "./noteRoute.js";
 import paymentRoute from "./paymentRoute.js";
 import notificationRoute from "./notificationRoute.js";
+import adminAnalyticsRoute from "./adminAnalyticsRoute.js";
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use("/playlists", playlistRoute);
 router.use("/notes", noteRoute);
 router.use("/payments", paymentRoute);
 router.use("/notifications", notificationRoute);
+router.use("/admin/analytics", adminAnalyticsRoute);
 
 export default router;

@@ -28,11 +28,40 @@ import {
   Award,
   Activity,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { adminAnalyticsService } from "@/services/adminAnalyticsService";
+import { toast } from "sonner";
 
 const AnalyticsPage = () => {
   const { t } = useTranslation(['admin', 'common']);
   const [dateRange, setDateRange] = useState("30d");
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [dateRange]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsResponse, activityResponse] = await Promise.all([
+        adminAnalyticsService.getDashboardStats(),
+        adminAnalyticsService.getRecentActivity(5)
+      ]);
+      
+      setDashboardData(statsResponse.data);
+      setRecentActivity(activityResponse.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Erreur', {
+        description: 'Impossible de charger les données du tableau de bord.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleExport = () => {
     // Export functionality would go here
@@ -56,108 +85,85 @@ const AnalyticsPage = () => {
     }
   };
 
-// Stats Cards Data
-const stats = [
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffInSeconds = Math.floor((now - past) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds} secondes`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} heures`;
+    return `${Math.floor(diffInSeconds / 86400)} jours`;
+  };
+
+  // Stats Cards Data (use real data when available)
+  const stats = dashboardData ? [
   {
     label: t('admin:total_users'),
-    value: "12,847",
-    change: "+12.5%",
+    value: dashboardData.totalUsers?.value?.toLocaleString() || "0",
+    change: dashboardData.totalUsers?.growth || "+0%",
     changeText: t('admin:from_last_month'),
     icon: <Users className="w-6 h-6 text-gray-400" />,
   },
   {
     label: t('admin:active_subscriptions'),
-    value: "8,432",
-    change: "+8.2%",
+    value: dashboardData.activeSubscriptions?.value?.toLocaleString() || "0",
+    change: dashboardData.activeSubscriptions?.growth || "+0%",
     changeText: t('admin:from_last_month'),
     icon: <CreditCard className="w-6 h-6 text-gray-400" />,
   },
   {
     label: t('admin:exam_attempts'),
-    value: "3,247",
-    change: "+15.3%",
+    value: dashboardData.examAttempts?.value?.toLocaleString() || "0",
+    change: dashboardData.examAttempts?.growth || "+0%",
     changeText: t('admin:from_last_month'),
     icon: <GraduationCap className="w-6 h-6 text-gray-400" />,
   },
   {
     label: t('admin:monthly_revenue'),
-    value: "$28,450",
-    change: "+18.7%",
+    value: `${dashboardData.monthlyRevenue?.value?.toLocaleString() || "0"} ${dashboardData.monthlyRevenue?.currency || "MAD"}`,
+    change: "+0%",
     changeText: t('admin:from_last_month'),
     icon: <TrendingUp className="w-6 h-6 text-gray-400" />,
   },
-];
+  ] : [];
 
-// Performance Metrics Data
-const performanceMetrics = [
+  // Performance Metrics Data
+  const performanceMetrics = dashboardData ? [
   {
     label: t('admin:average_score'),
-    value: "78.5%",
-    change: "+5.2%",
+    value: `${dashboardData.performanceMetrics?.averageScore || "0"}%`,
+    change: "+0%",
     icon: <Target className="w-5 h-5 text-blue-500" />,
   },
   {
     label: t('admin:completion_rate'),
-    value: "92.3%",
-    change: "+2.1%",
+    value: "N/A",
+    change: "+0%",
     icon: <Award className="w-5 h-5 text-green-500" />,
   },
   {
     label: t('admin:study_time'),
-    value: "4.2h",
-    change: "+0.8h",
+    value: `${dashboardData.performanceMetrics?.totalStudyHours || "0"}h`,
+    change: "+0h",
     icon: <Clock className="w-5 h-5 text-purple-500" />,
   },
   {
     label: t('admin:active_sessions'),
-    value: "1,847",
-    change: "+12.3%",
+    value: dashboardData.totalUsers?.value?.toLocaleString() || "0",
+    change: "+0%",
     icon: <Activity className="w-5 h-5 text-orange-500" />,
   },
-];
+  ] : [];
 
-// Subject Performance Data
-const subjectPerformance = [
-  { subject: "Mathematics", score: 85, attempts: 1247, growth: "+12.3%" },
-  { subject: "Physics", score: 78, attempts: 892, growth: "+8.7%" },
-  { subject: "Chemistry", score: 82, attempts: 756, growth: "+15.2%" },
-  { subject: "Biology", score: 79, attempts: 634, growth: "+6.8%" },
-  { subject: "English", score: 88, attempts: 445, growth: "+9.1%" },
-];
-
-// Recent Activity Data
-const recentActivity = [
-  {
-    action: "New user registered",
-    user: "John Doe",
-    time: "2 minutes ago",
-    type: "user",
-  },
-  {
-    action: "Exam completed",
-    user: "Sarah Smith",
-    time: "5 minutes ago",
-    type: "exam",
-  },
-  {
-    action: "Subscription upgraded",
-    user: "Mike Johnson",
-    time: "12 minutes ago",
-    type: "subscription",
-  },
-  {
-    action: "Payment received",
-    user: "Emily Brown",
-    time: "18 minutes ago",
-    type: "payment",
-  },
-  {
-    action: "New exam added",
-    user: "Admin",
-    time: "25 minutes ago",
-    type: "admin",
-  },
-];
+  // Subject Performance Data
+  const subjectPerformance = [
+    { subject: "Mathematics", score: 85, attempts: 1247, growth: "+12.3%" },
+    { subject: "Physics", score: 78, attempts: 892, growth: "+8.7%" },
+    { subject: "Chemistry", score: 82, attempts: 756, growth: "+15.2%" },
+    { subject: "Biology", score: 79, attempts: 634, growth: "+6.8%" },
+    { subject: "English", score: 88, attempts: 445, growth: "+9.1%" },
+  ];
 
   return (
     <div className="p-5 space-y-6 flex flex-col">
@@ -198,16 +204,31 @@ const recentActivity = [
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[140px]"
-          >
-            <div className="flex flex-col gap-2">
-              <span className="text-gray-700 font-medium">{stat.label}</span>
-              <span className="text-3xl font-bold text-black">
-                {stat.value}
-              </span>
+        {loading ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-xl p-6 shadow-sm min-h-[140px] animate-pulse"
+            >
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </div>
+              <div className="w-12 h-12 bg-gray-200 rounded"></div>
+            </div>
+          ))
+        ) : (
+          stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[140px]"
+            >
+              <div className="flex flex-col gap-2">
+                <span className="text-gray-700 font-medium">{stat.label}</span>
+                <span className="text-3xl font-bold text-black">
+                  {stat.value}
+                </span>
               <span className="text-sm text-green-600 font-semibold">
                 {stat.change}{" "}
                 <span className="text-gray-400 font-normal">
@@ -219,7 +240,7 @@ const recentActivity = [
               {stat.icon}
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Performance Metrics */}
@@ -312,24 +333,34 @@ const recentActivity = [
             <CardDescription>{t('admin:latest_platform_activities')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {recentActivity.map((activity, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <div className="mt-1">{getActivityIcon(activity.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {activity.action}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {activity.user} • {activity.time}
-                    </p>
+            {loading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : recentActivity.length > 0 ? (
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div className="mt-1">{getActivityIcon(activity.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">
+                        {activity.action}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        {activity.user} • {formatTimeAgo(activity.time)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Aucune activité récente
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

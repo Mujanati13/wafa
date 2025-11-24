@@ -23,6 +23,9 @@ router.post("/login", (req, res, next) => {
           id: user._id,
           username: user.username,
           email: user.email,
+          name: user.name,
+          isAdmin: user.isAdmin,
+          plan: user.plan,
         },
       });
     });
