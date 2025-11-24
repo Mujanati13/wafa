@@ -1,6 +1,7 @@
 import User from "../models/userModel.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
 import asyncHandler from "../handlers/asyncHandler.js";
+import { NotificationController } from "./notificationController.js";
 
 export const UserController = {
     // Get all users with pagination
@@ -376,5 +377,44 @@ export const UserController = {
             success: true,
             data: { stats },
         });
+    }),
+
+    // Unlock achievement and send notification
+    unlockAchievement: asyncHandler(async (req, res) => {
+        const { userId, achievementName, achievementDescription } = req.body;
+
+        if (!userId || !achievementName) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID and achievement name are required"
+            });
+        }
+
+        // You would typically get UserStats model here
+        // For now, sending notification
+        try {
+            await NotificationController.createNotification(
+                userId,
+                "achievement",
+                "Nouveau badge débloqué !",
+                `Félicitations ! Vous avez débloqué le badge '${achievementName}'. ${achievementDescription || ''}`,
+                "/dashboard/profile"
+            );
+
+            res.status(200).json({
+                success: true,
+                message: "Achievement unlocked and notification sent",
+                achievement: {
+                    name: achievementName,
+                    description: achievementDescription
+                }
+            });
+        } catch (error) {
+            console.error("Error unlocking achievement:", error);
+            res.status(500).json({
+                success: false,
+                message: "Error unlocking achievement"
+            });
+        }
     })
 };

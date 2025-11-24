@@ -19,10 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // CORS middleware
-app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:3010"],
-  credentials: true
-}));
+app.use(cors({}));
 
 // Request logging middleware
 app.use((req, res, next) => {

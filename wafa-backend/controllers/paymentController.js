@@ -2,6 +2,7 @@ import paypal from "@paypal/checkout-server-sdk";
 import Transaction from "../models/transactionModel.js";
 import User from "../models/userModel.js";
 import asyncHandler from "../handlers/asyncHandler.js";
+import { NotificationController } from "./notificationController.js";
 
 // PayPal environment setup
 const environment = () => {
@@ -151,6 +152,26 @@ const capturePayment = asyncHandler(async (req, res) => {
       user.plan = "Premium";
       user.planExpiry = currentExpiry;
       await user.save();
+
+      // Send subscription notification
+      try {
+        const durationText = {
+          "1month": "1 mois",
+          "3months": "3 mois",
+          "6months": "6 mois",
+          "1year": "1 an"
+        }[transaction.duration] || transaction.duration;
+
+        await NotificationController.createNotification(
+          req.user._id,
+          "subscription",
+          "Abonnement Premium activé",
+          `Votre abonnement Premium (${durationText}) a été activé avec succès. Profitez de tous les avantages!`,
+          "/dashboard/subscription"
+        );
+      } catch (error) {
+        console.error("Error creating subscription notification:", error);
+      }
 
       res.status(200).json({
         success: true,

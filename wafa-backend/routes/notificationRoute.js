@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { NotificationController } from "../controllers/notificationController.js";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
+import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
@@ -21,6 +21,10 @@ router.put("/read-all", NotificationController.markAllAsRead);
 
 // Delete a notification
 router.delete("/:id", NotificationController.deleteNotification);
+
+// Admin routes for sending notifications
+router.post("/admin/send-system", isAdmin, NotificationController.sendSystemNotification);
+router.post("/admin/send-broadcast", isAdmin, NotificationController.sendBroadcastNotification);
 
 // Test route to create sample notifications (for development only)
 router.post("/create-samples", async (req, res) => {

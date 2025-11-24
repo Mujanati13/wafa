@@ -1,6 +1,7 @@
 import examModel from "../models/examParYearModel.js";
 import asyncHandler from '../handlers/asyncHandler.js';
 import QuestionModel from "../models/questionModule.js";
+import { NotificationController } from "./notificationController.js";
 
 export const examController = {
     create: asyncHandler(async (req, res) => {
@@ -123,6 +124,45 @@ export const examController = {
                 totalQuestions: questions.length,
                 questions: groupedQuestions,
             }
+        });
+    }),
+
+    // Record exam completion and send notification
+    completeExam: asyncHandler(async (req, res) => {
+        const { examId, userId, score, totalQuestions } = req.body;
+
+        if (!examId || !userId || score === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Exam ID, User ID, and Score are required"
+            });
+        }
+
+        const exam = await examModel.findById(examId).populate('moduleId', 'name');
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found"
+            });
+        }
+
+        // Create notification for exam completion
+        try {
+            const percentage = totalQuestions ? Math.round((score / totalQuestions) * 100) : 0;
+            await NotificationController.createNotification(
+                userId,
+                "exam_result",
+                "Résultat d'examen disponible",
+                `Votre résultat pour l'examen ${exam.name} est maintenant disponible. Score: ${percentage}%`,
+                "/dashboard/results"
+            );
+        } catch (error) {
+            console.error("Error creating exam notification:", error);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Exam completed and notification sent"
         });
     })
 

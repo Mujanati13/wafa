@@ -119,4 +119,77 @@ export const NotificationController = {
       throw error;
     }
   },
+
+  // Admin: Send system notification to specific user
+  sendSystemNotification: asyncHandler(async (req, res) => {
+    const { userId, title, message, link } = req.body;
+
+    if (!userId || !title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID, title, and message are required"
+      });
+    }
+
+    try {
+      const notification = await Notification.create({
+        userId,
+        type: "system",
+        title,
+        message,
+        link: link || null
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "System notification sent successfully",
+        data: notification
+      });
+    } catch (error) {
+      console.error("Error sending system notification:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error sending notification"
+      });
+    }
+  }),
+
+  // Admin: Send notification to all users
+  sendBroadcastNotification: asyncHandler(async (req, res) => {
+    const { title, message, link, excludeUserIds } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Title and message are required"
+      });
+    }
+
+    try {
+      const User = require("../models/userModel.js").default;
+      const users = await User.find({ _id: { $nin: excludeUserIds || [] } }).select("_id");
+
+      const notifications = users.map(user => ({
+        userId: user._id,
+        type: "system",
+        title,
+        message,
+        link: link || null
+      }));
+
+      const result = await Notification.insertMany(notifications);
+
+      res.status(201).json({
+        success: true,
+        message: `Broadcast notification sent to ${result.length} users`,
+        count: result.length
+      });
+    } catch (error) {
+      console.error("Error sending broadcast notification:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error sending broadcast notification"
+      });
+    }
+  })
 };

@@ -31,4 +31,7 @@ router.post("/upload-photo", isAuthenticated, uploadProfilePicture, UserControll
 // User stats and achievements (authenticated)
 router.get("/my-stats", isAuthenticated, UserController.getMyStats);
 
+// Unlock achievement and send notification
+router.post("/unlock-achievement", isAuthenticated, UserController.unlockAchievement);
+
 export default router;
