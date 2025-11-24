@@ -140,12 +140,12 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm h-16">
       <div className="flex items-center justify-between h-full px-4 md:px-6">
         <div className="flex items-center gap-4">
-          {/* Mobile Menu Toggle */}
+          {/* Menu Toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="md:hidden flex-shrink-0"
+            className="flex-shrink-0"
           >
             <Menu className="h-5 w-5" />
           </Button>

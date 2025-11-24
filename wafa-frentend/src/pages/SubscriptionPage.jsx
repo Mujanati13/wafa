@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import PlanModal from "@/components/admin/PlanModal";
-import { DollarSign, SquareChartGantt, UserRoundCheck, Trash2, Edit, Plus } from "lucide-react";
+import { DollarSign, SquareChartGantt, UserRoundCheck, Trash2, Edit, Plus, Users, TrendingUp, Loader } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -12,95 +12,63 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { adminAnalyticsService } from "@/services/adminAnalyticsService";
+import { subscriptionPlanService } from "@/services/subscriptionPlanService";
+import { toast } from "sonner";
 
 const SubscriptionPage = () => {
   const { t } = useTranslation(['admin', 'common']);
-  // Helpers for persistence
-  const storageKey = "subscriptionPlans";
-  const loadPlansFromStorage = () => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  };
-  const savePlansToStorage = (plans) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(plans));
-    } catch {
-      // ignore
-    }
-  };
-
-  // Default mock data for subscription plans
-  const defaultPlans = [
-    {
-      id: 1,
-      name: "Basic",
-      description: "Essential features for medical students",
-      price: 29.99,
-      oldPrice: 39.99,
-      features: ["Access to past exams", "Basic explanations"],
-      subscribers: 2847,
-      revenue: 85381.53,
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Premium",
-      description: "Advanced features for serious exam preparation",
-      price: 59.99,
-      oldPrice: 79.99,
-      features: [
-        "All Basic features",
-        "Detailed explanations",
-        "Priority support",
-      ],
-      subscribers: 4521,
-      revenue: 271214.79,
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Enterprise",
-      description: "Comprehensive solution for institutions",
-      price: 199.99,
-      oldPrice: 249.99,
-      features: ["Multi-seat licenses", "Admin analytics", "Dedicated support"],
-      subscribers: 1064,
-      revenue: 212789.36,
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "Student Discount",
-      description: "Special pricing for verified students",
-      price: 19.99,
-      oldPrice: 29.99,
-      features: ["All Basic features", "Student verification"],
-      subscribers: 892,
-      revenue: 17831.08,
-      status: "Active",
-    },
-  ];
-
-  const [subscriptionPlans, setSubscriptionPlans] = React.useState(() => {
-    return loadPlansFromStorage() ?? defaultPlans;
+  
+  // Real subscription statistics
+  const [subscriptionStats, setSubscriptionStats] = useState({
+    free: 0,
+    premium: 0,
+    total: 0,
+    conversionRate: 0
   });
-
+  const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Real subscription plans from API
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  
   // Modal state for create/edit
-  const [isPlanModalOpen, setIsPlanModalOpen] = React.useState(false);
-  const [planModalTitle, setPlanModalTitle] = React.useState("Create Plan");
-  const [planModalMode, setPlanModalMode] = React.useState("create"); // "create" | "edit"
-  const [currentPlanId, setCurrentPlanId] = React.useState(null);
-  const [planModalInitial, setPlanModalInitial] = React.useState(null);
-
-  React.useEffect(() => {
-    savePlansToStorage(subscriptionPlans);
-  }, [subscriptionPlans]);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planModalTitle, setPlanModalTitle] = useState("Create Plan");
+  const [planModalMode, setPlanModalMode] = useState("create");
+  const [currentPlanId, setCurrentPlanId] = useState(null);
+  const [planModalInitial, setPlanModalInitial] = useState(null);
+  
+  useEffect(() => {
+    fetchSubscriptionStats();
+    fetchSubscriptionPlans();
+  }, []);
+  
+  const fetchSubscriptionStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await adminAnalyticsService.getSubscriptionAnalytics();
+      setSubscriptionStats(response.data);
+    } catch (error) {
+      toast.error('Erreur', { description: 'Impossible de charger les statistiques d\'abonnement.' });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+  
+  const fetchSubscriptionPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const response = await subscriptionPlanService.getAllPlans();
+      setSubscriptionPlans(response.data || []);
+    } catch (error) {
+      console.error('Error fetching subscription plans:', error);
+      toast.error('Erreur', { description: 'Impossible de charger les plans d\'abonnement.' });
+    } finally {
+      setPlansLoading(false);
+    }
+  };
 
   const openCreateModal = () => {
     setPlanModalTitle("Create Plan");
@@ -119,7 +87,7 @@ const SubscriptionPage = () => {
   const openEditModal = (plan) => {
     setPlanModalTitle("Edit Plan");
     setPlanModalMode("edit");
-    setCurrentPlanId(plan.id);
+    setCurrentPlanId(plan._id);
     setPlanModalInitial({ ...plan });
     setIsPlanModalOpen(true);
   };
@@ -130,62 +98,65 @@ const SubscriptionPage = () => {
     setCurrentPlanId(null);
   };
 
-  const handleModalSave = (form) => {
-    const normalizedFeatures = Array.isArray(form.features)
-      ? form.features.filter(Boolean)
-      : (form.featuresText || "")
-          .split(",")
-          .map((f) => f.trim())
-          .filter(Boolean);
-    const normalized = {
-      name: form.name?.trim() || "",
-      description: form.description?.trim() || "",
-      price:
-        form.price === "" || form.price == null ? 0 : parseFloat(form.price),
-      oldPrice:
-        form.oldPrice === "" || form.oldPrice == null
-          ? null
-          : parseFloat(form.oldPrice),
-      features: normalizedFeatures,
-    };
-
-    if (planModalMode === "create") {
-      const nextId =
-        subscriptionPlans.reduce((m, p) => (p.id > m ? p.id : m), 0) + 1;
-      const newPlan = {
-        id: nextId,
-        ...normalized,
-        subscribers: 0,
-        revenue: 0,
-        status: "Active",
+  const handleModalSave = async (form) => {
+    try {
+      setIsSaving(true);
+      const formData = {
+        name: form.name?.trim() || "",
+        description: form.description?.trim() || "",
+        price: form.price === "" || form.price == null ? 0 : parseFloat(form.price),
+        oldPrice: form.oldPrice === "" || form.oldPrice == null ? null : parseFloat(form.oldPrice),
+        features: Array.isArray(form.features) ? form.features.filter(Boolean) : [],
       };
-      setSubscriptionPlans((prev) => [newPlan, ...prev]);
-    } else if (planModalMode === "edit" && currentPlanId != null) {
-      setSubscriptionPlans((prev) =>
-        prev.map((p) => (p.id === currentPlanId ? { ...p, ...normalized } : p))
-      );
-    }
 
-    setIsPlanModalOpen(false);
-    setPlanModalInitial(null);
-    setCurrentPlanId(null);
+      if (planModalMode === "create") {
+        await subscriptionPlanService.createPlan(formData);
+        toast.success('Succès', { description: 'Plan créé avec succès.' });
+      } else {
+        await subscriptionPlanService.updatePlan(currentPlanId, formData);
+        toast.success('Succès', { description: 'Plan mis à jour avec succès.' });
+      }
+
+      // Refresh plans
+      await fetchSubscriptionPlans();
+      handleModalCancel();
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      toast.error('Erreur', { description: 'Impossible de sauvegarder le plan.' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    setSubscriptionPlans((prev) => prev.filter((p) => p.id !== id));
-    if (currentPlanId === id) {
-      handleModalCancel();
+  const handleDelete = async (id) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce plan ?')) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await subscriptionPlanService.deletePlan(id);
+      toast.success('Succès', { description: 'Plan supprimé avec succès.' });
+      await fetchSubscriptionPlans();
+      if (currentPlanId === id) {
+        handleModalCancel();
+      }
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      toast.error('Erreur', { description: 'Impossible de supprimer le plan.' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Calculate totals
   const totalPlans = subscriptionPlans.length;
   const totalSubscribers = subscriptionPlans.reduce(
-    (sum, plan) => sum + plan.subscribers,
+    (sum, plan) => sum + (plan.subscribers || 0),
     0
   );
   const monthlyRevenue = subscriptionPlans.reduce(
-    (sum, plan) => sum + plan.revenue,
+    (sum, plan) => sum + (plan.revenue || 0),
     0
   );
   const averageRevenuePerUser =
@@ -216,11 +187,75 @@ const SubscriptionPage = () => {
           </Button>
         </motion.div>
 
-        {/* Metrics Cards Section */}
+        {/* Real Subscription Statistics */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6"
+        >
+          <Card className="shadow-lg border-l-4 border-l-blue-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {statsLoading ? '...' : subscriptionStats.total}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-l-4 border-l-green-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <UserRoundCheck className="w-4 h-4" />
+                Premium Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {statsLoading ? '...' : subscriptionStats.premium}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-l-4 border-l-gray-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Free Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-600">
+                {statsLoading ? '...' : subscriptionStats.free}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-l-4 border-l-purple-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Conversion Rate
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">
+                {statsLoading ? '...' : `${subscriptionStats.conversionRate}%`}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Metrics Cards Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
         >
           {/* Total Plans Card */}
@@ -243,7 +278,7 @@ const SubscriptionPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-medium uppercase">Total Subscribers</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{totalSubscribers.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">{isNaN(totalSubscribers) ? 0 : totalSubscribers.toLocaleString()}</p>
                   <p className="text-xs text-gray-500 mt-1">Across all plans</p>
                 </div>
                 <UserRoundCheck className="w-8 h-8 text-green-600" />
@@ -258,7 +293,7 @@ const SubscriptionPage = () => {
                 <div>
                   <p className="text-xs text-gray-500 font-medium uppercase">Monthly Revenue</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    ${monthlyRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${isNaN(monthlyRevenue) ? '0.00' : monthlyRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Monthly recurring revenue</p>
                 </div>
@@ -273,7 +308,7 @@ const SubscriptionPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-medium uppercase">Avg Revenue/User</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">${averageRevenuePerUser.toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">${isNaN(averageRevenuePerUser) ? '0.00' : averageRevenuePerUser.toFixed(2)}</p>
                   <p className="text-xs text-gray-500 mt-1">Per subscription</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-purple-600" />
@@ -289,9 +324,22 @@ const SubscriptionPage = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {subscriptionPlans.map((plan, index) => (
+          {plansLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-lg p-6 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))
+          ) : subscriptionPlans.length === 0 ? (
+            <div className="col-span-4 text-center py-12">
+              <p className="text-gray-500">Aucun plan disponible</p>
+            </div>
+          ) : (
+            subscriptionPlans.map((plan, index) => (
             <motion.div
-              key={plan.id}
+              key={plan._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
@@ -313,6 +361,7 @@ const SubscriptionPage = () => {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            disabled={isSaving}
                           >
                             <Edit className="h-4 w-4 text-indigo-600 hover:text-indigo-700" />
                           </Button>
@@ -326,11 +375,11 @@ const SubscriptionPage = () => {
                             Edit Plan
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(plan.id)}
-                            className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                            onClick={() => handleDelete(plan._id)}
+                            className="flex items-center gap-2 text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
-                            Delete
+                            Delete Plan
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -361,7 +410,7 @@ const SubscriptionPage = () => {
                           Subscribers
                         </p>
                         <p className="text-lg font-bold text-gray-900 mt-1">
-                          {plan.subscribers.toLocaleString()}
+                          {(plan.subscribers || 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="bg-green-50 rounded-lg p-3">
@@ -369,7 +418,7 @@ const SubscriptionPage = () => {
                           Revenue
                         </p>
                         <p className="text-lg font-bold text-gray-900 mt-1">
-                          ${plan.revenue.toLocaleString("en-US", {
+                          ${(plan.revenue || 0).toLocaleString("en-US", {
                             maximumFractionDigits: 0,
                           })}
                         </p>
@@ -412,7 +461,8 @@ const SubscriptionPage = () => {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+            ))
+          )}
         </motion.div>
 
         <PlanModal

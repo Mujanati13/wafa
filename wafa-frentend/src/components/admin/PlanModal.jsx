@@ -1,5 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, DollarSign, Package, Check, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -48,72 +50,130 @@ const PlanModal = ({
   if (!open) return null;
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] absolute top-0 left-0 w-full h-full">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">{title}</h1>
-          <p className="text-sm text-gray-600">
-            {t("admin:plan_details")}
-          </p>
-        </div>
+    <AnimatePresence>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="flex justify-center items-center min-h-screen bg-black/60 backdrop-blur-sm p-4 z-[99999999999] fixed top-0 left-0 w-full h-full"
+        onClick={onCancel}
+      >
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="w-full max-w-2xl bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl border border-gray-200 p-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Close Button */}
+          <button
+            onClick={onCancel}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors group"
+          >
+            <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+          </button>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="plan-name">{t("admin:plan_title")}</Label>
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            </div>
+            <p className="text-sm text-gray-600 ml-1">
+              {t("admin:plan_details")}
+            </p>
+          </div>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="plan-name" className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Package className="w-4 h-4 text-purple-600" />
+                {t("admin:plan_title")}
+              </Label>
               <Input
                 id="plan-name"
+                placeholder="e.g., Premium Plan"
                 value={form.name}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, name: e.target.value }))
                 }
+                className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-all"
               />
             </div>
-            <div>
-              <Label htmlFor="plan-desc">{t("admin:description")}</Label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="plan-desc" className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Package className="w-4 h-4 text-purple-600" />
+                {t("admin:description")}
+              </Label>
+              <Input
                 id="plan-desc"
+                placeholder="Brief description of the plan"
                 value={form.description}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, description: e.target.value }))
                 }
-                className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex min-h-[80px] w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="old-price">{t("admin:old_price")}</Label>
-              <Input
-                id="old-price"
-                type="number"
-                step="0.01"
-                value={form.oldPrice}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, oldPrice: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="price">{t("admin:new_price")}</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={form.price}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, price: e.target.value }))
-                }
+                className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-all"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="features-input">{t("admin:features")}</Label>
+            <Label className="text-sm font-semibold text-gray-800 mb-3 block">Pricing</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <div className="space-y-2">
+                <Label htmlFor="old-price" className="text-xs font-medium text-gray-700 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-gray-500" />
+                  {t("admin:old_price")} (Original)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <Input
+                    id="old-price"
+                    type="number"
+                    step="0.01"
+                    placeholder="99.99"
+                    value={form.oldPrice}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, oldPrice: e.target.value }))
+                    }
+                    className="h-11 pl-7 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price" className="text-xs font-medium text-gray-700 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  {t("admin:new_price")} (Current)
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    placeholder="59.99"
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, price: e.target.value }))
+                    }
+                    className="h-11 pl-7 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500 transition-all font-semibold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              {t("admin:features")}
+            </Label>
             <div className="flex gap-2">
               <Input
-                id="features-input"
                 placeholder={t("admin:features_placeholder")}
                 value={form.featuresInput}
                 onChange={(e) =>
@@ -132,10 +192,11 @@ const PlanModal = ({
                     }));
                   }
                 }}
+                className="h-11 rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500 transition-all"
               />
               <Button
                 type="button"
-                className="bg-gray-900 hover:bg-black text-white"
+                className="h-11 px-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all rounded-lg flex items-center gap-2"
                 onClick={() => {
                   const value = form.featuresInput.trim();
                   if (!value) return;
@@ -147,21 +208,29 @@ const PlanModal = ({
                   }));
                 }}
               >
+                <Plus className="w-4 h-4" />
                 {t("admin:add")}
               </Button>
             </div>
 
             {Array.isArray(form.features) && form.features.length > 0 ? (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-wrap gap-2 mt-4 p-4 bg-green-50 rounded-lg border border-green-100"
+              >
                 {form.features.map((f, idx) => (
-                  <span
+                  <motion.span
                     key={`${f}-${idx}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-3 py-1.5 text-sm text-green-800 border border-green-200 shadow-sm"
                   >
+                    <Check className="w-3 h-3 text-green-600" />
                     {f}
                     <button
                       type="button"
-                      className="ml-1 text-gray-500 hover:text-red-600"
+                      className="ml-1 text-green-600 hover:text-red-600 transition-colors font-bold"
                       onClick={() =>
                         setForm((p) => ({
                           ...p,
@@ -172,31 +241,34 @@ const PlanModal = ({
                     >
                       ×
                     </button>
-                  </span>
+                  </motion.span>
                 ))}
-              </div>
+              </motion.div>
             ) : null}
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-8">
             <Button
               type="button"
-              className="bg-gray-200 hover:bg-gray-300 text-gray-900"
+              variant="outline"
+              className="px-6 h-11 rounded-lg border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all"
               onClick={onCancel}
             >
               {t("admin:cancel")}
             </Button>
             <Button
               type="button"
-              className="bg-gray-900 hover:bg-black text-white"
+              className="px-6 h-11 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
               onClick={() => onSave(form)}
             >
+              <Check className="w-4 h-4" />
               {t("admin:save")}
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    </AnimatePresence>
   );
 };
 

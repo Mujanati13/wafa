@@ -54,6 +54,12 @@ export const adminAnalyticsService = {
     const response = await api.get('/admin/analytics/demographics');
     return response.data;
   },
+
+  // Get leaderboard
+  getLeaderboard: async (params = {}) => {
+    const response = await api.get('/admin/analytics/leaderboard', { params });
+    return response.data;
+  },
 };
 
 export default adminAnalyticsService;

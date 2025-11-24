@@ -14,5 +14,6 @@ router.get("/user-growth", AdminAnalyticsController.getUserGrowth);
 router.get("/recent-activity", AdminAnalyticsController.getRecentActivity);
 router.get("/subscriptions", AdminAnalyticsController.getSubscriptionAnalytics);
 router.get("/demographics", AdminAnalyticsController.getUserDemographics);
+router.get("/leaderboard", AdminAnalyticsController.getLeaderboard);
 
 export default router;

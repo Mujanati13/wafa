@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign } from "lucide-react";
@@ -14,11 +14,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/shared";
+import { paymentService } from "@/services/paymentService";
+import { toast } from "sonner";
 
 const DemandesDePayements = () => {
   const { t } = useTranslation(['admin', 'common']);
-  // Sample data for demonstration
-  const demandes = [
+  
+  // Real data from backend
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0, pages: 0 });
+  
+  useEffect(() => {
+    fetchTransactions(1);
+  }, []);
+  
+  const fetchTransactions = async (page) => {
+    try {
+      setLoading(true);
+      const response = await paymentService.getAllTransactions({ page, limit: pagination.limit });
+      setTransactions(response.transactions);
+      setPagination(response.pagination);
+      setStats(response.stats);
+    } catch (error) {
+      toast.error('Erreur', { description: 'Impossible de charger les transactions.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Old hardcoded data (keeping for reference, will be removed)
+  const demandesOld = [
     {
       id: 1,
       profileImg: "https://randomuser.me/api/portraits/women/1.jpg",
@@ -81,21 +108,17 @@ const DemandesDePayements = () => {
     },
   ];
 
-  // Pagination logic
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
-  const totalPages = Math.ceil(demandes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentDemandes = demandes.slice(startIndex, endIndex);
-
+  // Pagination logic with real data
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    fetchTransactions(page);
   };
 
   const renderPaginationButtons = () => {
     const buttons = [];
     const maxVisiblePages = 5;
+    const currentPage = pagination.page;
+    const totalPages = pagination.pages;
+    
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     if (endPage - startPage + 1 < maxVisiblePages) {
@@ -132,8 +155,8 @@ const DemandesDePayements = () => {
     buttons.push(
       <button
         key="next"
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        onClick={() => handlePageChange(pagination.page + 1)}
+        disabled={pagination.page === totalPages}
         className="flex items-center gap-1 px-3 py-1 border rounded text-sm bg-white hover:bg-gray-100 disabled:opacity-50"
       >
         Next &gt;
@@ -178,7 +201,7 @@ const DemandesDePayements = () => {
                     Total Demandes
                   </p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {demandes.length}
+                    {loading ? '...' : pagination.total}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Payment requests
@@ -198,7 +221,7 @@ const DemandesDePayements = () => {
                     En attente
                   </p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {demandes.length}
+                    {loading ? '...' : (stats.find(s => s._id === 'pending')?.count || 0)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Awaiting approval
@@ -209,19 +232,19 @@ const DemandesDePayements = () => {
             </CardContent>
           </Card>
 
-          {/* Total Users */}
+          {/* Completed */}
           <Card className="shadow-lg border-0 hover:shadow-xl transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-medium uppercase">
-                    Utilisateurs
+                    Complétés
                   </p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {new Set(demandes.map((d) => d.username)).size}
+                    {loading ? '...' : (stats.find(s => s._id === 'completed')?.count || 0)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Unique users
+                    Completed payments
                   </p>
                 </div>
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
@@ -257,13 +280,13 @@ const DemandesDePayements = () => {
                         Email
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Enregistré
+                        Montant
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Mode de Paiement
+                        Statut
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Semestres
+                        Date
                       </th>
                       <th className="text-right py-4 px-6 font-semibold text-gray-700">
                         Actions
@@ -271,9 +294,27 @@ const DemandesDePayements = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentDemandes.map((d, index) => (
+                    {loading ? (
+                      Array.from({ length: 3 }).map((_, index) => (
+                        <tr key={index} className="border-b border-gray-100">
+                          <td className="py-4 px-6"><div className="h-10 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                        </tr>
+                      ))
+                    ) : transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                          Aucune transaction trouvée
+                        </td>
+                      </tr>
+                    ) : (
+                      transactions.map((t, index) => (
                       <motion.tr
-                        key={d.id}
+                        key={t._id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -282,78 +323,65 @@ const DemandesDePayements = () => {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
-                              <AvatarImage src={d.profileImg} alt={d.name} />
                               <AvatarFallback>
-                                {d.name
-                                  .split(" ")
+                                {t.user?.name
+                                  ?.split(" ")
                                   .map((n) => n[0])
-                                  .join("")}
+                                  .join("") || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <p className="font-semibold text-gray-900">
-                                {d.name}
+                                {t.user?.name || "Unknown"}
                               </p>
                               <p className="text-xs text-gray-500">
-                                @{d.username}
+                                ID: {t._id.slice(-6)}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-gray-600">{d.email}</td>
+                        <td className="py-4 px-6 text-gray-600">{t.user?.email || "N/A"}</td>
                         <td className="py-4 px-6 text-center">
-                          <Badge variant="outline" className="text-xs">
-                            {d.registered}
+                          <Badge variant="outline" className="text-xs font-semibold">
+                            ${t.amount?.toFixed(2) || "0.00"}
                           </Badge>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <Badge className="bg-blue-100 text-blue-800 border-0">
-                            <CreditCard className="w-3 h-3 mr-1" />
-                            {d.paymentMode}
+                          <Badge 
+                            className={`border-0 ${
+                              t.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              t.status === 'failed' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {t.status}
                           </Badge>
                         </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            {d.semesters.map((s, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">
-                                {s}
-                              </Badge>
-                            ))}
-                          </div>
+                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
+                          {new Date(t.createdAt).toLocaleDateString('fr-FR')}
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 hover:text-green-700" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="flex items-center gap-2">
-                                  <Check className="h-4 w-4" />
-                                  Approver
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 hover:bg-red-50"
+                              className="h-8 w-8 p-0"
+                              title="View Details"
                             >
-                              <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
+                              <CheckCircle2 className="h-4 w-4 text-blue-600 hover:text-blue-700" />
                             </Button>
                           </div>
                         </td>
                       </motion.tr>
-                    ))}
+                    )))}
                   </tbody>
                 </table>
               </div>
             </CardContent>
 
             {/* Pagination Footer */}
-            {totalPages > 1 && (
+            {pagination.pages > 1 && (
               <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gradient-to-r from-amber-50 to-orange-50 py-4">
                 <div className="text-sm text-gray-600 font-medium">
                   Affichage {startIndex + 1} à{" "}

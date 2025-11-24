@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -7,21 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatCard } from "@/components/shared";
+import { adminAnalyticsService } from "@/services/adminAnalyticsService";
+import { toast } from "sonner";
 
-const leaderboardData = Array.from({ length: 20 }, (_, i) => ({
-  id: i + 1,
-  username: `user${i + 1}`,
-  name: `Name ${i + 1}`,
-  points: 1000 - i * 23 + (i % 3) * 50,
-  bluePoints: 200 + ((i * 7) % 100),
-  rank: i + 1,
-  year: ["2025", "2024", "2023"][i % 3],
-  studentYear: ["1st", "2nd", "3rd", "4th"][i % 4],
-  period: ["All", "Monthly", "Daily"][i % 3],
-}));
-
-const years = ["2025", "2024", "2023"];
-const studentYears = ["1st", "2nd", "3rd", "4th"];
+const years = ["All", "2025", "2024", "2023"];
+const studentYears = ["All", "1st", "2nd", "3rd", "4th"];
 const periods = ["All", "Monthly", "Daily"];
 
 const Leaderboard = () => {
@@ -30,27 +20,45 @@ const Leaderboard = () => {
   const [year, setYear] = useState("All");
   const [studentYear, setStudentYear] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    topPoints: 0,
+    avgPoints: 0
+  });
 
-  // Filter logic
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [year, studentYear, filter]);
+
+  const fetchLeaderboard = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAnalyticsService.getLeaderboard({
+        year,
+        studentYear,
+        period: filter,
+        limit: 50
+      });
+      
+      setLeaderboardData(response.data.leaderboard);
+      setStats(response.data.stats);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      toast.error('Erreur', {
+        description: 'Impossible de charger le classement.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter logic (client-side search only)
   const filteredData = leaderboardData.filter(
     (user) =>
-      (filter === "All" || user.period === filter) &&
-      (year === "All" || user.year === year) &&
-      (studentYear === "All" || user.studentYear === studentYear) &&
-      (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Analytics
-  const totalUsers = leaderboardData.length;
-  const topPoints = Math.max(...leaderboardData.map((u) => u.points));
-  const avgPoints = Math.round(
-    leaderboardData.reduce((acc, u) => acc + u.points, 0) /
-      leaderboardData.length
-  );
-  const bluePointsSum = leaderboardData.reduce(
-    (acc, u) => acc + u.bluePoints,
-    0
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -71,7 +79,7 @@ const Leaderboard = () => {
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">{t('dashboard:total_users')}</p>
-              <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.totalUsers}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -80,7 +88,7 @@ const Leaderboard = () => {
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">{t('dashboard:top_points')}</p>
-              <p className="text-2xl font-bold text-gray-900">{topPoints}</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.topPoints}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <Award className="w-6 h-6 text-green-600" />
@@ -89,7 +97,7 @@ const Leaderboard = () => {
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">{t('dashboard:avg_points')}</p>
-              <p className="text-2xl font-bold text-gray-900">{avgPoints}</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.avgPoints}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-yellow-600" />
@@ -160,7 +168,7 @@ const Leaderboard = () => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:id')}
+                    {t('dashboard:rank')}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     {t('dashboard:user_name')}
@@ -171,29 +179,38 @@ const Leaderboard = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     {t('dashboard:points')}
                   </th>
-                  
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:rank')}
+                    {t('dashboard:exams')}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredData.length === 0 ? (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                    </tr>
+                  ))
+                ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
                       {t('dashboard:no_data_found')}
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((user) => (
+                  filteredData.map((user, index) => (
                     <tr
-                      key={user.id}
+                      key={user._id || index}
                       className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                         user.rank === 1 ? "bg-blue-50" : ""
                       }`}
                     >
                       <td className="py-4 px-4 text-gray-700 font-medium">
-                        {user.id}
+                        {user.rank}
                       </td>
                       <td className="py-4 px-4 text-blue-700 font-semibold">
                         {user.username}
@@ -202,9 +219,8 @@ const Leaderboard = () => {
                       <td className="py-4 px-4 font-bold text-gray-900">
                         {user.points}
                       </td>
-                      
                       <td className="py-4 px-4 font-bold text-gray-900">
-                        {user.rank}
+                        {user.totalExams || 0}
                       </td>
                     </tr>
                   ))

@@ -251,6 +251,84 @@ export const AdminAnalyticsController = {
       success: true,
       data: demographics
     });
+  }),
+
+  // Get leaderboard with rankings
+  getLeaderboard: asyncHandler(async (req, res) => {
+    const { year, studentYear, period = 'all', limit = 50 } = req.query;
+    
+    // Build match criteria
+    const matchCriteria = {};
+    
+    if (year && year !== 'All') {
+      matchCriteria['semesters'] = year;
+    }
+    
+    // Fetch users with their stats
+    const leaderboard = await UserStats.aggregate([
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $unwind: '$user'
+      },
+      {
+        $match: {
+          ...matchCriteria,
+          'user.isAactive': true
+        }
+      },
+      {
+        $project: {
+          username: '$user.username',
+          name: '$user.name',
+          email: '$user.email',
+          points: { $ifNull: ['$totalPoints', 0] },
+          bluePoints: { $ifNull: ['$bluePoints', 0] },
+          totalExams: { $ifNull: ['$totalExams', 0] },
+          averageScore: { $ifNull: ['$averageScore', 0] },
+          studyHours: { $ifNull: ['$studyHours', 0] },
+          semesters: '$user.semesters',
+          plan: '$user.plan'
+        }
+      },
+      {
+        $sort: { points: -1 }
+      },
+      {
+        $limit: parseInt(limit)
+      }
+    ]);
+    
+    // Add rank to each user
+    const rankedLeaderboard = leaderboard.map((user, index) => ({
+      ...user,
+      rank: index + 1
+    }));
+    
+    // Calculate statistics
+    const totalUsers = leaderboard.length;
+    const topPoints = leaderboard[0]?.points || 0;
+    const avgPoints = totalUsers > 0
+      ? Math.round(leaderboard.reduce((acc, u) => acc + u.points, 0) / totalUsers)
+      : 0;
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        leaderboard: rankedLeaderboard,
+        stats: {
+          totalUsers,
+          topPoints,
+          avgPoints
+        }
+      }
+    });
   })
 };
 

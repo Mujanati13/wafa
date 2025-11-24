@@ -14,6 +14,7 @@ import noteRoute from "./noteRoute.js";
 import paymentRoute from "./paymentRoute.js";
 import notificationRoute from "./notificationRoute.js";
 import adminAnalyticsRoute from "./adminAnalyticsRoute.js";
+import subscriptionPlanRoute from "./subscriptionPlanRoute.js";
 
 const router = Router();
 
@@ -31,5 +32,6 @@ router.use("/notes", noteRoute);
 router.use("/payments", paymentRoute);
 router.use("/notifications", notificationRoute);
 router.use("/admin/analytics", adminAnalyticsRoute);
+router.use("/subscription-plans", subscriptionPlanRoute);
 
 export default router;
