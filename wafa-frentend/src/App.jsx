@@ -24,6 +24,7 @@ import AdminPage from "./pages/AdminPage";
 import AnayticsPage from "./pages/AnayticsPage";
 import UsersWithTabs from "./components/admin/UsersWithTabs";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import ClientSubscriptionPage from "./pages/ClientSubscriptionPage";
 import ReportQuestionsAdmin from "./pages/ReportQuestionsAdmin";
 import Explications from "./pages/Explications";
 import Resumes from "./pages/Resumes";
@@ -52,6 +53,12 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import PlaylistsPage from "./pages/PlaylistsPage";
 import NotesPage from "./pages/NotesPage";
+import SupportPage from "./pages/SupportPage";
+import NotificationAdmin from "./pages/NotificationAdmin";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfUsePage from "./pages/TermsOfUsePage";
+import SubAdminPage from "./pages/SubAdminPage";
+import AdminPaypalSettings from "./pages/AdminPaypalSettings";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminLogin from "./components/auth/AdminLogin";
 
@@ -69,6 +76,8 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-of-use" element={<TermsOfUsePage />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
 
@@ -79,7 +88,7 @@ export default function App() {
           <Route path="notes" element={<NotesPage />} />
           <Route path="note" element={<NotesPage />} />
           <Route path="leaderboard" element={<LeaderboardClient />} />
-          <Route path="subscription" element={<SubscriptionPage />} />
+          <Route path="subscription" element={<ClientSubscriptionPage />} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />
@@ -92,11 +101,13 @@ export default function App() {
           />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="support" element={<SupportPage />} />
         </Route>
         <Route path="/admin" element={<ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>}>
           <Route path="analytics" element={<AnayticsPage />} />
           <Route path="users" element={<UsersWithTabs />} />
-
+          <Route path="notifications" element={<NotificationAdmin />} />
+          <Route path="sub-admins" element={<SubAdminPage />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="exams" element={<p>exams</p>} />
           <Route path="report-questions" element={<ReportQuestionsAdmin />} />
@@ -124,6 +135,7 @@ export default function App() {
             path="createCategoriesForCourses"
             element={<CreateCategoriesForCourses />}
           />
+          <Route path="paypal-settings" element={<AdminPaypalSettings />} />
         </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
       </Routes>

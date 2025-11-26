@@ -16,6 +16,7 @@ import {
   Brain,
   Stethoscope,
   Dna,
+  HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -135,6 +136,12 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:my_notes'),
       icon: NotebookPen,
       path: "/dashboard/note",
+    },
+    {
+      id: "support",
+      label: t('dashboard:support', 'Support'),
+      icon: HelpCircle,
+      path: "/dashboard/support",
     },
   ];
 

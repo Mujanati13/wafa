@@ -22,6 +22,7 @@ import {
   Blocks,
   Menu,
   X,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -136,6 +137,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           label: t('admin:payment_requests'),
           icon: DollarSign,
           path: "/admin/demandes-de-paiements",
+        },
+        {
+          id: "paypalSettings",
+          label: t('admin:paypal_settings', 'Paramètres PayPal'),
+          icon: Settings,
+          path: "/admin/paypal-settings",
         },
       ],
     },

@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import UserStats from "../models/userStatsModel.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 import { NotificationController } from "./notificationController.js";
@@ -239,6 +240,47 @@ export const UserController = {
         }
     },
 
+    // Update user (admin: role, permissions, etc.)
+    updateUser: async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const updateData = req.body;
+
+            // Allowed fields for update
+            const allowedFields = ['isAdmin', 'adminRole', 'permissions', 'plan', 'isAactive'];
+            const updates = {};
+
+            allowedFields.forEach(field => {
+                if (updateData.hasOwnProperty(field)) {
+                    updates[field] = updateData[field];
+                }
+            });
+
+            const user = await User.findByIdAndUpdate(userId, updates, { new: true })
+                .select('-password -resetCode');
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'User updated successfully',
+                data: user
+            });
+        } catch (error) {
+            console.error('Error updating user:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update user',
+                error: error.message
+            });
+        }
+    },
+
     // Upload profile picture
     uploadProfilePicture: asyncHandler(async (req, res) => {
         if (!req.file) {
@@ -379,6 +421,29 @@ export const UserController = {
         });
     }),
 
+    // Get user's subscription information
+    getSubscriptionInfo: asyncHandler(async (req, res) => {
+        const userId = req.user._id;
+        
+        const user = await User.findById(userId).select('plan subscription email');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                plan: user.plan || 'Free',
+                subscription: user.subscription || null,
+                email: user.email
+            }
+        });
+    }),
+
     // Unlock achievement and send notification
     unlockAchievement: asyncHandler(async (req, res) => {
         const { userId, achievementName, achievementDescription } = req.body;
@@ -414,6 +479,68 @@ export const UserController = {
             res.status(500).json({
                 success: false,
                 message: "Error unlocking achievement"
+            });
+        }
+    }),
+
+    // Get leaderboard for public display
+    getLeaderboard: asyncHandler(async (req, res) => {
+        const { limit = 20 } = req.query;
+
+        try {
+            const leaderboard = await UserStats.aggregate([
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $unwind: '$user'
+                },
+                {
+                    $match: {
+                        'user.isAactive': true
+                    }
+                },
+                {
+                    $project: {
+                        userId: '$userId',
+                        username: '$user.username',
+                        name: '$user.name',
+                        email: '$user.email',
+                        points: { $ifNull: ['$totalPoints', 0] },
+                        bluePoints: { $ifNull: ['$bluePoints', 0] },
+                        totalExams: { $ifNull: ['$totalExams', 0] },
+                        averageScore: { $ifNull: ['$averageScore', 0] },
+                        studyHours: { $ifNull: ['$studyHours', 0] }
+                    }
+                },
+                {
+                    $sort: { points: -1 }
+                },
+                {
+                    $limit: parseInt(limit)
+                }
+            ]);
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    leaderboard: leaderboard.map((entry, index) => ({
+                        ...entry,
+                        rank: index + 1
+                    }))
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch leaderboard',
+                error: error.message
             });
         }
     })

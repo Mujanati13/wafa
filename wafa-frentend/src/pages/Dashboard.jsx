@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
+import { dashboardService } from "@/services/dashboardService";
 import { Lock, Sparkles, TrendingUp, Award, Clock } from "lucide-react";
 import ModuleCard from "@/components/Dashboard/ModuleCard";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader, StatCard } from "@/components/shared";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -18,10 +20,11 @@ const Dashboard = () => {
   const [semester, setSemester] = useState("S1");
   const [coursesData, setCoursesData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
-    totalProgress: 0,
-    questionsAnswered: 0,
-    currentStreak: 0,
+    examsCompleted: 0,
+    averageScore: 0,
+    studyHours: 0,
     rank: 0,
   });
 
@@ -42,19 +45,31 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const { data } = await moduleService.getAllmodules();
-        localStorage.setItem("modules", JSON.stringify(data.data));
-        setCoursesData(data.data);
         
-        // Mock stats - replace with actual API call
+        // Fetch modules
+        const { data: modulesData } = await moduleService.getAllmodules();
+        localStorage.setItem("modules", JSON.stringify(modulesData.data));
+        setCoursesData(modulesData.data);
+
+        // Fetch user profile
+        const profileData = await dashboardService.getUserProfile();
+        setUser(profileData.data);
+
+        // Fetch user stats
+        const statsData = await dashboardService.getUserStats();
+        
+        // Fetch user's rank
+        const { rank } = await dashboardService.getLeaderboardRank();
+
         setStats({
-          totalProgress: 65,
-          questionsAnswered: 1234,
-          currentStreak: 7,
-          rank: 45,
+          examsCompleted: statsData.data.stats.examsCompleted || 0,
+          averageScore: statsData.data.stats.averageScore || 0,
+          studyHours: statsData.data.stats.studyHours || 0,
+          rank: rank || 0,
         });
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching dashboard data:", error);
+        toast.error(t('dashboard:error_loading_dashboard'));
       } finally {
         setLoading(false);
       }
@@ -64,8 +79,6 @@ const Dashboard = () => {
   const handleCourseClick = (courseId) => {
     navigate(`/dashboard/subjects/${courseId}`);
   };
-
-  const user = { name: "Az-eddine serhani", plan: "Plan Gratuit" };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 p-4 md:p-6">
@@ -89,7 +102,7 @@ const Dashboard = () => {
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-teal-500 to-blue-600">
                       {t('dashboard:welcome')}
                     </span>
-                    <span className="text-primary ml-2">{user.name}</span>
+                    <span className="text-primary ml-2">{user?.name || user?.fullName || 'Utilisateur'}</span>
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm md:text-base">
@@ -123,7 +136,7 @@ const Dashboard = () => {
                   ))}
                 </div>
                 <Badge variant="secondary" className="self-start">
-                  {user.plan}
+                  {user?.subscription?.plan?.name || 'Plan Gratuit'}
                 </Badge>
               </div>
             </div>
@@ -148,34 +161,28 @@ const Dashboard = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              title={t('dashboard:total_progress')}
-              value={`${stats.totalProgress}%`}
-              icon={<TrendingUp className="h-4 w-4" />}
-              trend="up"
-              trendValue="+12%"
-              description={t('dashboard:this_month')}
-            />
-            <StatCard
-              title={t('dashboard:questions_answered')}
-              value={stats.questionsAnswered}
+              title={t('dashboard:exams_completed')}
+              value={stats.examsCompleted}
               icon={<Award className="h-4 w-4" />}
               description={t('dashboard:in_total')}
             />
             <StatCard
-              title={t('dashboard:current_streak')}
-              value={`${stats.currentStreak} ${t('dashboard:days')}`}
+              title={t('dashboard:average_score')}
+              value={`${Math.round(stats.averageScore)}%`}
+              icon={<TrendingUp className="h-4 w-4" />}
+              description={t('dashboard:last_exam')}
+            />
+            <StatCard
+              title={t('dashboard:study_hours')}
+              value={Math.round(stats.studyHours)}
               icon={<Clock className="h-4 w-4" />}
-              trend="up"
-              trendValue={t('dashboard:record')}
-              description={t('dashboard:keep_it_up')}
+              description={t('dashboard:total_time')}
             />
             <StatCard
               title={t('dashboard:ranking')}
               value={`#${stats.rank}`}
               icon={<Award className="h-4 w-4" />}
-              trend="up"
-              trendValue="+3"
-              description={t('dashboard:this_week')}
+              description={t('dashboard:global_rank')}
             />
           </div>
         )}

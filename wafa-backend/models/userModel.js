@@ -29,6 +29,18 @@ const userSchema = new mongoose.Schema(
       default: false,
       required: true,
     },
+    // Admin role for sub-admin management
+    adminRole: {
+      type: String,
+      enum: ["super_admin", "admin", "moderator", "editor"],
+      default: null,
+    },
+    // Admin permissions array
+    permissions: {
+      type: [String],
+      enum: ["users", "content", "analytics", "payments", "notifications", "reports", "settings"],
+      default: [],
+    },
     resetCode: {
       type: String,
       trim: true,

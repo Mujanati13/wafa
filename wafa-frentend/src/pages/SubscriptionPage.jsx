@@ -49,9 +49,17 @@ const SubscriptionPage = () => {
     try {
       setStatsLoading(true);
       const response = await adminAnalyticsService.getSubscriptionAnalytics();
-      setSubscriptionStats(response.data);
+      // Handle both nested (response.data.data) and flat (response.data) structures
+      const statsData = response.data?.data || response.data || response;
+      setSubscriptionStats({
+        free: statsData.free || 0,
+        premium: statsData.premium || 0,
+        total: statsData.total || 0,
+        conversionRate: statsData.conversionRate || 0
+      });
     } catch (error) {
-      toast.error('Erreur', { description: 'Impossible de charger les statistiques d\'abonnement.' });
+      console.error('Error fetching subscription stats:', error);
+      toast.error('Impossible de charger les statistiques d\'abonnement');
     } finally {
       setStatsLoading(false);
     }
@@ -61,10 +69,12 @@ const SubscriptionPage = () => {
     try {
       setPlansLoading(true);
       const response = await subscriptionPlanService.getAllPlans();
-      setSubscriptionPlans(response.data || []);
+      // Handle both nested (response.data) and direct array structures
+      const plansData = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      setSubscriptionPlans(plansData);
     } catch (error) {
       console.error('Error fetching subscription plans:', error);
-      toast.error('Erreur', { description: 'Impossible de charger les plans d\'abonnement.' });
+      toast.error('Impossible de charger les plans d\'abonnement');
     } finally {
       setPlansLoading(false);
     }
@@ -122,7 +132,7 @@ const SubscriptionPage = () => {
       handleModalCancel();
     } catch (error) {
       console.error('Error saving plan:', error);
-      toast.error('Erreur', { description: 'Impossible de sauvegarder le plan.' });
+      toast.error('Impossible de sauvegarder le plan');
     } finally {
       setIsSaving(false);
     }
@@ -143,7 +153,7 @@ const SubscriptionPage = () => {
       }
     } catch (error) {
       console.error('Error deleting plan:', error);
-      toast.error('Erreur', { description: 'Impossible de supprimer le plan.' });
+      toast.error('Impossible de supprimer le plan');
     } finally {
       setIsSaving(false);
     }
@@ -389,15 +399,15 @@ const SubscriptionPage = () => {
                     <div className="space-y-1">
                       <div className="flex items-baseline gap-1">
                         <span className="text-3xl font-bold text-gray-900">
-                          ${plan.price}
+                          {plan.price} MAD
                         </span>
                         <span className="text-sm text-gray-500">/month</span>
                       </div>
                       {plan.oldPrice != null && plan.oldPrice > plan.price && (
                         <p className="text-sm text-gray-500">
-                          <span className="line-through">${plan.oldPrice}</span>
+                          <span className="line-through">{plan.oldPrice} MAD</span>
                           <Badge className="ml-2 bg-red-100 text-red-800">
-                            Save ${(plan.oldPrice - plan.price).toFixed(2)}
+                            Save {(plan.oldPrice - plan.price).toFixed(2)} MAD
                           </Badge>
                         </p>
                       )}

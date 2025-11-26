@@ -126,6 +126,29 @@ export const userService = {
         }
     },
 
+    // Update user (for admin purposes)
+    updateUser: async (userId, updateData) => {
+        try {
+            console.log(`Updating user ${userId}:`, updateData);
+            const response = await api.put(`/users/${userId}`, updateData);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
+    },
+
+    // Get leaderboard
+    getLeaderboard: async (limit = 20) => {
+        try {
+            const response = await api.get(`/users/leaderboard`, { params: { limit } });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching leaderboard:', error);
+            throw error;
+        }
+    },
+
     // Test connection
     testConnection: async () => {
         try {

@@ -17,6 +17,16 @@ const moduleSchema = new mongoose.Schema(
         },
         infoText: {
                 type: String,
+        },
+        // Module color for card/icon styling
+        color: {
+                type: String,
+                default: "#6366f1", // Default indigo color
+        },
+        // Help content for the help modal
+        helpContent: {
+                type: String,
+                default: "",
         }
     },
     { timestamps: true }

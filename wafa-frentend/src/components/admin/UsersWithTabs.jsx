@@ -12,6 +12,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { cn } from "../../lib/utils";
@@ -34,9 +35,13 @@ import {
   Edit,
   Trash2,
   Eye,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import NewUserForm from "./NewUserForm";
 import { userService } from "../../services/userService";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const UsersWithTabs = () => {
   const [activeTab, setActiveTab] = useState("free"); // "free" or "paying"
@@ -48,6 +53,7 @@ const UsersWithTabs = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({});
+  const [exporting, setExporting] = useState(false);
 
   // Fetch users based on active tab
   const fetchUsers = async () => {
@@ -101,6 +107,133 @@ const UsersWithTabs = () => {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Export to CSV
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      // Fetch all users for export
+      const response = await userService.getAllUsers(1, 10000);
+      if (!response.success) {
+        throw new Error("Failed to fetch users");
+      }
+      
+      const allUsers = response.data.users;
+      const headers = ["Nom", "Email", "Plan", "Statut", "Date d'inscription"];
+      const csvContent = [
+        headers.join(","),
+        ...allUsers.map((user) =>
+          [
+            `"${user.name || user.username || ""}"`,
+            `"${user.email}"`,
+            `"${user.plan || "Free"}"`,
+            `"${user.isAactive ? "Actif" : "Inactif"}"`,
+            `"${new Date(user.createdAt).toLocaleDateString("fr-FR")}"`,
+          ].join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob(["\ufeff" + csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `utilisateurs_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting CSV:", error);
+      alert("Erreur lors de l'exportation CSV");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Export to PDF
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      // Fetch all users for export
+      const response = await userService.getAllUsers(1, 10000);
+      if (!response.success) {
+        throw new Error("Failed to fetch users");
+      }
+      
+      const allUsers = response.data.users;
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Liste des Utilisateurs - WAFA", 14, 20);
+
+      // Subtitle with date
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, 14, 28);
+      
+      // Stats summary
+      doc.setFontSize(11);
+      doc.setTextColor(60);
+      doc.text(`Total: ${allUsers.length} utilisateurs | Gratuit: ${allUsers.filter(u => u.plan === "Free").length} | Premium: ${allUsers.filter(u => u.plan !== "Free").length}`, 14, 36);
+
+      // Table
+      autoTable(doc, {
+        startY: 42,
+        head: [["Nom", "Email", "Plan", "Statut", "Date d'inscription"]],
+        body: allUsers.map((user) => [
+          user.name || user.username || "-",
+          user.email,
+          user.plan || "Free",
+          user.isAactive ? "Actif" : "Inactif",
+          new Date(user.createdAt).toLocaleDateString("fr-FR"),
+        ]),
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [99, 102, 241], // Indigo
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
+        },
+        columnStyles: {
+          0: { cellWidth: 35 },
+          1: { cellWidth: 55 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 30 },
+        },
+      });
+
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Page ${i} sur ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "center" }
+        );
+      }
+
+      doc.save(`utilisateurs_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      alert("Erreur lors de l'exportation PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const getPlanBadgeColor = (plan) => {
     switch (plan) {
@@ -224,10 +357,25 @@ const UsersWithTabs = () => {
             <Button variant="outline" size="sm" onClick={testConnection}>
               Test API
             </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={exporting}>
+                  <Download className="w-4 h-4" />
+                  {exporting ? "Exportation..." : "Export"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Exporter en CSV
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                  <FileText className="w-4 h-4" />
+                  Exporter en PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="sm"
               className="bg-black text-white hover:bg-gray-800"

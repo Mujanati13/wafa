@@ -15,6 +15,7 @@ import paymentRoute from "./paymentRoute.js";
 import notificationRoute from "./notificationRoute.js";
 import adminAnalyticsRoute from "./adminAnalyticsRoute.js";
 import subscriptionPlanRoute from "./subscriptionPlanRoute.js";
+import paypalSettingsRoute from "./paypalSettingsRoute.js";
 
 const router = Router();
 
@@ -33,5 +34,6 @@ router.use("/payments", paymentRoute);
 router.use("/notifications", notificationRoute);
 router.use("/admin/analytics", adminAnalyticsRoute);
 router.use("/subscription-plans", subscriptionPlanRoute);
+router.use("/paypal-settings", paypalSettingsRoute);
 
 export default router;

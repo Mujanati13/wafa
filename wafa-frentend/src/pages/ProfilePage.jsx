@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { debounce } from 'lodash';
 import { 
   User, Mail, Phone, MapPin, Calendar, GraduationCap, 
-  BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2
+  BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2, Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,8 @@ const ProfilePage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
   const [user, setUser] = useState(null);
   const [userStats, setUserStats] = useState(null);
   const [profileData, setProfileData] = useState({
@@ -82,6 +85,55 @@ const ProfilePage = () => {
 
     fetchData();
   }, []);
+
+  // Auto-save profile function
+  const autoSaveProfile = useCallback(
+    debounce(async (data) => {
+      if (!data.firstName && !data.lastName) return;
+      
+      setAutoSaving(true);
+      try {
+        const updateData = {
+          name: `${data.firstName} ${data.lastName}`.trim(),
+          phone: data.phone,
+          birthDate: data.birthDate,
+          university: data.university,
+          faculty: data.faculty,
+          year: data.year,
+          specialization: data.specialization,
+          location: data.location,
+          bio: data.bio
+        };
+        
+        const updatedUser = await userService.updateUserProfile(updateData);
+        setUser(updatedUser);
+        setProfileData({ ...data });
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        toast.error(t('dashboard:auto_save_failed', 'Échec de la sauvegarde automatique'));
+      } finally {
+        setTimeout(() => setAutoSaving(false), 500);
+      }
+    }, 2000),
+    []
+  );
+
+  // Trigger auto-save when editData changes (only in edit mode)
+  useEffect(() => {
+    if (isEditing && editData.firstName !== profileData.firstName ||
+        isEditing && editData.lastName !== profileData.lastName ||
+        isEditing && editData.phone !== profileData.phone ||
+        isEditing && editData.birthDate !== profileData.birthDate ||
+        isEditing && editData.university !== profileData.university ||
+        isEditing && editData.faculty !== profileData.faculty ||
+        isEditing && editData.year !== profileData.year ||
+        isEditing && editData.specialization !== profileData.specialization ||
+        isEditing && editData.location !== profileData.location ||
+        isEditing && editData.bio !== profileData.bio) {
+      autoSaveProfile(editData);
+    }
+  }, [editData, isEditing]);
 
   // Map achievement types to icons
   const getAchievementIcon = (achievementId) => {
@@ -149,6 +201,7 @@ const ProfilePage = () => {
       setUser(updatedUser);
       setProfileData({ ...editData });
       setIsEditing(false);
+      setLastSaved(new Date());
       toast.success(t('dashboard:profile_updated_success'));
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -193,7 +246,33 @@ const ProfilePage = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>{t('dashboard:personal_information')}</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <CardTitle>{t('dashboard:personal_information')}</CardTitle>
+                    {/* Auto-save indicator */}
+                    {isEditing && (
+                      <div className="flex items-center gap-2">
+                        {autoSaving ? (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
+                          >
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>{t('dashboard:saving', 'Sauvegarde...')}</span>
+                          </motion.div>
+                        ) : lastSaved ? (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full"
+                          >
+                            <Check className="h-3 w-3" />
+                            <span>{t('dashboard:saved', 'Sauvegardé')}</span>
+                          </motion.div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                   {!isEditing ? (
                     <Button onClick={() => setIsEditing(true)} variant="outline" className="gap-2">
                       <Edit className="h-4 w-4" />

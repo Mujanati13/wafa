@@ -1,6 +1,7 @@
 {
   "dashboard": "Tableau de bord",
   "welcome": "Bienvenue",
+  "welcome_message": "Continuez à progresser et améliorez vos performances. Besoin d'aide ? Contactez-nous sur",
   "my_courses": "Mes cours",
   "my_exams": "Mes examens",
   "my_notes": "Mes notes",
@@ -216,6 +217,12 @@
   "redirecting_to_dashboard": "Redirection vers le tableau de bord...",
   "return_to_dashboard": "Retour au tableau de bord",
   "exams_completed": "Examens réalisés",
+  "average_score": "Score moyen",
+  "last_exam": "dernier examen",
+  "study_hours": "Heures d'étude",
+  "total_time": "temps total",
+  "global_rank": "classement mondial",
+  "error_loading_dashboard": "Erreur lors du chargement du tableau de bord",
   "study_hours": "Heures d'étude",
   "monthly_goal": "Objectif du mois",
   "my_progress": "Mes Progrès",
@@ -287,5 +294,9 @@
   "my_notes": "Mes notes",
   "analysis": "Analyse",
   "library": "Bibliothèque",
-  "need_help": "Besoin d'aide ?"
+  "need_help": "Besoin d'aide ?",
+  "support": "Support",
+  "saving": "Sauvegarde...",
+  "saved": "Sauvegardé",
+  "auto_save_failed": "Échec de la sauvegarde automatique"
 }

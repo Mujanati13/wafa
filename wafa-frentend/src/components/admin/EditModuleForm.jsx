@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
+import { Palette, X, Check } from "lucide-react";
 
 import {
   Form,
@@ -15,11 +16,40 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover";
 import { api } from "@/lib/utils";
+
+// Preset colors for module cards
+const PRESET_COLORS = [
+  "#6366f1", // Indigo
+  "#8b5cf6", // Violet
+  "#a855f7", // Purple
+  "#ec4899", // Pink
+  "#ef4444", // Red
+  "#f97316", // Orange
+  "#f59e0b", // Amber
+  "#eab308", // Yellow
+  "#84cc16", // Lime
+  "#22c55e", // Green
+  "#10b981", // Emerald
+  "#14b8a6", // Teal
+  "#06b6d4", // Cyan
+  "#0ea5e9", // Sky
+  "#3b82f6", // Blue
+  "#6b7280", // Gray
+];
 
 const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedColor, setSelectedColor] = useState("#6366f1");
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const editModuleSchema = z.object({
     name: z.string().min(2, t("admin:module_name_required")),
@@ -33,6 +63,10 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       .string()
       .optional()
       .transform((v) => (v == null ? "" : v)),
+    helpContent: z
+      .string()
+      .optional()
+      .transform((v) => (v == null ? "" : v)),
   });
 
   const form = useForm({
@@ -42,6 +76,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       semester: "",
       imageUrl: "",
       helpText: "",
+      helpContent: "",
     },
   });
 
@@ -52,8 +87,10 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
         name: module.name || "",
         semester: module.semester || "",
         imageUrl: module.imageUrl || "",
-        helpText: module.helpText || "",
+        helpText: module.helpText || module.infoText || "",
+        helpContent: module.helpContent || "",
       });
+      setSelectedColor(module.color || "#6366f1");
     }
   }, [module, form]);
 
@@ -65,6 +102,8 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
         semester: data.semester,
         imageUrl: data.imageUrl,
         infoText: data.helpText,
+        color: selectedColor,
+        helpContent: data.helpContent,
       });
 
       console.log("Module updated:", res.data);
@@ -86,8 +125,8 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] absolute top-0 left-0 w-full h-full">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] absolute top-0 left-0 w-full h-full overflow-y-auto">
+      <div className="w-full max-w-lg bg-white rounded-lg shadow-sm border border-gray-200 p-6 my-8">
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-gray-900 mb-1">
             {t("admin:edit_module")}
@@ -149,6 +188,98 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               )}
             />
 
+            {/* Color Picker */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                Couleur du Module
+              </Label>
+              <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-10"
+                  >
+                    <div
+                      className="w-6 h-6 rounded-md border border-gray-200"
+                      style={{ backgroundColor: selectedColor }}
+                    />
+                    <span className="text-gray-600">{selectedColor}</span>
+                    <Palette className="w-4 h-4 ml-auto text-gray-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-3" align="start">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Couleurs prédéfinies</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setShowColorPicker(false)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-6 h-6 rounded-md border-2 transition-all ${
+                            selectedColor === color
+                              ? "border-gray-900 scale-110"
+                              : "border-transparent hover:scale-110"
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => {
+                            setSelectedColor(color);
+                            setShowColorPicker(false);
+                          }}
+                        >
+                          {selectedColor === color && (
+                            <Check className="w-4 h-4 text-white mx-auto" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t">
+                      <Label className="text-xs text-gray-500 mb-1.5 block">
+                        Couleur personnalisée
+                      </Label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={selectedColor}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          className="w-10 h-8 rounded border border-gray-200 cursor-pointer"
+                        />
+                        <Input
+                          type="text"
+                          value={selectedColor}
+                          onChange={(e) => setSelectedColor(e.target.value)}
+                          className="flex-1 h-8 text-sm"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Color Preview */}
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: selectedColor }}
+                >
+                  {module?.name?.[0]?.toUpperCase() || "M"}
+                </div>
+                <span className="text-sm text-gray-600">Aperçu de la carte module</span>
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="imageUrl"
@@ -189,6 +320,29 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="helpContent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Contenu d'aide détaillé
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Décrivez le module, son contenu, et comment l'utiliser..."
+                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400 min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ce texte s'affichera dans la fenêtre d'aide du module
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
@@ -203,7 +357,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                 disabled={isSubmitting}
                 className="bg-gray-800 hover:bg-gray-900 text-white"
               >
-                {isSubmitting ? t("admin:saving") : t("admin:create")}
+                {isSubmitting ? t("admin:saving") : t("admin:save")}
               </Button>
             </div>
           </form>

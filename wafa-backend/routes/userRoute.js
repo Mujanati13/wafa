@@ -5,6 +5,8 @@ import { uploadProfilePicture } from "../middleware/uploadMiddleware.js";
 
 const router = Router();
 
+// ========== Static routes (must come BEFORE :userId routes) ==========
+
 // Get all users with pagination
 router.get("/", UserController.getAllUsers);
 
@@ -17,12 +19,6 @@ router.get("/paying", UserController.getPayingUsers);
 // Get user statistics
 router.get("/stats", UserController.getUserStats);
 
-// Update user plan
-router.patch("/:userId/plan", UserController.updateUserPlan);
-
-// Toggle user active status
-router.patch("/:userId/status", UserController.toggleUserStatus);
-
 // User profile routes (authenticated)
 router.get("/profile", isAuthenticated, UserController.getProfile);
 router.put("/profile", isAuthenticated, UserController.updateProfile);
@@ -31,7 +27,24 @@ router.post("/upload-photo", isAuthenticated, uploadProfilePicture, UserControll
 // User stats and achievements (authenticated)
 router.get("/my-stats", isAuthenticated, UserController.getMyStats);
 
+// Get user's subscription info (authenticated)
+router.get("/subscription-info", isAuthenticated, UserController.getSubscriptionInfo);
+
+// Get leaderboard (public)
+router.get("/leaderboard", UserController.getLeaderboard);
+
 // Unlock achievement and send notification
 router.post("/unlock-achievement", isAuthenticated, UserController.unlockAchievement);
+
+// ========== Dynamic routes (must come AFTER static routes) ==========
+
+// Update user plan
+router.patch("/:userId/plan", UserController.updateUserPlan);
+
+// Toggle user active status
+router.patch("/:userId/status", UserController.toggleUserStatus);
+
+// Update user (admin only - for role and permissions)
+router.put("/:userId", UserController.updateUser);
 
 export default router;

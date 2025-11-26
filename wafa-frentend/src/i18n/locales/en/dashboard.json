@@ -1,6 +1,7 @@
 {
   "dashboard": "Dashboard",
   "welcome": "Welcome",
+  "welcome_message": "Keep progressing and improve your performance. Need help? Contact us on",
   "my_courses": "My Courses",
   "my_exams": "My Exams",
   "my_notes": "My Notes",
@@ -216,6 +217,12 @@
   "redirecting_to_dashboard": "Redirecting to dashboard...",
   "return_to_dashboard": "Return to Dashboard",
   "exams_completed": "Exams Completed",
+  "average_score": "Average Score",
+  "last_exam": "last exam",
+  "study_hours": "Study Hours",
+  "total_time": "total time",
+  "global_rank": "global ranking",
+  "error_loading_dashboard": "Error loading dashboard",
   "study_hours": "Study Hours",
   "monthly_goal": "Monthly Goal",
   "my_progress": "My Progress",
@@ -287,5 +294,9 @@
   "my_notes": "My Notes",
   "analysis": "Analysis",
   "library": "Library",
-  "need_help": "Need help?"
+  "need_help": "Need help?",
+  "support": "Support",
+  "saving": "Saving...",
+  "saved": "Saved",
+  "auto_save_failed": "Auto-save failed"
 }

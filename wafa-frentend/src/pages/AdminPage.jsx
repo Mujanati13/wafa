@@ -13,7 +13,7 @@ const AdminPage = () => {
     { label: 'Total Users', value: '2,847', icon: <Users className="w-6 h-6" />, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Total Questions', value: '12,459', icon: <FileQuestion className="w-6 h-6" />, color: 'text-green-600', bg: 'bg-green-50' },
     { label: 'Active Modules', value: '45', icon: <BookOpen className="w-6 h-6" />, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Monthly Revenue', value: '€8,420', icon: <DollarSign className="w-6 h-6" />, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Monthly Revenue', value: '8,420 MAD', icon: <DollarSign className="w-6 h-6" />, color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 
   const quickActions = [

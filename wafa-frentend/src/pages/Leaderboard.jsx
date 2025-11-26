@@ -1,27 +1,39 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp } from "lucide-react";
+import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp, Download, Calendar, Trophy, Zap, MessageSquare, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PageHeader, StatCard } from "@/components/shared";
 import { adminAnalyticsService } from "@/services/adminAnalyticsService";
+import { moduleService } from "@/services/moduleService";
 import { toast } from "sonner";
 
 const years = ["All", "2025", "2024", "2023"];
 const studentYears = ["All", "1st", "2nd", "3rd", "4th"];
-const periods = ["All", "Monthly", "Daily"];
+const periods = ["All", "Monthly", "Weekly", "Daily"];
+const pointTypes = [
+  { value: "all", label: "Tous les points", icon: Trophy, color: "gray" },
+  { value: "normal", label: "Points Normaux", icon: Star, color: "blue" },
+  { value: "report", label: "Points Report", icon: MessageSquare, color: "green" },
+  { value: "explanation", label: "Points Explication", icon: Zap, color: "yellow" },
+];
 
 const Leaderboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [filter, setFilter] = useState("All");
   const [year, setYear] = useState("All");
   const [studentYear, setStudentYear] = useState("All");
+  const [pointType, setPointType] = useState("all");
+  const [moduleFilter, setModuleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [modules, setModules] = useState([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
     topPoints: 0,
@@ -29,8 +41,21 @@ const Leaderboard = () => {
   });
 
   useEffect(() => {
+    fetchModules();
+  }, []);
+
+  useEffect(() => {
     fetchLeaderboard();
-  }, [year, studentYear, filter]);
+  }, [year, studentYear, filter, pointType, moduleFilter]);
+
+  const fetchModules = async () => {
+    try {
+      const response = await moduleService.getAllmodules();
+      setModules(response.data?.data || []);
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+    }
+  };
 
   const fetchLeaderboard = async () => {
     try {
@@ -39,7 +64,9 @@ const Leaderboard = () => {
         year,
         studentYear,
         period: filter,
-        limit: 50
+        pointType: pointType !== 'all' ? pointType : undefined,
+        moduleId: moduleFilter !== 'all' ? moduleFilter : undefined,
+        limit: 100
       });
       
       setLeaderboardData(response.data.leaderboard);
@@ -52,6 +79,63 @@ const Leaderboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      toast.loading('Génération du rapport...', { id: 'export' });
+
+      // Create CSV content
+      const csvData = [
+        ['Rang', 'Nom d\'utilisateur', 'Nom', 'Points', 'Type de Points', 'Examens Complétés'],
+        ...leaderboardData.map(user => [
+          user.rank,
+          user.username,
+          user.name,
+          user.points,
+          pointType === 'all' ? 'Tous' : pointType,
+          user.totalExams || 0
+        ])
+      ];
+
+      const csvContent = csvData.map(row => row.join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `leaderboard_${pointType}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Rapport exporté', { 
+        id: 'export',
+        description: 'Le fichier CSV a été téléchargé.'
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Erreur lors de l\'export', { id: 'export' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const getPointTypeBadge = (type) => {
+    const config = pointTypes.find(p => p.value === type) || pointTypes[0];
+    const colorClasses = {
+      blue: 'bg-blue-100 text-blue-700',
+      green: 'bg-green-100 text-green-700',
+      yellow: 'bg-yellow-100 text-yellow-700',
+      gray: 'bg-gray-100 text-gray-700',
+    };
+    return (
+      <Badge className={colorClasses[config.color]}>
+        <config.icon className="w-3 h-3 mr-1" />
+        {config.label}
+      </Badge>
+    );
   };
 
   // Filter logic (client-side search only)
@@ -107,36 +191,73 @@ const Leaderboard = () => {
 
         {/* Search & Filter Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder={t('dashboard:search_by_name')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          <div className="flex flex-col gap-4">
+            {/* Top Row - Search and Export */}
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="relative flex-1 w-full sm:max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder={t('dashboard:search_by_name')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <Button
+                onClick={handleExport}
+                variant="outline"
+                className="flex items-center gap-2"
+                disabled={exporting || loading}
+              >
+                <Download className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
+                {exporting ? 'Export...' : 'Exporter CSV'}
+              </Button>
             </div>
-            <div className="flex gap-2">
+
+            {/* Point Type Filter - Visual Badges */}
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-600 mr-2 self-center">Type de points:</span>
+              {pointTypes.map((pt) => {
+                const colorClasses = {
+                  blue: pointType === pt.value ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+                  green: pointType === pt.value ? 'bg-green-500 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100',
+                  yellow: pointType === pt.value ? 'bg-yellow-500 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100',
+                  gray: pointType === pt.value ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100',
+                };
+                return (
+                  <button
+                    key={pt.value}
+                    onClick={() => setPointType(pt.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${colorClasses[pt.color]}`}
+                  >
+                    <pt.icon className="w-4 h-4" />
+                    {pt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Filter Row */}
+            <div className="flex flex-wrap gap-2">
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50"
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
               >
                 {periods.map((tab) => (
                   <option key={tab} value={tab}>
-                    {tab}
+                    {tab === 'All' ? 'Toutes périodes' : tab}
                   </option>
                 ))}
               </select>
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50"
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
               >
                 <option value="All">{t('dashboard:all_years')}</option>
-                {years.map((y) => (
+                {years.filter(y => y !== 'All').map((y) => (
                   <option key={y} value={y}>
                     {y}
                   </option>
@@ -145,18 +266,27 @@ const Leaderboard = () => {
               <select
                 value={studentYear}
                 onChange={(e) => setStudentYear(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50"
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
               >
                 <option value="All">{t('dashboard:all_student_years')}</option>
-                {studentYears.map((sy) => (
+                {studentYears.filter(sy => sy !== 'All').map((sy) => (
                   <option key={sy} value={sy}>
                     {sy}
                   </option>
                 ))}
               </select>
-              <button className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 flex items-center gap-2 text-gray-600">
-                <Filter className="w-4 h-4" /> {t('dashboard:filters')}
-              </button>
+              <select
+                value={moduleFilter}
+                onChange={(e) => setModuleFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
+              >
+                <option value="all">Tous les modules</option>
+                {modules.map((mod) => (
+                  <option key={mod._id} value={mod._id}>
+                    {mod.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

@@ -3,18 +3,48 @@ import Transaction from "../models/transactionModel.js";
 import User from "../models/userModel.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 import { NotificationController } from "./notificationController.js";
+import PaypalSettings from "../models/paypalSettingsModel.js";
 
-// PayPal environment setup
-const environment = () => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+// Cache PayPal settings
+let cachedPaypalSettings = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-  return process.env.PAYPAL_MODE === "production"
+// Get PayPal settings from database with caching
+const getPaypalSettings = async () => {
+  const now = Date.now();
+  if (cachedPaypalSettings && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedPaypalSettings;
+  }
+
+  const settings = await PaypalSettings.findOne();
+  if (settings) {
+    cachedPaypalSettings = settings;
+    cacheTimestamp = now;
+  }
+  return settings;
+};
+
+// Clear settings cache (call after updating settings)
+export const clearPaypalSettingsCache = () => {
+  cachedPaypalSettings = null;
+  cacheTimestamp = 0;
+};
+
+// PayPal environment setup - now uses database settings with fallback to env vars
+const environment = async () => {
+  const settings = await getPaypalSettings();
+  
+  const clientId = settings?.clientId || process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = settings?.clientSecret || process.env.PAYPAL_CLIENT_SECRET;
+  const mode = settings?.mode || process.env.PAYPAL_MODE || "sandbox";
+
+  return mode === "production"
     ? new paypal.core.LiveEnvironment(clientId, clientSecret)
     : new paypal.core.SandboxEnvironment(clientId, clientSecret);
 };
 
-const client = () => new paypal.core.PayPalHttpClient(environment());
+const client = async () => new paypal.core.PayPalHttpClient(await environment());
 
 // Pricing configuration
 const PRICING = {
@@ -27,6 +57,21 @@ const PRICING = {
 // Create PayPal order
 const createOrder = asyncHandler(async (req, res) => {
   const { duration } = req.body;
+
+  // Check if PayPal is configured
+  const settings = await getPaypalSettings();
+  const clientId = settings?.clientId || process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = settings?.clientSecret || process.env.PAYPAL_CLIENT_SECRET;
+  
+  if (!clientId || !clientSecret) {
+    res.status(400);
+    throw new Error("PayPal n'est pas configuré. Veuillez contacter l'administrateur.");
+  }
+
+  if (settings && !settings.isActive) {
+    res.status(400);
+    throw new Error("Les paiements PayPal sont temporairement désactivés.");
+  }
 
   if (!duration || !PRICING[duration]) {
     res.status(400);
@@ -70,7 +115,8 @@ const createOrder = asyncHandler(async (req, res) => {
   });
 
   try {
-    const order = await client().execute(request);
+    const paypalClient = await client();
+    const order = await paypalClient.execute(request);
 
     // Update transaction with PayPal order ID
     transaction.paypalOrderId = order.result.id;
@@ -116,7 +162,8 @@ const capturePayment = asyncHandler(async (req, res) => {
   request.requestBody({});
 
   try {
-    const capture = await client().execute(request);
+    const paypalClient = await client();
+    const capture = await paypalClient.execute(request);
 
     if (capture.result.status === "COMPLETED") {
       // Update transaction

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   SubscrptionChart,
   UserGrowChart,
@@ -27,21 +28,37 @@ import {
   Target,
   Award,
   Activity,
+  RefreshCw,
+  Bell,
+  FileText,
+  Settings,
+  AlertCircle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { adminAnalyticsService } from "@/services/adminAnalyticsService";
 import { toast } from "sonner";
 
 const AnalyticsPage = () => {
   const { t } = useTranslation(['admin', 'common']);
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState("30d");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   useEffect(() => {
     fetchDashboardData();
   }, [dateRange]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh(true);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -53,6 +70,7 @@ const AnalyticsPage = () => {
       
       setDashboardData(statsResponse.data);
       setRecentActivity(activityResponse.data);
+      setLastRefresh(new Date());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erreur', {
@@ -63,9 +81,69 @@ const AnalyticsPage = () => {
     }
   };
 
-  const handleExport = () => {
-    // Export functionality would go here
-    console.log("Exporting analytics data...");
+  const handleRefresh = useCallback(async (silent = false) => {
+    if (!silent) setRefreshing(true);
+    try {
+      const [statsResponse, activityResponse] = await Promise.all([
+        adminAnalyticsService.getDashboardStats(),
+        adminAnalyticsService.getRecentActivity(5)
+      ]);
+      
+      setDashboardData(statsResponse.data);
+      setRecentActivity(activityResponse.data);
+      setLastRefresh(new Date());
+      
+      if (!silent) {
+        toast.success('Données actualisées', {
+          description: 'Le tableau de bord a été mis à jour.'
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      if (!silent) {
+        toast.error('Erreur lors de l\'actualisation');
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const handleExport = async () => {
+    try {
+      toast.loading('Génération du rapport...', { id: 'export' });
+      
+      // Create CSV content
+      const csvData = [
+        ['Métrique', 'Valeur', 'Croissance'],
+        ['Utilisateurs totaux', dashboardData?.totalUsers?.value || 0, dashboardData?.totalUsers?.growth || '0%'],
+        ['Abonnements actifs', dashboardData?.activeSubscriptions?.value || 0, dashboardData?.activeSubscriptions?.growth || '0%'],
+        ['Tentatives d\'examen', dashboardData?.examAttempts?.value || 0, dashboardData?.examAttempts?.growth || '0%'],
+        ['Revenus mensuels', `${dashboardData?.monthlyRevenue?.value || 0} ${dashboardData?.monthlyRevenue?.currency || 'MAD'}`, ''],
+        ['', '', ''],
+        ['Métriques de performance', '', ''],
+        ['Score moyen', `${dashboardData?.performanceMetrics?.averageScore || 0}%`, ''],
+        ['Heures d\'étude totales', dashboardData?.performanceMetrics?.totalStudyHours || 0, ''],
+      ];
+
+      const csvContent = csvData.map(row => row.join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `analytics_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Rapport exporté', { 
+        id: 'export',
+        description: 'Le fichier CSV a été téléchargé.'
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Erreur lors de l\'export', { id: 'export' });
+    }
   };
 
   const getActivityIcon = (type) => {
@@ -199,7 +277,23 @@ const AnalyticsPage = () => {
             <Download className="w-4 h-4" />
             {t('common:export')}
           </Button>
+          <Button
+            onClick={() => handleRefresh(false)}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={refreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Actualisation...' : 'Actualiser'}
+          </Button>
         </div>
+      </div>
+
+      {/* Last Refresh Indicator */}
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <Clock className="w-3 h-3" />
+        <span>Dernière mise à jour: {lastRefresh.toLocaleTimeString('fr-FR')}</span>
+        <span className="text-green-500">• Actualisation auto toutes les 60s</span>
       </div>
 
       {/* KPI Cards */}
@@ -372,34 +466,54 @@ const AnalyticsPage = () => {
           <CardDescription>{t('admin:common_admin_tasks')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-blue-50 hover:border-blue-300"
+              onClick={() => navigate('/admin/users')}
             >
-              <Users className="w-6 h-6" />
+              <Users className="w-6 h-6 text-blue-600" />
               <span className="text-sm">{t('admin:manage_users')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-green-50 hover:border-green-300"
+              onClick={() => navigate('/admin/addQuestions')}
             >
-              <GraduationCap className="w-6 h-6" />
+              <GraduationCap className="w-6 h-6 text-green-600" />
               <span className="text-sm">{t('admin:add_exam')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-purple-50 hover:border-purple-300"
+              onClick={() => navigate('/admin/subscription')}
             >
-              <CreditCard className="w-6 h-6" />
+              <CreditCard className="w-6 h-6 text-purple-600" />
               <span className="text-sm">{t('admin:view_subscriptions')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-orange-50 hover:border-orange-300"
+              onClick={() => navigate('/admin/report-questions')}
             >
-              <BarChart3 className="w-6 h-6" />
-              <span className="text-sm">{t('admin:generate_report')}</span>
+              <AlertCircle className="w-6 h-6 text-orange-600" />
+              <span className="text-sm">Reports</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-pink-50 hover:border-pink-300"
+              onClick={() => navigate('/admin/notifications')}
+            >
+              <Bell className="w-6 h-6 text-pink-600" />
+              <span className="text-sm">Notifications</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-teal-50 hover:border-teal-300"
+              onClick={() => navigate('/admin/leaderboard')}
+            >
+              <BarChart3 className="w-6 h-6 text-teal-600" />
+              <span className="text-sm">Leaderboard</span>
             </Button>
           </div>
         </CardContent>
