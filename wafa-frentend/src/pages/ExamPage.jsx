@@ -861,7 +861,7 @@ const ExamPage = () => {
                     <div className="flex items-center justify-center">
                       {/* Correct/Verifier Button */}
                       <button
-                        onClick={verifyCurrentQuestion}
+                        onClick={handleVerifyQuestion}
                         disabled={isQuestionVerified || showResults}
                         className={cn(
                           "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all",
@@ -895,7 +895,7 @@ const ExamPage = () => {
 
                       {/* Ressayer Button */}
                       <button
-                        onClick={retryCurrentQuestion}
+                        onClick={handleResetQuestion}
                         disabled={!isQuestionVerified && !showResults}
                         className={cn(
                           "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100",

@@ -20,6 +20,7 @@ import {
   Lock,
   CreditCard,
   BarChart3,
+  GraduationCap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -119,6 +120,23 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     return false;
   });
 
+  // Group modules by semester
+  const modulesBySemester = filteredModules.reduce((acc, module) => {
+    const semester = module.semester || 'Unknown';
+    if (!acc[semester]) {
+      acc[semester] = [];
+    }
+    acc[semester].push(module);
+    return acc;
+  }, {});
+
+  // Sort semesters (S1, S2, ..., S10)
+  const sortedSemesters = Object.keys(modulesBySemester).sort((a, b) => {
+    const numA = parseInt(a.replace('S', ''));
+    const numB = parseInt(b.replace('S', ''));
+    return numA - numB;
+  });
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape" && isMobile && sidebarOpen) {
@@ -151,13 +169,13 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     return Book; // Default icon
   };
 
-  // Dynamic module items based on filtered modules (user's subscribed semesters)
-  const moduleSidebarItems = filteredModules.map((module) => ({
+  // Create module sidebar item
+  const createModuleSidebarItem = (module) => ({
     id: module._id,
     label: module.name,
     icon: getModuleIcon(module.name),
     path: `/dashboard/subjects/${module._id}`,
-  }));
+  });
 
   // Other grouped items
   const analysisItems = [
@@ -275,18 +293,18 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                 />
               </CollapsibleSection>
 
-              {/* Group: Modules */}
+              {/* Group: Modules - Grouped by Semester */}
               <CollapsibleSection
                 id="modules"
                 title={t('dashboard:modules')}
-                count={moduleSidebarItems.length}
+                count={filteredModules.length}
                 isOpen={openGroups.modules}
                 forceOpen={!sidebarOpen}
                 onToggle={() => toggleGroup("modules")}
                 sidebarOpen={sidebarOpen}
                 icon={Book}
               >
-                {moduleSidebarItems.length === 0 ? (
+                {filteredModules.length === 0 ? (
                   sidebarOpen && (
                     <div className="px-3 py-4 text-center">
                       <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
@@ -299,18 +317,32 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                     </div>
                   )
                 ) : (
-                  moduleSidebarItems.map((item) => (
-                    <SidebarItem
-                      key={item.id}
-                      item={item}
-                      activeTab={activeTab}
-                      setActiveTab={setActiveTab}
-                      navigate={navigate}
-                      isMobile={isMobile}
+                  sortedSemesters.map((semester) => (
+                    <CollapsibleSection
+                      key={semester}
+                      id={`semester-${semester}`}
+                      title={semester}
+                      count={modulesBySemester[semester].length}
+                      isOpen={openGroups[`semester-${semester}`]}
+                      forceOpen={!sidebarOpen}
+                      onToggle={() => toggleGroup(`semester-${semester}`)}
                       sidebarOpen={sidebarOpen}
-                      setSidebarOpen={setSidebarOpen}
-                      extraClassName={sidebarOpen ? "pl-2" : ""}
-                    />
+                      icon={GraduationCap}
+                    >
+                      {modulesBySemester[semester].map((module) => (
+                        <SidebarItem
+                          key={module._id}
+                          item={createModuleSidebarItem(module)}
+                          activeTab={activeTab}
+                          setActiveTab={setActiveTab}
+                          navigate={navigate}
+                          isMobile={isMobile}
+                          sidebarOpen={sidebarOpen}
+                          setSidebarOpen={setSidebarOpen}
+                          extraClassName={sidebarOpen ? "pl-4" : ""}
+                        />
+                      ))}
+                    </CollapsibleSection>
                   ))
                 )}
               </CollapsibleSection>

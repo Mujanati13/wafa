@@ -26,8 +26,6 @@ router.post("/login", (req, res, next) => {
           name: user.name,
           isAdmin: user.isAdmin,
           plan: user.plan,
-          planExpiry: user.planExpiry,
-          semesters: user.semesters,
         },
       });
     });

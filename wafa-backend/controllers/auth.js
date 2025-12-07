@@ -572,9 +572,6 @@ export const AuthController = {
               profilePicture: user.profilePicture,
               emailVerified: user.emailVerified,
               role: user.role,
-              plan: user.plan,
-              planExpiry: user.planExpiry,
-              semesters: user.semesters,
             },
           });
         });
@@ -632,9 +629,6 @@ export const AuthController = {
               profilePicture: user.profilePicture,
               emailVerified: user.emailVerified,
               role: user.role,
-              plan: user.plan,
-              planExpiry: user.planExpiry,
-              semesters: user.semesters,
             },
           });
         });
@@ -689,9 +683,6 @@ export const AuthController = {
             profilePicture: newUser.profilePicture,
             emailVerified: newUser.emailVerified,
             role: newUser.role,
-            plan: newUser.plan,
-            planExpiry: newUser.planExpiry,
-            semesters: newUser.semesters,
           },
         });
       });
