@@ -442,15 +442,18 @@ const SubscriptionPage = () => {
                           Features
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {plan.features.map((f, i) => (
-                            <Badge
-                              key={`${plan.id}-feature-${i}`}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {f}
-                            </Badge>
-                          ))}
+                          {plan.features.map((f, i) => {
+                            const featureText = typeof f === 'string' ? f : f.text;
+                            return (
+                              <Badge
+                                key={`${plan.id}-feature-${i}`}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {featureText}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

@@ -14,64 +14,73 @@ const seedSubscriptionPlans = async () => {
         await SubscriptionPlan.deleteMany({});
         console.log('✓ Cleared existing subscription plans');
 
-        // Create 3 basic subscription plans
+        // Create 3 subscription plans matching the design
         const plans = await SubscriptionPlan.insertMany([
             {
-                name: 'Plan Gratuit',
-                description: 'Accès limité aux ressources d\'apprentissage',
+                name: 'Gratuit',
+                description: 'Accès de base pour découvrir la plateforme',
                 price: 0,
                 oldPrice: null,
+                period: 'Semester',
                 features: [
-                    'Accès à 5 examens',
-                    'Accès à 3 modules',
-                    '1 résumé par mois',
-                    'Support communautaire'
+                    { text: 'one module', included: true },
+                    { text: 'un exam', included: true },
+                    { text: 'Mobile-friendly interface', included: true },
+                    { text: 'fonctionalités', included: false },
+                    { text: 'Access to Boards', included: false },
+                    { text: 'access to statistiques', included: false },
+                    { text: 'Ai companion access', included: false },
+                    { text: 'Early features access', included: false }
                 ],
                 status: 'Active',
-                order: 1
+                order: 1,
+                isPopular: false
             },
             {
-                name: 'Plan Étudiant',
-                description: 'Accès complet aux ressources pour étudiants',
-                price: 49,
-                oldPrice: 99,
+                name: 'Premium',
+                description: 'Accès complet par semestre',
+                price: 90,
+                oldPrice: 120,
+                period: 'Semester',
                 features: [
-                    'Accès illimité aux examens',
-                    'Accès illimité aux modules',
-                    'Résumés illimités',
-                    'Explications détaillées',
-                    'Playlists d\'étude personnalisées',
-                    'Support prioritaire par email',
-                    'Statistiques d\'apprentissage avancées',
-                    'Téléchargement hors ligne'
+                    { text: 'tous les modules', included: true },
+                    { text: 'tous les exams', included: true },
+                    { text: 'Mobile-friendly interface', included: true },
+                    { text: 'fonctionalités', included: true },
+                    { text: 'Access to Boards', included: true },
+                    { text: 'access to statistiques', included: true },
+                    { text: 'Ai companion access', included: true },
+                    { text: 'Early features access', included: true }
                 ],
                 status: 'Active',
-                order: 2
+                order: 2,
+                isPopular: true
             },
             {
-                name: 'Plan Premium',
-                description: 'Accès premium avec support personnel',
-                price: 99,
-                oldPrice: 199,
+                name: 'Premium Annuel',
+                description: 'Accès complet annuel - Meilleure valeur',
+                price: 120,
+                oldPrice: 200,
+                period: 'Annee',
                 features: [
-                    'Accès illimité à toutes les ressources',
-                    'Support personnalisé 24/7',
-                    'Mentorat avec les meilleurs étudiants',
-                    'Accès aux webinaires exclusifs',
-                    'Plans d\'étude sur mesure',
-                    'Suivi de progression détaillé',
-                    'Accès prioritaire aux nouveaux contenus',
-                    'Certificat de réussite',
-                    'Garantie de satisfaction 30 jours'
+                    { text: 'tous les modules', included: true },
+                    { text: 'tous les exams', included: true },
+                    { text: 'Mobile-friendly interface', included: true },
+                    { text: 'fonctionalités', included: true },
+                    { text: 'Access to Boards', included: true },
+                    { text: 'access to statistiques', included: true },
+                    { text: 'Ai companion access', included: true },
+                    { text: 'Early features access', included: true }
                 ],
                 status: 'Active',
-                order: 3
+                order: 3,
+                isPopular: false
             }
         ]);
 
         console.log(`✓ Created ${plans.length} subscription plans:`);
         plans.forEach((plan, index) => {
-            console.log(`  ${index + 1}. ${plan.name} - ${plan.price}DH (${plan.features.length} features)`);
+            console.log(`  ${index + 1}. ${plan.name} - ${plan.price} dh/${plan.period} (${plan.features.length} features)`);
         });
 
         await mongoose.disconnect();

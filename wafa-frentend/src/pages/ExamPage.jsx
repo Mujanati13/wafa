@@ -43,7 +43,8 @@ import {
   Share2,
   Download,
   Eye,
-  EyeOff
+  EyeOff,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,6 +58,7 @@ import { cn } from "@/lib/utils";
 import ExplicationModel from "@/components/ExamsPage/ExplicationModel";
 import NoteModal from "@/components/ExamsPage/NoteModal";
 import ReportModal from "@/components/ExamsPage/ReportModal";
+import CommunityModal from "@/components/ExamsPage/CommunityModal";
 
 // Confetti function (simple implementation without external library)
 const triggerConfetti = () => {
@@ -114,6 +116,11 @@ const ExamPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [showCommunityModal, setShowCommunityModal] = useState(false);
+  
+  // Verification state - per question
+  const [verifiedQuestions, setVerifiedQuestions] = useState({});
+  const [validationError, setValidationError] = useState(null);
   
   // UI preferences
   const [fontSize, setFontSize] = useState(() => {
@@ -273,6 +280,39 @@ const ExamPage = () => {
     setFlaggedQuestions(newFlags);
     playSound('flag');
   }, [flaggedQuestions, playSound, t]);
+
+  // Verify current question - show answer without submitting full exam
+  const handleVerifyQuestion = useCallback(() => {
+    const hasAnswer = selectedAnswers[currentQuestion]?.length > 0;
+    if (!hasAnswer) {
+      setValidationError("At least select an option");
+      setTimeout(() => setValidationError(null), 3000);
+      return;
+    }
+    
+    setVerifiedQuestions(prev => ({
+      ...prev,
+      [currentQuestion]: true
+    }));
+    playSound('select');
+  }, [currentQuestion, selectedAnswers, playSound]);
+
+  // Reset current question verification
+  const handleResetQuestion = useCallback(() => {
+    setSelectedAnswers(prev => {
+      const newAnswers = { ...prev };
+      delete newAnswers[currentQuestion];
+      return newAnswers;
+    });
+    setVerifiedQuestions(prev => {
+      const newVerified = { ...prev };
+      delete newVerified[currentQuestion];
+      return newVerified;
+    });
+  }, [currentQuestion]);
+
+  // Check if current question is verified
+  const isQuestionVerified = verifiedQuestions[currentQuestion] || false;
 
   // Font size controls
   const adjustFontSize = useCallback((delta) => {
@@ -669,22 +709,43 @@ const ExamPage = () => {
                           </Badge>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleFlag(currentQuestion)}
-                        className={cn(
-                          "shrink-0 transition-all",
-                          flaggedQuestions.has(currentQuestion) 
-                            ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50" 
-                            : "text-gray-400 hover:text-gray-600"
-                        )}
-                      >
-                        <Flag className={cn(
-                          "h-5 w-5 transition-transform",
-                          flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
-                        )} />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowNoteModal(true)}
+                          className="shrink-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 h-8 w-8"
+                          title="Note"
+                        >
+                          <NotebookPen className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowReportModal(true)}
+                          className="shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8"
+                          title="Signaler"
+                        >
+                          <TriangleAlert className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleFlag(currentQuestion)}
+                          className={cn(
+                            "shrink-0 transition-all h-8 w-8",
+                            flaggedQuestions.has(currentQuestion) 
+                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50" 
+                              : "text-gray-400 hover:text-gray-600"
+                          )}
+                          title="Surligner"
+                        >
+                          <Flag className={cn(
+                            "h-4 w-4 transition-transform",
+                            flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
+                          )} />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -713,21 +774,21 @@ const ExamPage = () => {
                       {currentQuestionData.options.map((option, index) => {
                         const isSelected = (selectedAnswers[currentQuestion] || []).includes(index);
                         const isCorrect = option.isCorrect;
-                        const showCorrectness = showResults;
+                        const showCorrectness = showResults || isQuestionVerified;
                         const isAnimating = answerAnimation?.questionIndex === currentQuestion && 
                                            answerAnimation?.optionIndex === index;
 
                         return (
                           <motion.button
                             key={index}
-                            whileHover={{ scale: showResults ? 1 : 1.01 }}
-                            whileTap={{ scale: showResults ? 1 : 0.99 }}
+                            whileHover={{ scale: showCorrectness ? 1 : 1.01 }}
+                            whileTap={{ scale: showCorrectness ? 1 : 0.99 }}
                             animate={isAnimating ? { scale: [1, 1.02, 1] } : {}}
                             className={cn(
                               "w-full text-left rounded-xl border-2 transition-all duration-200",
                               "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                              !showResults && "hover:shadow-md cursor-pointer",
-                              showResults && "cursor-default",
+                              !showCorrectness && "hover:shadow-md cursor-pointer",
+                              showCorrectness && "cursor-default",
                               // Default state
                               !isSelected && !showCorrectness && "border-gray-200 bg-white hover:border-gray-300",
                               // Selected state (before results)
@@ -737,8 +798,8 @@ const ExamPage = () => {
                               // Wrong answer selected (results)
                               showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50"
                             )}
-                            onClick={() => !showResults && handleAnswerSelect(currentQuestion, index)}
-                            disabled={showResults}
+                            onClick={() => !showCorrectness && handleAnswerSelect(currentQuestion, index)}
+                            disabled={showCorrectness}
                           >
                             <div className="p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
                               {/* Option Letter/Icon */}
@@ -795,44 +856,83 @@ const ExamPage = () => {
                     </div>
                   </CardContent>
 
-                  {/* Action Toolbar */}
-                  <div className="bg-gray-50 border-t px-4 sm:px-6 py-3">
-                    <div className="flex items-center justify-center flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 text-xs sm:text-sm"
+                  {/* Bottom Action Toolbar */}
+                  <div className="bg-white border-t">
+                    <div className="flex items-center justify-center">
+                      {/* Correct/Verifier Button */}
+                      <button
+                        onClick={verifyCurrentQuestion}
+                        disabled={isQuestionVerified || showResults}
+                        className={cn(
+                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all",
+                          "border-r border-gray-100",
+                          isQuestionVerified || showResults
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "hover:bg-emerald-50 text-emerald-600"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
+                          isQuestionVerified || showResults ? "bg-emerald-500" : "bg-emerald-100"
+                        )}>
+                          <Check className={cn("h-5 w-5", isQuestionVerified || showResults ? "text-white" : "text-emerald-600")} />
+                        </div>
+                        <span className="text-xs font-medium">
+                          {isQuestionVerified || showResults ? 'Correct' : 'Verifier'}
+                        </span>
+                      </button>
+
+                      {/* Community Button */}
+                      <button
+                        onClick={() => setShowCommunityModal(true)}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-teal-50 text-teal-600 border-r border-gray-100"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mb-1">
+                          <Users className="h-5 w-5 text-teal-600" />
+                        </div>
+                        <span className="text-xs font-medium">A Community</span>
+                      </button>
+
+                      {/* Ressayer Button */}
+                      <button
+                        onClick={retryCurrentQuestion}
+                        disabled={!isQuestionVerified && !showResults}
+                        className={cn(
+                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100",
+                          (!isQuestionVerified && !showResults)
+                            ? "opacity-50 cursor-not-allowed text-gray-400"
+                            : "hover:bg-orange-50 text-orange-500"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
+                          (!isQuestionVerified && !showResults) ? "bg-gray-100" : "bg-orange-100"
+                        )}>
+                          <RefreshCcw className={cn("h-5 w-5", (!isQuestionVerified && !showResults) ? "text-gray-400" : "text-orange-500")} />
+                        </div>
+                        <span className="text-xs font-medium">Ressayer</span>
+                      </button>
+
+                      {/* Explication Button */}
+                      <button
                         onClick={() => setShowExplanation(true)}
-                        disabled={!showResults}
+                        disabled={!isQuestionVerified && !showResults}
+                        className={cn(
+                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all",
+                          (!isQuestionVerified && !showResults)
+                            ? "opacity-50 cursor-not-allowed text-gray-400"
+                            : "hover:bg-blue-50 text-blue-600"
+                        )}
                       >
-                        <Lightbulb className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t('dashboard:explanation') || 'Explanation'}</span>
-                        <span className="sm:hidden">Expl.</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 text-xs sm:text-sm"
-                        onClick={() => setShowNoteModal(true)}
-                      >
-                        <NotebookPen className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t('dashboard:note') || 'Note'}</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => setShowReportModal(true)}
-                      >
-                        <TriangleAlert className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t('dashboard:report') || 'Report'}</span>
-                      </Button>
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
+                          (!isQuestionVerified && !showResults) ? "bg-gray-100" : "bg-blue-100"
+                        )}>
+                          <Lightbulb className={cn("h-5 w-5", (!isQuestionVerified && !showResults) ? "text-gray-400" : "text-blue-600")} />
+                        </div>
+                        <span className="text-xs font-medium">Explication</span>
+                      </button>
                     </div>
-                    {!showResults && (
-                      <p className="text-xs text-center text-gray-500 mt-2">
-                        {t('dashboard:finish_to_see_explanation') || 'Finish exam to see explanations'}
-                      </p>
-                    )}
                   </div>
                 </Card>
               </motion.div>
@@ -885,14 +985,41 @@ const ExamPage = () => {
           {/* Sidebar - Desktop */}
           <div className="hidden lg:block lg:col-span-1">
             <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b py-4">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b py-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>{t('dashboard:questions_by_session') || 'Questions'}</span>
                   <Badge className="bg-blue-100 text-blue-700">{questions.length}</Badge>
                 </CardTitle>
+                {/* Legend */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                    <span className="text-gray-500">Non visité</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
+                    <span className="text-gray-500">Répondu</span>
+                  </div>
+                  {showResults && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
+                        <span className="text-gray-500">Correct</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                        <span className="text-gray-500">Incorrect</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Flag className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span className="text-gray-500">Surligné</span>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[500px]">
+                <ScrollArea className="h-[450px]">
                   <div className="p-4 space-y-4">
                     {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
                       const isCollapsed = collapsedSessions.has(sessionName);
@@ -1008,14 +1135,14 @@ const ExamPage = () => {
         </div>
       </div>
 
-      {/* Mobile FAB */}
-      <div className="lg:hidden fixed bottom-6 right-6 z-30">
+      {/* Mobile FAB - positioned higher to avoid overlapping with bottom toolbar */}
+      <div className="lg:hidden fixed bottom-24 right-4 z-30">
         <Button
           size="lg"
-          className="h-14 w-14 rounded-full shadow-xl bg-gradient-to-br from-blue-600 to-indigo-600"
+          className="h-12 w-12 rounded-full shadow-xl bg-gradient-to-br from-blue-600 to-indigo-600"
           onClick={() => setShowSidebar(true)}
         >
-          <ListChecks className="h-6 w-6" />
+          <ListChecks className="h-5 w-5" />
         </Button>
       </div>
 
@@ -1272,6 +1399,20 @@ const ExamPage = () => {
           isOpen={showReportModal}
           onClose={() => setShowReportModal(false)}
           questionId={currentQuestionData._id}
+        />
+      )}
+
+      {showCommunityModal && currentQuestionData && (
+        <CommunityModal
+          isOpen={showCommunityModal}
+          onClose={() => setShowCommunityModal(false)}
+          questionId={currentQuestionData._id}
+          questionOptions={currentQuestionData.options}
+          correctAnswer={currentQuestionData.options
+            .map((opt, i) => opt.isCorrect ? String.fromCharCode(65 + i) : null)
+            .filter(Boolean)}
+          userLevel={20} // TODO: Pass actual user level from module stats
+          requiredLevel={20}
         />
       )}
     </div>

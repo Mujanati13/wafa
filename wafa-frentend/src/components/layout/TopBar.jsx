@@ -68,18 +68,51 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     { type: 'page', title: t('dashboard:my_notes'), icon: FileText, path: '/dashboard/note', description: t('dashboard:my_notes') },
   ];
 
-  // Get modules from localStorage
+  // Get modules from localStorage and filter by user's semesters
   useEffect(() => {
     const storedModules = localStorage.getItem('modules');
+    const storedUser = localStorage.getItem('user');
+    
+    let userSemesters = [];
+    let userPlan = "Free";
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        userSemesters = userData.semesters || [];
+        userPlan = userData.plan || "Free";
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+    // Also use the fetched user data if available
+    if (user?.semesters) {
+      userSemesters = user.semesters;
+    }
+    if (user?.plan) {
+      userPlan = user.plan;
+    }
+
     if (storedModules) {
       try {
         const modules = JSON.parse(storedModules);
-        const moduleItems = modules.map(module => ({
+        // Filter modules based on user's subscribed semesters
+        const filteredModules = modules.filter(module => {
+          // If user has semesters defined, use those
+          if (userSemesters && userSemesters.length > 0) {
+            return userSemesters.includes(module.semester);
+          }
+          // For Free plan users with no semesters set, give access to S1 by default
+          if (userPlan === "Free" || !userPlan) {
+            return module.semester === "S1";
+          }
+          return false;
+        });
+        const moduleItems = filteredModules.map(module => ({
           type: 'module',
           title: module.name,
           icon: BookOpen,
           path: `/dashboard/subjects/${module._id}`,
-          description: 'Module de cours'
+          description: `Module - ${module.semester}`
         }));
         setSearchResults([...searchableItems, ...moduleItems]);
       } catch (error) {
@@ -88,7 +121,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     } else {
       setSearchResults(searchableItems);
     }
-  }, []);
+  }, [user]);
 
   // Close search results when clicking outside
   useEffect(() => {

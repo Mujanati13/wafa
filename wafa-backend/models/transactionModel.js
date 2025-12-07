@@ -42,6 +42,12 @@ const transactionSchema = new mongoose.Schema(
       enum: ["1month", "3months", "6months", "1year"],
       required: true,
     },
+    // Selected semesters for the subscription
+    semesters: {
+      type: [String],
+      enum: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"],
+      default: [],
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

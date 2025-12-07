@@ -56,7 +56,7 @@ const PRICING = {
 
 // Create PayPal order
 const createOrder = asyncHandler(async (req, res) => {
-  const { duration } = req.body;
+  const { duration, semesters, planId } = req.body;
 
   // Check if PayPal is configured
   const settings = await getPaypalSettings();
@@ -78,15 +78,33 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error("Invalid duration selected");
   }
 
+  // Validate semesters
+  const validSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+  const selectedSemesters = semesters || [];
+  
+  if (selectedSemesters.length === 0) {
+    res.status(400);
+    throw new Error("Veuillez sélectionner au moins un semestre");
+  }
+
+  // Validate that all selected semesters are valid
+  for (const sem of selectedSemesters) {
+    if (!validSemesters.includes(sem)) {
+      res.status(400);
+      throw new Error(`Semestre invalide: ${sem}`);
+    }
+  }
+
   const amount = PRICING[duration];
 
-  // Create transaction record
+  // Create transaction record with semesters
   const transaction = await Transaction.create({
     user: req.user._id,
     amount,
     currency: "USD",
     plan: "Premium",
     duration,
+    semesters: selectedSemesters,
     status: "pending",
   });
 
@@ -198,6 +216,15 @@ const capturePayment = asyncHandler(async (req, res) => {
 
       user.plan = "Premium";
       user.planExpiry = currentExpiry;
+      
+      // Update user's semesters with the selected ones
+      if (transaction.semesters && transaction.semesters.length > 0) {
+        // Merge existing semesters with new ones (avoid duplicates)
+        const existingSemesters = user.semesters || [];
+        const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
+        user.semesters = newSemesters;
+      }
+      
       await user.save();
 
       // Send subscription notification
@@ -383,6 +410,14 @@ const handleWebhook = asyncHandler(async (req, res) => {
 
           user.plan = "Premium";
           user.planExpiry = currentExpiry;
+          
+          // Update user's semesters with the selected ones
+          if (transaction.semesters && transaction.semesters.length > 0) {
+            const existingSemesters = user.semesters || [];
+            const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
+            user.semesters = newSemesters;
+          }
+          
           await user.save();
         }
       }

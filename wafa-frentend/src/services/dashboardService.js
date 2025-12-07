@@ -51,13 +51,17 @@ export const dashboardService = {
       
       // Get current user info
       const userProfile = await dashboardService.getUserProfile();
+      const userId = userProfile.data?.user?._id || userProfile.data?._id;
+      
+      // The API returns { success: true, data: { leaderboard: [...] } }
+      const leaderboard = data.data?.leaderboard || data.leaderboard || [];
       
       // Find user's rank in leaderboard
-      const rank = data.data?.findIndex(
-        (user) => user._id === userProfile.data._id
+      const rank = leaderboard.findIndex(
+        (user) => user.userId?.toString() === userId?.toString() || user._id?.toString() === userId?.toString()
       ) + 1 || 0;
       
-      return { rank, leaderboard: data.data };
+      return { rank, leaderboard };
     } catch (error) {
       console.error("Error fetching leaderboard rank:", error);
       return { rank: 0, leaderboard: [] };

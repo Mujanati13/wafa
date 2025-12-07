@@ -1,29 +1,46 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2 } from 'lucide-react'
 
 const FAQSection = () => {
   
 const faqs = [
   {
-    q: "Comment accéder aux QCM médicaux?",
-    a: "Inscrivez-vous gratuitement et commencez à pratiquer immédiatement avec nos QCM médicaux organisés par spécialité.",
+    q: "Pour quelle faculté sont destinés ces QCMs ?",
+    a: "Les QCMs sont spécifiquement conçus pour les étudiants de la FMPR (Faculté de Médecine et de Pharmacie de Rabat).",
+    icon: GraduationCap,
+    color: "blue"
   },
   {
-    q: "L'assistance IA est-elle disponible pour tous les plans?",
-    a: "L'assistance IA est disponible avec les plans Premium, fournissant des explications détaillées et du feedback personnalisé.",
+    q: "Dois-je créer un compte ?",
+    a: "Oui, la création d'un compte gratuit est nécessaire pour accéder aux QCMs et sauvegarder votre progression.",
+    icon: UserPlus,
+    color: "green"
   },
   {
-    q: "Puis-je annuler mon abonnement premium?",
-    a: "Oui, vous pouvez annuler à tout moment depuis votre espace personnel. Nous offrons également une garantie de remboursement de 30 jours.",
+    q: "Puis-je suivre ma progression ?",
+    a: "Oui, votre progression est automatiquement sauvegardée et vous pouvez la consulter à tout moment.",
+    icon: BarChart3,
+    color: "purple"
   },
   {
-    q: "Les QCM sont-ils adaptés à tous les niveaux?",
-    a: "Oui, nos QCM sont organisés par niveau de difficulté et adaptés depuis les études de base jusqu'à la préparation aux concours.",
+    q: "Mes informations bancaires sont-elles sécurisées ?",
+    a: "Absolument. Nous ne conservons aucune information concernant votre carte bancaire. Tous les paiements sont traités par PayPal qui garantit la sécurité de vos transactions.",
+    icon: Shield,
+    color: "teal"
   },
   {
-    q: "Comment suivre mes progrès?",
-    a: "Votre tableau de bord personnalisé vous permet de suivre vos performances, voir vos statistiques détaillées et identifier les domaines à améliorer.",
+    q: "Puis-je être remboursé ?",
+    a: "Les remboursements ne sont accordés que dans des cas exceptionnels. Pour toute demande, contactez-nous sur WhatsApp 0612345678.",
+    icon: RefreshCcw,
+    color: "orange"
   },
+  {
+    q: "Puis-je personnaliser mon parcours d'études ?",
+    a: "Bien sûr ! Vous pouvez organiser votre plan d'études par création des playlists, des examens et des exercices spécifiques afin de personnaliser votre expérience d'apprentissage.",
+    icon: Settings2,
+    color: "indigo"
+  }
 ];
 
   // Animation variants
@@ -133,6 +150,18 @@ export default FAQSection
 function FAQAccordion({ faqs }) {
   const [open, setOpen] = useState(null);
 
+  const getColorClasses = (color) => {
+    const colors = {
+      blue: 'text-blue-500 bg-blue-50',
+      green: 'text-green-500 bg-green-50',
+      purple: 'text-purple-500 bg-purple-50',
+      teal: 'text-teal-500 bg-teal-50',
+      orange: 'text-orange-500 bg-orange-50',
+      indigo: 'text-indigo-500 bg-indigo-50'
+    };
+    return colors[color] || colors.blue;
+  };
+
   const itemVariants = {
     hidden: { 
       opacity: 0, 
@@ -188,76 +217,86 @@ function FAQAccordion({ faqs }) {
 
   return (
     <div className="space-y-4">
-      {faqs.map((faq, index) => (
-        <motion.div
-          key={index}
-          variants={itemVariants}
-          className="group"
-        >
+      {faqs.map((faq, index) => {
+        const Icon = faq.icon;
+        const colorClasses = getColorClasses(faq.color);
+        
+        return (
           <motion.div
-            className={`
-              bg-white backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 overflow-hidden
-              transition-all duration-300 hover:shadow-xl hover:border-blue-300
-              ${open === index ? 'border-blue-400 shadow-blue-100' : ''}
-            `}
-            whileHover={{ scale: 1.01 }}
-            transition={{ duration: 0.2 }}
+            key={index}
+            variants={itemVariants}
+            className="group"
           >
-            <motion.button
-              onClick={() => setOpen(open === index ? null : index)}
-              className="w-full px-8 py-6 text-left flex items-center justify-between group focus:outline-none"
-              whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}
+            <motion.div
+              className={`
+                bg-white backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200 overflow-hidden
+                transition-all duration-300 hover:shadow-xl hover:border-blue-300
+                ${open === index ? 'border-blue-400 shadow-blue-100' : ''}
+              `}
+              whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.2 }}
             >
-              <span className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
-                {faq.q}
-              </span>
-              <motion.div
-                variants={buttonIconVariants}
-                animate={open === index ? "open" : "closed"}
-                className="ml-4 flex-shrink-0"
+              <motion.button
+                onClick={() => setOpen(open === index ? null : index)}
+                className="w-full px-8 py-6 text-left flex items-center justify-between group focus:outline-none"
+                whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}
+                transition={{ duration: 0.2 }}
               >
-                <svg 
-                  className="w-6 h-6 text-blue-600" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M19 9l-7 7-7-7" 
-                  />
-                </svg>
-              </motion.div>
-            </motion.button>
-            
-            <AnimatePresence>
-              {open === index && (
-                <motion.div
-                  initial="collapsed"
-                  animate="expanded"
-                  exit="collapsed"
-                  variants={contentVariants}
-                  className="overflow-hidden"
-                >
-                  <div className="px-8 pb-6 pt-2">
-                    <motion.p 
-                      className="text-gray-700 leading-relaxed"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                    >
-                      {faq.a}
-                    </motion.p>
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`p-3 rounded-lg ${colorClasses} flex-shrink-0`}>
+                    <Icon className="w-5 h-5" />
                   </div>
+                  <span className="text-lg font-semibold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
+                    {faq.q}
+                  </span>
+                </div>
+                <motion.div
+                  variants={buttonIconVariants}
+                  animate={open === index ? "open" : "closed"}
+                  className="ml-4 flex-shrink-0"
+                >
+                  <svg 
+                    className="w-6 h-6 text-blue-600" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M19 9l-7 7-7-7" 
+                    />
+                  </svg>
                 </motion.div>
-              )}
-            </AnimatePresence>
+              </motion.button>
+              
+              <AnimatePresence>
+                {open === index && (
+                  <motion.div
+                    initial="collapsed"
+                    animate="expanded"
+                    exit="collapsed"
+                    variants={contentVariants}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-8 pb-6 pt-2 border-t border-gray-100">
+                      <motion.p 
+                        className="text-gray-700 leading-relaxed"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        {faq.a}
+                      </motion.p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -17,10 +17,14 @@ import {
   Stethoscope,
   Dna,
   HelpCircle,
+  Lock,
+  CreditCard,
+  BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
+import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +45,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userSemesters, setUserSemesters] = useState([]);
+  const [userPlan, setUserPlan] = useState("Free");
   // Collapsible section open states (all collapsed by default)
   const [openGroups, setOpenGroups] = useState({
     dashboard: false,
@@ -52,13 +58,38 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const toggleGroup = (groupKey) =>
     setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
 
+  // Fetch user profile to get semesters
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const userProfile = await userService.getUserProfile();
+        setUserSemesters(userProfile.semesters || []);
+        setUserPlan(userProfile.plan || "Free");
+        // Update localStorage with latest user data
+        localStorage.setItem("user", JSON.stringify(userProfile));
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        // Fallback to localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setUserSemesters(user.semesters || []);
+          setUserPlan(user.plan || "Free");
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   useEffect(() => {
     const fetchModules = async () => {
       try {
         setLoading(true);
         const { data } = await moduleService.getAllmodules();
-        setModules(data.data || []);
-        localStorage.setItem("modules", JSON.stringify(data.data));
+        const allModules = data.data || [];
+        setModules(allModules);
+        localStorage.setItem("modules", JSON.stringify(allModules));
       } catch (error) {
         console.error("Error fetching modules:", error);
         // Fallback to localStorage if API fails
@@ -73,6 +104,20 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
     fetchModules();
   }, []);
+
+  // Filter modules based on user's subscribed semesters
+  const filteredModules = modules.filter((module) => {
+    // If user has semesters defined, use those
+    if (userSemesters && userSemesters.length > 0) {
+      return userSemesters.includes(module.semester);
+    }
+    // For Free plan users with no semesters set, give access to S1 by default
+    if (userPlan === "Free" || !userPlan) {
+      return module.semester === "S1";
+    }
+    // No access if no semesters and not Free plan
+    return false;
+  });
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -106,8 +151,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     return Book; // Default icon
   };
 
-  // Dynamic module items based on fetched modules
-  const moduleSidebarItems = modules.map((module) => ({
+  // Dynamic module items based on filtered modules (user's subscribed semesters)
+  const moduleSidebarItems = filteredModules.map((module) => ({
     id: module._id,
     label: module.name,
     icon: getModuleIcon(module.name),
@@ -121,6 +166,12 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:ranking'),
       icon: Trophy,
       path: "/dashboard/leaderboard",
+    },
+    {
+      id: "statistics",
+      label: t('dashboard:statistics', 'Statistiques'),
+      icon: BarChart3,
+      path: "/dashboard/statistics",
     },
   ];
 
@@ -136,6 +187,12 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:my_notes'),
       icon: NotebookPen,
       path: "/dashboard/note",
+    },
+    {
+      id: "subscription",
+      label: t('dashboard:subscription', 'Abonnement'),
+      icon: CreditCard,
+      path: "/dashboard/subscription",
     },
     {
       id: "support",
@@ -168,13 +225,13 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
         }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
         className={`${isMobile ? "fixed" : "relative"} z-50 ${
-          isMobile ? "h-[calc(100vh-4rem)]" : "h-screen"
-        } flex flex-col min-h-0 bg-white border-r border-gray-200 shadow-xl left-0 ${
+          isMobile ? "h-[calc(100vh-4rem)]" : "h-full"
+        } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${
           isMobile ? "top-16" : "top-0"
         } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden`}
       >
         {/* Navigation */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 h-0 min-h-0">
           <TooltipProvider delayDuration={300}>
             <nav
               className={cn(
@@ -229,19 +286,33 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                 sidebarOpen={sidebarOpen}
                 icon={Book}
               >
-                {moduleSidebarItems.map((item) => (
-                  <SidebarItem
-                    key={item.id}
-                    item={item}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    navigate={navigate}
-                    isMobile={isMobile}
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                    extraClassName={sidebarOpen ? "pl-2" : ""}
-                  />
-                ))}
+                {moduleSidebarItems.length === 0 ? (
+                  sidebarOpen && (
+                    <div className="px-3 py-4 text-center">
+                      <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {t('dashboard:no_modules_available', 'Aucun module disponible')}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('dashboard:subscribe_to_access', 'Souscrivez à un plan pour accéder aux modules')}
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  moduleSidebarItems.map((item) => (
+                    <SidebarItem
+                      key={item.id}
+                      item={item}
+                      activeTab={activeTab}
+                      setActiveTab={setActiveTab}
+                      navigate={navigate}
+                      isMobile={isMobile}
+                      sidebarOpen={sidebarOpen}
+                      setSidebarOpen={setSidebarOpen}
+                      extraClassName={sidebarOpen ? "pl-2" : ""}
+                    />
+                  ))
+                )}
               </CollapsibleSection>
 
               {/* Group: Analyse */}

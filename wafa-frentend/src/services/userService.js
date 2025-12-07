@@ -72,11 +72,21 @@ export const userService = {
     },
 
     // Get current user profile
-    getUserProfile: async () => {
+    getUserProfile: async (forceRefresh = false) => {
         try {
+            // Clear cached user data if force refresh is requested
+            if (forceRefresh) {
+                localStorage.removeItem('userProfile');
+            }
+            
             console.log('Fetching user profile from: /users/profile');
             const response = await api.get('/users/profile');
-            return response.data.data.user;
+            const user = response.data.data.user;
+            
+            // Update localStorage with fresh data
+            localStorage.setItem('userProfile', JSON.stringify(user));
+            
+            return user;
         } catch (error) {
             console.error('Error fetching user profile:', error);
             throw error;

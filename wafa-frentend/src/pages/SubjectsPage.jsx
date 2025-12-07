@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap } from "lucide-react";
+import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
+import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +19,48 @@ const SubjectsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [userSemesters, setUserSemesters] = useState([]);
+  const [userPlan, setUserPlan] = useState("Free");
   const { courseId } = useParams();
   const navigate = useNavigate();
+
+  // Check user access based on subscription
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const userProfile = await userService.getUserProfile();
+        const semesters = userProfile.semesters || [];
+        const plan = userProfile.plan || "Free";
+        setUserSemesters(semesters);
+        setUserPlan(plan);
+        localStorage.setItem("user", JSON.stringify(userProfile));
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        // Fallback to localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          setUserSemesters(user.semesters || []);
+          setUserPlan(user.plan || "Free");
+        }
+      }
+    };
+    checkAccess();
+  }, []);
+
+  // Helper function to check if user has access to a semester
+  const hasAccessToSemester = (semester) => {
+    // If user has semesters defined, check against those
+    if (userSemesters && userSemesters.length > 0) {
+      return userSemesters.includes(semester);
+    }
+    // For Free plan users with no semesters set, give access to S1 by default
+    if (userPlan === "Free" || !userPlan) {
+      return semester === "S1";
+    }
+    return false;
+  };
 
   useEffect(() => {
     const fetchData = async (id) => {
@@ -29,6 +70,15 @@ const SubjectsPage = () => {
         const moduleData = data?.data;
 
         if (!moduleData) return;
+
+        // Check if user has access to this module's semester
+        if (!hasAccessToSemester(moduleData.semester)) {
+          setHasAccess(false);
+          setCourse({ name: moduleData.name, semester: moduleData.semester });
+          setIsLoading(false);
+          return;
+        }
+        setHasAccess(true);
 
         // Build a map of examId -> questions count
         const examIdToQuestionCount = (moduleData.questions || []).reduce(
@@ -70,8 +120,10 @@ const SubjectsPage = () => {
         setIsLoading(false);
       }
     };
-    fetchData(courseId);
-  }, [courseId]);
+    if (courseId) {
+      fetchData(courseId);
+    }
+  }, [courseId, userSemesters, userPlan]);
 
   const filteredExams = course?.exams?.filter(
     (exam) => selectedCategory === "all" || exam.category === selectedCategory
@@ -117,6 +169,45 @@ const SubjectsPage = () => {
                   <ArrowLeft className="h-4 w-4" />
                   {t('common:back')}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Access denied - user doesn't have subscription for this semester
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center">
+                  <Lock className="h-10 w-10 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">
+                    {t('dashboard:access_restricted', 'Accès Restreint')}
+                  </h3>
+                  <p className="text-muted-foreground mb-2">
+                    {t('dashboard:module_not_in_plan', "Ce module n'est pas inclus dans votre abonnement actuel.")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>{course?.name}</strong> - {course?.semester}
+                  </p>
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    {t('common:back')}
+                  </Button>
+                  <Button onClick={() => navigate('/dashboard/subscription')} className="gap-2">
+                    {t('dashboard:upgrade_plan', 'Améliorer mon abonnement')}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

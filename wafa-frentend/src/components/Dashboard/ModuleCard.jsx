@@ -84,15 +84,42 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
         
         {/* Course Image with gradient overlay */}
         <div className="relative mb-4 overflow-hidden rounded-xl">
-          <img
-            src={course.imageUrl}
-            alt={course.name}
-            className="w-full h-32 sm:h-40 object-cover transform group-hover:scale-110 transition-transform duration-500"
-          />
+          {course.imageUrl ? (
+            <img
+              src={course.imageUrl}
+              alt={course.name}
+              className="w-full h-32 sm:h-40 object-cover transform group-hover:scale-110 transition-transform duration-500"
+              onError={(e) => {
+                // Hide broken image and show gradient background
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : null}
+          
+          {/* Gradient background - always visible as fallback */}
           <div 
-            className={`absolute inset-0 opacity-30 group-hover:opacity-20 transition-opacity duration-300 ${!customStyle ? `bg-gradient-to-t ${colorScheme.gradient}` : ''}`}
-            style={customStyle ? { background: `linear-gradient(to top, ${course.color}99, transparent)` } : undefined}
-          ></div>
+            className={`${course.imageUrl ? 'absolute' : 'relative'} inset-0 w-full h-32 sm:h-40 ${!customStyle ? `bg-gradient-to-br ${colorScheme.gradient}` : ''}`}
+            style={customStyle ? { 
+              background: `linear-gradient(135deg, ${course.color}40, ${course.color}20)`,
+            } : undefined}
+          >
+            {/* Module name overlay for no-image cards */}
+            {!course.imageUrl && (
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <span className="text-gray-600 text-sm font-medium text-center opacity-60">
+                  {course.name}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Image overlay gradient */}
+          {course.imageUrl && (
+            <div 
+              className={`absolute inset-0 opacity-30 group-hover:opacity-20 transition-opacity duration-300 ${!customStyle ? `bg-gradient-to-t ${colorScheme.gradient}` : ''}`}
+              style={customStyle ? { background: `linear-gradient(to top, ${course.color}99, transparent)` } : undefined}
+            ></div>
+          )}
           
           {/* Progress badge on image */}
           <div className="absolute top-2 right-2">

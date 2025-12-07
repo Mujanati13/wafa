@@ -34,7 +34,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import Header from "./landingPage/Header";
-import FloatingSupport from "./FloatingSupport";
 import { subscriptionPlanService } from "@/services/subscriptionPlanService";
 
 const LandingPage = () => {
@@ -43,13 +42,10 @@ const LandingPage = () => {
       <Header />
       <HeroSection />
       <FeaturesSection />
-      <StatsSection />
       <PricingSection />
       <TestimonialsSection />
       <FAQSection />
-      <ContactSection />
       <Footer />
-      <FloatingSupport />
     </div>
   );
 };
@@ -67,7 +63,7 @@ const HeroSection = () => {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16 w-full">
-        <div className="grid lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 items-center">
+        <div className="grid gap-8 md:gap-10 lg:gap-12 items-center">
           {/* Left: Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -92,92 +88,9 @@ const HeroSection = () => {
             <p className="text-sm md:text-base lg:text-lg text-slate-600 max-w-xl leading-relaxed">
               {t("hero_description")}
             </p>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-6 text-xs md:text-sm pt-2 md:pt-4">
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="h-4 md:h-5 w-4 md:w-5 flex-shrink-0" />
-                <span className="font-medium">{t("hero_benefit_1")}</span>
-              </div>
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="h-4 md:h-5 w-4 md:w-5 flex-shrink-0" />
-                <span className="font-medium">{t("hero_benefit_2")}</span>
-              </div>
-            </div>
           </motion.div>
 
-          {/* Right: Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex lg:flex-none justify-center relative mt-8 lg:mt-0"
-          >
-            <div className="relative w-full lg:w-auto">
-              <Card className="w-full max-w-sm md:max-w-md lg:max-w-[420px] shadow-2xl border-2 mx-auto">
-                <CardContent className="p-6 md:p-8">
-                  <div className="space-y-6">
-                    {/* Header with gradient circle */}
-                    <div className="flex items-center gap-4">
-                      <div className="h-14 w-14 md:h-16 md:w-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                        <GraduationCap className="h-7 md:h-8 w-7 md:w-8 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-base md:text-lg text-slate-900">{t("hero_card_title")}</p>
-                        <p className="text-xs md:text-sm text-slate-500">{t("hero_card_subtitle")}</p>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    {/* Features list */}
-                    <div className="space-y-4">
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="flex items-center gap-3"
-                      >
-                        <BookOpen className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                        <span className="text-xs md:text-sm font-medium text-slate-700">{t("hero_card_feature_1")}</span>
-                      </motion.div>
-                      
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="flex items-center gap-3"
-                      >
-                        <Award className="h-5 w-5 text-yellow-500 flex-shrink-0" />
-                        <span className="text-xs md:text-sm font-medium text-slate-700">{t("hero_card_feature_2")}</span>
-                      </motion.div>
-                      
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="flex items-center gap-3"
-                      >
-                        <Users className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        <span className="text-xs md:text-sm font-medium text-slate-700">{t("hero_card_feature_3")}</span>
-                      </motion.div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Floating rating badge */}
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-2 -right-2 lg:-top-3 lg:-right-3"
-              >
-                <div className="bg-slate-900 text-white rounded-full px-3 md:px-4 py-1.5 md:py-2 shadow-xl flex items-center gap-2">
-                  <Star className="h-3 md:h-4 w-3 md:w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-bold text-xs md:text-sm">{t("hero_rating")}</span>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
+
         </div>
       </div>
     </section>
@@ -277,40 +190,6 @@ const FeaturesSection = () => {
 };
 
 // Stats Section
-const StatsSection = () => {
-  const { t } = useTranslation("landing");
-
-  const stats = [
-    { icon: <Users className="h-10 md:h-12 w-10 md:w-12 mx-auto mb-3 md:mb-4 opacity-80" />, value: t("stat_1_value"), label: t("stat_1_label") },
-    { icon: <BookOpen className="h-10 md:h-12 w-10 md:w-12 mx-auto mb-3 md:mb-4 opacity-80" />, value: t("stat_2_value"), label: t("stat_2_label") },
-    { icon: <Award className="h-10 md:h-12 w-10 md:w-12 mx-auto mb-3 md:mb-4 opacity-80" />, value: t("stat_3_value"), label: t("stat_3_label") },
-    { icon: <Zap className="h-10 md:h-12 w-10 md:w-12 mx-auto mb-3 md:mb-4 opacity-80" />, value: t("stat_4_value"), label: t("stat_4_label") }
-  ];
-
-  return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white" aria-label="Platform Statistics">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="text-center"
-            >
-              {stat.icon}
-              <p className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{stat.value}</p>
-              <p className="text-xs sm:text-sm md:text-base text-blue-100">{stat.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
-
 // Pricing Section
 const PricingSection = () => {
   const { t } = useTranslation("landing");
@@ -324,7 +203,7 @@ const PricingSection = () => {
         setLoading(true);
         const response = await subscriptionPlanService.getAllPlans();
         if (response.success && response.data) {
-          // Sort plans by order or creation date
+          // Sort plans by order
           const sortedPlans = response.data.sort((a, b) => a.order - b.order);
           setPlans(sortedPlans);
         } else {
@@ -337,40 +216,55 @@ const PricingSection = () => {
         setPlans([
           {
             _id: "1",
-            name: t("plan_1_name"),
-            price: t("plan_1_price"),
-            description: t("plan_1_desc"),
+            name: "Gratuit",
+            price: 0,
+            period: "Semester",
+            isPopular: false,
             features: [
-              t("plan_1_feature_1"),
-              t("plan_1_feature_2"),
-              t("plan_1_feature_3"),
-              t("plan_1_feature_4")
+              { text: "one module", included: true },
+              { text: "un exam", included: true },
+              { text: "Mobile-friendly interface", included: true },
+              { text: "fonctionalités", included: false },
+              { text: "Access to Boards", included: false },
+              { text: "access to statistiques", included: false },
+              { text: "Ai companion access", included: false },
+              { text: "Early features access", included: false }
             ]
           },
           {
             _id: "2",
-            name: t("plan_2_name"),
-            price: t("plan_2_price"),
-            description: t("plan_2_desc"),
+            name: "Premium",
+            price: 90,
+            oldPrice: 120,
+            period: "Semester",
+            isPopular: true,
             features: [
-              t("plan_2_feature_1"),
-              t("plan_2_feature_2"),
-              t("plan_2_feature_3"),
-              t("plan_2_feature_4"),
-              t("plan_2_feature_5"),
-              t("plan_2_feature_6")
+              { text: "tous les modules", included: true },
+              { text: "tous les exams", included: true },
+              { text: "Mobile-friendly interface", included: true },
+              { text: "fonctionalités", included: true },
+              { text: "Access to Boards", included: true },
+              { text: "access to statistiques", included: true },
+              { text: "Ai companion access", included: true },
+              { text: "Early features access", included: true }
             ]
           },
           {
             _id: "3",
-            name: t("plan_3_name"),
-            price: t("plan_3_price"),
-            description: t("plan_3_desc"),
+            name: "Premium Annuel",
+            price: 120,
+            oldPrice: 200,
+            period: "Annee",
+            isPopular: false,
             features: [
-              t("plan_3_feature_1"),
-              t("plan_3_feature_2"),
-              t("plan_3_feature_3"),
-              t("plan_3_feature_4")
+              { text: "tous les modules", included: true },
+              { text: "tous les exams", included: true },
+              { text: "Mobile-friendly interface", included: true },
+              { text: "fonctionalités", included: true },
+              { text: "Access to Boards", included: true },
+              { text: "access to statistiques", included: true },
+              { text: "Ai companion access", included: true },
+              { text: "Early features access", included: true }
             ]
           }
         ]);
@@ -383,7 +277,7 @@ const PricingSection = () => {
   }, [t]);
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("pricing_title")}>
+    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -407,56 +301,90 @@ const PricingSection = () => {
             <Loader className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-6 max-w-5xl mx-auto">
-            {plans.map((plan, index) => {
-              const isPopular = index === Math.floor(plans.length / 2);
-              return (
-                <motion.div
-                  key={plan._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`flex ${isPopular ? 'sm:col-span-2 lg:col-span-1 sm:max-w-sm lg:max-w-none' : ''}`}
-                >
-                  <Card className={`w-full h-full flex flex-col transition-all duration-300 transform hover:shadow-2xl ${isPopular ? 'border-primary border-2 shadow-xl ring-1 ring-primary/20 lg:scale-105 lg:shadow-2xl' : 'border-2 hover:border-primary/30'}`}>
-                    <CardHeader className="space-y-4 pb-4">
-                      {isPopular && (
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                          <Badge className="bg-gradient-to-r from-blue-600 to-purple-600">{t("pricing_popular_badge")}</Badge>
-                        </div>
-                      )}
-                      <CardTitle className="text-xl md:text-2xl">{plan.name}</CardTitle>
-                      <CardDescription className="text-sm md:text-base">{plan.description}</CardDescription>
-                      <div className="pt-2">
-                        <span className="text-4xl md:text-5xl font-bold">${plan.price}</span>
-                        <span className="text-muted-foreground text-sm md:text-base ml-1">{t("pricing_period")}</span>
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+              {plans.map((plan, index) => {
+                const isPopular = plan.isPopular;
+                return (
+                  <motion.div
+                    key={plan._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="relative"
+                  >
+                    {isPopular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 text-xs">
+                          ★ LE PLUS POPULAIRE
+                        </Badge>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4 flex-grow">
-                      <ul className="space-y-3">
-                        {plan.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm md:text-base">
-                            <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                    <div className="p-6 pt-0">
-                      <Button 
-                        variant={isPopular ? "default" : "outline"}
-                        className="w-full"
-                        size="lg"
-                      >
-                        {isPopular ? t("plan_2_cta") : (index === 0 ? t("plan_1_cta") : t("plan_3_cta"))}
-                      </Button>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
+                    )}
+                    <Card className={`h-full flex flex-col transition-all duration-300 transform hover:shadow-xl rounded-2xl ${isPopular ? 'border-blue-500 border-2 shadow-lg' : 'border-2 border-blue-200'}`}>
+                      <CardHeader className="text-center pb-4 pt-8">
+                        {/* Icon */}
+                        <div className="flex justify-center mb-4">
+                          <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${plan.price === 0 ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
+                            {plan.price === 0 ? (
+                              <Star className="h-6 w-6 text-slate-400" />
+                            ) : (
+                              <Zap className="h-6 w-6 text-white" />
+                            )}
+                          </div>
+                        </div>
+                        <CardTitle className="text-xl md:text-2xl font-bold">{plan.name}</CardTitle>
+                        <div className="pt-4">
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-4xl md:text-5xl font-bold text-blue-600">{plan.price} dh</span>
+                            {plan.oldPrice && (
+                              <span className="text-lg text-muted-foreground line-through ml-2">{plan.oldPrice}</span>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground text-sm mt-1">par {plan.period}</p>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-grow pt-4">
+                        <ul className="space-y-3">
+                          {plan.features && plan.features.map((feature, i) => {
+                            const featureText = typeof feature === 'string' ? feature : feature.text;
+                            const isIncluded = typeof feature === 'string' ? true : feature.included;
+                            return (
+                              <li key={i} className="flex items-center gap-3 text-sm">
+                                {isIncluded ? (
+                                  <CheckCircle2 className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-full border-2 border-red-300 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-red-400 text-xs font-bold">✕</span>
+                                  </div>
+                                )}
+                                <span className={isIncluded ? 'text-slate-700' : 'text-slate-400'}>{featureText}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+            
+            {/* CTA Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mt-10"
+            >
+              <Button variant="outline" size="lg" className="px-8">
+                Essayez maintenant
+              </Button>
+              <p className="text-sm text-muted-foreground mt-4 font-medium">
+                Cette offre est valable pour une durée limitée, Profitez de cette opportunité avant qu'il ne soit trop tard
+              </p>
+            </motion.div>
+          </>
         )}
       </div>
     </section>

@@ -214,22 +214,25 @@ const PricingSection = () => {
                       }}
                       viewport={{ once: true }}
                     >
-                      {plan.features.map((feature, idx) => (
-                        <motion.li 
-                          key={idx} 
-                          className="flex items-start gap-3 text-gray-700"
-                          variants={featureVariants}
-                        >
-                          <motion.div
-                            className={`flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-br ${plan.color} flex items-center justify-center mt-0.5`}
-                            whileHover={{ scale: 1.2 }}
-                            transition={{ duration: 0.2 }}
+                      {plan.features.map((feature, idx) => {
+                        const featureText = typeof feature === 'string' ? feature : feature.text;
+                        return (
+                          <motion.li 
+                            key={idx} 
+                            className="flex items-start gap-3 text-gray-700"
+                            variants={featureVariants}
                           >
-                            <FiCheck className="text-white text-sm" />
-                          </motion.div>
-                          <span className="group-hover:text-gray-800 transition-colors duration-300">{feature}</span>
-                        </motion.li>
-                      ))}
+                            <motion.div
+                              className={`flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-br ${plan.color} flex items-center justify-center mt-0.5`}
+                              whileHover={{ scale: 1.2 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <FiCheck className="text-white text-sm" />
+                            </motion.div>
+                            <span className="group-hover:text-gray-800 transition-colors duration-300">{featureText}</span>
+                          </motion.li>
+                        );
+                      })}
                     </motion.ul>
                     
                     <motion.button 

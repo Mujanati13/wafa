@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { userService } from "@/services/userService";
 import axios from "axios";
 
 const PaymentSuccess = () => {
@@ -15,6 +16,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState("processing"); // processing, success, error
   const [message, setMessage] = useState(t('dashboard:verifying_payment'));
+  const [selectedSemesters, setSelectedSemesters] = useState([]);
 
   useEffect(() => {
     const capturePayment = async () => {
@@ -25,6 +27,16 @@ const PaymentSuccess = () => {
         setStatus("error");
         setMessage(t('dashboard:missing_order_id'));
         return;
+      }
+
+      // Get pending semesters from localStorage
+      const pendingSemesters = localStorage.getItem('pendingSubscriptionSemesters');
+      if (pendingSemesters) {
+        try {
+          setSelectedSemesters(JSON.parse(pendingSemesters));
+        } catch (e) {
+          console.error('Error parsing pending semesters:', e);
+        }
       }
 
       try {
@@ -38,6 +50,16 @@ const PaymentSuccess = () => {
           setStatus("success");
           setMessage(t('dashboard:payment_success_premium_active'));
 
+          // Clear pending semesters from localStorage
+          localStorage.removeItem('pendingSubscriptionSemesters');
+          
+          // Refresh user profile to get updated semesters
+          try {
+            await userService.getUserProfile(true); // Force refresh
+          } catch (e) {
+            console.error('Error refreshing user profile:', e);
+          }
+
           // Redirect to dashboard after 3 seconds
           setTimeout(() => {
             navigate("/dashboard/home");
@@ -50,6 +72,8 @@ const PaymentSuccess = () => {
           error.response?.data?.message ||
             t('dashboard:payment_validation_failed')
         );
+        // Clear pending semesters on error too
+        localStorage.removeItem('pendingSubscriptionSemesters');
       }
     };
 
@@ -97,6 +121,13 @@ const PaymentSuccess = () => {
                     {message}
                   </AlertDescription>
                 </Alert>
+                {selectedSemesters.length > 0 && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Semestres activés:</strong> {selectedSemesters.sort().join(', ')}
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Progress value={100} className="h-2" />
                   <p className="text-sm text-muted-foreground">

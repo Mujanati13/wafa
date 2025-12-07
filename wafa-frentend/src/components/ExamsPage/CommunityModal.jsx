@@ -1,33 +1,37 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaTimes, FaThumbsUp, FaThumbsDown } from "react-icons/fa";
-import { FiUsers } from "react-icons/fi";
+import { X, Users, Lock, Check } from "lucide-react";
 
-const CommunityModal = ({ isOpen, onClose, questionId, correctAnswer }) => {
+const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctAnswer, userLevel = 0, requiredLevel = 20 }) => {
   const [userVote, setUserVote] = useState(null);
   const [stats, setStats] = useState({
     totalVotes: 0,
-    optionVotes: { A: 0, B: 0, C: 0, D: 0, E: 0 },
+    optionVotes: {},
   });
+  
+  const canVote = userLevel >= requiredLevel;
 
   useEffect(() => {
-    if (isOpen) {
-      // Fetch community stats (placeholder)
-      // In real implementation, fetch from backend
+    if (isOpen && questionOptions) {
+      // Generate mock stats based on number of options
+      const mockVotes = {};
+      let total = 0;
+      questionOptions.forEach((opt, index) => {
+        const letter = String.fromCharCode(65 + index);
+        const votes = opt.isCorrect ? Math.floor(Math.random() * 100) + 100 : Math.floor(Math.random() * 50);
+        mockVotes[letter] = votes;
+        total += votes;
+      });
+      
       setStats({
-        totalVotes: 247,
-        optionVotes: {
-          A: 45,
-          B: 12,
-          C: 178,
-          D: 8,
-          E: 4,
-        },
+        totalVotes: total,
+        optionVotes: mockVotes,
       });
     }
-  }, [isOpen]);
+  }, [isOpen, questionOptions]);
 
   const handleVote = (option) => {
+    if (!canVote) return;
     setUserVote(option);
     // Send vote to backend
   };
@@ -36,8 +40,20 @@ const CommunityModal = ({ isOpen, onClose, questionId, correctAnswer }) => {
     if (stats.totalVotes === 0) return 0;
     return ((stats.optionVotes[option] / stats.totalVotes) * 100).toFixed(1);
   };
+  
+  const correctPercentage = () => {
+    if (!questionOptions || stats.totalVotes === 0) return 0;
+    let correctVotes = 0;
+    questionOptions.forEach((opt, index) => {
+      if (opt.isCorrect) {
+        const letter = String.fromCharCode(65 + index);
+        correctVotes += stats.optionVotes[letter] || 0;
+      }
+    });
+    return ((correctVotes / stats.totalVotes) * 100).toFixed(1);
+  };
 
-  const options = ["A", "B", "C", "D", "E"];
+  const options = questionOptions ? questionOptions.map((_, i) => String.fromCharCode(65 + i)) : [];
 
   return (
     <AnimatePresence>
@@ -53,102 +69,121 @@ const CommunityModal = ({ isOpen, onClose, questionId, correctAnswer }) => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                  <FiUsers className="text-teal-600" size={20} />
+            {/* Header */}
+            <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">
+                      Vote de la communauté
+                    </h3>
+                    <p className="text-sm text-white/80">
+                      {stats.totalVotes} votes
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">
-                    Vote de la communauté
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {stats.totalVotes} votes
+                <button
+                  onClick={onClose}
+                  className="text-white/80 hover:text-white transition-colors p-1"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Level requirement warning */}
+              {!canVote && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+                  <Lock className="h-5 w-5 text-amber-500 shrink-0" />
+                  <p className="text-sm text-amber-700">
+                    Vous devez atteindre <strong>{requiredLevel}%</strong> de progression dans ce module pour voter. 
+                    Niveau actuel: <strong>{userLevel}%</strong>
                   </p>
                 </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <FaTimes size={20} />
-              </button>
-            </div>
+              )}
 
-            <div className="space-y-3">
-              {options.map((option) => {
-                const percentage = getPercentage(option);
-                const isCorrect = correctAnswer?.includes(option);
-                const isUserVote = userVote === option;
+              {/* Options with vote stats */}
+              <div className="space-y-3">
+                {options.map((option, index) => {
+                  const percentage = getPercentage(option);
+                  const isCorrect = questionOptions[index]?.isCorrect;
+                  const isUserVote = userVote === option;
 
-                return (
-                  <div
-                    key={option}
-                    className={`relative overflow-hidden rounded-lg border-2 transition-all ${
-                      isCorrect
-                        ? "border-green-500 bg-green-50"
-                        : isUserVote
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 bg-white"
-                    }`}
-                  >
-                    {/* Progress bar background */}
-                    <div
-                      className={`absolute inset-0 transition-all duration-500 ${
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handleVote(option)}
+                      disabled={!canVote}
+                      className={`relative w-full overflow-hidden rounded-xl border-2 transition-all ${
                         isCorrect
-                          ? "bg-green-200/50"
-                          : "bg-blue-200/30"
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    />
+                          ? "border-emerald-500 bg-emerald-50"
+                          : isUserVote
+                          ? "border-teal-500 bg-teal-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      } ${!canVote ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+                    >
+                      {/* Progress bar background */}
+                      <div
+                        className={`absolute inset-0 transition-all duration-500 ${
+                          isCorrect
+                            ? "bg-emerald-200/50"
+                            : "bg-teal-200/30"
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      />
 
-                    <div className="relative flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                            isCorrect
-                              ? "bg-green-500 text-white"
-                              : isUserVote
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {option}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            Option {option}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {stats.optionVotes[option]} votes
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-gray-700">
-                          {percentage}%
-                        </span>
-                        {isCorrect && (
-                          <div className="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                            Correct
+                      <div className="relative flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
+                              isCorrect
+                                ? "bg-emerald-500 text-white"
+                                : isUserVote
+                                ? "bg-teal-500 text-white"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {isCorrect ? <Check className="h-4 w-4" /> : option}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                          <div className="text-left">
+                            <p className="font-medium text-gray-800 text-sm">
+                              Option {option}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {stats.optionVotes[option] || 0} votes
+                            </p>
+                          </div>
+                        </div>
 
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 text-center">
-                💡 <strong>{percentage}%</strong> de la communauté a choisi la
-                bonne réponse
-              </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-gray-700">
+                            {percentage}%
+                          </span>
+                          {isCorrect && (
+                            <div className="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                              Correct
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Summary */}
+              <div className="mt-5 p-4 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl border border-teal-100">
+                <p className="text-sm text-gray-700 text-center">
+                  💡 <strong>{correctPercentage()}%</strong> de la communauté a choisi la bonne réponse
+                </p>
+              </div>
             </div>
           </motion.div>
         </motion.div>

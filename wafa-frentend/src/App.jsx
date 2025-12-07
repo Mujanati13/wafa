@@ -59,6 +59,7 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
 import SubAdminPage from "./pages/SubAdminPage";
 import AdminPaypalSettings from "./pages/AdminPaypalSettings";
+import StatisticsPage from "./pages/StatisticsPage";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminLogin from "./components/auth/AdminLogin";
 
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="note" element={<NotesPage />} />
           <Route path="leaderboard" element={<LeaderboardClient />} />
           <Route path="subscription" element={<ClientSubscriptionPage />} />
+          <Route path="statistics" element={<StatisticsPage />} />
           <Route path="exams" element={<ExamsPage />} />
           {/* <Route path="exam/:examId" element={<ExamPage />} /> */}
           <Route path="results" element={<ResultsPage />} />

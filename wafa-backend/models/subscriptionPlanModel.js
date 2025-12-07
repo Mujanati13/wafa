@@ -1,11 +1,21 @@
 import mongoose from "mongoose";
 
+const featureSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true,
+  },
+  included: {
+    type: Boolean,
+    default: true,
+  },
+}, { _id: false });
+
 const subscriptionPlanSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     description: {
@@ -21,8 +31,13 @@ const subscriptionPlanSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+    period: {
+      type: String,
+      enum: ["Semester", "Annee"],
+      default: "Semester",
+    },
     features: {
-      type: [String],
+      type: [featureSchema],
       default: [],
     },
     status: {
@@ -33,6 +48,10 @@ const subscriptionPlanSchema = new mongoose.Schema(
     order: {
       type: Number,
       default: 0,
+    },
+    isPopular: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

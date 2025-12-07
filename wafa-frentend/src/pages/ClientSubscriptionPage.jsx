@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Check, AlertCircle, Zap, Loader2, CreditCard, ShieldCheck } from "lucide-react";
+import { Check, AlertCircle, Zap, Loader2, CreditCard, ShieldCheck, BookOpen, Building2, Clock, MessageCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { dashboardService } from "@/services/dashboardService";
 import { subscriptionPlanService } from "@/services/subscriptionPlanService";
 import { toast } from "sonner";
@@ -22,6 +24,22 @@ const ClientSubscriptionPage = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedSemesters, setSelectedSemesters] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState(null); // 'card' or 'transfer'
+
+  // WhatsApp contact number
+  const WHATSAPP_NUMBER = "0612345678";
+
+  // All available semesters
+  const allSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+
+  // Get the maximum number of semesters user can select based on plan
+  const getMaxSemesters = (plan) => {
+    if (!plan) return 0;
+    // Premium (Semester) allows 1 semester, Premium Annuel allows 2 semesters
+    if (plan.period === "Annee") return 2;
+    return 1;
+  };
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -63,11 +81,61 @@ const ClientSubscriptionPage = () => {
     }
 
     setSelectedPlan(plan);
+    setSelectedSemesters([]); // Reset selected semesters
+    setPaymentMethod(null); // Reset payment method
     setShowPaymentDialog(true);
+  };
+
+  // Handle semester selection
+  const handleSemesterChange = (semester, checked) => {
+    const maxSemesters = getMaxSemesters(selectedPlan);
+    
+    if (checked) {
+      if (selectedSemesters.length < maxSemesters) {
+        setSelectedSemesters([...selectedSemesters, semester]);
+      } else {
+        toast.warning(`Vous pouvez sélectionner maximum ${maxSemesters} semestre${maxSemesters > 1 ? 's' : ''} avec ce plan`);
+      }
+    } else {
+      setSelectedSemesters(selectedSemesters.filter(s => s !== semester));
+    }
+  };
+
+  // Handle WhatsApp contact
+  const handleContactWhatsApp = () => {
+    if (!selectedPlan) return;
+
+    const maxSemesters = getMaxSemesters(selectedPlan);
+    if (selectedSemesters.length !== maxSemesters) {
+      toast.error(`Veuillez sélectionner ${maxSemesters} semestre${maxSemesters > 1 ? 's' : ''}`);
+      return;
+    }
+
+    // Create WhatsApp message with subscription details
+    const semestersList = selectedSemesters.sort().join(', ');
+    const message = encodeURIComponent(
+      `Bonjour! Je souhaite souscrire au plan ${selectedPlan.name} (${selectedPlan.price} MAD).\n\nSemestres choisis: ${semestersList}\n\nMerci de me contacter pour finaliser mon abonnement.`
+    );
+    
+    // Open WhatsApp with pre-filled message
+    const whatsappUrl = `https://wa.me/212${WHATSAPP_NUMBER.replace(/^0/, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    
+    toast.success('Redirection vers WhatsApp...', {
+      description: 'Contactez-nous pour finaliser votre abonnement'
+    });
+    
+    setShowPaymentDialog(false);
   };
 
   const handlePayWithPayPal = async () => {
     if (!selectedPlan) return;
+
+    const maxSemesters = getMaxSemesters(selectedPlan);
+    if (selectedSemesters.length !== maxSemesters) {
+      toast.error(`Veuillez sélectionner ${maxSemesters} semestre${maxSemesters > 1 ? 's' : ''}`);
+      return;
+    }
 
     try {
       setPaymentLoading(true);
@@ -81,16 +149,23 @@ const ClientSubscriptionPage = () => {
         '12 Mois': '1year',
       };
 
-      const duration = durationMap[selectedPlan.duration] || '1month';
+      const duration = selectedPlan.period === "Annee" ? '1year' : '6months';
 
-      // Create PayPal order
+      // Create PayPal order with selected semesters
       const response = await axios.post(
         `${API_URL}/payments/create-order`,
-        { duration },
+        { 
+          duration,
+          semesters: selectedSemesters,
+          planId: selectedPlan._id
+        },
         { withCredentials: true }
       );
 
       if (response.data.success && response.data.orderId) {
+        // Store selected semesters in localStorage to use after payment
+        localStorage.setItem('pendingSubscriptionSemesters', JSON.stringify(selectedSemesters));
+        
         // Redirect to PayPal
         const paypalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${response.data.orderId}`;
         window.location.href = paypalUrl;
@@ -232,12 +307,17 @@ const ClientSubscriptionPage = () => {
                         <CardContent className="flex-1 space-y-6">
                           {/* Features */}
                           <div className="space-y-3">
-                            {plan.features && plan.features.map((feature, idx) => (
-                              <div key={idx} className="flex items-start gap-3">
-                                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-sm text-slate-700">{feature}</span>
-                              </div>
-                            ))}
+                            {plan.features && plan.features.map((feature, idx) => {
+                              const featureText = typeof feature === 'string' ? feature : feature.text;
+                              const isIncluded = typeof feature === 'string' ? true : feature.included;
+                              
+                              return (
+                                <div key={idx} className={`flex items-start gap-3 ${!isIncluded ? 'opacity-50' : ''}`}>
+                                  <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isIncluded ? 'text-green-500' : 'text-slate-400'}`} />
+                                  <span className={`text-sm ${isIncluded ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{featureText}</span>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           {/* Current Plan Indicator */}
@@ -308,71 +388,252 @@ const ClientSubscriptionPage = () => {
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              Confirmer votre abonnement
+            <DialogTitle className="text-2xl font-bold text-center">
+              Choisissez votre mode de paiement <span className="text-blue-600">préféré</span>
             </DialogTitle>
-            <DialogDescription>
-              Vous allez souscrire au plan {selectedPlan?.name}
-            </DialogDescription>
           </DialogHeader>
 
           {selectedPlan && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 py-4">
+              {/* Plan Summary */}
               <div className="p-4 bg-slate-50 rounded-lg border">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-medium">{selectedPlan.name}</span>
                   <span className="font-bold text-lg">{selectedPlan.price} MAD</span>
                 </div>
-                {selectedPlan.duration && (
+                {selectedPlan.period && (
                   <p className="text-sm text-slate-600">
-                    Durée: {selectedPlan.duration}
+                    Durée: {selectedPlan.period === "Annee" ? "1 Année" : "1 Semestre"}
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2 text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-green-500" />
-                  <span>Paiement sécurisé via PayPal</span>
+              {/* Semester Selection */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-semibold">
+                    Sélectionnez {getMaxSemesters(selectedPlan)} semestre{getMaxSemesters(selectedPlan) > 1 ? 's' : ''}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>Activation immédiate après paiement</span>
+                <p className="text-sm text-slate-500">
+                  Choisissez les semestres auxquels vous souhaitez accéder avec votre abonnement
+                </p>
+                
+                <div className="grid grid-cols-5 gap-3 mt-3">
+                  {allSemesters.map((semester) => {
+                    const isSelected = selectedSemesters.includes(semester);
+                    const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+                    
+                    return (
+                      <div
+                        key={semester}
+                        className={`
+                          relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                            : isDisabled 
+                              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50' 
+                              : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                          }
+                        `}
+                        onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                      >
+                        <Checkbox 
+                          id={semester}
+                          checked={isSelected}
+                          disabled={isDisabled}
+                          onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                          className="hidden"
+                        />
+                        <span className="text-sm font-bold">{semester}</span>
+                        {isSelected && (
+                          <div className="absolute -top-1 -right-1">
+                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Selection summary */}
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-700">
+                    <strong>Semestres sélectionnés:</strong>{' '}
+                    {selectedSemesters.length > 0 
+                      ? selectedSemesters.sort().join(', ')
+                      : 'Aucun sélectionné'
+                    }
+                    {' '}({selectedSemesters.length}/{getMaxSemesters(selectedPlan)})
+                  </p>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                {/* Card Payment Option */}
+                <div
+                  onClick={() => setPaymentMethod('card')}
+                  className={`
+                    relative p-5 rounded-xl border-2 cursor-pointer transition-all
+                    ${paymentMethod === 'card' 
+                      ? 'border-purple-500 bg-purple-50 shadow-lg' 
+                      : 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
+                    }
+                  `}
+                >
+                  {paymentMethod === 'card' && (
+                    <div className="absolute -top-2 -right-2">
+                      <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-white" />
+                    </div>
+                    <h4 className="font-bold text-lg text-slate-900">Paiement par Carte Débit</h4>
+                  </div>
+                  
+                  <p className="text-sm text-slate-600 mb-4">
+                    Paiement direct avec activation immédiate de votre compte
+                  </p>
+                  
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                      Pour l'un des deux plans tarifaires : +30 DH pour la transaction
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                      Paiement direct + activation directe de votre compte
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                      Traitement instantané et sécurisé
+                    </li>
+                  </ul>
+                  
+                  <div className="mt-4 flex items-center gap-2 text-purple-600">
+                    <Zap className="w-4 h-4" />
+                    <span className="text-sm font-medium">Activation instantanée</span>
+                  </div>
+                </div>
+
+                {/* Bank Transfer Option */}
+                <div
+                  onClick={() => setPaymentMethod('transfer')}
+                  className={`
+                    relative p-5 rounded-xl border-2 cursor-pointer transition-all
+                    ${paymentMethod === 'transfer' 
+                      ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                      : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+                    }
+                  `}
+                >
+                  {paymentMethod === 'transfer' && (
+                    <div className="absolute -top-2 -right-2">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-white" />
+                    </div>
+                    <h4 className="font-bold text-lg text-slate-900">Contact puis Transfert</h4>
+                  </div>
+                  
+                  <p className="text-sm text-slate-600 mb-2">
+                    Contactez-nous sur WhatsApp pour finaliser votre commande et obtenir tous les détails
+                  </p>
+                  <p className="text-xl font-bold text-blue-600 mb-4">{WHATSAPP_NUMBER}</p>
+                  
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      Contactez-nous sur WhatsApp pour finaliser votre commande
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      Procédez au paiement pour valider et expédier votre commande
+                    </li>
+                    <li className="flex items-center gap-2 text-sm text-slate-700">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      Activation sous 24H Inchallah (délai étendu à 48H lors des fortes sollicitations)
+                    </li>
+                  </ul>
+                  
+                  <div className="mt-4 flex items-center gap-2 text-slate-500">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-medium">24-48H</span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          <DialogFooter className="flex gap-3 sm:justify-between">
+          <DialogFooter className="flex gap-3 sm:justify-between mt-4">
             <Button
               variant="outline"
-              onClick={() => setShowPaymentDialog(false)}
+              onClick={() => {
+                setShowPaymentDialog(false);
+                setSelectedSemesters([]);
+                setPaymentMethod(null);
+              }}
               disabled={paymentLoading}
             >
               Annuler
             </Button>
-            <Button
-              onClick={handlePayWithPayPal}
-              disabled={paymentLoading}
-              className="bg-[#0070ba] hover:bg-[#003087] text-white"
-            >
-              {paymentLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Traitement...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 01-.633-.74L4.944 3.72a.77.77 0 01.757-.644h6.92c2.3 0 3.98.476 4.988 1.413.962.897 1.388 2.238 1.267 3.982-.266 3.82-2.57 5.944-6.475 5.944H9.63a.77.77 0 00-.759.645l-.795 5.277zm1.746-15.95l-2.45 15.62h2.92l.667-4.32a.77.77 0 01.76-.645h2.59c3.08 0 4.902-1.68 5.12-4.722.094-1.362-.186-2.413-.832-3.127-.698-.771-1.897-1.162-3.567-1.162h-4.45a.77.77 0 00-.758.644z"/>
-                  </svg>
-                  Payer avec PayPal
-                </>
-              )}
-            </Button>
+            
+            {paymentMethod === 'card' && (
+              <Button
+                onClick={handlePayWithPayPal}
+                disabled={paymentLoading || selectedSemesters.length !== getMaxSemesters(selectedPlan)}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+              >
+                {paymentLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Traitement...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Payer {selectedPlan?.price + 30} MAD
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {paymentMethod === 'transfer' && (
+              <Button
+                onClick={handleContactWhatsApp}
+                disabled={selectedSemesters.length !== getMaxSemesters(selectedPlan)}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Contacter sur WhatsApp
+              </Button>
+            )}
+            
+            {!paymentMethod && (
+              <Button
+                disabled
+                className="bg-slate-300 text-slate-500 cursor-not-allowed"
+              >
+                Sélectionnez un mode de paiement
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
