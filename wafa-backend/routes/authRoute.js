@@ -2,6 +2,7 @@ import express from "express";
 import "../strategies/local-strategy.js";
 import "../strategies/google-strategy.js";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 import { AuthController } from "../controllers/auth.js";
 
 const router = express.Router();
@@ -17,8 +18,17 @@ router.post("/login", (req, res, next) => {
         return res.status(500).json({ message: "Failed to establish session" });
       }
       
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+      
       return res.status(200).json({
+        success: true,
         message: "Login successful",
+        token,
         user: {
           id: user._id,
           username: user.username,
