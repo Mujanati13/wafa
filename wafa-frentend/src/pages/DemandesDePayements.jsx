@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
-import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign } from "lucide-react";
+import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign, Search, Calendar, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PageHeader } from "@/components/shared";
+import { PageHeader, TableFilters } from "@/components/shared";
 import { paymentService } from "@/services/paymentService";
 import { toast } from "sonner";
 
@@ -25,6 +25,11 @@ const DemandesDePayements = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0, pages: 0 });
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   
   useEffect(() => {
     fetchTransactions(1);
@@ -112,6 +117,25 @@ const DemandesDePayements = () => {
   const handlePageChange = (page) => {
     fetchTransactions(page);
   };
+
+  // Filter transactions based on search and date
+  const filteredTransactions = transactions.filter((t) => {
+    const matchesSearch = 
+      t.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t._id?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const transactionDate = t.createdAt ? t.createdAt.slice(0, 10) : "";
+    let matchesDate = true;
+    if (dateFrom) {
+      matchesDate = matchesDate && transactionDate >= dateFrom;
+    }
+    if (dateTo) {
+      matchesDate = matchesDate && transactionDate <= dateTo;
+    }
+    
+    return matchesSearch && matchesDate;
+  });
 
   const renderPaginationButtons = () => {
     const buttons = [];
@@ -253,6 +277,27 @@ const DemandesDePayements = () => {
           </Card>
         </motion.div>
 
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-4">
+              <TableFilters
+                onSearch={setSearchTerm}
+                onDateChange={(from, to) => {
+                  setDateFrom(from);
+                  setDateTo(to);
+                }}
+                placeholder="Rechercher par nom, email, ID..."
+                showYearFilter={false}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Table Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -283,10 +328,13 @@ const DemandesDePayements = () => {
                         Montant
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Mode de Paiement
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Statut
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Date
+                        Date de Demande
                       </th>
                       <th className="text-right py-4 px-6 font-semibold text-gray-700">
                         Actions
@@ -303,16 +351,17 @@ const DemandesDePayements = () => {
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                         </tr>
                       ))
-                    ) : transactions.length === 0 ? (
+                    ) : filteredTransactions.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                        <td colSpan={7} className="text-center py-8 text-gray-500">
                           Aucune transaction trouvée
                         </td>
                       </tr>
                     ) : (
-                      transactions.map((t, index) => (
+                      filteredTransactions.map((t, index) => (
                       <motion.tr
                         key={t._id}
                         initial={{ opacity: 0 }}
@@ -349,13 +398,28 @@ const DemandesDePayements = () => {
                         <td className="py-4 px-6 text-center">
                           <Badge 
                             className={`border-0 ${
+                              t.paymentMethod === 'Contact' ? 'bg-blue-100 text-blue-800' :
+                              t.paymentMethod === 'PayPal' ? 'bg-indigo-100 text-indigo-800' :
+                              t.paymentMethod === 'Bank Transfer' ? 'bg-emerald-100 text-emerald-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            {t.paymentMethod || 'Contact'}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          <Badge 
+                            className={`border-0 ${
                               t.status === 'completed' ? 'bg-green-100 text-green-800' :
                               t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                               t.status === 'failed' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {t.status}
+                            {t.status === 'completed' ? 'Complété' : 
+                             t.status === 'pending' ? 'En attente' : 
+                             t.status === 'failed' ? 'Échoué' : t.status}
                           </Badge>
                         </td>
                         <td className="py-4 px-6 text-center text-gray-600 text-sm">
@@ -367,7 +431,15 @@ const DemandesDePayements = () => {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              title="View Details"
+                              title="Approuver"
+                            >
+                              <Check className="h-4 w-4 text-green-600 hover:text-green-700" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Voir les détails"
                             >
                               <CheckCircle2 className="h-4 w-4 text-blue-600 hover:text-blue-700" />
                             </Button>
@@ -384,8 +456,7 @@ const DemandesDePayements = () => {
             {pagination.pages > 1 && (
               <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gradient-to-r from-amber-50 to-orange-50 py-4">
                 <div className="text-sm text-gray-600 font-medium">
-                  Affichage {startIndex + 1} à{" "}
-                  {Math.min(endIndex, demandes.length)} sur {demandes.length}
+                  Page {pagination.page} sur {pagination.pages} ({pagination.total} résultats)
                 </div>
                 <div className="flex items-center gap-1">
                   {renderPaginationButtons()}

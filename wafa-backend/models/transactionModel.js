@@ -34,13 +34,17 @@ const transactionSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["Premium", "Premium Annuel"],
+      enum: ["Premium", "Premium Annuel", "Gratuit"],
       required: true,
     },
     duration: {
       type: String,
       enum: ["1month", "3months", "6months", "1year"],
-      required: true,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["PayPal", "Bank Transfer", "Contact"],
+      default: "Contact",
     },
     // Selected semesters for the subscription
     semesters: {

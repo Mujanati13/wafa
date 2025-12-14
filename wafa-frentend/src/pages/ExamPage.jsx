@@ -44,7 +44,8 @@ import {
   Download,
   Eye,
   EyeOff,
-  Users
+  Users,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -117,6 +118,11 @@ const ExamPage = () => {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [showOverview, setShowOverview] = useState(false);
+  const [showVueEnsemble, setShowVueEnsemble] = useState(false);
+  
+  // Track visited questions (for orange color)
+  const [visitedQuestions, setVisitedQuestions] = useState(new Set([0]));
   
   // Verification state - per question
   const [verifiedQuestions, setVerifiedQuestions] = useState({});
@@ -285,7 +291,10 @@ const ExamPage = () => {
   const handleVerifyQuestion = useCallback(() => {
     const hasAnswer = selectedAnswers[currentQuestion]?.length > 0;
     if (!hasAnswer) {
-      setValidationError("At least select an option");
+      setValidationError("Sélectionnez une réponse");
+      toast.error("Sélectionnez une réponse", {
+        icon: <AlertCircle className="h-4 w-4 text-red-500" />
+      });
       setTimeout(() => setValidationError(null), 3000);
       return;
     }
@@ -325,7 +334,9 @@ const ExamPage = () => {
   const goToNext = useCallback(() => {
     if (currentQuestion < questions.length - 1) {
       setQuestionTransition('next');
-      setCurrentQuestion(currentQuestion + 1);
+      const nextQ = currentQuestion + 1;
+      setCurrentQuestion(nextQ);
+      setVisitedQuestions(prev => new Set([...prev, nextQ]));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentQuestion, questions.length]);
@@ -333,7 +344,9 @@ const ExamPage = () => {
   const goToPrevious = useCallback(() => {
     if (currentQuestion > 0) {
       setQuestionTransition('prev');
-      setCurrentQuestion(currentQuestion - 1);
+      const prevQ = currentQuestion - 1;
+      setCurrentQuestion(prevQ);
+      setVisitedQuestions(prev => new Set([...prev, prevQ]));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentQuestion]);
@@ -341,6 +354,7 @@ const ExamPage = () => {
   const goToQuestion = useCallback((index) => {
     setQuestionTransition(index > currentQuestion ? 'next' : 'prev');
     setCurrentQuestion(index);
+    setVisitedQuestions(prev => new Set([...prev, index]));
     setShowSidebar(false);
   }, [currentQuestion]);
 
@@ -398,12 +412,14 @@ const ExamPage = () => {
     [selectedAnswers, questions.length]
   );
 
-  // Get question status
+  // Get question status with enhanced colors
   const getQuestionStatus = useCallback((index) => {
     const hasAnswer = selectedAnswers[index]?.length > 0;
+    const isVerified = verifiedQuestions[index];
     const isFlagged = flaggedQuestions.has(index);
+    const isVisited = visitedQuestions.has(index);
     
-    if (showResults) {
+    if (showResults || isVerified) {
       const question = questions[index];
       const userAnswers = selectedAnswers[index] || [];
       const correctAnswers = question.options
@@ -413,10 +429,26 @@ const ExamPage = () => {
       const isCorrect = userAnswers.length === correctAnswers.length &&
         userAnswers.every(ans => correctAnswers.includes(ans));
       
-      return { status: isCorrect ? 'correct' : 'incorrect', isFlagged };
+      return { status: isCorrect ? 'correct' : 'incorrect', isFlagged, isVisited };
     }
-    return { status: hasAnswer ? 'answered' : 'unanswered', isFlagged };
-  }, [selectedAnswers, flaggedQuestions, questions, showResults]);
+    
+    // Flagged takes priority (purple)
+    if (isFlagged) {
+      return { status: 'flagged', isFlagged: true, isVisited };
+    }
+    
+    // Answered (blue)
+    if (hasAnswer) {
+      return { status: 'answered', isFlagged, isVisited };
+    }
+    
+    // Visited but not answered (orange)
+    if (isVisited) {
+      return { status: 'visited', isFlagged, isVisited: true };
+    }
+    
+    return { status: 'unanswered', isFlagged, isVisited: false };
+  }, [selectedAnswers, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -750,6 +782,17 @@ const ExamPage = () => {
                   </div>
 
                   <CardContent className="p-4 sm:p-6 space-y-6">
+                    {/* Question Reference */}
+                    <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span>
+                        {examData?.year && `Examen ${examData.year}`}
+                        {examData?.moduleName && ` - ${examData.moduleName}`}
+                        {currentQuestionData?.sessionLabel && ` - ${currentQuestionData.sessionLabel}`}
+                        {` - Question ${currentQuestion + 1}`}
+                      </span>
+                    </div>
+
                     {/* Question Text */}
                     <div 
                       className="text-gray-800 leading-relaxed font-medium"
@@ -918,7 +961,7 @@ const ExamPage = () => {
                         onClick={() => setShowExplanation(true)}
                         disabled={!isQuestionVerified && !showResults}
                         className={cn(
-                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all",
+                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100",
                           (!isQuestionVerified && !showResults)
                             ? "opacity-50 cursor-not-allowed text-gray-400"
                             : "hover:bg-blue-50 text-blue-600"
@@ -931,6 +974,17 @@ const ExamPage = () => {
                           <Lightbulb className={cn("h-5 w-5", (!isQuestionVerified && !showResults) ? "text-gray-400" : "text-blue-600")} />
                         </div>
                         <span className="text-xs font-medium">Explication</span>
+                      </button>
+
+                      {/* Vue d'ensemble Button */}
+                      <button
+                        onClick={() => setShowVueEnsemble(true)}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-indigo-50 text-indigo-600"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-1">
+                          <LayoutGrid className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <span className="text-xs font-medium">Vue d'ensemble</span>
                       </button>
                     </div>
                   </div>
@@ -980,6 +1034,62 @@ const ExamPage = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* Progress Summary Bar */}
+            <div className="mt-4 p-3 bg-white rounded-lg border shadow-sm">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="font-medium text-gray-700">Progression</span>
+                <span className="text-gray-500">
+                  {Object.keys(verifiedQuestions).length} / {questions.length} vérifiées
+                </span>
+              </div>
+              <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
+                {(() => {
+                  const correctCount = questions.filter((_, i) => {
+                    if (!verifiedQuestions[i]) return false;
+                    const selected = selectedAnswers[i] || [];
+                    const correctIndices = questions[i].options
+                      .map((opt, idx) => opt.isCorrect ? idx : null)
+                      .filter(idx => idx !== null);
+                    return selected.length === correctIndices.length && 
+                      selected.every(s => correctIndices.includes(s));
+                  }).length;
+                  
+                  const incorrectCount = Object.keys(verifiedQuestions).length - correctCount;
+                  const unansweredCount = questions.length - Object.keys(verifiedQuestions).length;
+                  
+                  const correctPct = (correctCount / questions.length) * 100;
+                  const incorrectPct = (incorrectCount / questions.length) * 100;
+                  
+                  return (
+                    <>
+                      <div 
+                        className="bg-emerald-500 transition-all" 
+                        style={{ width: `${correctPct}%` }}
+                      />
+                      <div 
+                        className="bg-red-500 transition-all" 
+                        style={{ width: `${incorrectPct}%` }}
+                      />
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="flex items-center justify-center gap-6 mt-2 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  Correctes
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  Incorrectes
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-gray-200"></div>
+                  Non vérifiées
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Sidebar - Desktop */}
@@ -997,8 +1107,16 @@ const ExamPage = () => {
                     <span className="text-gray-500">Non visité</span>
                   </div>
                   <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                    <span className="text-gray-500">Visité</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
                     <span className="text-gray-500">Répondu</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                    <span className="text-gray-500">Surligné</span>
                   </div>
                   {showResults && (
                     <>
@@ -1012,10 +1130,6 @@ const ExamPage = () => {
                       </div>
                     </>
                   )}
-                  <div className="flex items-center gap-1">
-                    <Flag className="w-3 h-3 fill-amber-500 text-amber-500" />
-                    <span className="text-gray-500">Surligné</span>
-                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -1077,14 +1191,17 @@ const ExamPage = () => {
                                           isCurrent && "ring-2 ring-blue-500 ring-offset-1",
                                           status === 'correct' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
                                           status === 'incorrect' && "bg-red-100 text-red-700 hover:bg-red-200",
+                                          status === 'verified' && "bg-blue-100 text-blue-700 hover:bg-blue-200",
+                                          status === 'flagged' && "bg-purple-100 text-purple-700 hover:bg-purple-200",
                                           status === 'answered' && !isCurrent && "bg-blue-100 text-blue-700 hover:bg-blue-200",
+                                          status === 'visited' && "bg-orange-100 text-orange-700 hover:bg-orange-200",
                                           status === 'unanswered' && "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                         )}
                                         onClick={() => goToQuestion(globalIndex)}
                                       >
                                         {qIndex + 1}
                                         {isFlagged && (
-                                          <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-amber-500 text-amber-500" />
+                                          <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-purple-500 text-purple-500" />
                                         )}
                                       </button>
                                     );
@@ -1212,7 +1329,10 @@ const ExamPage = () => {
                                     globalIndex === currentQuestion && "ring-2 ring-blue-500",
                                     status === 'correct' && "bg-emerald-100 text-emerald-700",
                                     status === 'incorrect' && "bg-red-100 text-red-700",
+                                    status === 'verified' && "bg-blue-100 text-blue-700",
+                                    status === 'flagged' && "bg-purple-100 text-purple-700",
                                     status === 'answered' && "bg-blue-100 text-blue-700",
+                                    status === 'visited' && "bg-orange-100 text-orange-700",
                                     status === 'unanswered' && "bg-gray-100 text-gray-600"
                                   )}
                                   onClick={() => {
@@ -1222,7 +1342,7 @@ const ExamPage = () => {
                                 >
                                   {qIndex + 1}
                                   {isFlagged && (
-                                    <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-amber-500 text-amber-500" />
+                                    <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-purple-500 text-purple-500" />
                                   )}
                                 </button>
                               );
@@ -1415,6 +1535,158 @@ const ExamPage = () => {
           requiredLevel={20}
         />
       )}
+
+      {/* Vue d'ensemble Modal */}
+      <AnimatePresence>
+        {showVueEnsemble && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowVueEnsemble(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-xl">
+                <div className="flex items-center gap-3">
+                  <LayoutGrid className="h-6 w-6" />
+                  <h2 className="text-xl font-bold">Vue d'ensemble</h2>
+                </div>
+                <button
+                  onClick={() => setShowVueEnsemble(false)}
+                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Questions List */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {questions.map((q, index) => {
+                    const { status, isFlagged } = getQuestionStatus(index);
+                    const hasAnswer = selectedAnswers[index]?.length > 0;
+                    const selectedOpts = selectedAnswers[index] || [];
+                    
+                    return (
+                      <div 
+                        key={index}
+                        className={cn(
+                          "p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md",
+                          status === 'correct' && "border-emerald-300 bg-emerald-50",
+                          status === 'incorrect' && "border-red-300 bg-red-50",
+                          status === 'verified' && "border-blue-300 bg-blue-50",
+                          status === 'flagged' && "border-purple-300 bg-purple-50",
+                          status === 'answered' && "border-blue-200 bg-blue-50/50",
+                          status === 'visited' && "border-orange-200 bg-orange-50/50",
+                          status === 'unanswered' && "border-gray-200 bg-gray-50",
+                          index === currentQuestion && "ring-2 ring-indigo-500 ring-offset-2"
+                        )}
+                        onClick={() => {
+                          goToQuestion(index);
+                          setShowVueEnsemble(false);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "font-bold",
+                                  status === 'correct' && "border-emerald-500 text-emerald-700",
+                                  status === 'incorrect' && "border-red-500 text-red-700",
+                                  status === 'verified' && "border-blue-500 text-blue-700",
+                                  status === 'flagged' && "border-purple-500 text-purple-700",
+                                  status === 'answered' && "border-blue-400 text-blue-600",
+                                  status === 'visited' && "border-orange-400 text-orange-600",
+                                  status === 'unanswered' && "border-gray-400 text-gray-600"
+                                )}
+                              >
+                                Q{index + 1}
+                              </Badge>
+                              {isFlagged && (
+                                <Flag className="h-4 w-4 fill-purple-500 text-purple-500" />
+                              )}
+                              {q.source && (
+                                <span className="text-xs text-gray-500">
+                                  {q.source.year && `${q.source.year}`}
+                                  {q.source.session && ` - ${q.source.session}`}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-700 line-clamp-2">
+                              {q.question}
+                            </p>
+                            {hasAnswer && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {selectedOpts.map(optIdx => (
+                                  <Badge 
+                                    key={optIdx} 
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {String.fromCharCode(65 + optIdx)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="shrink-0">
+                            {status === 'correct' && <CheckCircle2 className="h-6 w-6 text-emerald-500" />}
+                            {status === 'incorrect' && <XCircle className="h-6 w-6 text-red-500" />}
+                            {status === 'verified' && <Check className="h-6 w-6 text-blue-500" />}
+                            {status === 'answered' && <Circle className="h-6 w-6 text-blue-400" />}
+                            {status === 'visited' && <Eye className="h-6 w-6 text-orange-400" />}
+                            {status === 'unanswered' && <Circle className="h-6 w-6 text-gray-300" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
+                      Correct
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                      Incorrect
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                      Visité
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                      Surligné
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowVueEnsemble(false)}
+                  >
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

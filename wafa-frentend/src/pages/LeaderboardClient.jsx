@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Medal, Trophy, Loader } from "lucide-react";
+import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
 
@@ -46,6 +47,20 @@ function getPodiumStyles(rank) {
     ring: "ring-amber-200",
     icon: <Trophy className="h-5 w-5" />,
   };
+}
+
+// Calculate user level based on total points
+function getUserLevel(points) {
+  if (points >= 10000) return { level: 10, name: "Maître", color: "bg-purple-500" };
+  if (points >= 7500) return { level: 9, name: "Expert", color: "bg-indigo-500" };
+  if (points >= 5000) return { level: 8, name: "Avancé", color: "bg-blue-500" };
+  if (points >= 3500) return { level: 7, name: "Confirmé", color: "bg-cyan-500" };
+  if (points >= 2500) return { level: 6, name: "Intermédiaire+", color: "bg-teal-500" };
+  if (points >= 1500) return { level: 5, name: "Intermédiaire", color: "bg-green-500" };
+  if (points >= 1000) return { level: 4, name: "Apprenti+", color: "bg-lime-500" };
+  if (points >= 500) return { level: 3, name: "Apprenti", color: "bg-yellow-500" };
+  if (points >= 200) return { level: 2, name: "Débutant+", color: "bg-orange-500" };
+  return { level: 1, name: "Débutant", color: "bg-slate-400" };
 }
 
 const LeaderboardClient = () => {
@@ -162,16 +177,32 @@ const LeaderboardClient = () => {
           <CardTitle>{t('dashboard:top_10')}</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Table Header */}
+          <div className="hidden md:grid md:grid-cols-7 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
+            <div className="col-span-2">Étudiant</div>
+            <div className="text-center">Points Bleus</div>
+            <div className="text-center">Points Verts</div>
+            <div className="text-center">Total</div>
+            <div className="text-center">Niveau</div>
+            <div className="text-center">Progression</div>
+          </div>
+
           <div className="divide-y">
             {topTen.map((user, idx) => {
               const rank = idx + 1;
               const badge = getScoreBadgeClasses(user.points, maxScore);
+              const levelInfo = getUserLevel(user.points);
+              // Calculate blue/green points (mock calculation based on total)
+              const bluePoints = user.bluePoints || Math.floor(user.points * 0.6);
+              const greenPoints = user.greenPoints || Math.floor(user.points * 0.4);
+              
               return (
                 <div
                   key={user._id || user.userId}
-                  className="flex items-center justify-between py-3"
+                  className="flex md:grid md:grid-cols-7 items-center justify-between gap-4 py-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  {/* User Info */}
+                  <div className="flex items-center gap-3 min-w-0 col-span-2">
                     <span
                       className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold ${
                         rank === 1
@@ -198,25 +229,57 @@ const LeaderboardClient = () => {
                     >
                       {getInitials(user.name)}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{user.name}</p>
-                      <div className="mt-1 h-1.5 w-48 max-w-[45vw] rounded-full bg-muted">
-                        <div
-                          className="h-1.5 rounded-full bg-primary/80"
-                          style={{
-                            width: `${Math.round(
-                              (user.points / maxScore) * 100
-                            )}%`,
-                          }}
-                        />
-                      </div>
+                    <p className="font-medium truncate">{user.name}</p>
+                  </div>
+
+                  {/* Blue Points */}
+                  <div className="hidden md:flex items-center justify-center gap-1">
+                    <Zap className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm font-semibold text-blue-600">{bluePoints}</span>
+                  </div>
+
+                  {/* Green Points */}
+                  <div className="hidden md:flex items-center justify-center gap-1">
+                    <Star className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-semibold text-green-600">{greenPoints}</span>
+                  </div>
+
+                  {/* Total Points */}
+                  <div className="hidden md:flex justify-center">
+                    <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                      {user.points} pts
+                    </span>
+                  </div>
+
+                  {/* Level */}
+                  <div className="hidden md:flex justify-center">
+                    <Badge className={`${levelInfo.color} text-white text-xs`}>
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      Nv. {levelInfo.level}
+                    </Badge>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="hidden md:block">
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-primary/80"
+                        style={{
+                          width: `${Math.round((user.points / maxScore) * 100)}%`,
+                        }}
+                      />
                     </div>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-md border ${badge}`}
-                  >
-                    {user.points} {t('dashboard:pts')}
-                  </span>
+
+                  {/* Mobile: Show only total points */}
+                  <div className="md:hidden flex items-center gap-2">
+                    <Badge className={`${levelInfo.color} text-white text-xs`}>
+                      Nv. {levelInfo.level}
+                    </Badge>
+                    <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                      {user.points} pts
+                    </span>
+                  </div>
                 </div>
               );
             })}

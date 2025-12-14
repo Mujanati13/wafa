@@ -8,6 +8,7 @@ const router = express.Router();
 router.post("/create", validate(ReportQuestionsSchema.createReportSchema), reportQuestionsController.create);
 router.patch("/update/:id", validate(ReportQuestionsSchema.updateReportSchema), reportQuestionsController.update);
 router.patch("/:id/approve", reportQuestionsController.approve);
+router.patch("/:id/reject", reportQuestionsController.reject);
 router.delete("/:id", reportQuestionsController.delete);
 router.get("/all", reportQuestionsController.getAll);
 router.get("/by-user/:userId", reportQuestionsController.getByUserId);

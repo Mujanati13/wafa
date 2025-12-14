@@ -12,6 +12,17 @@ const moduleSchema = new mongoose.Schema(
                 enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10"],
                 required: [true, "Semester is required"]
         },
+        // Category - 3 default categories
+        category: {
+                type: String,
+                enum: ["Exam par years", "Exam par courses", "Résumé et cours"],
+                default: "Exam par years",
+        },
+        // List of course names within the module
+        courseNames: {
+                type: [String],
+                default: [],
+        },
         imageUrl: {
                 type: String,
         },
@@ -25,6 +36,23 @@ const moduleSchema = new mongoose.Schema(
         },
         // Help content for the help modal
         helpContent: {
+                type: String,
+                default: "",
+        },
+        // Difficulty level
+        difficulty: {
+                type: String,
+                enum: ["easy", "medium", "hard"],
+                default: "medium",
+        },
+        // Content type: image/pdf URL or text description
+        contentType: {
+                type: String,
+                enum: ["url", "text"],
+                default: "url",
+        },
+        // Text content when contentType is "text"
+        textContent: {
                 type: String,
                 default: "",
         }

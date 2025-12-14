@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, LogIn, UserPlus, LayoutDashboard, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -10,10 +10,26 @@ import logo from '@/assets/logo.png';
 
 const Header = () => {
   const { t } = useTranslation(['common', 'landing']);
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check if user is logged in
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!(user && token));
+    };
+    
+    checkAuth();
+    // Listen for storage changes (login/logout in other tabs)
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,6 +71,26 @@ const Header = () => {
     { label: t('common:nav_contact'), href: '#contact' }
   ];
 
+  // Smooth scroll handler
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    setIsMenuOpen(false);
+    
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
+    
+    if (element) {
+      const headerHeight = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <header className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
@@ -83,7 +119,8 @@ const Header = () => {
               <a 
                 key={item.label}
                 href={item.href}
-                className="relative text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent"
+                onClick={(e) => handleNavClick(e, item.href)}
+                className="relative text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-md hover:bg-accent cursor-pointer"
               >
                 {item.label}
               </a>
@@ -93,18 +130,37 @@ const Header = () => {
           {/* Desktop CTA Buttons & Language Switcher */}
           <div className="hidden md:flex items-center gap-3">
             <LanguageSwitcher />
-            <Button variant="ghost" asChild>
-              <Link to="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                {t('common:log_in')}
-              </Link>
-            </Button>
-            <Button asChild className="shadow-md">
-              <Link to="/register">
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t('common:sign_up')}
-              </Link>
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/dashboard/home">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    {t('common:dashboard', 'Tableau de bord')}
+                  </Link>
+                </Button>
+                <Button asChild className="shadow-md">
+                  <Link to="/dashboard/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    {t('common:profile', 'Profil')}
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    {t('common:log_in')}
+                  </Link>
+                </Button>
+                <Button asChild className="shadow-md">
+                  <Link to="/register">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {t('common:sign_up')}
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -134,8 +190,8 @@ const Header = () => {
                   <a 
                     key={item.label}
                     href={item.href}
-                    className="text-[15px] font-medium text-foreground/90 hover:text-primary hover:bg-accent/80 transition-all px-6 py-4 border-b border-border/40 last:border-b-0"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className="text-[15px] font-medium text-foreground/90 hover:text-primary hover:bg-accent/80 transition-all px-6 py-4 border-b border-border/40 last:border-b-0 cursor-pointer"
                   >
                     {item.label}
                   </a>
@@ -145,18 +201,37 @@ const Header = () => {
               <Separator />
               
               <div className="flex flex-col gap-3 p-6 bg-muted/30">
-                <Button variant="outline" asChild className="w-full h-12 font-medium shadow-sm hover:shadow">
-                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    {t('common:log_in')}
-                  </Link>
-                </Button>
-                <Button asChild className="w-full h-12 font-medium shadow-md hover:shadow-lg">
-                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    {t('common:sign_up')}
-                  </Link>
-                </Button>
+                {isLoggedIn ? (
+                  <>
+                    <Button variant="outline" asChild className="w-full h-12 font-medium shadow-sm hover:shadow">
+                      <Link to="/dashboard/home" onClick={() => setIsMenuOpen(false)}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        {t('common:dashboard', 'Tableau de bord')}
+                      </Link>
+                    </Button>
+                    <Button asChild className="w-full h-12 font-medium shadow-md hover:shadow-lg">
+                      <Link to="/dashboard/profile" onClick={() => setIsMenuOpen(false)}>
+                        <User className="mr-2 h-4 w-4" />
+                        {t('common:profile', 'Profil')}
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" asChild className="w-full h-12 font-medium shadow-sm hover:shadow">
+                      <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        {t('common:log_in')}
+                      </Link>
+                    </Button>
+                    <Button asChild className="w-full h-12 font-medium shadow-md hover:shadow-lg">
+                      <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        {t('common:sign_up')}
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </SheetContent>
           </Sheet>

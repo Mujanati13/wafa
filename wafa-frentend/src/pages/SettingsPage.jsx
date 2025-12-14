@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   User, Lock, Bell, Shield, Download, Save, Camera, 
-  Mail, Phone, MapPin, GraduationCap, Eye, EyeOff
+  Mail, Phone, MapPin, GraduationCap, Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,26 +12,72 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PageHeader } from '@/components/shared';
 import { toast } from 'sonner';
+import { dashboardService } from '@/services/dashboardService';
 
 const SettingsPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [showPassword, setShowPassword] = useState(false);
+  const [userSemester, setUserSemester] = useState('S1');
   const [settings, setSettings] = useState({
     firstName: 'Az-eddine',
     lastName: 'Serhani',
     email: 'azeddine.serhani@email.com',
     phone: '+212 6 12 34 56 78',
     university: 'Université Hassan II',
-    faculty: 'Faculté de Médecine',
-    currentYear: '6ème année',
+    faculty: 'Faculté de Médecine et de Pharmacie',
+    currentYear: '1ère année',
     emailNotifications: true,
     pushNotifications: false,
     profileVisibility: 'public',
     shareProgress: true,
     twoFactorAuth: false,
   });
+
+  // Calculate study year based on semester
+  const getYearFromSemester = (semester) => {
+    const semNum = parseInt(semester.replace('S', ''));
+    if (semNum <= 2) return '1ère année';
+    if (semNum <= 4) return '2ème année';
+    if (semNum <= 6) return '3ème année';
+    if (semNum <= 8) return '4ème année';
+    if (semNum <= 10) return '5ème année';
+    return '6ème année';
+  };
+
+  // Fetch user profile and set semester
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await dashboardService.getUserProfile();
+        const user = response.data?.user || response.data;
+        if (user) {
+          setSettings(prev => ({
+            ...prev,
+            firstName: user.firstName || user.name?.split(' ')[0] || prev.firstName,
+            lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || prev.lastName,
+            email: user.email || prev.email,
+            phone: user.phone || prev.phone,
+          }));
+          // Get user's semester and calculate year
+          const semesters = user.semesters || [];
+          if (semesters.length > 0) {
+            const latestSemester = semesters[semesters.length - 1];
+            setUserSemester(latestSemester);
+            setSettings(prev => ({
+              ...prev,
+              currentYear: getYearFromSemester(latestSemester)
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   const handleSave = () => {
     toast.success(t('dashboard:settings_saved_success'));
@@ -124,8 +170,10 @@ const SettingsPage = () => {
                   <Input
                     id="university"
                     value={settings.university}
-                    onChange={(e) => handleChange('university', e.target.value)}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground">Ce champ ne peut pas être modifié</p>
                 </div>
 
                 <div className="space-y-2">
@@ -133,26 +181,30 @@ const SettingsPage = () => {
                   <Input
                     id="faculty"
                     value={settings.faculty}
-                    onChange={(e) => handleChange('faculty', e.target.value)}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground">Ce champ ne peut pas être modifié</p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="currentYear">{t('dashboard:study_year')}</Label>
-                  <Select value={settings.currentYear} onValueChange={(value) => handleChange('currentYear', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1ère année">1ère année</SelectItem>
-                      <SelectItem value="2ème année">2ème année</SelectItem>
-                      <SelectItem value="3ème année">3ème année</SelectItem>
-                      <SelectItem value="4ème année">4ème année</SelectItem>
-                      <SelectItem value="5ème année">5ème année</SelectItem>
-                      <SelectItem value="6ème année">6ème année</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="currentYear"
+                    value={settings.currentYear}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-muted-foreground">Calculé automatiquement selon votre semestre ({userSemester})</p>
                 </div>
+
+                <Alert variant="warning" className="bg-amber-50 border-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Avertissement :</strong> Aucun contenu illégal ou pornographique n'est autorisé. 
+                    Le non-respect de cette règle entraînera la suppression définitive de votre compte.
+                  </AlertDescription>
+                </Alert>
 
                 <Button onClick={handleSave} className="gap-2">
                   <Save className="h-4 w-4" />

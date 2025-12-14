@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +18,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const ClientSubscriptionPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
+  const location = useLocation();
   
   const [userSubscription, setUserSubscription] = useState(null);
   const [allPlans, setAllPlans] = useState([]);
@@ -26,6 +28,8 @@ const ClientSubscriptionPage = () => {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedSemesters, setSelectedSemesters] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState(null); // 'card' or 'transfer'
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // Confirmation dialog for bank transfer
+  const [requestLoading, setRequestLoading] = useState(false);
 
   // WhatsApp contact number
   const WHATSAPP_NUMBER = "0612345678";
@@ -44,6 +48,18 @@ const ClientSubscriptionPage = () => {
   useEffect(() => {
     fetchSubscriptionData();
   }, []);
+
+  // Pre-select plan if passed from landing page
+  useEffect(() => {
+    if (location.state?.selectedPlan && allPlans.length > 0) {
+      const preSelectedPlan = allPlans.find(p => p._id === location.state.selectedPlan._id);
+      if (preSelectedPlan && preSelectedPlan.price > 0) {
+        setSelectedPlan(preSelectedPlan);
+        setShowPaymentDialog(true);
+        toast.info(`Plan ${preSelectedPlan.name} sélectionné`);
+      }
+    }
+  }, [location.state, allPlans]);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -101,7 +117,7 @@ const ClientSubscriptionPage = () => {
     }
   };
 
-  // Handle WhatsApp contact
+  // Handle WhatsApp contact - Show confirmation dialog first
   const handleContactWhatsApp = () => {
     if (!selectedPlan) return;
 
@@ -111,21 +127,61 @@ const ClientSubscriptionPage = () => {
       return;
     }
 
-    // Create WhatsApp message with subscription details
-    const semestersList = selectedSemesters.sort().join(', ');
-    const message = encodeURIComponent(
-      `Bonjour! Je souhaite souscrire au plan ${selectedPlan.name} (${selectedPlan.price} MAD).\n\nSemestres choisis: ${semestersList}\n\nMerci de me contacter pour finaliser mon abonnement.`
-    );
-    
-    // Open WhatsApp with pre-filled message
-    const whatsappUrl = `https://wa.me/212${WHATSAPP_NUMBER.replace(/^0/, '')}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-    
-    toast.success('Redirection vers WhatsApp...', {
-      description: 'Contactez-nous pour finaliser votre abonnement'
-    });
-    
-    setShowPaymentDialog(false);
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
+
+  // Create payment request and contact WhatsApp
+  const handleConfirmBankTransfer = async () => {
+    if (!selectedPlan) return;
+
+    try {
+      setRequestLoading(true);
+
+      // Create payment request in the backend
+      const semestersList = selectedSemesters.sort().join(', ');
+      
+      const requestData = {
+        planId: selectedPlan._id,
+        planName: selectedPlan.name,
+        amount: selectedPlan.price,
+        semesters: selectedSemesters,
+        paymentMode: "Bank Transfer"
+      };
+
+      // Call API to create payment request
+      const response = await axios.post(
+        `${API_URL}/payments/bank-transfer-request`,
+        requestData,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success('Demande créée!', {
+          description: 'Votre demande a été enregistrée. Contactez-nous sur WhatsApp pour finaliser.'
+        });
+
+        // Create WhatsApp message with subscription details
+        const message = encodeURIComponent(
+          `Bonjour! Je souhaite souscrire au plan ${selectedPlan.name} (${selectedPlan.price} MAD).\n\nSemestres choisis: ${semestersList}\n\nJ'ai créé une demande de paiement (#${response.data.requestId || 'N/A'}).\n\nMerci de me contacter pour finaliser mon abonnement.`
+        );
+        
+        // Open WhatsApp with pre-filled message
+        const whatsappUrl = `https://wa.me/212${WHATSAPP_NUMBER.replace(/^0/, '')}?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        // Close dialogs
+        setShowConfirmDialog(false);
+        setShowPaymentDialog(false);
+        setSelectedSemesters([]);
+        setPaymentMethod(null);
+      }
+    } catch (error) {
+      console.error('Error creating bank transfer request:', error);
+      toast.error('Erreur lors de la création de la demande');
+    } finally {
+      setRequestLoading(false);
+    }
   };
 
   const handlePayWithPayPal = async () => {
@@ -622,7 +678,7 @@ const ClientSubscriptionPage = () => {
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Contacter sur WhatsApp
+                Demande
               </Button>
             )}
             
@@ -634,6 +690,88 @@ const ClientSubscriptionPage = () => {
                 Sélectionnez un mode de paiement
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bank Transfer Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">
+              Confirmer la demande de transfert bancaire
+            </DialogTitle>
+            <DialogDescription className="text-slate-600">
+              Êtes-vous sûr de vouloir continuer avec le transfert bancaire ?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-900 mb-2">Détails de votre commande</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Plan:</span>
+                  <span className="font-medium text-slate-900">{selectedPlan?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Prix:</span>
+                  <span className="font-medium text-slate-900">{selectedPlan?.price} MAD</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Semestres:</span>
+                  <span className="font-medium text-slate-900">{selectedSemesters.join(', ')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-900">
+                  <p className="font-semibold mb-1">Prochaines étapes:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-amber-800">
+                    <li>Une demande sera créée dans le panneau admin</li>
+                    <li>Vous serez redirigé vers WhatsApp</li>
+                    <li><strong>Contactez le support via WhatsApp</strong> pour finaliser le paiement</li>
+                    <li>Activation sous 24-48H après confirmation du paiement</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+              <p className="text-sm text-green-800 font-medium">
+                📱 Après confirmation, contactez-nous sur WhatsApp au <strong>{WHATSAPP_NUMBER}</strong>
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={requestLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleConfirmBankTransfer}
+              disabled={requestLoading}
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+            >
+              {requestLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Confirmer et Contacter
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -5,3 +5,4 @@ export { PageHeader } from './PageHeader';
 export { ConfirmDialog } from './ConfirmDialog';
 export { AlertMessage } from './AlertMessage';
 export { EmptyState, PageSkeleton } from './EmptyState';
+export { default as TableFilters } from './TableFilters';

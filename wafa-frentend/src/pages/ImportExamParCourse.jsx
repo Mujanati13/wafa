@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -14,122 +14,238 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, BookOpen, ChevronRight } from "lucide-react";
+import { 
+  Plus, 
+  Trash2, 
+  Link, 
+  BookOpen, 
+  ChevronRight, 
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Eye
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ImportExamParCourse = () => {
   const { t } = useTranslation(['admin', 'common']);
-  // Demo catalog: Module -> Categories -> Courses -> Exams
-  const modules = useMemo(
-    () => [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-    ],
-    []
-  );
-
-  const catalog = useMemo(
-    () => ({
-      "Anatomie 1": {
-        categories: {
-          Osteologie: {
-            courses: {
-              "Membre supérieur": {
-                exams: ["DS 1", "DS 2", "Rattrapage"],
-              },
-              "Membre inférieur": {
-                exams: ["DS 1", "Final"],
-              },
-            },
-          },
-          Neurologie: {
-            courses: {
-              Encéphale: { exams: ["DS", "Final"] },
-            },
-          },
-        },
-      },
-      Biophysique: {
-        categories: {
-          Mécanique: { courses: { Cinétiques: { exams: ["Quiz", "Final"] } } },
-        },
-      },
-      Embryologie: {
-        categories: {
-          Général: { courses: { Bases: { exams: ["DS 1"] } } },
-        },
-      },
-      Histologie: {
-        categories: {
-          Tissus: { courses: { Épithélium: { exams: ["DS"] } } },
-        },
-      },
-      "Physiologie 1": {
-        categories: {
-          Cardio: { courses: { ECG: { exams: ["DS", "Final"] } } },
-        },
-      },
-      "Biochimie 1": {
-        categories: {
-          Métabolisme: { courses: { Glucides: { exams: ["DS"] } } },
-        },
-      },
-    }),
-    []
-  );
-
+  
+  // State for modules and courses
+  const [modules, setModules] = useState([]);
+  const [examCourses, setExamCourses] = useState([]);
+  const [examYears, setExamYears] = useState([]);
+  const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
+  
+  // Loading states
+  const [loadingModules, setLoadingModules] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingExamYears, setLoadingExamYears] = useState(false);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [linking, setLinking] = useState(false);
+  
+  // Selection state
   const [selectedModule, setSelectedModule] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
-  const [selectedExam, setSelectedExam] = useState("");
-  const [excelFile, setExcelFile] = useState(null);
-
-  // Integrate exam year questions mapping (right section in mockup)
+  
+  // Dialog for viewing questions
+  const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
+  
+  // Question linking mappings
   const [yearMappings, setYearMappings] = useState([
-    { id: crypto.randomUUID(), yearName: "", questionNumbers: "" },
+    { id: crypto.randomUUID(), examYearId: "", yearName: "", questionNumbers: "" },
   ]);
+
+  // Fetch modules on mount
+  useEffect(() => {
+    fetchModules();
+  }, []);
+
+  // Fetch courses and exam years when module changes
+  useEffect(() => {
+    if (selectedModule) {
+      fetchCoursesForModule(selectedModule);
+      fetchExamYearsForModule(selectedModule);
+    } else {
+      setExamCourses([]);
+      setExamYears([]);
+    }
+    setSelectedCourse("");
+  }, [selectedModule]);
+
+  const fetchModules = async () => {
+    try {
+      setLoadingModules(true);
+      const response = await axios.get(`${API_URL}/modules`, {
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setModules(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching modules:", error);
+      toast.error("Erreur lors du chargement des modules");
+    } finally {
+      setLoadingModules(false);
+    }
+  };
+
+  const fetchCoursesForModule = async (moduleId) => {
+    try {
+      setLoadingCourses(true);
+      const response = await axios.get(`${API_URL}/exam-courses`, {
+        params: { moduleId },
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setExamCourses(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setExamCourses([]);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const fetchExamYearsForModule = async (moduleId) => {
+    try {
+      setLoadingExamYears(true);
+      const response = await axios.get(`${API_URL}/exams`, {
+        params: { moduleId },
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setExamYears(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching exam years:", error);
+      setExamYears([]);
+    } finally {
+      setLoadingExamYears(false);
+    }
+  };
+
+  const fetchQuestionsForExam = async (examId) => {
+    try {
+      setLoadingQuestions(true);
+      const response = await axios.get(`${API_URL}/questions/exam/${examId}`, {
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setSelectedExamQuestions(response.data.data || []);
+        setShowQuestionsDialog(true);
+      }
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      toast.error("Erreur lors du chargement des questions");
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
 
   const handleAddYearRow = () =>
     setYearMappings((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), yearName: "", questionNumbers: "" },
+      { id: crypto.randomUUID(), examYearId: "", yearName: "", questionNumbers: "" },
     ]);
 
   const handleRemoveYearRow = (id) =>
     setYearMappings((prev) => prev.filter((r) => r.id !== id));
 
-  // Dependent options
-  const categoryOptions = selectedModule
-    ? Object.keys(catalog[selectedModule]?.categories || {})
-    : [];
-  const courseOptions = selectedCategory
-    ? Object.keys(
-        catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
-      )
-    : [];
-  const examOptions = selectedCourse
-    ? catalog[selectedModule]?.categories[selectedCategory]?.courses[
-        selectedCourse
-      ]?.exams || []
-    : [];
-
-  const canImport =
-    selectedModule &&
-    selectedCategory &&
-    selectedCourse &&
-    selectedExam &&
-    excelFile;
-
-  const handleImport = () => {
-    // Placeholder handler. Wire to API later.
-    alert(
-      `Import ready:\nModule: ${selectedModule}\nCategory: ${selectedCategory}\nCourse: ${selectedCourse}\nExam: ${selectedExam}\nExcel: ${excelFile?.name}\n` +
-        `Integrations (exam year): ${yearMappings.length}`
+  const handleYearMappingChange = (id, field, value) => {
+    setYearMappings((prev) =>
+      prev.map((r) => {
+        if (r.id === id) {
+          const updated = { ...r, [field]: value };
+          if (field === "examYearId") {
+            const examYear = examYears.find(e => e._id === value);
+            if (examYear) {
+              updated.yearName = `${examYear.name} (${examYear.year})`;
+            }
+          }
+          return updated;
+        }
+        return r;
+      })
     );
   };
+
+  const handleViewQuestions = (examYearId) => {
+    if (examYearId) {
+      fetchQuestionsForExam(examYearId);
+    }
+  };
+
+  const handleLinkQuestions = async () => {
+    if (!selectedCourse) {
+      toast.error("Veuillez sélectionner un cours");
+      return;
+    }
+
+    const validMappings = yearMappings.filter(
+      m => m.examYearId && m.questionNumbers.trim()
+    );
+
+    if (validMappings.length === 0) {
+      toast.error("Veuillez ajouter au moins une intégration avec des numéros de questions");
+      return;
+    }
+
+    try {
+      setLinking(true);
+      const response = await axios.post(
+        `${API_URL}/exam-courses/${selectedCourse}/link-questions`,
+        {
+          questionLinks: validMappings.map(m => ({
+            examParYearId: m.examYearId,
+            questionNumbers: m.questionNumbers,
+            yearName: m.yearName,
+          })),
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setYearMappings([
+          { id: crypto.randomUUID(), examYearId: "", yearName: "", questionNumbers: "" },
+        ]);
+        // Refresh courses to get updated question counts
+        if (selectedModule) {
+          fetchCoursesForModule(selectedModule);
+        }
+      }
+    } catch (error) {
+      console.error("Error linking questions:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la liaison des questions");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const canLink = selectedModule && selectedCourse && yearMappings.some(
+    m => m.examYearId && m.questionNumbers.trim()
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-slate-100 p-6">
@@ -142,15 +258,15 @@ const ImportExamParCourse = () => {
           className="rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 p-6 text-white shadow-lg flex justify-between items-center"
         >
           <div>
-            <h1 className="text-3xl font-bold mb-2">Importer Examens par Cours</h1>
+            <h1 className="text-3xl font-bold mb-2">Lier Questions aux Cours</h1>
             <p className="text-rose-100">
-              Importez les questions par catégories de cours
+              Liez les questions des examens par années aux cours thématiques
             </p>
           </div>
-          <BookOpen className="w-12 h-12 opacity-80" />
+          <Link className="w-12 h-12 opacity-80" />
         </motion.div>
 
-        {/* Source Section */}
+        {/* Selection Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -159,150 +275,88 @@ const ImportExamParCourse = () => {
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-rose-50 to-orange-50 border-b">
               <CardTitle className="flex items-center gap-2 text-rose-900">
-                <Upload className="w-5 h-5" />
-                Hiérarchie des Cours
+                <BookOpen className="w-5 h-5" />
+                Sélection du Cours
               </CardTitle>
               <CardDescription>
-                Sélectionnez le module, la catégorie, le cours et l'examen, puis téléchargez le fichier Excel
+                Sélectionnez le module et le cours auquel vous souhaitez lier des questions
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Module Select */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.15 }}
-                  className="space-y-2"
-                >
+                <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-1">
                     <span className="text-rose-600">●</span> Module
                   </Label>
                   <Select
                     value={selectedModule}
-                    onValueChange={(value) => {
-                      setSelectedModule(value);
-                      setSelectedCategory("");
-                      setSelectedCourse("");
-                      setSelectedExam("");
-                    }}
+                    onValueChange={setSelectedModule}
+                    disabled={loadingModules}
                   >
                     <SelectTrigger className="border-rose-200">
-                      <SelectValue placeholder="Choisir un module" />
+                      <SelectValue placeholder={loadingModules ? "Chargement..." : "Choisir un module"} />
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
+                        <SelectItem key={m._id} value={m._id}>
+                          {m.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </motion.div>
-
-                {/* Category Select */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                  className="space-y-2"
-                >
-                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-orange-600">●</span> Catégorie
-                  </Label>
-                  <Select
-                    value={selectedCategory}
-                    onValueChange={(value) => {
-                      setSelectedCategory(value);
-                      setSelectedCourse("");
-                      setSelectedExam("");
-                    }}
-                    disabled={!selectedModule}
-                  >
-                    <SelectTrigger className="border-rose-200">
-                      <SelectValue placeholder={selectedModule ? "Choisir une catégorie" : "Sélectionnez d'abord un module"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </motion.div>
+                </div>
 
                 {/* Course Select */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.25 }}
-                  className="space-y-2"
-                >
+                <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-1">
                     <ChevronRight className="w-3 h-3" />
-                    <span className="text-amber-600">●</span> Cours
+                    <span className="text-orange-600">●</span> Cours
                   </Label>
                   <Select
                     value={selectedCourse}
-                    onValueChange={(value) => {
-                      setSelectedCourse(value);
-                      setSelectedExam("");
-                    }}
-                    disabled={!selectedCategory}
+                    onValueChange={setSelectedCourse}
+                    disabled={!selectedModule || loadingCourses}
                   >
                     <SelectTrigger className="border-rose-200">
-                      <SelectValue placeholder={selectedCategory ? "Choisir un cours" : "Sélectionnez d'abord une catégorie"} />
+                      <SelectValue 
+                        placeholder={
+                          !selectedModule 
+                            ? "Sélectionnez d'abord un module" 
+                            : loadingCourses 
+                              ? "Chargement..." 
+                              : examCourses.length === 0
+                                ? "Aucun cours disponible"
+                                : "Choisir un cours"
+                        } 
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {courseOptions.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
+                      {examCourses.map((c) => (
+                        <SelectItem key={c._id} value={c._id}>
+                          {c.name} - {c.category}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </motion.div>
-
-                {/* File Upload */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 }}
-                  className="space-y-2"
-                >
-                  <Label className="font-semibold text-gray-700">Fichier Excel</Label>
-                  <div className="relative">
-                    <Input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
-                      className="border-rose-200"
-                    />
-                    {excelFile && (
-                      <Badge className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-100 text-green-800 border-0 text-xs">
-                        ✓ Prêt
-                      </Badge>
-                    )}
-                  </div>
-                </motion.div>
+                </div>
               </div>
+
+              {examCourses.length === 0 && selectedModule && !loadingCourses && (
+                <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm">
+                      Aucun cours trouvé pour ce module. Créez d'abord des cours dans la section "Examens par Cours".
+                    </span>
+                  </div>
+                </div>
+              )}
             </CardContent>
-            <CardFooter className="bg-gray-50 border-t flex justify-end">
-              <Button
-                className="bg-rose-600 hover:bg-rose-700 gap-2"
-                disabled={!canImport}
-                onClick={handleImport}
-              >
-                <Upload className="w-4 h-4" />
-                Importer
-              </Button>
-            </CardFooter>
           </Card>
         </motion.div>
 
-        {/* Exam Year Integration */}
+        {/* Question Linking Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -311,11 +365,11 @@ const ImportExamParCourse = () => {
           <Card className="shadow-lg border-0">
             <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b">
               <CardTitle className="flex items-center gap-2 text-orange-900">
-                <BookOpen className="w-5 h-5" />
+                <Link className="w-5 h-5" />
                 Intégrer Questions d'Examens par Années
               </CardTitle>
               <CardDescription>
-                Mappez les questions des examens par années existants vers cet examen par cours
+                Mappez les questions des examens par années existants vers ce cours
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
@@ -326,51 +380,60 @@ const ImportExamParCourse = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: idx * 0.05 }}
-                    className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end p-3 bg-slate-50 rounded-lg border border-slate-200"
+                    className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-end p-3 bg-slate-50 rounded-lg border border-slate-200"
                   >
                     <div className="sm:col-span-2 space-y-1">
-                      <Label className="text-xs font-semibold">Nom de l'Année</Label>
-                      <Input
-                        placeholder="ex: 2023 - Principal"
-                        value={row.yearName}
-                        onChange={(e) =>
-                          setYearMappings((prev) =>
-                            prev.map((r) =>
-                              r.id === row.id
-                                ? { ...r, yearName: e.target.value }
-                                : r
-                            )
-                          )
-                        }
-                        className="text-xs"
-                      />
+                      <Label className="text-xs font-semibold">Examen par Année</Label>
+                      <Select
+                        value={row.examYearId}
+                        onValueChange={(value) => handleYearMappingChange(row.id, "examYearId", value)}
+                        disabled={!selectedModule || loadingExamYears}
+                      >
+                        <SelectTrigger className="text-xs">
+                          <SelectValue placeholder="Sélectionner..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {examYears.map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name} ({exam.year})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="sm:col-span-2 space-y-1">
                       <Label className="text-xs font-semibold">Numéros de Questions</Label>
                       <Input
                         placeholder="ex: 1-5,7,10-12"
                         value={row.questionNumbers}
-                        onChange={(e) =>
-                          setYearMappings((prev) =>
-                            prev.map((r) =>
-                              r.id === row.id
-                                ? { ...r, questionNumbers: e.target.value }
-                                : r
-                            )
-                          )
-                        }
+                        onChange={(e) => handleYearMappingChange(row.id, "questionNumbers", e.target.value)}
                         className="text-xs"
                       />
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveYearRow(row.id)}
-                      disabled={yearMappings.length === 1}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewQuestions(row.examYearId)}
+                        disabled={!row.examYearId || loadingQuestions}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        {loadingQuestions ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveYearRow(row.id)}
+                        disabled={yearMappings.length === 1}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -381,11 +444,108 @@ const ImportExamParCourse = () => {
                 className="w-full mt-4 gap-2 border-orange-200 text-orange-600 hover:bg-orange-50"
               >
                 <Plus className="w-4 h-4" />
-                Ajouter une Intégration d'Année
+                Ajouter une Intégration
               </Button>
             </CardContent>
+            <CardFooter className="bg-gray-50 border-t flex justify-end">
+              <Button
+                className="bg-rose-600 hover:bg-rose-700 gap-2"
+                disabled={!canLink || linking}
+                onClick={handleLinkQuestions}
+              >
+                {linking ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4" />
+                )}
+                Lier les Questions
+              </Button>
+            </CardFooter>
           </Card>
         </motion.div>
+
+        {/* Selected Course Summary */}
+        {selectedCourse && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <Card className="shadow-lg border-0">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-green-900">
+                  <CheckCircle className="w-5 h-5" />
+                  Cours Sélectionné
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {examCourses.filter(c => c._id === selectedCourse).map(course => (
+                  <div key={course._id} className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg">{course.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        Catégorie: {course.category} • 
+                        Questions liées: {course.totalQuestions || 0}
+                      </p>
+                    </div>
+                    <Badge variant={course.status === "active" ? "success" : "secondary"}>
+                      {course.status === "active" ? "Actif" : "Brouillon"}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Questions Preview Dialog */}
+        <Dialog open={showQuestionsDialog} onOpenChange={setShowQuestionsDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Questions de l'Examen</DialogTitle>
+              <DialogDescription>
+                Visualisez les questions disponibles. Utilisez les numéros dans le champ de saisie.
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[50vh]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">#</TableHead>
+                    <TableHead>Question</TableHead>
+                    <TableHead className="w-24">Session</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedExamQuestions.map((question, idx) => (
+                    <TableRow key={question._id}>
+                      <TableCell className="font-medium">{idx + 1}</TableCell>
+                      <TableCell className="max-w-md truncate">
+                        {question.text?.substring(0, 100)}
+                        {question.text?.length > 100 && "..."}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {question.sessionLabel}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {selectedExamQuestions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Aucune question trouvée pour cet examen
+                </div>
+              )}
+            </ScrollArea>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowQuestionsDialog(false)}>
+                Fermer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

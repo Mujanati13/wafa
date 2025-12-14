@@ -12,8 +12,8 @@ cloudinary.config({
 // Configure Multer to use memory storage
 const storage = multer.memoryStorage();
 
-// File filter
-const fileFilter = (req, file, cb) => {
+// File filter for images
+const imageFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
@@ -21,14 +21,32 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Upload middleware
+// File filter for PDFs
+const pdfFilter = (req, file, cb) => {
+  if (file.mimetype === "application/pdf") {
+    cb(null, true);
+  } else {
+    cb(new Error("Veuillez télécharger un fichier PDF valide"), false);
+  }
+};
+
+// Upload middleware for profile pictures
 export const uploadProfilePicture = multer({
   storage: storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB max
   },
-  fileFilter: fileFilter,
+  fileFilter: imageFilter,
 }).single("profilePicture");
+
+// Upload middleware for PDFs
+export const uploadPDF = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max for PDFs
+  },
+  fileFilter: pdfFilter,
+});
 
 // Upload to Cloudinary from buffer
 export const uploadToCloudinary = (buffer) => {
@@ -70,4 +88,4 @@ export const deleteFromCloudinary = async (publicId) => {
   }
 };
 
-export default { uploadProfilePicture, uploadToCloudinary, deleteFromCloudinary };
+export default { uploadProfilePicture, uploadPDF, uploadToCloudinary, deleteFromCloudinary };

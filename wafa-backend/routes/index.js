@@ -16,6 +16,9 @@ import notificationRoute from "./notificationRoute.js";
 import adminAnalyticsRoute from "./adminAnalyticsRoute.js";
 import subscriptionPlanRoute from "./subscriptionPlanRoute.js";
 import paypalSettingsRoute from "./paypalSettingsRoute.js";
+import landingPageSettingsRoute from "./landingPageSettingsRoute.js";
+import examCourseRoute from "./examCourseRoute.js";
+import settingsRoute from "./settingsRoute.js";
 
 const router = Router();
 
@@ -35,5 +38,8 @@ router.use("/notifications", notificationRoute);
 router.use("/admin/analytics", adminAnalyticsRoute);
 router.use("/subscription-plans", subscriptionPlanRoute);
 router.use("/paypal-settings", paypalSettingsRoute);
+router.use("/landing-settings", landingPageSettingsRoute);
+router.use("/exam-courses", examCourseRoute);
+router.use("/settings", settingsRoute);
 
 export default router;

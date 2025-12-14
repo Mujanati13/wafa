@@ -37,11 +37,26 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
+  Shield,
+  CheckCircle,
+  CreditCard,
+  GraduationCap,
 } from "lucide-react";
+import { TableFilters } from "../shared";
 import NewUserForm from "./NewUserForm";
 import { userService } from "../../services/userService";
+import { Badge } from "../ui/badge";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+const studentYears = [
+  { value: "1", label: "1ère année" },
+  { value: "2", label: "2ème année" },
+  { value: "3", label: "3ème année" },
+  { value: "4", label: "4ème année" },
+  { value: "5", label: "5ème année" },
+  { value: "6", label: "6ème année" },
+];
 
 const UsersWithTabs = () => {
   const [activeTab, setActiveTab] = useState("free"); // "free" or "paying"
@@ -54,6 +69,13 @@ const UsersWithTabs = () => {
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({});
   const [exporting, setExporting] = useState(false);
+  
+  // New filter states
+  const [studentYear, setStudentYear] = useState("all");
+  const [startDate, setStartDate] = useState(undefined);
+  const [endDate, setEndDate] = useState(undefined);
+  const [paymentStartDate, setPaymentStartDate] = useState(undefined);
+  const [paymentEndDate, setPaymentEndDate] = useState(undefined);
 
   // Fetch users based on active tab
   const fetchUsers = async () => {
@@ -256,13 +278,49 @@ const UsersWithTabs = () => {
       : "bg-red-100 text-red-800 border-red-200";
   };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
+  // Filter users based on search term and filters
+  const filteredUsers = users.filter((user) => {
+    // Search filter
+    const matchesSearch = 
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Student year filter
+    const matchesYear = studentYear === "all" || user.currentYear === studentYear;
+    
+    // Registration date filter
+    const userRegDate = new Date(user.createdAt);
+    const matchesRegDate = 
+      (!startDate || userRegDate >= startDate) &&
+      (!endDate || userRegDate <= endDate);
+    
+    // Payment date filter (only for paying users)
+    let matchesPaymentDate = true;
+    if (activeTab === "paying" && user.paymentDate) {
+      const userPayDate = new Date(user.paymentDate);
+      matchesPaymentDate = 
+        (!paymentStartDate || userPayDate >= paymentStartDate) &&
+        (!paymentEndDate || userPayDate <= paymentEndDate);
+    }
+    
+    return matchesSearch && matchesYear && matchesRegDate && matchesPaymentDate;
+  });
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStudentYear("all");
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setPaymentStartDate(undefined);
+    setPaymentEndDate(undefined);
+  };
+
+  const activeFilterCount = 
+    (searchTerm ? 1 : 0) + 
+    (studentYear !== "all" ? 1 : 0) + 
+    (startDate || endDate ? 1 : 0) + 
+    (paymentStartDate || paymentEndDate ? 1 : 0);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -515,22 +573,45 @@ const UsersWithTabs = () => {
         {/* Search and Filter */}
         <Card className="shadow-sm">
           <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search users by name, username or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <Button variant="outline" className="sm:w-auto">
-                <Filter className="w-4 h-4" />
-                Filters
-              </Button>
-            </div>
+            <TableFilters
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Rechercher par nom, username ou email..."
+              startDate={startDate}
+              endDate={endDate}
+              onDateChange={({ startDate: sd, endDate: ed }) => {
+                setStartDate(sd);
+                setEndDate(ed);
+              }}
+              showDateFilter={true}
+              additionalFilters={[
+                {
+                  key: "studentYear",
+                  label: "Année d'étude",
+                  value: studentYear,
+                  onChange: setStudentYear,
+                  options: studentYears,
+                },
+                ...(activeTab === "paying" ? [{
+                  key: "paymentDate",
+                  label: "Date de paiement",
+                  value: paymentStartDate ? "custom" : "all",
+                  onChange: (val) => {
+                    if (val === "all") {
+                      setPaymentStartDate(undefined);
+                      setPaymentEndDate(undefined);
+                    }
+                  },
+                  options: [
+                    { value: "last7days", label: "7 derniers jours" },
+                    { value: "last30days", label: "30 derniers jours" },
+                    { value: "last90days", label: "90 derniers jours" },
+                  ],
+                }] : [])
+              ]}
+              onClearFilters={handleClearFilters}
+              activeFilterCount={activeFilterCount}
+            />
           </CardContent>
         </Card>
 
@@ -554,24 +635,51 @@ const UsersWithTabs = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px]">
+                <table className="w-full min-w-[900px]">
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        User
+                        Utilisateur
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
                         Contact
                       </th>
-                     
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        Status
+                        <div className="flex items-center gap-1">
+                          <GraduationCap className="w-4 h-4" />
+                          Année
+                        </div>
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        Semester
+                        Statut
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        Register Date
+                        Semestre
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        Inscription
+                      </th>
+                      {activeTab === "paying" && (
+                        <>
+                          <th className="text-left py-3 px-4 font-medium text-gray-700">
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              Approbation
+                            </div>
+                          </th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-700">
+                            <div className="flex items-center gap-1">
+                              <CreditCard className="w-4 h-4 text-blue-600" />
+                              Paiement
+                            </div>
+                          </th>
+                        </>
+                      )}
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        <div className="flex items-center gap-1">
+                          <Shield className="w-4 h-4 text-purple-600" />
+                          CGU
+                        </div>
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
                         Actions
@@ -602,7 +710,7 @@ const UsersWithTabs = () => {
                                 {user.name || user.username}
                               </div>
                               <div className="text-sm text-gray-500">
-                                ID: {user._id}
+                                @{user.username}
                               </div>
                             </div>
                           </div>
@@ -617,7 +725,11 @@ const UsersWithTabs = () => {
                             </div>
                           </div>
                         </td>
-                     
+                        <td className="py-4 px-4">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {user.currentYear ? `${user.currentYear}ème` : '-'}
+                          </Badge>
+                        </td>
                         <td className="py-4 px-4">
                           <span
                             className={cn(
@@ -625,21 +737,62 @@ const UsersWithTabs = () => {
                               getStatusBadgeColor(user.isAactive)
                             )}
                           >
-                            {user.isAactive ? "Active" : "Inactive"}
+                            {user.isAactive ? "Actif" : "Inactif"}
                           </span>
                         </td>
                         <td className="py-4 px-4">
                           <span className="text-sm text-gray-700">
-                            {user.semesters.map((s) => s).join(", ") || "N/A"}
+                            {user.semesters?.map((s) => s).join(", ") || "N/A"}
                           </span>
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-2">
                             <Calendar className="text-gray-400 flex-shrink-0 w-3.5 h-3.5" />
-                            <span className="text-gray-700">
-                              {new Date(user.createdAt).toLocaleDateString()}
+                            <span className="text-gray-700 text-sm">
+                              {new Date(user.createdAt).toLocaleDateString("fr-FR")}
                             </span>
                           </div>
+                        </td>
+                        {activeTab === "paying" && (
+                          <>
+                            <td className="py-4 px-4">
+                              {user.approvalDate ? (
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="text-green-500 w-4 h-4" />
+                                  <span className="text-sm text-gray-700">
+                                    {new Date(user.approvalDate).toLocaleDateString("fr-FR")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              {user.paymentDate ? (
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="text-blue-500 w-4 h-4" />
+                                  <span className="text-sm text-gray-700">
+                                    {new Date(user.paymentDate).toLocaleDateString("fr-FR")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
+                            </td>
+                          </>
+                        )}
+                        <td className="py-4 px-4">
+                          {user.consentAcceptedAt ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200 gap-1">
+                              <Shield className="w-3 h-3" />
+                              Accepté
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-400 gap-1">
+                              <Shield className="w-3 h-3" />
+                              Non
+                            </Badge>
+                          )}
                         </td>
                         <td className="py-4 px-4">
                           <DropdownMenu>
@@ -651,15 +804,22 @@ const UsersWithTabs = () => {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem className="flex items-center gap-2">
                                 <Eye className="w-4 h-4" />
-                                View
+                                Voir
                               </DropdownMenuItem>
                               <DropdownMenuItem className="flex items-center gap-2">
                                 <Edit className="w-4 h-4" />
-                                Edit
+                                Modifier
                               </DropdownMenuItem>
+                              {user.consentAcceptedAt && (
+                                <DropdownMenuItem className="flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  Voir consentement
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem className="flex items-center gap-2 text-red-600">
                                 <Trash2 className="w-4 h-4" />
-                                Delete
+                                Supprimer
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

@@ -33,14 +33,31 @@ export const reportQuestionsController = {
 
     getAll: asyncHandler(async (req, res) => {
         const reports = await ReportQuestions.find()
-            .populate({ path: "userId", select: "username" })
-            .populate({ path: "questionId", select: "text" })
+            .populate({ path: "userId", select: "username email" })
+            .populate({ 
+                path: "questionId", 
+                select: "text examId sessionLabel",
+                populate: {
+                    path: "examId",
+                    select: "name year moduleId",
+                    populate: {
+                        path: "moduleId",
+                        select: "name category"
+                    }
+                }
+            })
             .lean();
 
         const shaped = reports.map((r) => ({
             ...r,
             username: r.userId?.username,
+            userEmail: r.userId?.email,
             questionTitle: r.questionId?.text,
+            questionSessionLabel: r.questionId?.sessionLabel,
+            examName: r.questionId?.examId?.name,
+            examYear: r.questionId?.examId?.year,
+            moduleName: r.questionId?.examId?.moduleId?.name,
+            moduleCategory: r.questionId?.examId?.moduleId?.category,
         }));
 
         res.status(200).json({ success: true, data: shaped });
@@ -115,6 +132,32 @@ export const reportQuestionsController = {
         res.status(200).json({ 
             success: true, 
             message: "Report approved successfully",
+            data: {
+                ...updated,
+                username: updated.userId?.username,
+                questionTitle: updated.questionId?.text,
+            }
+        });
+    }),
+
+    reject: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const updated = await ReportQuestions.findByIdAndUpdate(
+            id,
+            { status: "rejected" },
+            { new: true, runValidators: true }
+        )
+            .populate({ path: "userId", select: "username" })
+            .populate({ path: "questionId", select: "text" })
+            .lean();
+        
+        if (!updated) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: "Report rejected successfully",
             data: {
                 ...updated,
                 username: updated.userId?.username,

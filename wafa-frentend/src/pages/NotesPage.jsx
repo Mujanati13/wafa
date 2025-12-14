@@ -471,7 +471,6 @@ const NotesPage = () => {
                   </div>
                 </CardContent>
               </Card>
-            )}
           </motion.div>
         )}
       </div>

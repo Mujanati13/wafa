@@ -1,88 +1,66 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { Folders, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Folders, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageHeader } from "@/components/shared";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
+import { api } from "@/lib/utils";
 import NewCategoryForm from "@/components/admin/NewCategoryForm";
+
+// 3 default categories
+const DEFAULT_CATEGORIES = [
+  { value: "Exam par years", label: "Exam par years", color: "bg-blue-100 text-blue-700" },
+  { value: "Exam par courses", label: "Exam par courses", color: "bg-purple-100 text-purple-700" },
+  { value: "Résumé et cours", label: "Résumé et cours", color: "bg-green-100 text-green-700" },
+];
 
 const CategoriesOfModules = () => {
   const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterModule, setFilterModule] = useState("all");
-  const itemsPerPage = 8;
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 10;
 
-  const categories = useMemo(() => {
-    const placeholderImage = "https://via.placeholder.com/150x150?text=Category";
-    const modules = [
-      { id: 1, name: "Anatomie 1" },
-      { id: 2, name: "Biophysique" },
-      { id: 3, name: "Embryologie" },
-      { id: 4, name: "Histologie" },
-      { id: 5, name: "Physiologie 1" },
-      { id: 6, name: "Biochimie 1" },
-      { id: 7, name: "Biostatistiques 1" },
-      { id: 8, name: "Génétique" },
-    ];
-
-    const categoryTypes = [
-      "Exam par years",
-      "Exam par courses",
-      "Exam TP",
-      "Exam QCM",
-      "Exam théorique",
-      "Exam pratique",
-      "Contrôle continu",
-      "Évaluation finale",
-      "Travaux dirigés",
-      "Projets",
-      "Mémoires",
-      "Présentations",
-    ];
-
-    let id = 1;
-    const list = [];
-
-    modules.forEach((module) => {
-      const numCategories = 2 + (module.id % 4);
-      for (let i = 0; i < numCategories; i++) {
-        const categoryType = categoryTypes[(module.id + i) % categoryTypes.length];
-        list.push({
-          id: id++,
-          moduleId: module.id,
-          moduleName: module.name,
-          name: categoryType,
-          imageUrl: placeholderImage,
-          totalQuestions: 25 + ((id + i * 7) % 100),
-        });
-      }
-    });
-
-    return list;
+  useEffect(() => {
+    fetchModules();
   }, []);
 
-  const filteredCategories = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    return categories.filter((c) => {
-      const passesModule = filterModule === "all" || c.moduleId.toString() === filterModule;
-      const passesSearch =
-        c.name.toLowerCase().includes(term) ||
-        c.moduleName.toLowerCase().includes(term) ||
-        String(c.id).includes(term);
-      return passesModule && passesSearch;
-    });
-  }, [searchTerm, filterModule, categories]);
+  const fetchModules = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (e) {
+      toast.error("Erreur lors du chargement des modules");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage) || 1;
+  const filteredModules = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return modules.filter((m) => {
+      const passesCategory = filterCategory === "all" || m.category === filterCategory;
+      const passesSearch =
+        m.name?.toLowerCase().includes(term) ||
+        m.semester?.toLowerCase().includes(term) ||
+        m.courseNames?.some(c => c.toLowerCase().includes(term));
+      return passesCategory && passesSearch;
+    });
+  }, [searchTerm, filterCategory, modules]);
+
+  const totalPages = Math.ceil(filteredModules.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentCategories = filteredCategories.slice(startIndex, endIndex);
+  const currentModules = filteredModules.slice(startIndex, endIndex);
 
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -91,7 +69,13 @@ const CategoriesOfModules = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterModule]);
+  }, [searchTerm, filterCategory]);
+
+  // Stats
+  const categoryStats = DEFAULT_CATEGORIES.map(cat => ({
+    ...cat,
+    count: modules.filter(m => m.category === cat.value).length
+  }));
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -146,25 +130,50 @@ const CategoriesOfModules = () => {
     return <div className="flex items-center gap-2">{buttons}</div>;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title={t('admin:categories_modules')} description={t('admin:manage_categories_each_module')} />
+          <PageHeader title="Catégories de Modules" description="Gérez les catégories et cours de chaque module" />
           
           <Button onClick={() => setShowNewCategoryForm(true)} className="gap-2">
             <Plus className="h-4 w-4" />
-            {t('admin:create_category')}
+            Ajouter un Module
           </Button>
+        </div>
+
+        {/* Category Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {categoryStats.map((cat) => (
+            <Card key={cat.value} className="border-0 shadow-md hover:shadow-lg transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{cat.label}</p>
+                    <p className="text-2xl font-bold">{cat.count}</p>
+                  </div>
+                  <Badge className={cat.color}>{cat.label.split(' ')[0]}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Folders className="h-5 w-5" />
-              {t('admin:category_directory')}
+              Liste des Modules par Catégorie
             </CardTitle>
-            <CardDescription>{t('admin:search_manage_categories')}</CardDescription>
+            <CardDescription>Modules organisés par les 3 catégories principales</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,26 +181,23 @@ const CategoriesOfModules = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   type="text"
-                  placeholder={t('admin:search_by_name_module_id')}
+                  placeholder="Rechercher par nom, semestre, cours..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Select value={filterModule} onValueChange={setFilterModule}>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t('admin:all_modules')} />
+                  <SelectValue placeholder="Toutes les catégories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('admin:all_modules')}</SelectItem>
-                  {Array.from(new Set(categories.map((c) => c.moduleId))).map((moduleId) => {
-                    const module = categories.find((c) => c.moduleId === moduleId);
-                    return (
-                      <SelectItem key={moduleId} value={moduleId.toString()}>
-                        {module.moduleName}
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -200,33 +206,73 @@ const CategoriesOfModules = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('common:id')}</TableHead>
-                    <TableHead>{t('admin:module_name')}</TableHead>
-                    <TableHead>{t('admin:category_name')}</TableHead>
-                    <TableHead>{t('admin:image')}</TableHead>
-                    <TableHead>{t('admin:questions')}</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Semestre</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Noms des Cours</TableHead>
+                    <TableHead>Difficulté</TableHead>
                     <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentCategories.length === 0 ? (
+                  {currentModules.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                        {t('admin:no_categories_found')}
+                        Aucun module trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
-                    currentCategories.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="font-mono text-sm">{c.id}</TableCell>
-                        <TableCell className="font-medium">{c.moduleName}</TableCell>
-                        <TableCell className="font-medium">{c.name}</TableCell>
+                    currentModules.map((m) => (
+                      <TableRow key={m._id}>
                         <TableCell>
-                          <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border">
-                            <img src={c.imageUrl} alt={c.name} className="w-full h-full object-cover" />
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                              style={{ backgroundColor: m.color || "#6366f1" }}
+                            >
+                              {m.name?.charAt(0) || "M"}
+                            </div>
+                            <span className="font-medium">{m.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{c.totalQuestions}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{m.semester}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            DEFAULT_CATEGORIES.find(c => c.value === m.category)?.color || "bg-gray-100 text-gray-700"
+                          }>
+                            {m.category || "Exam par years"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {m.courseNames && m.courseNames.length > 0 ? (
+                              m.courseNames.slice(0, 3).map((course, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {course}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
+                            {m.courseNames && m.courseNames.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{m.courseNames.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            m.difficulty === "easy" ? "bg-green-100 text-green-700" :
+                            m.difficulty === "hard" ? "bg-red-100 text-red-700" :
+                            "bg-amber-100 text-amber-700"
+                          }>
+                            {m.difficulty === "easy" ? "Facile" :
+                             m.difficulty === "hard" ? "Difficile" : "Moyen"}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
@@ -254,7 +300,7 @@ const CategoriesOfModules = () => {
           </CardContent>
           <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-slate-50/50">
             <div className="text-sm text-muted-foreground">
-              {t('common:showing')} {filteredCategories.length === 0 ? 0 : startIndex + 1} {t('common:to')} {Math.min(endIndex, filteredCategories.length)} {t('common:of')} {filteredCategories.length} {t('common:results')}
+              Affichage {filteredModules.length === 0 ? 0 : startIndex + 1} à {Math.min(endIndex, filteredModules.length)} sur {filteredModules.length} résultats
             </div>
             {renderPagination()}
           </CardFooter>
@@ -262,7 +308,7 @@ const CategoriesOfModules = () => {
       </div>
 
       {showNewCategoryForm && (
-        <NewCategoryForm setShowNewCategoryForm={setShowNewCategoryForm} modules={categories} />
+        <NewCategoryForm setShowNewCategoryForm={setShowNewCategoryForm} modules={modules} />
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock } from "lucide-react";
+import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock, FileQuestion } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+
+// Progress Circle Component
+const ProgressCircle = ({ progress, size = 48 }) => {
+  const radius = (size - 8) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          className="text-gray-200"
+          strokeWidth="4"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          className="text-blue-600 transition-all duration-500"
+          strokeWidth="4"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs font-bold text-gray-700">{progress}%</span>
+      </div>
+    </div>
+  );
+};
 
 const SubjectsPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -313,13 +351,43 @@ const SubjectsPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="hover:shadow-lg transition-all h-full flex flex-col">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg">{exam.name}</CardTitle>
-                    <Badge variant={exam.progress > 0 ? "default" : "secondary"}>
-                      {exam.questions} Q
+              <Card className="hover:shadow-lg transition-all h-full flex flex-col overflow-hidden">
+                {/* Exam Image */}
+                {exam.imageUrl ? (
+                  <div className="relative h-40 bg-gradient-to-br from-blue-100 to-indigo-100 overflow-hidden">
+                    <img 
+                      src={exam.imageUrl} 
+                      alt={exam.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden absolute inset-0 items-center justify-center bg-gradient-to-br from-blue-500/20 to-indigo-500/20">
+                      <FileQuestion className="h-16 w-16 text-blue-500/50" />
+                    </div>
+                    {/* Question Count Badge */}
+                    <Badge className="absolute top-3 right-3 bg-white/90 text-gray-700 hover:bg-white">
+                      {exam.questions} Questions
                     </Badge>
+                  </div>
+                ) : (
+                  <div className="relative h-40 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
+                    <FileQuestion className="h-16 w-16 text-blue-500/50" />
+                    {/* Question Count Badge */}
+                    <Badge className="absolute top-3 right-3 bg-white/90 text-gray-700 hover:bg-white">
+                      {exam.questions} Questions
+                    </Badge>
+                  </div>
+                )}
+
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg line-clamp-2">{exam.name}</CardTitle>
+                    {exam.progress > 0 && (
+                      <ProgressCircle progress={exam.progress} size={48} />
+                    )}
                   </div>
                   {exam.description && (
                     <CardDescription className="line-clamp-2">
@@ -328,17 +396,7 @@ const SubjectsPage = () => {
                   )}
                 </CardHeader>
                 
-                <CardContent className="flex-1 flex flex-col justify-end space-y-4">
-                  {exam.progress > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{t('dashboard:progress')}</span>
-                        <span className="font-medium">{exam.progress}%</span>
-                      </div>
-                      <Progress value={exam.progress} />
-                    </div>
-                  )}
-                  
+                <CardContent className="flex-1 flex flex-col justify-end pt-2">
                   <div className="flex gap-2">
                     <Button 
                       className="flex-1 gap-2" 

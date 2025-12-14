@@ -63,8 +63,10 @@ export const resumeController = {
 
     getAll: asyncHandler(async (req, res) => {
         const resumes = await resumeModel.find()
-            .populate('userId', 'name email') // Assuming user has these fields
-            .populate('questionId');
+            .populate('userId', 'name email')
+            .populate('moduleId', 'name semester color')
+            .populate('questionId')
+            .sort({ createdAt: -1 });
         
         res.status(200).json({
             success: true,
@@ -151,6 +153,52 @@ export const resumeController = {
         res.status(200).json({
             success: true,
             data: updatedResume
+        });
+    }),
+
+    // Admin upload - create resume with module and course
+    adminUpload: asyncHandler(async (req, res) => {
+        const { moduleId, courseName, title } = req.body;
+        
+        // The PDF URL would come from file upload middleware
+        const pdfUrl = req.file?.path || req.body.pdfUrl;
+
+        if (!moduleId || !courseName || !title || !pdfUrl) {
+            return res.status(400).json({
+                success: false,
+                message: "Module, course name, title, and PDF are required"
+            });
+        }
+
+        const newResume = await resumeModel.create({
+            moduleId,
+            courseName,
+            title,
+            pdfUrl,
+            status: "approved",
+            isAdminUpload: true
+        });
+
+        const populated = await resumeModel.findById(newResume._id)
+            .populate('moduleId', 'name semester');
+
+        res.status(201).json({
+            success: true,
+            data: populated
+        });
+    }),
+
+    // Get all resumes with module population for hierarchical view
+    getAllWithModules: asyncHandler(async (req, res) => {
+        const resumes = await resumeModel.find()
+            .populate('moduleId', 'name semester color')
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 });
+        
+        res.status(200).json({
+            success: true,
+            count: resumes.length,
+            data: resumes
         });
     })
 };

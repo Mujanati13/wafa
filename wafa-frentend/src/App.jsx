@@ -59,9 +59,12 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
 import SubAdminPage from "./pages/SubAdminPage";
 import AdminPaypalSettings from "./pages/AdminPaypalSettings";
+import LandingPageAdmin from "./pages/LandingPageAdmin";
+import PrivacyPolicyAdmin from "./pages/PrivacyPolicyAdmin";
 import StatisticsPage from "./pages/StatisticsPage";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminLogin from "./components/auth/AdminLogin";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -138,8 +141,13 @@ export default function App() {
             element={<CreateCategoriesForCourses />}
           />
           <Route path="paypal-settings" element={<AdminPaypalSettings />} />
+          <Route path="landing-settings" element={<LandingPageAdmin />} />
+          <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
         </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
+        
+        {/* 404 Not Found - Must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

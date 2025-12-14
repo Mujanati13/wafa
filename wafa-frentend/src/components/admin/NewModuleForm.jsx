@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
-import { Palette, X, Check, BookOpen, AlertCircle, Loader2 } from "lucide-react";
+import { Palette, X, Check, BookOpen, AlertCircle, Loader2, Image, FileText, CircleDot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -54,11 +54,20 @@ const PRESET_COLORS = [
   "#6b7280", // Gray
 ];
 
+// Difficulty levels with colors
+const DIFFICULTY_LEVELS = [
+  { value: "easy", label: "Facile", color: "#22c55e", bgColor: "bg-green-100", textColor: "text-green-700", borderColor: "border-green-300" },
+  { value: "medium", label: "Moyen", color: "#f59e0b", bgColor: "bg-amber-100", textColor: "text-amber-700", borderColor: "border-amber-300" },
+  { value: "hard", label: "Difficile", color: "#ef4444", bgColor: "bg-red-100", textColor: "text-red-700", borderColor: "border-red-300" },
+];
+
 const NewModuleForm = ({ setShowNewModuleForm }) => {
   const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#6366f1");
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [contentType, setContentType] = useState("url"); // "url" or "text"
+  const [difficulty, setDifficulty] = useState("medium");
 
   const newModuleSchema = z.object({
     name: z.string().min(2, t("admin:module_name_required")),
@@ -68,6 +77,10 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
       .url(t("admin:image_url_invalid"))
       .or(z.string().length(0))
       .transform((v) => v || ""),
+    textContent: z
+      .string()
+      .optional()
+      .transform((v) => (v == null ? "" : v)),
     helpText: z
       .string()
       .optional()
@@ -84,6 +97,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
       name: "",
       semester: "",
       imageUrl: "",
+      textContent: "",
       helpText: "",
       helpContent: "",
     },
@@ -95,7 +109,10 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
       const res = await api.post("/modules/create", {
         name: data.name,
         semester: data.semester,
-        imageUrl: data.imageUrl,
+        imageUrl: contentType === "url" ? data.imageUrl : "",
+        textContent: contentType === "text" ? data.textContent : "",
+        contentType: contentType,
+        difficulty: difficulty,
         infoText: data.helpText,
         color: selectedColor,
         helpContent: data.helpContent,
@@ -206,6 +223,33 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                   )}
                 />
 
+                {/* Difficulty Selector */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-900">
+                    Niveau de Difficulté
+                  </Label>
+                  <div className="flex gap-3">
+                    {DIFFICULTY_LEVELS.map((level) => (
+                      <button
+                        key={level.value}
+                        type="button"
+                        onClick={() => setDifficulty(level.value)}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                          difficulty === level.value
+                            ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <CircleDot 
+                          className="h-4 w-4" 
+                          style={{ color: difficulty === level.value ? level.color : "#9ca3af" }}
+                        />
+                        <span className="font-medium">{level.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Color Picker */}
                   <div className="space-y-3">
@@ -295,26 +339,80 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
 
                   {/* Image URL */}
                   <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem className="h-full flex flex-col">
-                          <FormLabel className="text-sm font-semibold text-gray-900">
-                            {t("admin:image_url_optional")}
-                          </FormLabel>
-                          <FormControl className="flex-1">
-                            <Textarea
-                              placeholder={t("admin:image_url_placeholder")}
-                              className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 resize-none flex-1"
-                              rows={5}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-red-500 text-xs mt-1" />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Content Type Toggle */}
+                    <Label className="text-sm font-semibold text-gray-900">
+                      Type de Contenu
+                    </Label>
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setContentType("url")}
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
+                          contentType === "url"
+                            ? "bg-blue-50 border-blue-300 text-blue-700"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <Image className="h-4 w-4" />
+                        Image/PDF URL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContentType("text")}
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
+                          contentType === "text"
+                            ? "bg-purple-50 border-purple-300 text-purple-700"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        <FileText className="h-4 w-4" />
+                        Texte
+                      </button>
+                    </div>
+
+                    {contentType === "url" ? (
+                      <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem className="h-full flex flex-col">
+                            <FormLabel className="text-sm font-semibold text-gray-900">
+                              {t("admin:image_url_optional")}
+                            </FormLabel>
+                            <FormControl className="flex-1">
+                              <Textarea
+                                placeholder={t("admin:image_url_placeholder")}
+                                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 resize-none flex-1"
+                                rows={4}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-red-500 text-xs mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="textContent"
+                        render={({ field }) => (
+                          <FormItem className="h-full flex flex-col">
+                            <FormLabel className="text-sm font-semibold text-gray-900">
+                              Contenu Textuel
+                            </FormLabel>
+                            <FormControl className="flex-1">
+                              <Textarea
+                                placeholder="Décrivez le contenu du module en texte..."
+                                className="border-gray-300 focus:ring-purple-500 focus:border-purple-500 resize-none flex-1"
+                                rows={4}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-red-500 text-xs mt-1" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 </div>
 

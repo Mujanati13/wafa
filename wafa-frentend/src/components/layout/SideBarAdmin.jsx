@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,8 @@ import {
   Menu,
   X,
   Settings,
+  Bell,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,16 +35,27 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
+// Items that require super_admin role (editors cannot see these)
+const RESTRICTED_ITEMS = ['analytics', 'subscription', 'demandesDePayements', 'paypalSettings', 'landingSettings'];
+const RESTRICTED_CATEGORIES = ['payments']; // Entire category hidden for non-super-admins
+
 const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
   const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Get user role from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = user.adminRole === 'super_admin';
+  
   const [openCategories, setOpenCategories] = useState({
     overview: true,
     users: false,
     content: false,
     payments: false,
     exams: false,
+    settings: false,
   });
 
   const sidebarCategories = [
@@ -207,7 +220,53 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
         },
       ],
     },
+    {
+      id: "settings",
+      label: t('admin:settings', 'Paramètres'),
+      icon: Settings,
+      items: [
+        {
+          id: "notifications",
+          label: t('admin:notifications', 'Notifications'),
+          icon: Bell,
+          path: "/admin/notifications",
+        },
+        {
+          id: "subAdmins",
+          label: t('admin:sub_admins', 'Sous-admins'),
+          icon: Shield,
+          path: "/admin/sub-admins",
+        },
+        {
+          id: "landingSettings",
+          label: t('admin:landing_settings', 'Page d\'accueil'),
+          icon: FileText,
+          path: "/admin/landing-settings",
+        },
+        {
+          id: "privacyPolicy",
+          label: t('admin:privacy_policy', 'Politique de confidentialité'),
+          icon: Shield,
+          path: "/admin/privacy-policy",
+        },
+      ],
+    },
   ];
+
+  // Filter categories and items based on user permissions
+  const filteredCategories = useMemo(() => {
+    if (isSuperAdmin) {
+      return sidebarCategories; // Super admin sees everything
+    }
+    
+    return sidebarCategories
+      .filter(category => !RESTRICTED_CATEGORIES.includes(category.id))
+      .map(category => ({
+        ...category,
+        items: category.items.filter(item => !RESTRICTED_ITEMS.includes(item.id))
+      }))
+      .filter(category => category.items.length > 0); // Remove empty categories
+  }, [isSuperAdmin, sidebarCategories]);
 
   const toggleCategory = (categoryId) => {
     setOpenCategories((prev) => ({
@@ -256,7 +315,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto px-3 py-4">
         <nav className="space-y-2">
-          {sidebarCategories.map((category, idx) => {
+          {filteredCategories.map((category, idx) => {
             const CategoryIcon = category.icon;
             const isOpen = openCategories[category.id];
             

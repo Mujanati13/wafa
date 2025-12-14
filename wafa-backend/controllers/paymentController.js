@@ -458,6 +458,57 @@ const handleWebhook = asyncHandler(async (req, res) => {
   res.status(200).json({ received: true });
 });
 
+// Create bank transfer request
+const createBankTransferRequest = asyncHandler(async (req, res) => {
+  const { planId, planName, amount, semesters, paymentMode } = req.body;
+
+  if (!planId || !planName || !amount || !semesters || !paymentMode) {
+    res.status(400);
+    throw new Error("Tous les champs sont requis");
+  }
+
+  // Validate semesters
+  const validSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+  if (!Array.isArray(semesters) || semesters.length === 0) {
+    res.status(400);
+    throw new Error("Veuillez sélectionner au moins un semestre");
+  }
+
+  for (const sem of semesters) {
+    if (!validSemesters.includes(sem)) {
+      res.status(400);
+      throw new Error(`Semestre invalide: ${sem}`);
+    }
+  }
+
+  // Create transaction record for bank transfer
+  const transaction = await Transaction.create({
+    user: req.user._id,
+    amount,
+    currency: "MAD",
+    plan: planName,
+    semesters,
+    status: "pending",
+    paymentMethod: paymentMode,
+  });
+
+  // Send notification to user
+  await NotificationController.createNotification(
+    req.user._id,
+    "subscription",
+    "Demande de paiement créée",
+    `Votre demande de paiement pour le plan ${planName} a été enregistrée. Contactez-nous sur WhatsApp pour finaliser.`,
+    "/dashboard/subscription"
+  );
+
+  res.status(201).json({
+    success: true,
+    message: "Demande de transfert bancaire créée avec succès",
+    requestId: transaction._id,
+    transaction
+  });
+});
+
 export default {
   createOrder,
   capturePayment,
@@ -465,4 +516,5 @@ export default {
   getTransaction,
   getAllTransactions,
   handleWebhook,
+  createBankTransferRequest,
 };

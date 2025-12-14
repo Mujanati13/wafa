@@ -7,6 +7,7 @@ const router = express.Router();
 // User routes
 router.post("/create-order", isAuthenticated, paymentController.createOrder);
 router.post("/capture-payment", isAuthenticated, paymentController.capturePayment);
+router.post("/bank-transfer-request", isAuthenticated, paymentController.createBankTransferRequest);
 router.get("/transactions", isAuthenticated, paymentController.getTransactions);
 router.get("/transactions/:id", isAuthenticated, paymentController.getTransaction);
 

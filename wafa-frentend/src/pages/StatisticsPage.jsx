@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -12,12 +12,20 @@ import {
   MessageCircle,
   Lightbulb,
   HelpCircle,
-  Target
+  Target,
+  Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { dashboardService } from "@/services/dashboardService";
 import { moduleService } from "@/services/moduleService";
@@ -31,6 +39,8 @@ const StatisticsPage = () => {
   const [modules, setModules] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("modules");
+  const [selectedSemester, setSelectedSemester] = useState("all");
+  const [userSemesters, setUserSemesters] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +55,9 @@ const StatisticsPage = () => {
         ]);
 
         const user = profileData.data?.user || profileData.data;
+        const userSems = user?.semesters || [];
         setUserProfile(user);
+        setUserSemesters(userSems);
         setStats(statsData.data?.stats || statsData.data);
         
         // Process modules data - API returns { success, count, data: [...modules] }
@@ -122,6 +134,45 @@ const StatisticsPage = () => {
   ];
 
   const getModuleColor = (index) => moduleColors[index % moduleColors.length];
+
+  // Filter and group modules by semester
+  const filteredAndGroupedModules = useMemo(() => {
+    let filtered = modules;
+    
+    if (selectedSemester !== "all") {
+      filtered = modules.filter(m => m.semester === selectedSemester);
+    }
+    
+    // Group by semester
+    const grouped = {};
+    filtered.forEach(module => {
+      if (!grouped[module.semester]) {
+        grouped[module.semester] = [];
+      }
+      grouped[module.semester].push(module);
+    });
+    
+    return grouped;
+  }, [modules, selectedSemester]);
+
+  // Calculate overall statistics based on filtered modules
+  const overallStats = useMemo(() => {
+    const modulesToCount = selectedSemester === "all" ? modules : Object.values(filteredAndGroupedModules).flat();
+    
+    const totalQuestions = modulesToCount.reduce((sum, m) => sum + (m.questionsAnswered || 0), 0);
+    const totalCorrect = modulesToCount.reduce((sum, m) => sum + (m.correctAnswers || 0), 0);
+    const totalIncorrect = modulesToCount.reduce((sum, m) => sum + (m.incorrectAnswers || 0), 0);
+    const totalModules = modulesToCount.length;
+    const avgSuccess = totalQuestions > 0 ? (totalCorrect / totalQuestions * 100) : 0;
+    
+    return {
+      totalQuestions,
+      totalCorrect,
+      totalIncorrect,
+      totalModules,
+      avgSuccess: Math.round(avgSuccess)
+    };
+  }, [modules, selectedSemester, filteredAndGroupedModules]);
 
   // Module Stats Card Component
   const ModuleStatsCard = ({ module, index, onClick }) => {
@@ -235,7 +286,90 @@ const StatisticsPage = () => {
           </Card>
         </motion.div>
 
-        {/* Category Tabs */}
+        {/* Overall Statistics Cards */}
+        {activeTab === "modules" && (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          >
+            <motion.div variants={itemVariants}>
+              <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">Total Questions</p>
+                      <p className="text-3xl font-bold text-blue-600">{overallStats.totalQuestions}</p>
+                    </div>
+                    <BookOpen className="h-12 w-12 text-blue-200" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Card className="border-green-100 bg-gradient-to-br from-green-50 to-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">Réponses Correctes</p>
+                      <p className="text-3xl font-bold text-green-600">{overallStats.totalCorrect}</p>
+                    </div>
+                    <Award className="h-12 w-12 text-green-200" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Card className="border-red-100 bg-gradient-to-br from-red-50 to-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">Réponses Incorrectes</p>
+                      <p className="text-3xl font-bold text-red-600">{overallStats.totalIncorrect}</p>
+                    </div>
+                    <TrendingUp className="h-12 w-12 text-red-200" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Card className="border-purple-100 bg-gradient-to-br from-purple-50 to-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">Taux de Réussite</p>
+                      <p className="text-3xl font-bold text-purple-600">{overallStats.avgSuccess}%</p>
+                    </div>
+                    <Award className="h-12 w-12 text-purple-200" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Filter and Semester Selection */}
+        <motion.div variants={itemVariants} className="flex items-center gap-4">
+          <Filter className="h-5 w-5 text-slate-600" />
+          <span className="text-sm font-medium text-slate-700">Filtrer par semestre:</span>
+          <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Tous les semestres" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les semestres</SelectItem>
+              {userSemesters.map((sem) => (
+                <SelectItem key={sem} value={sem}>
+                  {sem}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
         <motion.div variants={itemVariants}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex bg-white border shadow-sm">
@@ -268,23 +402,43 @@ const StatisticsPage = () => {
 
             {/* Modules Tab Content */}
             <TabsContent value="modules" className="mt-6">
-              <motion.div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {modules.map((module, index) => (
-                  <ModuleStatsCard 
-                    key={module._id || index}
-                    module={module}
-                    index={index}
-                    onClick={() => navigate(`/dashboard/modules/${module._id}`)}
-                  />
-                ))}
-              </motion.div>
-              
-              {modules.length === 0 && (
+              {Object.keys(filteredAndGroupedModules).length > 0 ? (
+                Object.keys(filteredAndGroupedModules)
+                  .sort()
+                  .map((semester) => (
+                    <div key={semester} className="mb-12">
+                      {/* Semester Header */}
+                      <motion.div 
+                        variants={itemVariants}
+                        className="flex items-center gap-3 mb-6"
+                      >
+                        <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base py-2 px-4">
+                          {semester}
+                        </Badge>
+                        <p className="text-slate-600">
+                          {filteredAndGroupedModules[semester].length} module{filteredAndGroupedModules[semester].length !== 1 ? 's' : ''}
+                        </p>
+                      </motion.div>
+
+                      {/* Modules Grid */}
+                      <motion.div 
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {filteredAndGroupedModules[semester].map((module, index) => (
+                          <ModuleStatsCard 
+                            key={module._id || index}
+                            module={module}
+                            index={index}
+                            onClick={() => navigate(`/dashboard/modules/${module._id}`)}
+                          />
+                        ))}
+                      </motion.div>
+                    </div>
+                  ))
+              ) : (
                 <div className="text-center py-12 text-slate-500">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">Aucun module disponible</p>

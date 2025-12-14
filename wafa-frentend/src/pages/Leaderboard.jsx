@@ -1,39 +1,47 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp, Download, Calendar, Trophy, Zap, MessageSquare, Star } from "lucide-react";
+import { Search, Filter, ArrowUp, ArrowDown, Award, Users, TrendingUp, Download, Calendar, Trophy, Zap, MessageSquare, Star, GraduationCap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageHeader, StatCard } from "@/components/shared";
+import { PageHeader, StatCard, TableFilters } from "@/components/shared";
 import { adminAnalyticsService } from "@/services/adminAnalyticsService";
 import { moduleService } from "@/services/moduleService";
 import { toast } from "sonner";
 
-const years = ["All", "2025", "2024", "2023"];
-const studentYears = ["All", "1st", "2nd", "3rd", "4th"];
-const periods = ["All", "Monthly", "Weekly", "Daily"];
-const pointTypes = [
-  { value: "all", label: "Tous les points", icon: Trophy, color: "gray" },
-  { value: "normal", label: "Points Normaux", icon: Star, color: "blue" },
-  { value: "report", label: "Points Report", icon: MessageSquare, color: "green" },
-  { value: "explanation", label: "Points Explication", icon: Zap, color: "yellow" },
+const studentYears = [
+  { value: "1", label: "1ère année" },
+  { value: "2", label: "2ème année" },
+  { value: "3", label: "3ème année" },
+  { value: "4", label: "4ème année" },
+  { value: "5", label: "5ème année" },
+  { value: "6", label: "6ème année" },
 ];
+
+// Level calculation based on total points
+const calculateLevel = (totalPoints) => {
+  if (totalPoints >= 10000) return { level: 10, name: "Maître", color: "bg-purple-500" };
+  if (totalPoints >= 7500) return { level: 9, name: "Expert", color: "bg-indigo-500" };
+  if (totalPoints >= 5000) return { level: 8, name: "Avancé", color: "bg-blue-500" };
+  if (totalPoints >= 3500) return { level: 7, name: "Confirmé", color: "bg-cyan-500" };
+  if (totalPoints >= 2500) return { level: 6, name: "Intermédiaire", color: "bg-teal-500" };
+  if (totalPoints >= 1500) return { level: 5, name: "Apprenti", color: "bg-green-500" };
+  if (totalPoints >= 1000) return { level: 4, name: "Initié", color: "bg-lime-500" };
+  if (totalPoints >= 500) return { level: 3, name: "Novice", color: "bg-yellow-500" };
+  if (totalPoints >= 200) return { level: 2, name: "Débutant", color: "bg-orange-500" };
+  return { level: 1, name: "Nouveau", color: "bg-gray-400" };
+};
 
 const Leaderboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
-  const [filter, setFilter] = useState("All");
-  const [year, setYear] = useState("All");
-  const [studentYear, setStudentYear] = useState("All");
-  const [pointType, setPointType] = useState("all");
-  const [moduleFilter, setModuleFilter] = useState("all");
+  const [studentYear, setStudentYear] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
-  const [modules, setModules] = useState([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
     topPoints: 0,
@@ -41,35 +49,27 @@ const Leaderboard = () => {
   });
 
   useEffect(() => {
-    fetchModules();
-  }, []);
-
-  useEffect(() => {
     fetchLeaderboard();
-  }, [year, studentYear, filter, pointType, moduleFilter]);
-
-  const fetchModules = async () => {
-    try {
-      const response = await moduleService.getAllmodules();
-      setModules(response.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching modules:', error);
-    }
-  };
+  }, [studentYear]);
 
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
       const response = await adminAnalyticsService.getLeaderboard({
-        year,
-        studentYear,
-        period: filter,
-        pointType: pointType !== 'all' ? pointType : undefined,
-        moduleId: moduleFilter !== 'all' ? moduleFilter : undefined,
+        studentYear: studentYear !== 'all' ? studentYear : undefined,
         limit: 100
       });
       
-      setLeaderboardData(response.data.leaderboard);
+      // Transform data to include all point types
+      const transformedData = (response.data.leaderboard || []).map(user => ({
+        ...user,
+        normalPoints: user.normalPoints || user.points || 0,
+        bluePoints: user.bluePoints || 0,
+        greenPoints: user.greenPoints || 0,
+        totalPoints: (user.normalPoints || user.points || 0) + (user.bluePoints || 0) + (user.greenPoints || 0),
+      }));
+      
+      setLeaderboardData(transformedData);
       setStats(response.data.stats);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -86,17 +86,21 @@ const Leaderboard = () => {
       setExporting(true);
       toast.loading('Génération du rapport...', { id: 'export' });
 
-      // Create CSV content
+      // Create CSV content with new columns
       const csvData = [
-        ['Rang', 'Nom d\'utilisateur', 'Nom', 'Points', 'Type de Points', 'Examens Complétés'],
-        ...leaderboardData.map(user => [
-          user.rank,
-          user.username,
-          user.name,
-          user.points,
-          pointType === 'all' ? 'Tous' : pointType,
-          user.totalExams || 0
-        ])
+        ['Rang', 'Utilisateur', 'Année', 'Points Normaux', 'Points Bleus', 'Points Verts', 'Niveau'],
+        ...filteredData.map(user => {
+          const levelInfo = calculateLevel(user.totalPoints);
+          return [
+            user.rank,
+            user.name || user.username,
+            user.currentYear || '-',
+            user.normalPoints,
+            user.bluePoints,
+            user.greenPoints,
+            `${levelInfo.level} - ${levelInfo.name}`
+          ];
+        })
       ];
 
       const csvContent = csvData.map(row => row.join(',')).join('\n');
@@ -104,7 +108,7 @@ const Leaderboard = () => {
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `leaderboard_${pointType}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `leaderboard_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -122,21 +126,12 @@ const Leaderboard = () => {
     }
   };
 
-  const getPointTypeBadge = (type) => {
-    const config = pointTypes.find(p => p.value === type) || pointTypes[0];
-    const colorClasses = {
-      blue: 'bg-blue-100 text-blue-700',
-      green: 'bg-green-100 text-green-700',
-      yellow: 'bg-yellow-100 text-yellow-700',
-      gray: 'bg-gray-100 text-gray-700',
-    };
-    return (
-      <Badge className={colorClasses[config.color]}>
-        <config.icon className="w-3 h-3 mr-1" />
-        {config.label}
-      </Badge>
-    );
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setStudentYear("all");
   };
+
+  const activeFilterCount = (searchTerm ? 1 : 0) + (studentYear !== "all" ? 1 : 0);
 
   // Filter logic (client-side search only)
   const filteredData = leaderboardData.filter(
@@ -156,6 +151,15 @@ const Leaderboard = () => {
               {t('dashboard:view_top_students')}
             </p>
           </div>
+          <Button
+            onClick={handleExport}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={exporting || loading}
+          >
+            <Download className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
+            {exporting ? 'Export...' : 'Exporter CSV'}
+          </Button>
         </div>
 
         {/* Analytics Cards */}
@@ -191,126 +195,63 @@ const Leaderboard = () => {
 
         {/* Search & Filter Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex flex-col gap-4">
-            {/* Top Row - Search and Export */}
-            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="relative flex-1 w-full sm:max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder={t('dashboard:search_by_name')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <Button
-                onClick={handleExport}
-                variant="outline"
-                className="flex items-center gap-2"
-                disabled={exporting || loading}
-              >
-                <Download className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
-                {exporting ? 'Export...' : 'Exporter CSV'}
-              </Button>
-            </div>
-
-            {/* Point Type Filter - Visual Badges */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm font-medium text-gray-600 mr-2 self-center">Type de points:</span>
-              {pointTypes.map((pt) => {
-                const colorClasses = {
-                  blue: pointType === pt.value ? 'bg-blue-500 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100',
-                  green: pointType === pt.value ? 'bg-green-500 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100',
-                  yellow: pointType === pt.value ? 'bg-yellow-500 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100',
-                  gray: pointType === pt.value ? 'bg-gray-500 text-white' : 'bg-gray-50 text-gray-700 hover:bg-gray-100',
-                };
-                return (
-                  <button
-                    key={pt.value}
-                    onClick={() => setPointType(pt.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${colorClasses[pt.color]}`}
-                  >
-                    <pt.icon className="w-4 h-4" />
-                    {pt.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Filter Row */}
-            <div className="flex flex-wrap gap-2">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
-              >
-                {periods.map((tab) => (
-                  <option key={tab} value={tab}>
-                    {tab === 'All' ? 'Toutes périodes' : tab}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
-              >
-                <option value="All">{t('dashboard:all_years')}</option>
-                {years.filter(y => y !== 'All').map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={studentYear}
-                onChange={(e) => setStudentYear(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
-              >
-                <option value="All">{t('dashboard:all_student_years')}</option>
-                {studentYears.filter(sy => sy !== 'All').map((sy) => (
-                  <option key={sy} value={sy}>
-                    {sy}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={moduleFilter}
-                onChange={(e) => setModuleFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm"
-              >
-                <option value="all">Tous les modules</option>
-                {modules.map((mod) => (
-                  <option key={mod._id} value={mod._id}>
-                    {mod.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <TableFilters
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Rechercher par nom ou username..."
+            showDateFilter={false}
+            additionalFilters={[
+              {
+                key: "studentYear",
+                label: "Année d'étude",
+                value: studentYear,
+                onChange: setStudentYear,
+                options: studentYears,
+              }
+            ]}
+            onClearFilters={handleClearFilters}
+            activeFilterCount={activeFilterCount}
+          />
         </div>
 
         {/* Leaderboard Table Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:rank')}
+                    Rang
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:user_name')}
+                    Utilisateur
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:name')}
+                    <div className="flex items-center gap-1">
+                      <GraduationCap className="w-4 h-4" />
+                      Année
+                    </div>
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:points')}
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">
+                    <div className="flex items-center justify-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      Normal
+                    </div>
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
-                    {t('dashboard:exams')}
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">
+                    <div className="flex items-center justify-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      Bleu
+                    </div>
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">
+                    <div className="flex items-center justify-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      Vert
+                    </div>
+                  </th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-700">
+                    Niveau
                   </th>
                 </tr>
               </thead>
@@ -318,42 +259,74 @@ const Leaderboard = () => {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="border-b border-gray-100">
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
+                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-20 mx-auto"></div></td>
                     </tr>
                   ))
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-500">
+                    <td colSpan={7} className="text-center py-8 text-gray-500">
                       {t('dashboard:no_data_found')}
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((user, index) => (
-                    <tr
-                      key={user._id || index}
-                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        user.rank === 1 ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <td className="py-4 px-4 text-gray-700 font-medium">
-                        {user.rank}
-                      </td>
-                      <td className="py-4 px-4 text-blue-700 font-semibold">
-                        {user.username}
-                      </td>
-                      <td className="py-4 px-4">{user.name}</td>
-                      <td className="py-4 px-4 font-bold text-gray-900">
-                        {user.points}
-                      </td>
-                      <td className="py-4 px-4 font-bold text-gray-900">
-                        {user.totalExams || 0}
-                      </td>
-                    </tr>
-                  ))
+                  filteredData.map((user, index) => {
+                    const levelInfo = calculateLevel(user.totalPoints);
+                    return (
+                      <tr
+                        key={user._id || index}
+                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                          user.rank === 1 ? "bg-yellow-50" : user.rank === 2 ? "bg-slate-50" : user.rank === 3 ? "bg-orange-50" : ""
+                        }`}
+                      >
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            {user.rank <= 3 ? (
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                user.rank === 1 ? 'bg-yellow-400' : user.rank === 2 ? 'bg-gray-300' : 'bg-orange-400'
+                              }`}>
+                                <Trophy className="w-4 h-4 text-white" />
+                              </div>
+                            ) : (
+                              <span className="w-8 h-8 flex items-center justify-center font-bold text-gray-600">
+                                {user.rank}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900">{user.name || user.username}</span>
+                            <span className="text-sm text-gray-500">@{user.username}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            {user.currentYear ? `${user.currentYear}ème année` : '-'}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="font-bold text-yellow-600">{user.normalPoints}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="font-bold text-blue-600">{user.bluePoints}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="font-bold text-green-600">{user.greenPoints}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <Badge className={`${levelInfo.color} text-white`}>
+                            Nv. {levelInfo.level} - {levelInfo.name}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

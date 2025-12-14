@@ -84,10 +84,11 @@ const NotificationAdmin = () => {
     try {
       setLoading(true);
       const response = await userService.getAllUsers({ limit: 100 });
-      setUsers(response.data || []);
+      setUsers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Erreur lors du chargement des utilisateurs');
+      setUsers([]); // Ensure users is always an array
     } finally {
       setLoading(false);
     }
@@ -210,11 +211,23 @@ const NotificationAdmin = () => {
     setSelectedUsers(prev => prev.filter(u => u._id !== userId));
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = Array.isArray(users) ? users.filter(user =>
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
+
+  // Select All / Deselect All
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers([...filteredUsers]);
+    }
+  };
+
+  // Check if all filtered users are selected
+  const allSelected = filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length;
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -427,6 +440,33 @@ const NotificationAdmin = () => {
                   />
                 </div>
 
+                {/* Select All / Clear Selection */}
+                <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="selectAll"
+                      checked={allSelected}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <Label htmlFor="selectAll" className="text-sm cursor-pointer">
+                      {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                    </Label>
+                  </div>
+                  {selectedUsers.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSelectedUsers([])}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Effacer ({selectedUsers.length})
+                    </Button>
+                  )}
+                </div>
+
                 {/* Selected Users */}
                 {selectedUsers.length > 0 && (
                   <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg">
@@ -473,6 +513,12 @@ const NotificationAdmin = () => {
                                 : 'hover:bg-gray-100'
                             }`}
                           >
+                            <input
+                              type="checkbox"
+                              checked={!!isSelected}
+                              onChange={() => {}}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
                               isSelected ? 'bg-blue-500' : 'bg-gray-400'
                             }`}>

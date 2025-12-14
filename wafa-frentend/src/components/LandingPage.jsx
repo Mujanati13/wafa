@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, 
   Shield, 
@@ -24,7 +25,15 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Loader
+  Loader,
+  ArrowRight,
+  MessageCircle,
+  Send,
+  HelpCircle,
+  UserPlus,
+  BarChart3,
+  RefreshCcw,
+  Settings2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +41,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import Header from "./landingPage/Header";
 import { subscriptionPlanService } from "@/services/subscriptionPlanService";
@@ -45,6 +60,7 @@ const LandingPage = () => {
       <PricingSection />
       <TestimonialsSection />
       <FAQSection />
+      <FeedbackSection />
       <Footer />
     </div>
   );
@@ -53,17 +69,71 @@ const LandingPage = () => {
 // Hero Section
 const HeroSection = () => {
   const { t } = useTranslation("landing");
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [chartData, setChartData] = useState([
+    { month: 'Jan', height: 45, color: 'from-blue-400 to-blue-500' },
+    { month: 'Fév', height: 55, color: 'from-blue-400 to-blue-500' },
+    { month: 'Mar', height: 65, color: 'from-blue-500 to-blue-600' },
+    { month: 'Avr', height: 60, color: 'from-blue-500 to-blue-600' },
+    { month: 'Mai', height: 75, color: 'from-blue-600 to-indigo-600' },
+    { month: 'Juin', height: 85, color: 'from-green-500 to-emerald-500' },
+  ]);
+  const [stats, setStats] = useState({ average: 85, progress: 22, rank: 'Top 5%' });
+
+  useEffect(() => {
+    // Check if user is logged in
+    const user = localStorage.getItem('user');
+    setIsLoggedIn(!!user);
+  }, []);
+
+  // Update chart data every 3 seconds with animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChartData(prevData => 
+        prevData.map(bar => ({
+          ...bar,
+          height: Math.min(95, Math.max(35, bar.height + (Math.random() - 0.5) * 15))
+        }))
+      );
+      
+      // Update stats randomly
+      setStats(prevStats => ({
+        average: Math.min(99, Math.max(75, prevStats.average + (Math.random() - 0.5) * 5)),
+        progress: Math.min(50, Math.max(10, prevStats.progress + (Math.random() - 0.5) * 4)),
+        rank: 'Top ' + Math.floor(Math.random() * 5 + 1) + '%'
+      }));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleGetStarted = () => {
+    if (isLoggedIn) {
+      navigate('/dashboard/home');
+    } else {
+      navigate('/register');
+    }
+  };
+
+  const handleStartMembership = () => {
+    if (isLoggedIn) {
+      navigate('/dashboard/subscription');
+    } else {
+      navigate('/register');
+    }
+  };
 
   return (
-    <section className="relative min-h-screen lg:min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30 pt-20 md:pt-24 lg:pt-20" aria-label={t("hero_badge")}>
+    <section className="relative h-screen flex items-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30" aria-label={t("hero_badge")}>
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-72 h-72 md:w-96 md:h-96 bg-blue-400/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 right-0 w-72 h-72 md:w-96 md:h-96 bg-purple-400/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16 w-full">
-        <div className="grid gap-8 md:gap-10 lg:gap-12 items-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="grid lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 items-center mt-10">
           {/* Left: Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -88,9 +158,171 @@ const HeroSection = () => {
             <p className="text-sm md:text-base lg:text-lg text-slate-600 max-w-xl leading-relaxed">
               {t("hero_description")}
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
+              {isLoggedIn ? (
+                <>
+                  <Button 
+                    size="lg" 
+                    onClick={handleGetStarted}
+                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                    Dashboard
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartMembership}
+                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0"
+                  >
+                    <Award className="h-4 w-4 md:h-5 md:w-5" />
+                    Gérer l'Abonnement
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    size="lg" 
+                    onClick={handleGetStarted}
+                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                    Commencer maintenant
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartMembership}
+                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0"
+                  >
+                    <Award className="h-4 w-4 md:h-5 md:w-5" />
+                    Commencer l'abonnement
+                  </Button>
+                </>
+              )}
+            </div>
           </motion.div>
 
+          {/* Right: Medical Illustration + Statistics */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex justify-center items-center"
+          >
+            <div className="relative w-full max-w-md">
+              {/* Medical Illustration */}
+              <div className="absolute -top-10 -right-10 w-32 h-32 md:w-40 md:h-40 z-0 opacity-30">
+                <img 
+                  src="https://img.icons8.com/3d-fluency/188/stethoscope.png" 
+                  alt="Medical Stethoscope" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="absolute -bottom-8 -left-8 w-24 h-24 md:w-32 md:h-32 z-0 opacity-30">
+                <img 
+                  src="https://img.icons8.com/3d-fluency/188/book.png" 
+                  alt="Study Book" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {/* Statistics Card with Graph */}
+              <div className="bg-white rounded-3xl shadow-2xl p-5 md:p-6 transform hover:scale-105 transition-transform duration-300">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base md:text-lg font-bold text-gray-900">Performance des Étudiants</h3>
+                    <p className="text-xs text-gray-500 mt-1">Progression mensuelle</p>
+                  </div>
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                  </div>
+                </div>
 
+                {/* Bar Chart */}
+                <div className="flex items-end justify-between gap-1 md:gap-1.5 h-40 md:h-48 mb-4 px-1">
+                  {chartData.map((bar, index) => (
+                    <motion.div 
+                      key={index} 
+                      className="flex flex-col items-center flex-1 h-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <motion.div 
+                        className={`w-full bg-gradient-to-t ${bar.color} rounded-t-lg shadow-lg hover:shadow-xl transition-shadow`}
+                        animate={{ height: `${bar.height}%` }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        style={{ minHeight: '8px' }}
+                      />
+                      <span className="text-xs text-gray-600 mt-1.5 font-medium">{bar.month}</span>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-3 pt-3 md:pt-4 border-t border-gray-100">
+                  <motion.div 
+                    className="text-center"
+                    key="avg"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                  >
+                    <p className="text-xs text-gray-500 mb-0.5">Moyenne</p>
+                    <motion.p 
+                      className="text-base md:text-lg font-bold text-gray-900"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {Math.round(stats.average)}%
+                    </motion.p>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center"
+                    key="prog"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                  >
+                    <p className="text-xs text-gray-500 mb-0.5">Progression</p>
+                    <motion.p 
+                      className="text-base md:text-lg font-bold text-green-600"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      +{Math.round(stats.progress)}%
+                    </motion.p>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center"
+                    key="rank"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                  >
+                    <p className="text-xs text-gray-500 mb-0.5">Classement</p>
+                    <motion.p 
+                      className="text-base md:text-lg font-bold text-blue-600"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {stats.rank}
+                    </motion.p>
+                  </motion.div>
+                </div>
+
+                {/* Success Badge */}
+                <div className="mt-3 md:mt-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-2.5 md:p-3 border border-blue-100">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-white p-1.5 rounded-lg shadow-sm">
+                      <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs md:text-sm font-semibold text-gray-900">+5,000 étudiants</p>
+                      <p className="text-xs text-gray-600 leading-tight">ont amélioré leurs notes</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -193,9 +425,16 @@ const FeaturesSection = () => {
 // Pricing Section
 const PricingSection = () => {
   const { t } = useTranslation("landing");
+  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [timeLeft, setTimeLeft] = useState({
+    days: 2,
+    hours: 14,
+    minutes: 32,
+    seconds: 15
+  });
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -203,8 +442,11 @@ const PricingSection = () => {
         setLoading(true);
         const response = await subscriptionPlanService.getAllPlans();
         if (response.success && response.data) {
-          // Sort plans by order
-          const sortedPlans = response.data.sort((a, b) => a.order - b.order);
+          // Sort plans by order and set Premium Annuel as popular
+          const sortedPlans = response.data.sort((a, b) => a.order - b.order).map(plan => ({
+            ...plan,
+            isPopular: plan.name === "Premium Annuel" || plan.name.toLowerCase().includes("annuel")
+          }));
           setPlans(sortedPlans);
         } else {
           setError("Failed to load plans");
@@ -237,7 +479,7 @@ const PricingSection = () => {
             price: 90,
             oldPrice: 120,
             period: "Semester",
-            isPopular: true,
+            isPopular: false,
             features: [
               { text: "tous les modules", included: true },
               { text: "tous les exams", included: true },
@@ -255,7 +497,7 @@ const PricingSection = () => {
             price: 120,
             oldPrice: 200,
             period: "Annee",
-            isPopular: false,
+            isPopular: true,
             features: [
               { text: "tous les modules", included: true },
               { text: "tous les exams", included: true },
@@ -275,6 +517,58 @@ const PricingSection = () => {
 
     fetchPlans();
   }, [t]);
+
+  const handleSubscribe = (plan) => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      // User is logged in - navigate to dashboard or subscription page
+      if (plan.price === 0) {
+        navigate('/dashboard');
+        toast.success('Bienvenue! Vous utilisez le plan gratuit');
+      } else {
+        // For paid plans, navigate to subscription page with plan info
+        navigate('/dashboard/subscription', { state: { selectedPlan: plan } });
+      }
+    } else {
+      // User is not logged in - navigate to register with plan info
+      navigate('/register', { state: { selectedPlan: plan } });
+      toast.info('Veuillez créer un compte pour continuer');
+    }
+  };
+
+  // Timer effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        let { days, hours, minutes, seconds } = prev;
+        
+        if (seconds > 0) {
+          seconds--;
+        } else if (minutes > 0) {
+          minutes--;
+          seconds = 59;
+        } else if (hours > 0) {
+          hours--;
+          minutes = 59;
+          seconds = 59;
+        } else if (days > 0) {
+          days--;
+          hours = 23;
+          minutes = 59;
+          seconds = 59;
+        } else {
+          // Timer ended, reset it
+          return { days: 2, hours: 14, minutes: 32, seconds: 15 };
+        }
+        
+        return { days, hours, minutes, seconds };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
@@ -302,6 +596,39 @@ const PricingSection = () => {
           </div>
         ) : (
           <>
+            {/* Countdown Timer */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="flex justify-center mb-12"
+            >
+              <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl px-6 md:px-8 py-4 md:py-6 shadow-lg">
+                <p className="text-center text-sm md:text-base font-semibold mb-3 text-white">⏰ Offre limitée - Ne manquez pas cette opportunité !</p>
+                <div className="flex gap-3 md:gap-4 justify-center items-center">
+                  <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
+                    <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.days).padStart(2, '0')}</div>
+                    <div className="text-xs md:text-sm mt-1 text-black font-semibold">Jours</div>
+                  </div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">:</div>
+                  <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
+                    <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.hours).padStart(2, '0')}</div>
+                    <div className="text-xs md:text-sm mt-1 text-black font-semibold">Heures</div>
+                  </div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">:</div>
+                  <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
+                    <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.minutes).padStart(2, '0')}</div>
+                    <div className="text-xs md:text-sm mt-1 text-black font-semibold">Minutes</div>
+                  </div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">:</div>
+                  <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
+                    <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.seconds).padStart(2, '0')}</div>
+                    <div className="text-xs md:text-sm mt-1 text-black font-semibold">Secondes</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
               {plans.map((plan, index) => {
                 const isPopular = plan.isPopular;
@@ -336,12 +663,12 @@ const PricingSection = () => {
                         <CardTitle className="text-xl md:text-2xl font-bold">{plan.name}</CardTitle>
                         <div className="pt-4">
                           <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-4xl md:text-5xl font-bold text-blue-600">{plan.price} dh</span>
+                            <span className="text-5xl md:text-6xl font-bold text-blue-600">{plan.price} dh</span>
                             {plan.oldPrice && (
-                              <span className="text-lg text-muted-foreground line-through ml-2">{plan.oldPrice}</span>
+                              <span className="text-xl text-muted-foreground line-through ml-2">{plan.oldPrice} dh</span>
                             )}
                           </div>
-                          <p className="text-muted-foreground text-sm mt-1">par {plan.period}</p>
+                          <p className="text-muted-foreground text-base mt-2 font-medium">par {plan.period}</p>
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow pt-4">
@@ -350,7 +677,7 @@ const PricingSection = () => {
                             const featureText = typeof feature === 'string' ? feature : feature.text;
                             const isIncluded = typeof feature === 'string' ? true : feature.included;
                             return (
-                              <li key={i} className="flex items-center gap-3 text-sm">
+                              <li key={i} className="flex items-center gap-3 text-base">
                                 {isIncluded ? (
                                   <CheckCircle2 className="h-5 w-5 text-blue-500 flex-shrink-0" />
                                 ) : (
@@ -358,11 +685,21 @@ const PricingSection = () => {
                                     <span className="text-red-400 text-xs font-bold">✕</span>
                                   </div>
                                 )}
-                                <span className={isIncluded ? 'text-slate-700' : 'text-slate-400'}>{featureText}</span>
+                                <span className={isIncluded ? 'text-slate-700 font-medium' : 'text-slate-400'}>{featureText}</span>
                               </li>
                             );
                           })}
                         </ul>
+                        <Button 
+                          onClick={() => handleSubscribe(plan)}
+                          className={`w-full mt-6 text-base font-semibold py-6 ${
+                            isPopular 
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white' 
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
+                          }`}
+                        >
+                          {plan.price === 0 ? 'Commencer gratuitement' : 'Commencer maintenant'}
+                        </Button>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -377,7 +714,19 @@ const PricingSection = () => {
               viewport={{ once: true }}
               className="text-center mt-10"
             >
-              <Button variant="outline" size="lg" className="px-8">
+              <Button 
+                onClick={() => {
+                  const token = localStorage.getItem('token');
+                  if (token) {
+                    navigate('/dashboard');
+                  } else {
+                    navigate('/register');
+                  }
+                }}
+                variant="outline" 
+                size="lg" 
+                className="px-8"
+              >
                 Essayez maintenant
               </Button>
               <p className="text-sm text-muted-foreground mt-4 font-medium">
@@ -469,27 +818,8 @@ const TestimonialsSection = () => {
 const FAQSection = () => {
   const { t } = useTranslation("landing");
 
-  const faqs = [
-    {
-      question: t("faq_1_question"),
-      answer: t("faq_1_answer")
-    },
-    {
-      question: t("faq_2_question"),
-      answer: t("faq_2_answer")
-    },
-    {
-      question: t("faq_3_question"),
-      answer: t("faq_3_answer")
-    },
-    {
-      question: t("faq_4_question"),
-      answer: t("faq_4_answer")
-    }
-  ];
-
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("faq_title")}>
+    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white" aria-label={t("faq_title")}>
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -501,30 +831,108 @@ const FAQSection = () => {
             {t("faq_badge")}
           </Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 md:mb-4">
-            {t("faq_title")}
+            Réponses aux questions fréquentes
           </h2>
+          <p className="text-base md:text-lg text-slate-600">
+            Trouvez les réponses à vos questions les plus courantes
+          </p>
         </motion.div>
 
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="hover:shadow-md transition-shadow duration-300 border-2">
-                <CardHeader className="space-y-3 pb-4">
-                  <CardTitle className="text-base md:text-lg">{faq.question}</CardTitle>
-                  <CardDescription className="text-sm md:text-base">
-                    {faq.answer}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl border-2 border-blue-100 shadow-lg overflow-hidden"
+        >
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">
+                    <GraduationCap className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Pour quelle faculté sont destinés ces QCMs ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Les QCMs sont spécifiquement conçus pour les étudiants de la <strong>FMPR</strong> (Faculté de Médecine et de Pharmacie de Rabat).
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-2" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
+                    <UserPlus className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Dois-je créer un compte ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Oui, la création d'un compte gratuit est nécessaire pour accéder aux QCMs et sauvegarder votre progression.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-3" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors flex-shrink-0">
+                    <BarChart3 className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Puis-je suivre ma progression ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Oui, votre progression est automatiquement sauvegardée et vous pouvez la consulter à tout moment.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-4" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-teal-100 rounded-lg group-hover:bg-teal-200 transition-colors flex-shrink-0">
+                    <Shield className="h-5 w-5 text-teal-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Mes informations bancaires sont-elles sécurisées ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Absolument. Nous ne conservons aucune information concernant votre carte bancaire. Tous les paiements sont traités par <strong>PayPal</strong> qui garantit la sécurité de vos transactions.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors flex-shrink-0">
+                    <RefreshCcw className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Puis-je être remboursé ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Les remboursements ne sont accordés que dans des cas exceptionnels. Pour toute demande, contactez-nous sur WhatsApp <a href="https://wa.me/212612345678" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline">0612345678</a>.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-6" className="border-b border-blue-100 last:border-0">
+              <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
+                <div className="flex items-center gap-4 text-left flex-1">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors flex-shrink-0">
+                    <Settings2 className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <span className="font-semibold text-slate-900">Puis-je personnaliser mon parcours d'études ?</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                Bien sûr ! Vous pouvez organiser votre plan d'études par création des <strong>playlists</strong>, des <strong>examens</strong> et des <strong>exercices spécifiques</strong> afin de personnaliser votre expérience d'apprentissage.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </motion.div>
+
+        
       </div>
     </section>
   );
@@ -638,6 +1046,147 @@ const ContactSection = () => {
             </Card>
           </motion.div>
         </div>
+      </div>
+    </section>
+  );
+};
+
+// Feedback Section
+const FeedbackSection = () => {
+  const { t } = useTranslation("landing");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  const handleSubmitFeedback = (e) => {
+    e.preventDefault();
+    setFeedbackSubmitted(true);
+    setTimeout(() => setFeedbackSubmitted(false), 3000);
+  };
+
+  return (
+    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50">
+      <div className="max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+              <MessageCircle className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Nous voulons vos <span className="text-blue-600">retours</span>
+          </h2>
+          
+          <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
+            Aidez-nous à améliorer WAFA en partageant vos pensées et suggestions. 
+            Votre contribution alimente notre innovation.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-2 border-blue-200 shadow-xl overflow-hidden">
+            <CardContent className="p-6 md:p-8">
+              {feedbackSubmitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-12"
+                >
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Merci pour votre retour!</h3>
+                  <p className="text-slate-600">Votre message a été envoyé avec succès.</p>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSubmitFeedback} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Nom complet</label>
+                      <Input 
+                        type="text" 
+                        placeholder="Votre nom" 
+                        required 
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Email</label>
+                      <Input 
+                        type="email" 
+                        placeholder="votre.email@exemple.com" 
+                        required 
+                        className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Sujet</label>
+                    <Input 
+                      type="text" 
+                      placeholder="De quoi voulez-vous parler?" 
+                      required 
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Message</label>
+                    <Textarea 
+                      placeholder="Partagez vos pensées, suggestions ou rapports de bugs..."
+                      rows={6}
+                      required
+                      className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-base font-semibold py-6"
+                    size="lg"
+                  >
+                    <Send className="w-5 h-5 mr-2" />
+                    Envoyer votre avis
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Trust indicators */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 text-center"
+        >
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-600">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <span>Réponse sous 24h</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-blue-600" />
+              <span>Confidentiel et sécurisé</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              <span>Communauté de 500+ étudiants</span>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

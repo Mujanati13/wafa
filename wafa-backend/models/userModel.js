@@ -126,6 +126,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Consent tracking
+    consentAcceptedAt: {
+      type: Date,
+      default: null,
+    },
+    // Payment approval tracking
+    approvalDate: {
+      type: Date,
+      default: null,
+    },
+    paymentDate: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
