@@ -18,15 +18,21 @@ export const isAuthenticated = async (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     try {
+      console.log('Verifying JWT token for:', req.path);
       const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SESSION_SECRET);
-      const user = await User.findById(decoded.userId || decoded.id);
+      console.log('JWT decoded:', { id: decoded.id, email: decoded.email });
+      const user = await User.findById(decoded.id || decoded.userId);
       if (user) {
+        console.log('User found:', user.email);
         req.user = user;
         return next();
       }
+      console.log('User not found for id:', decoded.id || decoded.userId);
     } catch (error) {
       console.error('JWT verification failed:', error.message);
     }
+  } else {
+    console.log('No Authorization header found for:', req.path);
   }
   
   return res.status(401).json({
