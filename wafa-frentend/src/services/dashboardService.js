@@ -1,14 +1,10 @@
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { api } from "@/lib/utils";
 
 export const dashboardService = {
   // Get user profile
   getUserProfile: async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/users/profile`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get('/users/profile');
       return data;
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -19,9 +15,7 @@ export const dashboardService = {
   // Get user stats
   getUserStats: async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/users/my-stats`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get('/users/my-stats');
       return data;
     } catch (error) {
       console.error("Error fetching user stats:", error);
@@ -32,9 +26,7 @@ export const dashboardService = {
   // Get user's subscription info (for regular users)
   getUserSubscriptionInfo: async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/users/subscription-info`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get('/users/subscription-info');
       return data;
     } catch (error) {
       console.error("Error fetching user subscription info:", error);
@@ -45,9 +37,7 @@ export const dashboardService = {
   // Get leaderboard rank for current user
   getLeaderboardRank: async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/users/leaderboard?limit=1000`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get('/users/leaderboard?limit=1000');
       
       // Get current user info
       const userProfile = await dashboardService.getUserProfile();
