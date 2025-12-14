@@ -1,13 +1,32 @@
 /**
  * Authentication and Authorization Middleware
  */
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
 
 /**
- * Middleware to check if user is authenticated
+ * Middleware to check if user is authenticated (supports both session and JWT)
  */
-export const isAuthenticated = (req, res, next) => {
+export const isAuthenticated = async (req, res, next) => {
+  // First check if user is authenticated via session (Passport)
   if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
+  }
+  
+  // If not authenticated via session, check for JWT token
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SESSION_SECRET);
+      const user = await User.findById(decoded.userId || decoded.id);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    } catch (error) {
+      console.error('JWT verification failed:', error.message);
+    }
   }
   
   return res.status(401).json({
@@ -18,10 +37,12 @@ export const isAuthenticated = (req, res, next) => {
 
 /**
  * Middleware to check if user is an admin
+ * Note: Should be used after isAuthenticated middleware
  */
 export const isAdmin = (req, res, next) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    if (req.user && req.user.isAdmin) {
+  // Check if user exists (set by isAuthenticated or session)
+  if (req.user) {
+    if (req.user.isAdmin) {
       return next();
     }
     return res.status(403).json({
@@ -38,10 +59,11 @@ export const isAdmin = (req, res, next) => {
 
 /**
  * Middleware to check if user's email is verified
+ * Note: Should be used after isAuthenticated middleware
  */
 export const isEmailVerified = (req, res, next) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    if (req.user && req.user.emailVerified) {
+  if (req.user) {
+    if (req.user.emailVerified) {
       return next();
     }
     return res.status(403).json({
@@ -59,9 +81,10 @@ export const isEmailVerified = (req, res, next) => {
 
 /**
  * Middleware to check if user has active subscription
+ * Note: Should be used after isAuthenticated middleware
  */
 export const hasActiveSubscription = (req, res, next) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
+  if (req.user) {
     const user = req.user;
     
     // Free users can access
