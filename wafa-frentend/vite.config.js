@@ -13,7 +13,7 @@ export default defineConfig({
   },
  server: {
   host: true,
-  port: 3010,
+  port: 4010,
   allowedHosts: ["wafa.albech.me"],
   hmr: {
     host: "wafa.albech.me",

@@ -12,7 +12,7 @@ import "./strategies/google-strategy.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5010;
 
 // Body parsing middleware - these must come first
 app.use(express.json({ limit: '10mb' }));
@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS middleware
 app.use(cors({
-  origin: ['https://wafa.albech.me', 'http://localhost:5173', 'http://localhost:3010'],
+  origin: ['https://wafa.albech.me', 'http://localhost:5173', 'http://localhost:4010'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
