@@ -6,6 +6,19 @@ const privacyPolicySchema = new mongoose.Schema({
     required: true,
     default: ''
   },
+  termsOfUse: {
+    type: String,
+    default: ''
+  },
+  termsLastUpdatedAt: {
+    type: Date,
+    default: null
+  },
+  termsLastUpdatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   lastUpdatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

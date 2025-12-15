@@ -27,7 +27,44 @@ const explanation = new mongoose.Schema(
            type: String,
            enum: ["pending", "approved", "rejected"],
            default: "pending"
-       }
+       },
+       // AI-generated explanation flag (reserved slot for DeepSeek)
+       isAiGenerated: {
+           type: Boolean,
+           default: false
+       },
+       aiProvider: {
+           type: String,
+           enum: ["deepseek", "openai", "manual", null],
+           default: null
+       },
+       // Community voting
+       upvotes: {
+           type: Number,
+           default: 0
+       },
+       downvotes: {
+           type: Number,
+           default: 0
+       },
+       voters: [{
+           userId: {
+               type: mongoose.Schema.Types.ObjectId,
+               ref: "User"
+           },
+           vote: {
+               type: String,
+               enum: ["up", "down"]
+           },
+           weight: {
+               type: Number,
+               default: 1
+           },
+           votedAt: {
+               type: Date,
+               default: Date.now
+           }
+       }]
 
     },
     { timestamps: true }

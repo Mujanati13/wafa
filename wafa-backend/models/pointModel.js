@@ -10,7 +10,7 @@ const pointSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["normal", "report", "explanation", "bonus", "achievement"],
+      enum: ["normal", "report", "explanation", "bonus", "achievement", "bluePoints", "greenPoints"],
       required: true,
       index: true,
     },

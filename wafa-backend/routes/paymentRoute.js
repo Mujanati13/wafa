@@ -13,6 +13,9 @@ router.get("/transactions/:id", isAuthenticated, paymentController.getTransactio
 
 // Admin routes
 router.get("/admin/transactions", isAuthenticated, isAdmin, paymentController.getAllTransactions);
+router.get("/admin/pending", isAuthenticated, isAdmin, paymentController.getPendingPayments);
+router.post("/admin/approve/:transactionId", isAuthenticated, isAdmin, paymentController.approvePayment);
+router.post("/admin/reject/:transactionId", isAuthenticated, isAdmin, paymentController.rejectPayment);
 
 // PayPal webhook (no auth needed - verified by PayPal signature)
 router.post("/webhook", paymentController.handleWebhook);

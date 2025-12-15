@@ -164,7 +164,145 @@ export const reportQuestionsController = {
                 questionTitle: updated.questionId?.text,
             }
         });
+    }),
+
+    // Search and filter reports (by user/email and date)
+    searchReports: asyncHandler(async (req, res) => {
+        const { search, dateFrom, dateTo, status, page = 1, limit = 20 } = req.query;
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const filter = {};
+        
+        // Status filter
+        if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+            filter.status = status;
+        }
+
+        // Date filter
+        if (dateFrom || dateTo) {
+            filter.createdAt = {};
+            if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+            if (dateTo) {
+                const endDate = new Date(dateTo);
+                endDate.setHours(23, 59, 59, 999);
+                filter.createdAt.$lte = endDate;
+            }
+        }
+
+        let reports = await ReportQuestions.find(filter)
+            .populate({ path: "userId", select: "username email" })
+            .populate({ 
+                path: "questionId", 
+                select: "text examId sessionLabel options",
+                populate: {
+                    path: "examId",
+                    select: "name year moduleId category",
+                    populate: {
+                        path: "moduleId",
+                        select: "name semester"
+                    }
+                }
+            })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Search filter (applied after population)
+        if (search) {
+            const searchLower = search.toLowerCase();
+            reports = reports.filter(r => 
+                r.userId?.username?.toLowerCase().includes(searchLower) ||
+                r.userId?.email?.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Get total before pagination
+        const total = reports.length;
+
+        // Apply pagination
+        reports = reports.slice(skip, skip + parseInt(limit));
+
+        const shaped = reports.map((r) => ({
+            ...r,
+            username: r.userId?.username,
+            userEmail: r.userId?.email,
+            questionTitle: r.questionId?.text,
+            questionOptions: r.questionId?.options,
+            questionSessionLabel: r.questionId?.sessionLabel,
+            examName: r.questionId?.examId?.name,
+            examYear: r.questionId?.examId?.year,
+            examCategory: r.questionId?.examId?.category,
+            moduleName: r.questionId?.examId?.moduleId?.name,
+            moduleSemester: r.questionId?.examId?.moduleId?.semester,
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: shaped,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+    }),
+
+    // Get detailed report with full question context
+    getReportDetails: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        
+        const report = await ReportQuestions.findById(id)
+            .populate({ path: "userId", select: "username email profilePicture" })
+            .populate({ 
+                path: "questionId", 
+                select: "text options images note sessionLabel examId",
+                populate: {
+                    path: "examId",
+                    select: "name year category moduleId courseName",
+                    populate: {
+                        path: "moduleId",
+                        select: "name semester color"
+                    }
+                }
+            })
+            .lean();
+            
+        if (!report) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                _id: report._id,
+                details: report.details,
+                status: report.status,
+                createdAt: report.createdAt,
+                user: {
+                    username: report.userId?.username,
+                    email: report.userId?.email,
+                    profilePicture: report.userId?.profilePicture
+                },
+                question: {
+                    _id: report.questionId?._id,
+                    text: report.questionId?.text,
+                    options: report.questionId?.options,
+                    images: report.questionId?.images,
+                    note: report.questionId?.note,
+                    sessionLabel: report.questionId?.sessionLabel
+                },
+                exam: {
+                    name: report.questionId?.examId?.name,
+                    year: report.questionId?.examId?.year,
+                    category: report.questionId?.examId?.category,
+                    courseName: report.questionId?.examId?.courseName
+                },
+                module: {
+                    name: report.questionId?.examId?.moduleId?.name,
+                    semester: report.questionId?.examId?.moduleId?.semester,
+                    color: report.questionId?.examId?.moduleId?.color
+                }
+            }
+        });
     })
 };
-
-

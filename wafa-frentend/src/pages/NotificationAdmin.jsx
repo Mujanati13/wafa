@@ -83,8 +83,10 @@ const NotificationAdmin = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await userService.getAllUsers({ limit: 100 });
-      setUsers(Array.isArray(response.data) ? response.data : []);
+      const response = await userService.getAllUsers(1, 100);
+      // Backend returns { success, data: { users, pagination } }
+      const usersData = response.data?.users || response.users || [];
+      setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Erreur lors du chargement des utilisateurs');

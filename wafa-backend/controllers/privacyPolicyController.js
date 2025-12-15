@@ -45,3 +45,58 @@ export const updatePrivacyPolicy = asyncHandler(async (req, res) => {
     data: policy
   });
 });
+
+// @desc    Get terms of use
+// @route   GET /api/settings/terms-of-use
+// @access  Public
+export const getTermsOfUse = asyncHandler(async (req, res) => {
+  const policy = await PrivacyPolicy.getPolicy();
+  
+  res.status(200).json({
+    success: true,
+    data: {
+      content: policy.termsOfUse || '',
+      lastUpdatedAt: policy.termsLastUpdatedAt,
+      lastUpdatedBy: policy.termsLastUpdatedBy
+    }
+  });
+});
+
+// @desc    Update terms of use
+// @route   PUT /api/settings/terms-of-use
+// @access  Private/Admin
+export const updateTermsOfUse = asyncHandler(async (req, res) => {
+  const { content } = req.body;
+
+  if (!content) {
+    return res.status(400).json({
+      success: false,
+      message: 'Le contenu est requis'
+    });
+  }
+
+  let policy = await PrivacyPolicy.findOne();
+  
+  if (!policy) {
+    policy = await PrivacyPolicy.create({
+      content: '',
+      termsOfUse: content,
+      termsLastUpdatedAt: new Date(),
+      termsLastUpdatedBy: req.user._id
+    });
+  } else {
+    policy.termsOfUse = content;
+    policy.termsLastUpdatedAt = new Date();
+    policy.termsLastUpdatedBy = req.user._id;
+    await policy.save();
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Conditions d\'utilisation mises à jour avec succès',
+    data: {
+      content: policy.termsOfUse,
+      lastUpdatedAt: policy.termsLastUpdatedAt
+    }
+  });
+});

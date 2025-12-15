@@ -1,4 +1,5 @@
 import Notification from "../models/notificationModel.js";
+import User from "../models/userModel.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 
 export const NotificationController = {
@@ -166,7 +167,6 @@ export const NotificationController = {
     }
 
     try {
-      const User = require("../models/userModel.js").default;
       const users = await User.find({ _id: { $nin: excludeUserIds || [] } }).select("_id");
 
       const notifications = users.map(user => ({

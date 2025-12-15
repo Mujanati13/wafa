@@ -12,10 +12,10 @@ const moduleSchema = new mongoose.Schema(
                 enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10"],
                 required: [true, "Semester is required"]
         },
-        // Category - 3 default categories
+        // Category - 4 default categories
         category: {
                 type: String,
-                enum: ["Exam par years", "Exam par courses", "Résumé et cours"],
+                enum: ["Exam par years", "Exam par courses", "Résumé et cours", "QCM banque"],
                 default: "Exam par years",
         },
         // List of course names within the module

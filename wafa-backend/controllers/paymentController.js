@@ -509,6 +509,179 @@ const createBankTransferRequest = asyncHandler(async (req, res) => {
   });
 });
 
+// Admin: Approve a payment request
+const approvePayment = asyncHandler(async (req, res) => {
+  const { transactionId } = req.params;
+  const { duration } = req.body; // Optional: override duration
+
+  const transaction = await Transaction.findById(transactionId);
+  
+  if (!transaction) {
+    res.status(404);
+    throw new Error("Transaction non trouvée");
+  }
+
+  if (transaction.status === 'completed') {
+    res.status(400);
+    throw new Error("Cette transaction a déjà été approuvée");
+  }
+
+  // Update transaction status
+  transaction.status = 'completed';
+  transaction.metadata = {
+    ...transaction.metadata,
+    approvedBy: req.user._id,
+    approvedAt: new Date()
+  };
+  await transaction.save();
+
+  // Update user subscription
+  const user = await User.findById(transaction.user);
+  if (!user) {
+    res.status(404);
+    throw new Error("Utilisateur non trouvé");
+  }
+
+  // Calculate plan expiry based on duration
+  const durationMap = {
+    "1month": 30,
+    "3months": 90,
+    "6months": 180,
+    "1year": 365,
+  };
+
+  const daysToAdd = durationMap[duration || transaction.duration] || 30;
+  const currentExpiry = user.planExpiry && user.planExpiry > new Date() 
+    ? new Date(user.planExpiry) 
+    : new Date();
+  
+  currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
+
+  user.plan = "Premium";
+  user.planExpiry = currentExpiry;
+  user.approvalDate = new Date();
+  user.paymentDate = new Date();
+  
+  // Update user's semesters with the selected ones
+  if (transaction.semesters && transaction.semesters.length > 0) {
+    const existingSemesters = user.semesters || [];
+    const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
+    user.semesters = newSemesters;
+  }
+  
+  await user.save();
+
+  // Send notification to user
+  try {
+    await NotificationController.createNotification(
+      transaction.user,
+      "subscription",
+      "Paiement approuvé",
+      `Votre paiement a été approuvé. Votre abonnement Premium est maintenant actif jusqu'au ${currentExpiry.toLocaleDateString('fr-FR')}.`,
+      "/dashboard/subscription"
+    );
+  } catch (error) {
+    console.error("Error creating approval notification:", error);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Paiement approuvé avec succès",
+    transaction,
+    subscription: {
+      plan: user.plan,
+      expiresAt: user.planExpiry,
+      semesters: user.semesters
+    }
+  });
+});
+
+// Admin: Reject a payment request
+const rejectPayment = asyncHandler(async (req, res) => {
+  const { transactionId } = req.params;
+  const { reason } = req.body;
+
+  const transaction = await Transaction.findById(transactionId);
+  
+  if (!transaction) {
+    res.status(404);
+    throw new Error("Transaction non trouvée");
+  }
+
+  transaction.status = 'cancelled';
+  transaction.errorMessage = reason || 'Paiement rejeté par l\'administrateur';
+  transaction.metadata = {
+    ...transaction.metadata,
+    rejectedBy: req.user._id,
+    rejectedAt: new Date(),
+    rejectionReason: reason
+  };
+  await transaction.save();
+
+  // Send notification to user
+  try {
+    await NotificationController.createNotification(
+      transaction.user,
+      "subscription",
+      "Paiement rejeté",
+      `Votre demande de paiement a été rejetée. ${reason ? `Raison: ${reason}` : 'Veuillez contacter le support.'}`,
+      "/dashboard/subscription"
+    );
+  } catch (error) {
+    console.error("Error creating rejection notification:", error);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Paiement rejeté",
+    transaction
+  });
+});
+
+// Get pending payment requests with filters
+const getPendingPayments = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20, search, dateFrom, dateTo } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const filter = { status: 'pending' };
+  
+  // Date filter
+  if (dateFrom || dateTo) {
+    filter.createdAt = {};
+    if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+    if (dateTo) filter.createdAt.$lte = new Date(dateTo);
+  }
+
+  let transactions = await Transaction.find(filter)
+    .populate('user', 'name email username createdAt')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Search filter (applied after population)
+  if (search) {
+    const searchLower = search.toLowerCase();
+    transactions = transactions.filter(t => 
+      t.user?.name?.toLowerCase().includes(searchLower) ||
+      t.user?.email?.toLowerCase().includes(searchLower) ||
+      t.user?.username?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  const total = await Transaction.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    transactions,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      pages: Math.ceil(total / parseInt(limit))
+    }
+  });
+});
+
 export default {
   createOrder,
   capturePayment,
@@ -517,4 +690,7 @@ export default {
   getAllTransactions,
   handleWebhook,
   createBankTransferRequest,
+  approvePayment,
+  rejectPayment,
+  getPendingPayments,
 };

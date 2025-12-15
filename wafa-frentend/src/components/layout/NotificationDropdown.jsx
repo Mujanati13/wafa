@@ -144,15 +144,28 @@ const NotificationDropdown = () => {
 
   // Format relative time in French
   const getRelativeTime = (date) => {
+    if (!date) return "Date inconnue";
+    
     const now = new Date();
     const notificationDate = new Date(date);
+    
+    // Check if date is valid
+    if (isNaN(notificationDate.getTime())) {
+      return "Date invalide";
+    }
+    
     const diffInSeconds = Math.floor((now - notificationDate) / 1000);
 
     if (diffInSeconds < 60) return "À l'instant";
     if (diffInSeconds < 3600) return `Il y a ${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `Il y a ${Math.floor(diffInSeconds / 3600)} h`;
     if (diffInSeconds < 604800) return `Il y a ${Math.floor(diffInSeconds / 86400)} j`;
-    return notificationDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    
+    try {
+      return notificationDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    } catch (error) {
+      return "Date invalide";
+    }
   };
 
   return (
