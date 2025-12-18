@@ -58,7 +58,7 @@ const LandingPage = () => {
       <HeroSection />
       <FeaturesSection />
       <PricingSection />
-      <TestimonialsSection />
+      {/* TestimonialsSection hidden - will be enabled when real reviews exist */}
       <FAQSection />
       <FeedbackSection />
       <Footer />
@@ -225,7 +225,8 @@ const HeroSection = () => {
                   className="w-full h-full object-contain"
                 />
               </div>
-              {/* Statistics Card with Graph */}
+              {/* Statistics Card with Graph - Only visible when logged in */}
+              {isLoggedIn ? (
               <div className="bg-white rounded-3xl shadow-2xl p-5 md:p-6 transform hover:scale-105 transition-transform duration-300">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
@@ -308,19 +309,36 @@ const HeroSection = () => {
                   </motion.div>
                 </div>
 
-                {/* Success Badge */}
-                <div className="mt-3 md:mt-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-2.5 md:p-3 border border-blue-100">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-white p-1.5 rounded-lg shadow-sm">
-                      <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
+                {/* Success Badge - hidden until real community stats are available */}
+              </div>
+              ) : (
+              /* Welcome Card for visitors */
+              <div className="bg-white rounded-3xl shadow-2xl p-5 md:p-6 transform hover:scale-105 transition-transform duration-300">
+                <div className="text-center space-y-4">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+                    <GraduationCap className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Préparez vos examens</h3>
+                  <p className="text-gray-600 text-sm">
+                    Accédez à des milliers de QCM médicaux, suivez votre progression et réussissez vos examens.
+                  </p>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <span>QCM par module et semestre</span>
                     </div>
-                    <div>
-                      <p className="text-xs md:text-sm font-semibold text-gray-900">+5,000 étudiants</p>
-                      <p className="text-xs text-gray-600 leading-tight">ont amélioré leurs notes</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <span>Statistiques détaillées</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <span>Classement et progression</span>
                     </div>
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </motion.div>
         </div>

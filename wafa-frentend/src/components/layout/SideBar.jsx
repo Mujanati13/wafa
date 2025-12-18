@@ -272,26 +272,18 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
               </div>
             ) : (
             <>
-              {/* Group: Dashboard */}
-              <CollapsibleSection
-                id="dashboard"
-                title={t('dashboard:dashboard')}
-                isOpen={openGroups.dashboard}
-                forceOpen={!sidebarOpen}
-                onToggle={() => toggleGroup("dashboard")}
+              {/* Dashboard - Direct Link (no submenu) */}
+              <SidebarItem
+                item={dashboardItem}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                navigate={navigate}
+                isMobile={isMobile}
                 sidebarOpen={sidebarOpen}
-                icon={Home}
-              >
-                <SidebarItem
-                  item={dashboardItem}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  navigate={navigate}
-                  isMobile={isMobile}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
-                />
-              </CollapsibleSection>
+                setSidebarOpen={setSidebarOpen}
+              />
+
+              <Separator className="my-2" />
 
               {/* Group: Modules - Grouped by Semester */}
               <CollapsibleSection

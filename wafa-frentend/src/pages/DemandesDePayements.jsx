@@ -319,22 +319,28 @@ const DemandesDePayements = () => {
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="text-left py-4 px-6 font-semibold text-gray-700">
+                        ID
+                      </th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-700">
                         Utilisateur
                       </th>
                       <th className="text-left py-4 px-6 font-semibold text-gray-700">
                         Email
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Montant
+                        Date de Demande
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-700">
+                        Date d'Inscription
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
                         Mode de Paiement
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Statut
+                        Semestres Demandés
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-700">
-                        Date de Demande
+                        Montant
                       </th>
                       <th className="text-right py-4 px-6 font-semibold text-gray-700">
                         Actions
@@ -345,7 +351,9 @@ const DemandesDePayements = () => {
                     {loading ? (
                       Array.from({ length: 3 }).map((_, index) => (
                         <tr key={index} className="border-b border-gray-100">
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-10 bg-gray-200 rounded animate-pulse"></div></td>
+                          <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
                           <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded animate-pulse"></div></td>
@@ -356,7 +364,7 @@ const DemandesDePayements = () => {
                       ))
                     ) : filteredTransactions.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-gray-500">
+                        <td colSpan={9} className="text-center py-8 text-gray-500">
                           Aucune transaction trouvée
                         </td>
                       </tr>
@@ -369,9 +377,13 @@ const DemandesDePayements = () => {
                         transition={{ duration: 0.3, delay: index * 0.05 }}
                         className="border-b border-gray-100 hover:bg-amber-50/50 transition-colors"
                       >
+                        <td className="py-4 px-6 text-gray-500 text-sm font-mono">
+                          {t._id.slice(-8).toUpperCase()}
+                        </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
+                              <AvatarImage src={t.user?.profileImage} />
                               <AvatarFallback>
                                 {t.user?.name
                                   ?.split(" ")
@@ -379,21 +391,17 @@ const DemandesDePayements = () => {
                                   .join("") || "U"}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                {t.user?.name || "Unknown"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                ID: {t._id.slice(-6)}
-                              </p>
-                            </div>
+                            <p className="font-semibold text-gray-900">
+                              {t.user?.name || "Unknown"}
+                            </p>
                           </div>
                         </td>
                         <td className="py-4 px-6 text-gray-600">{t.user?.email || "N/A"}</td>
-                        <td className="py-4 px-6 text-center">
-                          <Badge variant="outline" className="text-xs font-semibold">
-                            ${t.amount?.toFixed(2) || "0.00"}
-                          </Badge>
+                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
+                          {new Date(t.createdAt).toLocaleDateString('fr-FR')}
+                        </td>
+                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
+                          {t.user?.createdAt ? new Date(t.user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}
                         </td>
                         <td className="py-4 px-6 text-center">
                           <Badge 
@@ -409,39 +417,39 @@ const DemandesDePayements = () => {
                           </Badge>
                         </td>
                         <td className="py-4 px-6 text-center">
-                          <Badge 
-                            className={`border-0 ${
-                              t.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              t.status === 'failed' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {t.status === 'completed' ? 'Complété' : 
-                             t.status === 'pending' ? 'En attente' : 
-                             t.status === 'failed' ? 'Échoué' : t.status}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {t.semesters && t.semesters.length > 0 ? (
+                              t.semesters.map((sem, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {sem}
+                                </Badge>
+                              ))
+                            ) : t.plan?.semesters && t.plan.semesters.length > 0 ? (
+                              t.plan.semesters.map((sem, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {sem}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </div>
                         </td>
-                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
-                          {new Date(t.createdAt).toLocaleDateString('fr-FR')}
+                        <td className="py-4 px-6 text-center">
+                          <Badge variant="outline" className="text-xs font-semibold">
+                            ${t.amount?.toFixed(2) || "0.00"}
+                          </Badge>
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
-                              variant="ghost"
+                              variant="default"
                               size="sm"
-                              className="h-8 w-8 p-0"
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700"
                               title="Approuver"
                             >
-                              <Check className="h-4 w-4 text-green-600 hover:text-green-700" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              title="Voir les détails"
-                            >
-                              <CheckCircle2 className="h-4 w-4 text-blue-600 hover:text-blue-700" />
+                              <Check className="h-4 w-4 mr-1" />
+                              Approuver
                             </Button>
                           </div>
                         </td>

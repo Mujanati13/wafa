@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 import { dashboardService } from "@/services/dashboardService";
-import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download } from "lucide-react";
+import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, ChevronLeft, ChevronRight, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts";
 import ModuleCard from "@/components/Dashboard/ModuleCard";
 import ModulePreviewModal from "@/components/Dashboard/ModulePreviewModal";
@@ -60,8 +60,12 @@ const Dashboard = () => {
   const [weeklyActivity, setWeeklyActivity] = useState([]);
   const [performanceTrend, setPerformanceTrend] = useState([]);
   const [completionData, setCompletionData] = useState([]);
+  const [semesterPage, setSemesterPage] = useState(0); // For paginating semesters (2 at a time)
 
   const allSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+  const semestersPerPage = 2;
+  const totalSemesterPages = Math.ceil(allSemesters.length / semestersPerPage);
+  const visibleSemesters = allSemesters.slice(semesterPage * semestersPerPage, (semesterPage + 1) * semestersPerPage);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -231,11 +235,8 @@ const Dashboard = () => {
   }, [coursesData, semester, userSemesters]);
   
   const handleCourseClick = (courseId) => {
-    const module = coursesData?.find(c => c._id === courseId);
-    if (module) {
-      setSelectedModule(module);
-      setShowModuleDialog(true);
-    }
+    // Navigate directly to the module without showing intermediate popup
+    navigate(`/dashboard/subjects/${courseId}`);
   };
 
   const handleStartModule = () => {
@@ -373,30 +374,53 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   
                   <div className="bg-white rounded-xl p-4 shadow-md border border-slate-200">
                     <p className="text-sm font-semibold text-slate-700 mb-3">Mes Semestres</p>
-                    <div className="flex flex-wrap gap-2">
-                      {allSemesters.slice(0, 6).map((sem) => {
-                        const isSubscribed = userSemesters.includes(sem);
-                        return (
-                          <Button
-                            key={sem}
-                            variant={semester === sem ? "default" : "outline"}
-                            size="sm"
-                            disabled={!isSubscribed}
-                            onClick={() => setSemester(sem)}
-                            className={`min-w-[60px] ${
-                              semester === sem 
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                                : isSubscribed 
-                                  ? 'hover:bg-blue-50' 
-                                  : 'opacity-40'
-                            }`}
-                          >
-                            {sem}
-                            {!isSubscribed && <Lock className="ml-1 h-3 w-3" />}
-                          </Button>
-                        );
-                      })}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSemesterPage(p => Math.max(0, p - 1))}
+                        disabled={semesterPage === 0}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="flex gap-2 flex-1 justify-center">
+                        {visibleSemesters.map((sem) => {
+                          const isSubscribed = userSemesters.includes(sem);
+                          return (
+                            <Button
+                              key={sem}
+                              variant={semester === sem ? "default" : "outline"}
+                              size="sm"
+                              disabled={!isSubscribed}
+                              onClick={() => setSemester(sem)}
+                              className={`min-w-[60px] ${
+                                semester === sem 
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                  : isSubscribed 
+                                    ? 'hover:bg-blue-50' 
+                                    : 'opacity-40'
+                              }`}
+                            >
+                              {sem}
+                              {!isSubscribed && <Lock className="ml-1 h-3 w-3" />}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSemesterPage(p => Math.min(totalSemesterPages - 1, p + 1))}
+                        disabled={semesterPage >= totalSemesterPages - 1}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
+                    <p className="text-xs text-center text-slate-400 mt-2">
+                      Page {semesterPage + 1} / {totalSemesterPages}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -404,11 +428,99 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
           </Card>
         </motion.div>
 
-        {/* Stats Grid */}
+        {/* Modules Section - Moved above Statistics */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <GraduationCap className="h-6 w-6 text-teal-600" />
+                {t('dashboard:modules')}
+                <Badge variant="outline" className="ml-2 bg-teal-50 text-teal-700 border-teal-200">
+                  {semester || "Sélectionner"}
+                </Badge>
+              </h2>
+              <div className="h-1 w-16 bg-gradient-to-r from-teal-600 to-emerald-500 mt-2 rounded-full" />
+            </div>
+            {!loading && filteredCourses.length > 0 && (
+              <Badge variant="secondary" className="text-sm">
+                {filteredCourses.length} module{filteredCourses.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <Skeleton className="h-32 w-full mb-4 rounded-lg" />
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              {filteredCourses.length > 0 ? (
+                filteredCourses.map((course, index) => (
+                  <ModuleCard
+                    key={course._id || course.id || index}
+                    course={course}
+                    handleCourseClick={handleCourseClick}
+                    index={index}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full">
+                  <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
+                    <CardContent className="text-center py-16">
+                      <div className="max-w-md mx-auto space-y-4">
+                        <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center">
+                          <Lock className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-slate-700">
+                          {userSemesters.length === 0 
+                            ? "Aucun semestre souscrit" 
+                            : "Aucun module disponible"
+                          }
+                        </h3>
+                        <p className="text-slate-500">
+                          {userSemesters.length === 0 
+                            ? "Abonnez-vous pour accéder aux modules et commencer votre apprentissage" 
+                            : "Sélectionnez un autre semestre ou vérifiez votre abonnement"
+                          }
+                        </p>
+                        <Button 
+                          onClick={() => navigate('/dashboard/subscription')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {userSemesters.length === 0 ? "Voir les abonnements" : "Gérer mon abonnement"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Stats Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div className="mb-4">
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -646,167 +758,14 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
           </Tabs>
         </motion.div>
 
-        {/* Modules Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="space-y-6"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <GraduationCap className="h-6 w-6 text-teal-600" />
-                {t('dashboard:modules')}
-                <Badge variant="outline" className="ml-2 bg-teal-50 text-teal-700 border-teal-200">
-                  {semester || "Sélectionner"}
-                </Badge>
-              </h2>
-              <div className="h-1 w-16 bg-gradient-to-r from-teal-600 to-emerald-500 mt-2 rounded-full" />
-            </div>
-            {!loading && filteredCourses.length > 0 && (
-              <Badge variant="secondary" className="text-sm">
-                {filteredCourses.length} module{filteredCourses.length > 1 ? 's' : ''}
-              </Badge>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <Card key={i} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <Skeleton className="h-32 w-full mb-4 rounded-lg" />
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {filteredCourses.length > 0 ? (
-                filteredCourses.map((course, index) => (
-                  <ModuleCard
-                    key={course._id || course.id || index}
-                    course={course}
-                    handleCourseClick={handleCourseClick}
-                    index={index}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full">
-                  <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
-                    <CardContent className="text-center py-16">
-                      <div className="max-w-md mx-auto space-y-4">
-                        <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center">
-                          <Lock className="h-8 w-8 text-slate-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-slate-700">
-                          {userSemesters.length === 0 
-                            ? "Aucun semestre souscrit" 
-                            : "Aucun module disponible"
-                          }
-                        </h3>
-                        <p className="text-slate-500">
-                          {userSemesters.length === 0 
-                            ? "Abonnez-vous pour accéder aux modules et commencer votre apprentissage" 
-                            : "Sélectionnez un autre semestre ou vérifiez votre abonnement"
-                          }
-                        </p>
-                        <Button 
-                          onClick={() => navigate('/dashboard/subscription')}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          {userSemesters.length === 0 ? "Voir les abonnements" : "Gérer mon abonnement"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* FAQ and Help Section - Combined */}
+        {/* Help Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid gap-6 lg:grid-cols-3"
         >
-          {/* FAQ Section - Takes 2 columns */}
-          <Card className="lg:col-span-2 border-blue-100 bg-gradient-to-br from-white to-blue-50/30 shadow-lg">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <HelpCircle className="h-5 w-5 text-blue-600" />
-                </div>
-                Questions Fréquentes
-              </CardTitle>
-              <CardDescription>Trouvez rapidement des réponses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full space-y-2">
-                <AccordionItem value="item-1" className="border rounded-lg px-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <AccordionTrigger className="hover:no-underline py-3">
-                    <div className="flex items-center gap-3 text-left">
-                      <GraduationCap className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">Pour quelle faculté ?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 text-sm pb-3 pl-7">
-                    <strong>FMPR</strong> - Faculté de Médecine et de Pharmacie de Rabat
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-2" className="border rounded-lg px-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <AccordionTrigger className="hover:no-underline py-3">
-                    <div className="flex items-center gap-3 text-left">
-                      <UserPlus className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">Dois-je créer un compte ?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 text-sm pb-3 pl-7">
-                    Oui, un compte gratuit est nécessaire pour sauvegarder votre progression.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-3" className="border rounded-lg px-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <AccordionTrigger className="hover:no-underline py-3">
-                    <div className="flex items-center gap-3 text-left">
-                      <Shield className="h-4 w-4 text-teal-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">Mes paiements sont-ils sécurisés ?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 text-sm pb-3 pl-7">
-                    Tous les paiements sont traités par <strong>PayPal</strong> de manière sécurisée.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-4" className="border rounded-lg px-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <AccordionTrigger className="hover:no-underline py-3">
-                    <div className="flex items-center gap-3 text-left">
-                      <Settings2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">Puis-je personnaliser mon parcours ?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 text-sm pb-3 pl-7">
-                    Créez des <strong>playlists</strong> et <strong>examens personnalisés</strong>.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
-
-          {/* Help Center Section - Takes 1 column */}
-          <Card className="border-purple-100 bg-gradient-to-br from-white to-purple-50/30 shadow-lg" ref={contactRef}>
+          {/* Help Center Section */}
+          <Card className="border-purple-100 bg-gradient-to-br from-white to-purple-50/30 shadow-lg max-w-md" ref={contactRef}>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">

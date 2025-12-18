@@ -194,28 +194,31 @@ const seedData = async () => {
         ]);
         console.log(`✓ Created ${explanations.length} explanations`);
 
-        // Create Resumes (linked to questions and user)
+        // Create Resumes (linked to modules and courses)
         const resumes = await Resume.insertMany([
             {
-                userId: testUser._id,
-                questionId: questions[0]._id,
+                moduleId: modules[0]._id, // Cardiologie module
+                courseName: 'Système Cardiovasculaire',
                 title: 'Résumé - Système Cardiovasculaire',
                 pdfUrl: 'https://example.com/resume-cardiovasculaire.pdf',
-                status: 'approved'
+                status: 'approved',
+                isAdminUpload: true
             },
             {
-                userId: testUser._id,
-                questionId: questions[1]._id,
+                moduleId: modules[0]._id, // Cardiologie module
+                courseName: 'Anatomie du Cœur',
                 title: 'Résumé - Anatomie du Cœur',
                 pdfUrl: 'https://example.com/resume-coeur.pdf',
-                status: 'approved'
+                status: 'approved',
+                isAdminUpload: true
             },
             {
-                userId: testUser._id,
-                questionId: questions[3]._id,
+                moduleId: modules[1]._id, // Anatomie module
+                courseName: 'Système Squelettique',
                 title: 'Résumé - Système Squelettique',
                 pdfUrl: 'https://example.com/resume-squelette.pdf',
-                status: 'approved'
+                status: 'approved',
+                isAdminUpload: true
             }
         ]);
         console.log(`✓ Created ${resumes.length} resumes`);

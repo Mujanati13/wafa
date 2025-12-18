@@ -33,7 +33,9 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
   const colorScheme = moduleColors[index % moduleColors.length];
   const progress = course.progress || 0;
   const totalQuestions = course.totalQuestions || 0;
-  const completedQuestions = Math.round((progress / 100) * totalQuestions);
+  const questionsAttempted = course.questionsAttempted || Math.round((progress / 100) * totalQuestions);
+  const correctAnswers = course.correctAnswers || 0;
+  const wrongAnswers = questionsAttempted - correctAnswers;
   
   // Use custom color from module if available
   const moduleColor = course.color || null;
@@ -163,14 +165,15 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
 
         {/* Course Stats */}
         <div className="relative flex items-center justify-between pt-3 border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <div 
-              className={`w-2 h-2 rounded-full animate-pulse ${!customStyle ? `bg-gradient-to-r ${colorScheme.gradient}` : ''}`}
-              style={customStyle ? { backgroundColor: course.color } : undefined}
-            ></div>
-            <span className="text-xs sm:text-sm text-gray-600 font-medium">
-              <span className="font-bold text-gray-800">{completedQuestions}</span> / {totalQuestions} Questions
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-bold text-green-600">{correctAnswers}</span>
+              <span className="text-xs text-gray-400">/</span>
+              <span className="text-xs font-bold text-red-500">{wrongAnswers}</span>
+              <span className="text-xs text-gray-400">/</span>
+              <span className="text-xs text-gray-600">{totalQuestions}</span>
+            </div>
+            <span className="text-xs text-gray-500">Questions</span>
           </div>
 
           <motion.button

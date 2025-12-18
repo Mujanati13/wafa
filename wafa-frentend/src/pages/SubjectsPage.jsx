@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock, FileQuestion } from "lucide-react";
+import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock, FileQuestion, ListChecks, Shuffle } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
@@ -342,8 +342,8 @@ const SubjectsPage = () => {
           </Card>
         )}
 
-        {/* Exams Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Exams List - QCMOLOGY Style */}
+        <div className="space-y-4">
           {filteredExams.map((exam, index) => (
             <motion.div
               key={exam.id}
@@ -351,69 +351,57 @@ const SubjectsPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="hover:shadow-lg transition-all h-full flex flex-col overflow-hidden">
-                {/* Exam Image */}
-                {exam.imageUrl ? (
-                  <div className="relative h-40 bg-gradient-to-br from-blue-100 to-indigo-100 overflow-hidden">
-                    <img 
-                      src={exam.imageUrl} 
-                      alt={exam.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className="hidden absolute inset-0 items-center justify-center bg-gradient-to-br from-blue-500/20 to-indigo-500/20">
-                      <FileQuestion className="h-16 w-16 text-blue-500/50" />
+              <Card className="hover:shadow-lg transition-all overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                    {/* Left Side: Exam Info */}
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                          <FileQuestion className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 line-clamp-1">{exam.name}</h3>
+                          <p className="text-sm text-gray-500">{exam.questions} Questions</p>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-500">Progression</span>
+                          <span className="font-medium text-gray-700">{exam.progress}%</span>
+                        </div>
+                        <Progress value={exam.progress} className="h-2" />
+                      </div>
                     </div>
-                    {/* Question Count Badge */}
-                    <Badge className="absolute top-3 right-3 bg-white/90 text-gray-700 hover:bg-white">
-                      {exam.questions} Questions
-                    </Badge>
-                  </div>
-                ) : (
-                  <div className="relative h-40 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-                    <FileQuestion className="h-16 w-16 text-blue-500/50" />
-                    {/* Question Count Badge */}
-                    <Badge className="absolute top-3 right-3 bg-white/90 text-gray-700 hover:bg-white">
-                      {exam.questions} Questions
-                    </Badge>
-                  </div>
-                )}
 
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg line-clamp-2">{exam.name}</CardTitle>
-                    {exam.progress > 0 && (
-                      <ProgressCircle progress={exam.progress} size={48} />
-                    )}
-                  </div>
-                  {exam.description && (
-                    <CardDescription className="line-clamp-2">
-                      {exam.description}
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                
-                <CardContent className="flex-1 flex flex-col justify-end pt-2">
-                  <div className="flex gap-2">
-                    <Button 
-                      className="flex-1 gap-2" 
-                      onClick={() => handleStartExam(exam.id)}
-                    >
-                      <Play className="h-4 w-4" />
-                      {exam.progress > 0 ? t('dashboard:continue_exam') : t('dashboard:start')}
-                    </Button>
-                    {exam.progress > 0 && (
+                    {/* Right Side: Mode Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
                       <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => toast.info(t('dashboard:resetting_progress'))}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => navigate(`/exam/${exam.id}?mode=exam`)}
                       >
-                        <RotateCcw className="h-4 w-4" />
+                        <Play className="h-4 w-4" />
+                        Mode Examen
                       </Button>
-                    )}
+                      <Button 
+                        variant="outline"
+                        className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
+                        onClick={() => navigate(`/exam/${exam.id}?mode=course`)}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        Mode Cours
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                        onClick={() => navigate(`/exam/${exam.id}?mode=bank`)}
+                      >
+                        <Shuffle className="h-4 w-4" />
+                        Mode Banque
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

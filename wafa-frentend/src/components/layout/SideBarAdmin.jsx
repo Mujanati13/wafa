@@ -213,6 +213,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           path: "/admin/importExamParCourse",
         },
         {
+          id: "importQCMBanque",
+          label: t('admin:import_qcm_banque', 'Importer QCM Banque'),
+          icon: FileDown,
+          path: "/admin/importQCMBanque",
+        },
+        {
           id: "addQuestions",
           label: t('admin:add_questions'),
           icon: FileQuestion,

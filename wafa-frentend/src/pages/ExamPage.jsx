@@ -60,6 +60,7 @@ import ExplicationModel from "@/components/ExamsPage/ExplicationModel";
 import NoteModal from "@/components/ExamsPage/NoteModal";
 import ReportModal from "@/components/ExamsPage/ReportModal";
 import CommunityModal from "@/components/ExamsPage/CommunityModal";
+import ResumesModal from "@/components/ExamsPage/ResumesModal";
 
 // Confetti function (simple implementation without external library)
 const triggerConfetti = () => {
@@ -118,6 +119,7 @@ const ExamPage = () => {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
+  const [showResumesModal, setShowResumesModal] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
   const [showVueEnsemble, setShowVueEnsemble] = useState(false);
   
@@ -511,24 +513,70 @@ const ExamPage = () => {
   // Error state
   if (error || !currentQuestionData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-lg"
         >
-          <Card className="max-w-md w-full shadow-xl border-0">
-            <CardContent className="pt-8 text-center space-y-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
-                <AlertCircle className="h-8 w-8 text-red-600" />
+          <Card className="shadow-2xl border-0 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{t('dashboard:oops') || 'Oups !'}</h3>
+                  <p className="text-blue-100 text-sm">{t('dashboard:exam_unavailable') || 'Examen non disponible'}</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-gray-800">{t('dashboard:exam_error') || 'Exam Error'}</h3>
-                <p className="text-gray-500">{error || t('dashboard:exam_not_found') || 'Exam not found'}</p>
+            </div>
+            
+            <CardContent className="p-6 space-y-6">
+              <div className="space-y-3">
+                <p className="text-gray-700 leading-relaxed">
+                  {t('dashboard:exam_not_available_msg') || "Désolé, cet examen n'est pas disponible pour le moment. Cela peut arriver pour plusieurs raisons :"}
+                </p>
+                <ul className="space-y-2 text-sm text-gray-600 ml-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>{t('dashboard:exam_removed') || "L'examen a peut-être été supprimé ou déplacé"}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>{t('dashboard:exam_temp_unavailable') || "Le contenu est temporairement indisponible"}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>{t('dashboard:exam_access_issue') || "Vous n'avez peut-être pas accès à ce contenu"}</span>
+                  </li>
+                </ul>
               </div>
-              <Button onClick={() => navigate('/dashboard/home')} className="w-full">
-                <Home className="mr-2 h-4 w-4" />
-                {t('dashboard:back_to_dashboard') || 'Back to Dashboard'}
-              </Button>
+
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                <p className="text-sm text-blue-900 flex items-start gap-2">
+                  <Lightbulb className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{t('dashboard:try_refresh') || "Essayez de rafraîchir la page ou retournez au tableau de bord pour explorer d'autres contenus."}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                  className="flex-1 gap-2"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                  {t('dashboard:refresh_page') || 'Actualiser'}
+                </Button>
+                <Button 
+                  onClick={() => navigate('/dashboard/home')} 
+                  className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                >
+                  <Home className="h-4 w-4" />
+                  {t('dashboard:back_to_dashboard') || 'Tableau de bord'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -934,6 +982,17 @@ const ExamPage = () => {
                           <Users className="h-5 w-5 text-teal-600" />
                         </div>
                         <span className="text-xs font-medium">A Community</span>
+                      </button>
+
+                      {/* Resumes/Cours Button */}
+                      <button
+                        onClick={() => setShowResumesModal(true)}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-purple-50 text-purple-600 border-r border-gray-100"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-1">
+                          <BookOpen className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <span className="text-xs font-medium">Résumés</span>
                       </button>
 
                       {/* Ressayer Button */}
@@ -1533,6 +1592,14 @@ const ExamPage = () => {
             .filter(Boolean)}
           userLevel={20} // TODO: Pass actual user level from module stats
           requiredLevel={20}
+        />
+      )}
+
+      {showResumesModal && (
+        <ResumesModal
+          isOpen={showResumesModal}
+          onClose={() => setShowResumesModal(false)}
+          examData={examData}
         />
       )}
 

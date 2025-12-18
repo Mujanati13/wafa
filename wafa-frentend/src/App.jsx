@@ -37,6 +37,7 @@ import ExamParYears from "./pages/ExamParYears";
 import ExamCourses from "./pages/ExamCourses";
 import ImportExamParYears from "./pages/ImportExamParYears";
 import ImportExamParCourse from "./pages/ImportExamParCourse";
+import ImportQCMBanque from "./pages/ImportQCMBanque";
 import ImportResumes from "./pages/ImportResumes";
 import AddQuestions from "./pages/AddQuestions";
 import ImportImages from "./pages/ImportImages";
@@ -134,6 +135,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="importExamParYears" element={<ImportExamParYears />} />
+          <Route path="importQCMBanque" element={<ImportQCMBanque />} />
           <Route path="addQuestions" element={<AddQuestions />} />
           <Route path="importExplications" element={<ImportExplications />} />
           <Route
