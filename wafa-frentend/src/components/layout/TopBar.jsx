@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { Menu, Sun, Moon, Bell, Search, X, BookOpen, FileText, Trophy, User } from "lucide-react";
+import { Menu, Sun, Moon, Bell, Search, X, BookOpen, FileText, Trophy, User, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import logoImage from "@/assets/logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -184,7 +183,15 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
           </Button>
 
           {/* Logo */}
-          <img src={logoImage} alt="WAFA Logo" className="h-10 w-auto flex-shrink-0" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <GraduationCap className="h-5 w-5 text-white" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-bold text-gray-900 leading-none">WAFA</span>
+              <span className="text-xs text-gray-500">v1.1</span>
+            </div>
+          </div>
 
           {/* Search Bar - Compact */}
           <div ref={searchRef} className="relative hidden md:block">

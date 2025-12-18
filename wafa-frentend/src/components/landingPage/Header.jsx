@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, LogIn, UserPlus, LayoutDashboard, User } from 'lucide-react';
+import { Menu, X, LogIn, UserPlus, LayoutDashboard, User, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
-import logo from '@/assets/logo.png';
 
 const Header = () => {
   const { t } = useTranslation(['common', 'landing']);
@@ -106,11 +105,13 @@ const Header = () => {
             to="/" 
             className="flex items-center gap-2 group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
-            <img 
-              src={logo} 
-              alt="WAFA Logo" 
-              className="h-12 w-auto object-contain"
-            />
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-none">WAFA</span>
+              <span className="text-xs text-gray-500">v1.1</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -172,11 +173,15 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[320px] sm:w-[380px] flex flex-col p-0">
               <div className="flex items-center justify-between p-6 pb-4">
-                <img 
-                  src={logo} 
-                  alt="WAFA Logo" 
-                  className="h-12 w-auto object-contain"
-                />
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <GraduationCap className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-lg font-bold text-gray-900 leading-none">WAFA</span>
+                    <span className="text-xs text-gray-500">v1.1</span>
+                  </div>
+                </div>
               </div>
               
               <div className="px-6 pb-4">
