@@ -14,7 +14,7 @@ export const landingPageSettingsController = {
     // Update settings
     updateSettings: asyncHandler(async (req, res) => {
         let settings = await LandingPageSettings.findOne();
-        
+
         if (!settings) {
             settings = await LandingPageSettings.create(req.body);
         } else {
@@ -34,10 +34,27 @@ export const landingPageSettingsController = {
         });
     }),
 
+    // Update branding (site name, logo)
+    updateBranding: asyncHandler(async (req, res) => {
+        const { siteName, siteVersion, logoUrl } = req.body;
+
+        const settings = await LandingPageSettings.getSettings();
+        if (siteName !== undefined) settings.siteName = siteName;
+        if (siteVersion !== undefined) settings.siteVersion = siteVersion;
+        if (logoUrl !== undefined) settings.logoUrl = logoUrl;
+        await settings.save();
+
+        res.status(200).json({
+            success: true,
+            data: settings,
+            message: "Branding mis à jour"
+        });
+    }),
+
     // Update hero section
     updateHero: asyncHandler(async (req, res) => {
         const { heroTitle, heroSubtitle, heroDescription } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
         if (heroTitle) settings.heroTitle = heroTitle;
         if (heroSubtitle) settings.heroSubtitle = heroSubtitle;
@@ -54,7 +71,7 @@ export const landingPageSettingsController = {
     // Update timer settings
     updateTimer: asyncHandler(async (req, res) => {
         const { timerEnabled, timerEndDate, timerTitle } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
         if (timerEnabled !== undefined) settings.timerEnabled = timerEnabled;
         if (timerEndDate !== undefined) settings.timerEndDate = timerEndDate;
@@ -70,18 +87,18 @@ export const landingPageSettingsController = {
 
     // Update pricing
     updatePricing: asyncHandler(async (req, res) => {
-        const { 
-            pricingTitle, 
-            pricingSubtitle, 
+        const {
+            pricingTitle,
+            pricingSubtitle,
             freePlanFeatures,
             premiumMonthlyPrice,
             premiumMonthlyFeatures,
             premiumAnnualPrice,
             premiumAnnualFeatures
         } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
-        
+
         if (pricingTitle) settings.pricingTitle = pricingTitle;
         if (pricingSubtitle) settings.pricingSubtitle = pricingSubtitle;
         if (freePlanFeatures) settings.freePlanFeatures = freePlanFeatures;
@@ -89,7 +106,7 @@ export const landingPageSettingsController = {
         if (premiumMonthlyFeatures) settings.premiumMonthlyFeatures = premiumMonthlyFeatures;
         if (premiumAnnualPrice !== undefined) settings.premiumAnnualPrice = premiumAnnualPrice;
         if (premiumAnnualFeatures) settings.premiumAnnualFeatures = premiumAnnualFeatures;
-        
+
         await settings.save();
 
         res.status(200).json({
@@ -102,7 +119,7 @@ export const landingPageSettingsController = {
     // Update FAQ
     updateFAQ: asyncHandler(async (req, res) => {
         const { faqTitle, faqItems } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
         if (faqTitle) settings.faqTitle = faqTitle;
         if (faqItems) settings.faqItems = faqItems;
@@ -118,7 +135,7 @@ export const landingPageSettingsController = {
     // Update contact info
     updateContact: asyncHandler(async (req, res) => {
         const { contactEmail, contactPhone, whatsappNumber, facebookUrl, instagramUrl, youtubeUrl } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
         if (contactEmail) settings.contactEmail = contactEmail;
         if (contactPhone) settings.contactPhone = contactPhone;
@@ -138,7 +155,7 @@ export const landingPageSettingsController = {
     // Update promotion banner
     updatePromotion: asyncHandler(async (req, res) => {
         const { promotionEnabled, promotionText, promotionLink } = req.body;
-        
+
         const settings = await LandingPageSettings.getSettings();
         if (promotionEnabled !== undefined) settings.promotionEnabled = promotionEnabled;
         if (promotionText) settings.promotionText = promotionText;

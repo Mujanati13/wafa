@@ -56,9 +56,9 @@ const PRESET_COLORS = [
 
 // Difficulty levels with colors
 const DIFFICULTY_LEVELS = [
-  { value: "easy", label: "Facile", color: "#22c55e", bgColor: "bg-green-100", textColor: "text-green-700", borderColor: "border-green-300" },
-  { value: "medium", label: "Moyen", color: "#f59e0b", bgColor: "bg-amber-100", textColor: "text-amber-700", borderColor: "border-amber-300" },
-  { value: "hard", label: "Difficile", color: "#ef4444", bgColor: "bg-red-100", textColor: "text-red-700", borderColor: "border-red-300" },
+  { value: "easy", label: "Facile", color: "#6366f1", bgColor: "bg-indigo-100", textColor: "text-indigo-700", borderColor: "border-indigo-300" },
+  { value: "medium", label: "Moyen", color: "#22c55e", bgColor: "bg-green-100", textColor: "text-green-700", borderColor: "border-green-300" },
+  { value: "hard", label: "Difficile", color: "#06b6d4", bgColor: "bg-cyan-100", textColor: "text-cyan-700", borderColor: "border-cyan-300" },
 ];
 
 const NewModuleForm = ({ setShowNewModuleForm }) => {
@@ -131,7 +131,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -234,14 +234,13 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                         key={level.value}
                         type="button"
                         onClick={() => setDifficulty(level.value)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
-                          difficulty === level.value
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${difficulty === level.value
                             ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
                             : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
-                        <CircleDot 
-                          className="h-4 w-4" 
+                        <CircleDot
+                          className="h-4 w-4"
                           style={{ color: difficulty === level.value ? level.color : "#9ca3af" }}
                         />
                         <span className="font-medium">{level.label}</span>
@@ -281,11 +280,10 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                               <button
                                 key={color}
                                 type="button"
-                                className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${
-                                  selectedColor === color
+                                className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${selectedColor === color
                                     ? "border-gray-900 scale-110 ring-2 ring-blue-300"
                                     : "border-gray-300"
-                                }`}
+                                  }`}
                                 style={{ backgroundColor: color }}
                                 onClick={() => {
                                   setSelectedColor(color);
@@ -347,11 +345,10 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                       <button
                         type="button"
                         onClick={() => setContentType("url")}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
-                          contentType === "url"
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "url"
                             ? "bg-blue-50 border-blue-300 text-blue-700"
                             : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         <Image className="h-4 w-4" />
                         Image/PDF URL
@@ -359,11 +356,10 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                       <button
                         type="button"
                         onClick={() => setContentType("text")}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
-                          contentType === "text"
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "text"
                             ? "bg-purple-50 border-purple-300 text-purple-700"
                             : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         <FileText className="h-4 w-4" />
                         Texte

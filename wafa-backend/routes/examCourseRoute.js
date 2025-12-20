@@ -3,6 +3,9 @@ import { examCourseController } from "../controllers/examCourseController.js";
 
 const router = Router();
 
+// Admin seed endpoint
+router.post("/admin/createCategoriesForCourses", examCourseController.createCategoriesForCourses);
+
 // CRUD operations
 router.get("/", examCourseController.getAll);
 router.get("/:id", examCourseController.getById);

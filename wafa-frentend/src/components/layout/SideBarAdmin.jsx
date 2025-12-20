@@ -25,6 +25,7 @@ import {
   Settings,
   Bell,
   Shield,
+  Layout,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,31 +38,34 @@ import {
 } from "@/components/ui/collapsible";
 
 // Items that require super_admin role (editors cannot see these)
-const RESTRICTED_ITEMS = ['analytics', 'subscription', 'demandesDePayements', 'paypalSettings', 'landingSettings'];
-const RESTRICTED_CATEGORIES = ['payments']; // Entire category hidden for non-super-admins
+const RESTRICTED_ITEMS = ['analytics', 'subscription', 'paypalSettings'];
+const RESTRICTED_CATEGORIES = []; // Entire category hidden for non-super-admins
 
 const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
   const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Get user role from localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isSuperAdmin = user.adminRole === 'super_admin';
-  
+
   const [openCategories, setOpenCategories] = useState({
     overview: true,
     users: false,
-    content: false,
-    payments: false,
+    structure: false,
     exams: false,
+    content: false,
+    imports: false,
+    payments: false,
     settings: false,
   });
 
   const sidebarCategories = [
+    // =========== DASHBOARD ===========
     {
       id: "overview",
-      label: t('admin:overview'),
+      label: "📊 " + t('admin:overview'),
       icon: BarChart3,
       items: [
         {
@@ -78,9 +82,10 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
         },
       ],
     },
+    // =========== USERS ===========
     {
       id: "users",
-      label: t('admin:users'),
+      label: "👥 " + t('admin:users'),
       icon: Users,
       items: [
         {
@@ -91,78 +96,11 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
         },
       ],
     },
+    // =========== STRUCTURE (Semestres, Modules, Catégories) ===========
     {
-      id: "content",
-      label: t('admin:content'),
-      icon: Book,
-      items: [
-        {
-          id: "reportQuestions",
-          label: t('admin:report_questions'),
-          icon: FileQuestion,
-          path: "/admin/report-questions",
-        },
-        {
-          id: "explications",
-          label: t('admin:explications'),
-          icon: CheckSquare,
-          path: "/admin/explications",
-        },
-        {
-          id: "resumes",
-          label: t('admin:resumes'),
-          icon: FileText,
-          path: "/admin/resumes",
-        },
-        {
-          id: "importResumes",
-          label: t('admin:import_resumes'),
-          icon: FileDown,
-          path: "/admin/importResumes",
-        },
-        {
-          id: "importExplications",
-          label: t('admin:import_explications'),
-          icon: FileDown,
-          path: "/admin/importExplications",
-        },
-        {
-          id: "importImages",
-          label: t('admin:import_images'),
-          icon: Image,
-          path: "/admin/importImages",
-        },
-      ],
-    },
-    {
-      id: "payments",
-      label: t('admin:payments'),
-      icon: CreditCard,
-      items: [
-        {
-          id: "subscription",
-          label: t('admin:subscription_plans'),
-          icon: CreditCard,
-          path: "/admin/subscription",
-        },
-        {
-          id: "demandesDePayements",
-          label: t('admin:payment_requests'),
-          icon: DollarSign,
-          path: "/admin/demandes-de-paiements",
-        },
-        {
-          id: "paypalSettings",
-          label: t('admin:paypal_settings', 'Paramètres PayPal'),
-          icon: Settings,
-          path: "/admin/paypal-settings",
-        },
-      ],
-    },
-    {
-      id: "exams",
-      label: t('admin:exams'),
-      icon: BookOpenCheck,
+      id: "structure",
+      label: "🏗️ Structure",
+      icon: Component,
       items: [
         {
           id: "semesters",
@@ -188,6 +126,14 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           icon: Blocks,
           path: "/admin/createCategoriesForCourses",
         },
+      ],
+    },
+    // =========== EXAMENS ===========
+    {
+      id: "exams",
+      label: "📝 " + t('admin:exams'),
+      icon: BookOpenCheck,
+      items: [
         {
           id: "examParYears",
           label: t('admin:exam_par_years'),
@@ -200,6 +146,52 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           icon: BookOpenCheck,
           path: "/admin/examCourses",
         },
+        {
+          id: "qcmBanque",
+          label: "QCM Banque",
+          icon: BookOpenCheck,
+          path: "/admin/qcmBanque",
+        },
+        {
+          id: "addQuestions",
+          label: t('admin:add_questions'),
+          icon: FileQuestion,
+          path: "/admin/addQuestions",
+        },
+      ],
+    },
+    // =========== CONTENU (Résumés, Explications) ===========
+    {
+      id: "content",
+      label: "📚 " + t('admin:content'),
+      icon: Book,
+      items: [
+        {
+          id: "resumes",
+          label: t('admin:resumes'),
+          icon: FileText,
+          path: "/admin/resumes",
+        },
+        {
+          id: "explications",
+          label: t('admin:explications'),
+          icon: CheckSquare,
+          path: "/admin/explications",
+        },
+        {
+          id: "reportQuestions",
+          label: t('admin:report_questions'),
+          icon: FileQuestion,
+          path: "/admin/report-questions",
+        },
+      ],
+    },
+    // =========== IMPORTS ===========
+    {
+      id: "imports",
+      label: "📥 Imports",
+      icon: FileDown,
+      items: [
         {
           id: "importExamParYears",
           label: t('admin:import_exam_par_years'),
@@ -219,16 +211,55 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           path: "/admin/importQCMBanque",
         },
         {
-          id: "addQuestions",
-          label: t('admin:add_questions'),
-          icon: FileQuestion,
-          path: "/admin/addQuestions",
+          id: "importResumes",
+          label: t('admin:import_resumes'),
+          icon: FileDown,
+          path: "/admin/importResumes",
+        },
+        {
+          id: "importExplications",
+          label: t('admin:import_explications'),
+          icon: FileDown,
+          path: "/admin/importExplications",
+        },
+        {
+          id: "importImages",
+          label: t('admin:import_images'),
+          icon: Image,
+          path: "/admin/importImages",
         },
       ],
     },
+    // =========== PAIEMENTS ===========
+    {
+      id: "payments",
+      label: "💳 " + t('admin:payments'),
+      icon: CreditCard,
+      items: [
+        {
+          id: "subscription",
+          label: t('admin:subscription_plans'),
+          icon: CreditCard,
+          path: "/admin/subscription",
+        },
+        {
+          id: "demandesDePayements",
+          label: t('admin:payment_requests'),
+          icon: DollarSign,
+          path: "/admin/demandes-de-paiements",
+        },
+        {
+          id: "paypalSettings",
+          label: t('admin:paypal_settings', 'Paramètres PayPal'),
+          icon: Settings,
+          path: "/admin/paypal-settings",
+        },
+      ],
+    },
+    // =========== PARAMÈTRES ===========
     {
       id: "settings",
-      label: t('admin:settings', 'Paramètres'),
+      label: "⚙️ " + t('admin:settings', 'Paramètres'),
       icon: Settings,
       items: [
         {
@@ -245,8 +276,8 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
         },
         {
           id: "landingSettings",
-          label: t('admin:landing_settings', 'Page d\'accueil'),
-          icon: FileText,
+          label: t('admin:landing_settings', 'Paramètres Landing Page'),
+          icon: Layout,
           path: "/admin/landing-settings",
         },
         {
@@ -264,7 +295,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     if (isSuperAdmin) {
       return sidebarCategories; // Super admin sees everything
     }
-    
+
     return sidebarCategories
       .filter(category => !RESTRICTED_CATEGORIES.includes(category.id))
       .map(category => ({
@@ -289,7 +320,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     <div className="relative flex flex-col h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-3"
@@ -324,11 +355,11 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           {filteredCategories.map((category, idx) => {
             const CategoryIcon = category.icon;
             const isOpen = openCategories[category.id];
-            
+
             return (
               <div key={category.id}>
                 {idx > 0 && <Separator className="my-3" />}
-                
+
                 <Collapsible
                   open={isOpen}
                   onOpenChange={() => toggleCategory(category.id)}
@@ -369,7 +400,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
                     {category.items.map((item) => {
                       const ItemIcon = item.icon;
                       const isActive = isPathActive(item.path);
-                      
+
                       return (
                         <Button
                           key={item.id}

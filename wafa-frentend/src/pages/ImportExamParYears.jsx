@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -14,37 +14,40 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Calendar } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, Calendar, Loader2 } from "lucide-react";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ImportExamParYears = () => {
   const { t } = useTranslation(['admin', 'common']);
-  const modules = useMemo(
-    () => [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-    ],
-    []
-  );
+  const [modules, setModules] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const examsByModule = useMemo(
-    () => ({
-      "Anatomie 1": [
-        "Anatomie 1 - 2021",
-        "Anatomie 1 - 2022",
-        "Anatomie 1 - 2023",
-      ],
-      Biophysique: ["Biophysique - 2022", "Biophysique - 2023"],
-      Embryologie: ["Embryologie - 2021", "Embryologie - 2024"],
-      Histologie: ["Histologie - 2023"],
-      "Physiologie 1": ["Physiologie 1 - 2022", "Physiologie 1 - 2023"],
-      "Biochimie 1": ["Biochimie 1 - 2023"],
-    }),
-    []
-  );
+  useEffect(() => {
+    fetchModules();
+    fetchExams();
+  }, []);
+
+  const fetchModules = async () => {
+    try {
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchExams = async () => {
+    try {
+      const { data } = await api.get("/exams/all");
+      setExams(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching exams:", err);
+    }
+  };
 
   const [selectedModule, setSelectedModule] = useState("");
   const [selectedExam, setSelectedExam] = useState("");
@@ -84,30 +87,26 @@ const ImportExamParYears = () => {
     // Placeholder handler. Wire to API later.
     alert(
       `Import ready:\nModule: ${selectedModule}\nExam: ${selectedExam}\nExcel: ${excelFile?.name}\n` +
-        `Images rows: ${imageMappings.length}\nSub-modules rows: ${subModuleMappings.length}`
+      `Images rows: ${imageMappings.length}\nSub-modules rows: ${subModuleMappings.length}`
     );
   };
 
-  const examOptions = selectedModule ? examsByModule[selectedModule] || [] : [];
+  // Filter exams by selected module
+  const examOptions = selectedModule
+    ? exams.filter(e => (e.moduleId?._id || e.moduleId) === selectedModule || e.moduleName === modules.find(m => m._id === selectedModule)?.name)
+    : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-500 p-6 text-white shadow-lg flex justify-between items-center"
-        >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Importer Examens par Années</h1>
-            <p className="text-indigo-100">
-              Importez les questions depuis un fichier Excel
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900">Importer Examens par Années</h2>
+            <p className="text-gray-600">Importez les questions depuis un fichier Excel</p>
           </div>
-          <Calendar className="w-12 h-12 opacity-80" />
-        </motion.div>
+          <Calendar className="w-10 h-10 text-blue-600" />
+        </div>
 
         {/* Source Section */}
         <motion.div

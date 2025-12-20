@@ -34,12 +34,12 @@ export const reportQuestionsController = {
     getAll: asyncHandler(async (req, res) => {
         const reports = await ReportQuestions.find()
             .populate({ path: "userId", select: "username email" })
-            .populate({ 
-                path: "questionId", 
+            .populate({
+                path: "questionId",
                 select: "text examId sessionLabel",
                 populate: {
                     path: "examId",
-                    select: "name year moduleId",
+                    select: "name year moduleId category courseName totalQuestions linkedQuestions",
                     populate: {
                         path: "moduleId",
                         select: "name category"
@@ -58,6 +58,13 @@ export const reportQuestionsController = {
             examYear: r.questionId?.examId?.year,
             moduleName: r.questionId?.examId?.moduleId?.name,
             moduleCategory: r.questionId?.examId?.moduleId?.category,
+            // Course specific fields
+            courseCategory: r.questionId?.examId?.category || null,
+            courseName: r.questionId?.examId?.courseName || r.questionId?.examId?.name,
+            // Number of questions in the exam/course
+            numberOfQuestions: r.questionId?.examId?.totalQuestions ||
+                r.questionId?.examId?.linkedQuestions?.length ||
+                null,
         }));
 
         res.status(200).json({ success: true, data: shaped });
@@ -118,19 +125,19 @@ export const reportQuestionsController = {
         const { id } = req.params;
         const updated = await ReportQuestions.findByIdAndUpdate(
             id,
-            { status: "approved" },
+            { status: "resolved" },
             { new: true, runValidators: true }
         )
             .populate({ path: "userId", select: "username" })
             .populate({ path: "questionId", select: "text" })
             .lean();
-        
+
         if (!updated) {
             return res.status(404).json({ success: false, message: "Report not found" });
         }
-        
-        res.status(200).json({ 
-            success: true, 
+
+        res.status(200).json({
+            success: true,
             message: "Report approved successfully",
             data: {
                 ...updated,
@@ -150,13 +157,13 @@ export const reportQuestionsController = {
             .populate({ path: "userId", select: "username" })
             .populate({ path: "questionId", select: "text" })
             .lean();
-        
+
         if (!updated) {
             return res.status(404).json({ success: false, message: "Report not found" });
         }
-        
-        res.status(200).json({ 
-            success: true, 
+
+        res.status(200).json({
+            success: true,
             message: "Report rejected successfully",
             data: {
                 ...updated,
@@ -172,9 +179,9 @@ export const reportQuestionsController = {
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         const filter = {};
-        
+
         // Status filter
-        if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+        if (status && ['pending', 'resolved', 'rejected'].includes(status)) {
             filter.status = status;
         }
 
@@ -191,8 +198,8 @@ export const reportQuestionsController = {
 
         let reports = await ReportQuestions.find(filter)
             .populate({ path: "userId", select: "username email" })
-            .populate({ 
-                path: "questionId", 
+            .populate({
+                path: "questionId",
                 select: "text examId sessionLabel options",
                 populate: {
                     path: "examId",
@@ -209,7 +216,7 @@ export const reportQuestionsController = {
         // Search filter (applied after population)
         if (search) {
             const searchLower = search.toLowerCase();
-            reports = reports.filter(r => 
+            reports = reports.filter(r =>
                 r.userId?.username?.toLowerCase().includes(searchLower) ||
                 r.userId?.email?.toLowerCase().includes(searchLower)
             );
@@ -250,11 +257,11 @@ export const reportQuestionsController = {
     // Get detailed report with full question context
     getReportDetails: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        
+
         const report = await ReportQuestions.findById(id)
             .populate({ path: "userId", select: "username email profilePicture" })
-            .populate({ 
-                path: "questionId", 
+            .populate({
+                path: "questionId",
                 select: "text options images note sessionLabel examId",
                 populate: {
                     path: "examId",
@@ -266,7 +273,7 @@ export const reportQuestionsController = {
                 }
             })
             .lean();
-            
+
         if (!report) {
             return res.status(404).json({ success: false, message: "Report not found" });
         }

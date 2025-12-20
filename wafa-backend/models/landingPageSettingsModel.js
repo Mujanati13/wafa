@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 
 const landingPageSettingsSchema = new mongoose.Schema(
     {
+        // Branding
+        siteName: {
+            type: String,
+            default: "WAFA",
+        },
+        siteVersion: {
+            type: String,
+            default: "v1.1",
+        },
+        logoUrl: {
+            type: String,
+            default: "",
+        },
+
         // Hero Section
         heroTitle: {
             type: String,
@@ -39,7 +53,7 @@ const landingPageSettingsSchema = new mongoose.Schema(
             type: String,
             default: "Choisissez le plan qui vous convient",
         },
-        
+
         // Individual plan prices and features
         freePlanFeatures: {
             type: [String],
@@ -124,7 +138,7 @@ const landingPageSettingsSchema = new mongoose.Schema(
 );
 
 // Ensure only one settings document exists
-landingPageSettingsSchema.statics.getSettings = async function() {
+landingPageSettingsSchema.statics.getSettings = async function () {
     let settings = await this.findOne();
     if (!settings) {
         settings = await this.create({});

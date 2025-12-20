@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
@@ -20,69 +20,42 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Save, Upload, ImageIcon } from "lucide-react";
-
-const examNamesByModule = {
-  "Anatomie 1": ["Session principale 2023", "Rattrapage 2022"],
-  Biophysique: ["Quiz 1", "Final 2023"],
-};
-const tpNamesByModule = {
-  "Anatomie 1": ["TP 1", "TP 2"],
-  Biophysique: ["TP mécanique", "TP optique"],
-};
-const qcmNamesByModule = {
-  "Anatomie 1": ["QCM 1", "QCM 2"],
-  Biophysique: ["QCM Intro", "QCM Avancé"],
-};
-const yearNames = ["2021", "2022", "2023", "2024"];
+import { Save, Upload, ImageIcon, Loader2 } from "lucide-react";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ImportImages = () => {
   const { t } = useTranslation(['admin', 'common']);
-  const modules = useMemo(
-    () => [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-    ],
-    []
-  );
 
-  const catalog = useMemo(
-    () => ({
-      "Anatomie 1": {
-        categories: {
-          Osteologie: {
-            courses: {
-              "Membre supérieur": {},
-              "Membre inférieur": {},
-            },
-          },
-          Neurologie: { courses: { Encéphale: {} } },
-        },
-      },
-      Biophysique: {
-        categories: {
-          Mécanique: { courses: { Cinétiques: {} } },
-        },
-      },
-      Embryologie: {
-        categories: { Général: { courses: { Bases: {} } } },
-      },
-      Histologie: {
-        categories: { Tissus: { courses: { Épithélium: {} } } },
-      },
-      "Physiologie 1": {
-        categories: { Cardio: { courses: { ECG: {} } } },
-      },
-      "Biochimie 1": {
-        categories: { Métabolisme: { courses: { Glucides: {} } } },
-      },
-    }),
-    []
-  );
+  const [modules, setModules] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [modulesRes, examsRes] = await Promise.all([
+        api.get("/modules"),
+        api.get("/exams/all")
+      ]);
+      setModules(modulesRes.data?.data || []);
+      setExams(examsRes.data?.data || []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get exams filtered by module
+  const getExamsForModule = (moduleId) => {
+    return exams.filter(e => (e.moduleId?._id || e.moduleId) === moduleId);
+  };
 
   // Base selections
   const [selectedModule, setSelectedModule] = useState("");
@@ -111,8 +84,8 @@ const ImportImages = () => {
     : [];
   const courseOptions = selectedCategory
     ? Object.keys(
-        catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
-      )
+      catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
+    )
     : [];
 
   const hasContextSelected = (() => {
@@ -171,20 +144,15 @@ const ImportImages = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
-        {/* Header with gradient background */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-cyan-600 to-teal-500 p-6 text-white shadow-lg"
-        >
-          <h1 className="text-3xl font-bold mb-2">Import Images</h1>
-          <p className="text-cyan-100">
-            Select module and exam context, specify question numbers, then upload images.
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Import Images</h2>
+            <p className="text-gray-600">Select module and exam context, specify question numbers, then upload images.</p>
+          </div>
+        </div>
 
         {/* Main Form */}
         <motion.div

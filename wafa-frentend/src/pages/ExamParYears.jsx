@@ -39,22 +39,69 @@ const ExamParYears = () => {
 
   useEffect(() => {
     fetchExams();
+    fetchModules();
   }, [showCreateForm]);
 
-  const handleAddExam = () => {
+  const [modules, setModules] = useState([]);
+
+  const fetchModules = async () => {
+    try {
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+    }
+  };
+
+  const handleAddExam = async () => {
     if (!formData.examName || !formData.moduleName || !formData.year) {
       toast.error(t('admin:fill_required_fields'));
       return;
     }
-    setShowAddExamForm(false);
-    setFormData({
-      examName: "",
-      moduleName: "",
-      year: "",
-      imageUrl: "",
-      helpText: "",
-    });
-    toast.success(t('admin:exam_added_success'));
+
+    try {
+      // Find module ID from name
+      const selectedModule = modules.find(m => m.name === formData.moduleName);
+      if (!selectedModule) {
+        toast.error("Module non trouvé");
+        return;
+      }
+
+      await api.post("/exams/create", {
+        name: formData.examName,
+        moduleId: selectedModule._id,
+        year: formData.year,
+        imageUrl: formData.imageUrl || "",
+        infoText: formData.helpText || "",
+      });
+
+      setShowAddExamForm(false);
+      setFormData({
+        examName: "",
+        moduleName: "",
+        year: "",
+        imageUrl: "",
+        helpText: "",
+      });
+      toast.success(t('admin:exam_added_success'));
+      fetchExams();
+    } catch (err) {
+      console.error("Error creating exam:", err);
+      toast.error("Erreur lors de la création de l'examen");
+    }
+  };
+
+  const handleDeleteExam = async (examId) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet examen ?")) return;
+
+    try {
+      await api.delete(`/exams/delete/${examId}`);
+      toast.success("Examen supprimé avec succès");
+      fetchExams();
+    } catch (err) {
+      console.error("Error deleting exam:", err);
+      toast.error("Erreur lors de la suppression");
+    }
   };
 
   const handleFormChange = (field, value) => {
@@ -164,7 +211,7 @@ const ExamParYears = () => {
 
   return (
     <div className="min-h-screen bg-white">
-    
+
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Action Bar */}
@@ -279,7 +326,12 @@ const ExamParYears = () => {
                             <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteExam(exam.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>

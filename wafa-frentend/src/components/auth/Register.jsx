@@ -58,14 +58,14 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error(t('common:error'), {
         description: t('auth:password_mismatch'),
       });
       return;
     }
-    
+
     if (!formData.acceptTerms) {
       toast.error(t('common:error'), {
         description: t('auth:terms_and_conditions'),
@@ -74,38 +74,38 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       const userData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         newsletter: formData.newsletter
       };
-      
+
       const result = await registerWithEmail(
         formData.email,
         formData.password,
         userData
       );
-      
+
       if (result.needsVerification) {
         toast.success(t('auth:account_created'), {
           description: result.message || t('auth:email_verified'),
           duration: 5000,
         });
-        
+
         // Redirect to Firebase email verification page
         navigate('/verify-email-firebase', { state: { email: formData.email } });
       } else {
         toast.success(t('auth:account_created'), {
           description: t('auth:account_created'),
         });
-        
+
         navigate('/dashboard/home');
       }
     } catch (error) {
       const errorMessage = error.message || 'Une erreur est survenue. Veuillez réessayer.';
-      
+
       // Check if error mentions Google sign-in
       if (errorMessage.includes('Google') || errorMessage.includes('google')) {
         toast.error(t('auth:email_already_exists'), {
@@ -129,14 +129,14 @@ const Register = () => {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
-    
+
     try {
       const result = await loginWithGoogle();
-      
+
       toast.success(t('auth:account_created'), {
         description: t('auth:account_created'),
       });
-      
+
       // Redirect to dashboard
       setTimeout(() => {
         navigate('/dashboard/home');
@@ -180,22 +180,31 @@ const Register = () => {
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-200 rounded-full opacity-25 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-2xl"
       >
+        {/* Back Button - Top Left */}
+        <Link
+          to="/"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('common:back')}
+        </Link>
+
         {/* Logo & Language Switcher */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block group">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              <img 
-                src={logo} 
-                alt="WAFA Logo" 
+              <img
+                src={logo}
+                alt="WAFA Logo"
                 className="h-16 w-auto mx-auto object-contain"
               />
             </motion.div>
@@ -290,7 +299,7 @@ const Register = () => {
                     )}
                   </Button>
                 </div>
-                
+
                 {/* Password Strength */}
                 {formData.password && (
                   <div className="space-y-2">
@@ -302,7 +311,7 @@ const Register = () => {
                       </span>
                     </div>
                     <Progress value={passwordStrength * 20} className="h-2" />
-                    
+
                     {/* Requirements */}
                     <div className="space-y-1 text-xs">
                       {passwordRequirements.map((req, idx) => (
@@ -422,9 +431,9 @@ const Register = () => {
               </div>
 
               {/* Google Sign Up Button */}
-              <Button 
-                variant="outline" 
-                type="button" 
+              <Button
+                variant="outline"
+                type="button"
                 disabled={isLoading}
                 onClick={handleGoogleSignUp}
                 className="w-full"
@@ -448,17 +457,6 @@ const Register = () => {
             </div>
           </CardFooter>
         </Card>
-
-        {/* Back to Home Link */}
-        <div className="text-center mt-6">
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common:back_to_home')}
-          </Link>
-        </div>
       </motion.div>
     </div>
   );

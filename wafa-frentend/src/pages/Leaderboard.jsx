@@ -13,12 +13,12 @@ import { moduleService } from "@/services/moduleService";
 import { toast } from "sonner";
 
 const studentYears = [
+  { value: "all", label: "student year (all-1-2-3-4-5)" },
   { value: "1", label: "1ère année" },
   { value: "2", label: "2ème année" },
   { value: "3", label: "3ème année" },
   { value: "4", label: "4ème année" },
   { value: "5", label: "5ème année" },
-  { value: "6", label: "6ème année" },
 ];
 
 // Level calculation based on total points
@@ -39,6 +39,7 @@ const Leaderboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [studentYear, setStudentYear] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [pointType, setPointType] = useState("normal"); // normal, report, explication
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -129,9 +130,10 @@ const Leaderboard = () => {
   const handleClearFilters = () => {
     setSearchTerm("");
     setStudentYear("all");
+    setPointType("normal");
   };
 
-  const activeFilterCount = (searchTerm ? 1 : 0) + (studentYear !== "all" ? 1 : 0);
+  const activeFilterCount = (searchTerm ? 1 : 0) + (studentYear !== "all" ? 1 : 0) + (pointType !== "normal" ? 1 : 0);
 
   // Filter logic (client-side search only)
   const filteredData = leaderboardData.filter(
@@ -194,7 +196,44 @@ const Leaderboard = () => {
         </div>
 
         {/* Search & Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          {/* Point Type Selector */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Type de points:</label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={pointType === "normal" ? "default" : "outline"}
+                onClick={() => setPointType("normal")}
+                className={`flex items-center gap-2 ${
+                  pointType === "normal" ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-blue-50"
+                }`}
+              >
+                <Star className="w-4 h-4" />
+                Points Normaux
+              </Button>
+              <Button
+                variant={pointType === "report" ? "default" : "outline"}
+                onClick={() => setPointType("report")}
+                className={`flex items-center gap-2 ${
+                  pointType === "report" ? "bg-green-600 hover:bg-green-700" : "hover:bg-green-50"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Points Report
+              </Button>
+              <Button
+                variant={pointType === "explication" ? "default" : "outline"}
+                onClick={() => setPointType("explication")}
+                className={`flex items-center gap-2 ${
+                  pointType === "explication" ? "bg-yellow-600 hover:bg-yellow-700" : "hover:bg-yellow-50"
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+                Points Explication
+              </Button>
+            </div>
+          </div>
+
           <TableFilters
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
@@ -229,29 +268,26 @@ const Leaderboard = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-700">
                     <div className="flex items-center gap-1">
                       <GraduationCap className="w-4 h-4" />
-                      Année
+                      year
                     </div>
                   </th>
                   <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    <div className="flex items-center justify-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      Normal
-                    </div>
+                    Points
                   </th>
                   <th className="text-center py-3 px-4 font-medium text-gray-700">
                     <div className="flex items-center justify-center gap-1">
                       <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Bleu
+                      bleu points
                     </div>
                   </th>
                   <th className="text-center py-3 px-4 font-medium text-gray-700">
                     <div className="flex items-center justify-center gap-1">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      Vert
+                      vert poits
                     </div>
                   </th>
                   <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    Niveau
+                    level
                   </th>
                 </tr>
               </thead>
@@ -306,23 +342,27 @@ const Leaderboard = () => {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            {user.currentYear ? `${user.currentYear}ème année` : '-'}
-                          </Badge>
+                          <span className="text-gray-700">
+                            {user.currentYear ? `${user.currentYear}eme` : '-'}
+                          </span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <span className="font-bold text-yellow-600">{user.normalPoints}</span>
+                          <span className="font-bold text-gray-900">{user.normalPoints}</span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <span className="font-bold text-blue-600">{user.bluePoints}</span>
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="font-bold text-blue-600">{user.bluePoints}</span>
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          </div>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <span className="font-bold text-green-600">{user.greenPoints}</span>
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="font-bold text-green-600">{user.greenPoints}</span>
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          </div>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <Badge className={`${levelInfo.color} text-white`}>
-                            Nv. {levelInfo.level} - {levelInfo.name}
-                          </Badge>
+                          <span className="font-bold text-gray-900">{levelInfo.level}</span>
                         </td>
                       </tr>
                     );

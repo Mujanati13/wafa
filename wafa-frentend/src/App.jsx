@@ -38,6 +38,7 @@ import ExamCourses from "./pages/ExamCourses";
 import ImportExamParYears from "./pages/ImportExamParYears";
 import ImportExamParCourse from "./pages/ImportExamParCourse";
 import ImportQCMBanque from "./pages/ImportQCMBanque";
+import QCMBanque from "./pages/QCMBanque";
 import ImportResumes from "./pages/ImportResumes";
 import AddQuestions from "./pages/AddQuestions";
 import ImportImages from "./pages/ImportImages";
@@ -125,6 +126,7 @@ export default function App() {
           <Route path="examParYears" element={<ExamParYears />} />
           <Route path="importExamParCourse" element={<ImportExamParCourse />} />
           <Route path="examCourses" element={<ExamCourses />} />
+          <Route path="qcmBanque" element={<QCMBanque />} />
           <Route path="resumes" element={<Resumes />} />
           <Route path="importResumes" element={<ImportResumes />} />
           <Route path="importImages" element={<ImportImages />} />
@@ -147,7 +149,7 @@ export default function App() {
           <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
         </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
-        
+
         {/* 404 Not Found - Must be last */}
         <Route path="*" element={<NotFound />} />
       </Routes>

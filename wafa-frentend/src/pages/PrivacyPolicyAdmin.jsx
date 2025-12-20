@@ -84,11 +84,35 @@ Vos données sont utilisées pour :
 - Communiquer avec vous
 - Assurer la sécurité de la plateforme
 
-## 4. Sécurité
+## 4. Conditions de l'Utilisation
+
+En utilisant la plateforme WAFA, vous acceptez les conditions suivantes :
+
+### Utilisation Acceptable
+- Utiliser la plateforme uniquement à des fins éducatives personnelles
+- Respecter les droits de propriété intellectuelle
+- Maintenir un comportement respectueux envers les autres utilisateurs
+- Signaler tout contenu inapproprié ou erreur
+- Respecter les règles du système de points et du classement
+
+### Utilisations Interdites
+- Partager, revendre ou distribuer le contenu de la plateforme
+- Copier ou reproduire les questions, explications ou résumés
+- Utiliser des scripts, bots ou outils automatisés
+- Tenter de contourner les mesures de sécurité
+- Créer plusieurs comptes pour manipuler le classement
+- Publier du contenu offensant, diffamatoire ou illégal
+
+### Compte Utilisateur
+- Un compte est strictement personnel et ne peut être partagé
+- Vous êtes responsable de la confidentialité de vos identifiants
+- Toute violation peut entraîner la suspension de votre compte
+
+## 5. Sécurité
 
 Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos données.
 
-## 5. Vos Droits
+## 6. Vos Droits
 
 Vous avez le droit de :
 - Accéder à vos données
@@ -96,11 +120,18 @@ Vous avez le droit de :
 - Supprimer vos données
 - Vous opposer au traitement
 
-## 6. Cookies
+## 7. Cookies
 
 Nous utilisons des cookies pour améliorer votre expérience.
 
-## 7. Contact
+## 8. Abonnements et Paiements
+
+- Les paiements sont traités de manière sécurisée via PayPal
+- Les abonnements sont facturés selon la période choisie
+- Le renouvellement est automatique sauf annulation préalable
+- Remboursement possible dans les 14 jours suivant l'achat
+
+## 9. Contact
 
 Pour toute question concernant cette politique, contactez-nous à : contact@wafa.ma
 `;

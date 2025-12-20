@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/shared";
 import NewExamCourseForm from "@/components/admin/NewExamCourseForm";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ExamCourses = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -25,42 +27,56 @@ const ExamCourses = () => {
   const [formData, setFormData] = useState({
     courseName: "",
     moduleName: "",
-    subModuleName: "",
     category: "",
     imageUrl: "",
     helpText: "",
   });
 
-  const examCourses = useMemo(() => {
-    const placeholderImage = "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Course";
-    const modules = ["Anatomie 1", "Biophysique", "Embryologie", "Histologie", "Physiologie 1", "Biochimie 1", "Biostatistiques 1", "Génétique", "Sémiologie 1", "Microbiologie 1", "Immunologie", "Hématologie"];
-    const subModules = ["Système cardiovasculaire", "Système respiratoire", "Système digestif", "Système nerveux", "Système musculo-squelettique", "Système endocrinien", "Système urinaire", "Système reproducteur"];
-    const categories = ["Théorique", "Pratique", "Clinique", "Laboratoire", "Recherche", "Évaluation"];
+  const [examCourses, setExamCourses] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const placeholderImage = "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Course";
 
-    let id = 1;
-    const list = [];
-
-    modules.forEach((module, moduleIdx) => {
-      subModules.forEach((subModule, subModuleIdx) => {
-        if (Math.random() > 0.4) {
-          const category = categories[Math.floor(Math.random() * categories.length)];
-          list.push({
-            id: id++,
-            moduleName: module,
-            subModuleName: subModule,
-            category: category,
-            courseName: `${subModule} - ${module}`,
-            imageUrl: placeholderImage,
-            helpText: `Informations et explications pour ${subModule} dans ${module}`,
-            totalQuestions: 25 + ((id + moduleIdx + subModuleIdx) % 60),
-            status: Math.random() > 0.5 ? "active" : "draft",
-          });
-        }
-      });
-    });
-
-    return list;
+  useEffect(() => {
+    fetchCourses();
+    fetchModules();
   }, []);
+
+  const fetchModules = async () => {
+    try {
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data } = await api.get("/exam-courses");
+      const list = (data?.data || []).map((c) => ({
+        id: c._id,
+        moduleName: c.moduleName || c.moduleId?.name || "",
+        moduleId: c.moduleId?._id || c.moduleId || "",
+        category: c.category || "",
+        courseName: c.name || "",
+        imageUrl: c.imageUrl || placeholderImage,
+        helpText: c.helpText || "",
+        totalQuestions: c.totalQuestions || 0,
+        status: c.status || "active",
+      }));
+      setExamCourses(list);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      setError("Erreur lors du chargement des cours");
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCourses = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -70,7 +86,6 @@ const ExamCourses = () => {
       const passesSearch =
         course.courseName.toLowerCase().includes(term) ||
         course.moduleName.toLowerCase().includes(term) ||
-        course.subModuleName.toLowerCase().includes(term) ||
         course.category.toLowerCase().includes(term) ||
         String(course.id).includes(term);
       return passesModule && passesCategory && passesSearch;
@@ -124,29 +139,72 @@ const ExamCourses = () => {
     return <div className="flex items-center gap-2">{buttons}</div>;
   };
 
-  const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName)));
-  const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category)));
+  const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName))).filter(Boolean);
+  const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category))).filter(Boolean);
+  const CATEGORIES = ["Théorique", "Pratique", "Clinique", "Laboratoire", "Recherche", "Évaluation"];
 
-  const handleAddCourse = () => {
+  const handleAddCourse = async () => {
     if (!formData.courseName || !formData.moduleName || !formData.category) {
-      alert(t('admin:fill_required_fields'));
+      toast.error(t('admin:fill_required_fields'));
       return;
     }
-    setShowAddCourseForm(false);
-    setFormData({
-      courseName: "",
-      moduleName: "",
-      subModuleName: "",
-      category: "",
-      imageUrl: "",
-      helpText: "",
-    });
-    alert(t('admin:course_added_success'));
+
+    try {
+      // Find module ID from name
+      const selectedModule = modules.find(m => m.name === formData.moduleName);
+      if (!selectedModule) {
+        toast.error("Module non trouvé");
+        return;
+      }
+
+      await api.post("/exam-courses", {
+        name: formData.courseName,
+        moduleId: selectedModule._id,
+        category: formData.category,
+        imageUrl: formData.imageUrl || "",
+        helpText: formData.helpText || "",
+      });
+
+      setShowAddCourseForm(false);
+      setFormData({
+        courseName: "",
+        moduleName: "",
+        category: "",
+        imageUrl: "",
+        helpText: "",
+      });
+      toast.success(t('admin:course_added_success'));
+      fetchCourses();
+    } catch (err) {
+      console.error("Error creating course:", err);
+      toast.error("Erreur lors de la création du cours");
+    }
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce cours ?")) return;
+
+    try {
+      await api.delete(`/exam-courses/${courseId}`);
+      toast.success("Cours supprimé avec succès");
+      fetchCourses();
+    } catch (err) {
+      console.error("Error deleting course:", err);
+      toast.error("Erreur lors de la suppression");
+    }
   };
 
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -220,7 +278,6 @@ const ExamCourses = () => {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Module</TableHead>
-                    <TableHead>Sous-Module</TableHead>
                     <TableHead>Catégorie</TableHead>
                     <TableHead>Nom du Cours</TableHead>
                     <TableHead>Image</TableHead>
@@ -232,7 +289,7 @@ const ExamCourses = () => {
                 <TableBody>
                   {currentCourses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                         Aucun cours trouvé
                       </TableCell>
                     </TableRow>
@@ -241,7 +298,6 @@ const ExamCourses = () => {
                       <TableRow key={course.id}>
                         <TableCell className="font-mono text-sm">{course.id}</TableCell>
                         <TableCell className="font-medium">{course.moduleName}</TableCell>
-                        <TableCell className="font-medium">{course.subModuleName}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{course.category}</Badge>
                         </TableCell>
@@ -263,7 +319,12 @@ const ExamCourses = () => {
                             <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteCourse(course.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -331,15 +392,7 @@ const ExamCourses = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-black font-medium">Sous-Module</Label>
-                    <Input
-                      placeholder="Ex: Système cardiovasculaire"
-                      value={formData.subModuleName}
-                      onChange={(e) => handleFormChange("subModuleName", e.target.value)}
-                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
-                    />
-                  </div>
+
 
                   <div className="space-y-2">
                     <Label className="text-black font-medium">Catégorie *</Label>

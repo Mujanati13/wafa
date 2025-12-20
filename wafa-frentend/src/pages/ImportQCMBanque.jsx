@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 const ImportQCMBanque = () => {
   const { t } = useTranslation(['admin', 'common']);
-  
+
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState("");
@@ -94,7 +94,7 @@ const ImportQCMBanque = () => {
 
   const handleImport = async () => {
     if (!canImport) return;
-    
+
     setImporting(true);
     try {
       // Prepare form data
@@ -102,11 +102,11 @@ const ImportQCMBanque = () => {
       formData.append('moduleId', selectedModule);
       formData.append('file', excelFile);
       formData.append('type', 'qcm-banque');
-      
+
       if (selectedCategory) {
         formData.append('defaultCategory', selectedCategory);
       }
-      
+
       // Add image mappings
       imageMappings.forEach((mapping, index) => {
         if (mapping.file && mapping.questionNumbers) {
@@ -114,7 +114,7 @@ const ImportQCMBanque = () => {
           formData.append(`images[${index}][questions]`, mapping.questionNumbers);
         }
       });
-      
+
       // Add category mappings
       categoryMappings.forEach((mapping, index) => {
         if (mapping.category && mapping.questionNumbers) {
@@ -125,16 +125,16 @@ const ImportQCMBanque = () => {
 
       // TODO: Wire to actual API endpoint
       // await questionService.importQCMBanque(formData);
-      
+
       toast.success('Import réussi', {
         description: `Questions importées dans ${modules.find(m => m._id === selectedModule)?.name || 'le module'}`
       });
-      
+
       // Reset form
       setExcelFile(null);
       setImageMappings([{ id: crypto.randomUUID(), file: null, questionNumbers: "" }]);
       setCategoryMappings([{ id: crypto.randomUUID(), category: "", questionNumbers: "" }]);
-      
+
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Erreur lors de l\'import', {
@@ -146,23 +146,16 @@ const ImportQCMBanque = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 p-6 text-white shadow-lg flex justify-between items-center"
-        >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Importer QCM Banque</h1>
-            <p className="text-emerald-100">
-              Importez des questions pour la banque de QCM depuis un fichier Excel
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900">Importer QCM Banque</h2>
+            <p className="text-gray-600">Importez des questions pour la banque de QCM depuis un fichier Excel</p>
           </div>
-          <Database className="w-12 h-12 opacity-80" />
-        </motion.div>
+          <Database className="w-10 h-10 text-blue-600" />
+        </div>
 
         {/* Source Section */}
         <motion.div

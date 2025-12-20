@@ -14,12 +14,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Trash2, 
-  Link, 
-  BookOpen, 
-  ChevronRight, 
+import {
+  Plus,
+  Trash2,
+  Link,
+  BookOpen,
+  ChevronRight,
   Loader2,
   CheckCircle,
   AlertCircle,
@@ -49,27 +49,27 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const ImportExamParCourse = () => {
   const { t } = useTranslation(['admin', 'common']);
-  
+
   // State for modules and courses
   const [modules, setModules] = useState([]);
   const [examCourses, setExamCourses] = useState([]);
   const [examYears, setExamYears] = useState([]);
   const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
-  
+
   // Loading states
   const [loadingModules, setLoadingModules] = useState(true);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingExamYears, setLoadingExamYears] = useState(false);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [linking, setLinking] = useState(false);
-  
+
   // Selection state
   const [selectedModule, setSelectedModule] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
-  
+
   // Dialog for viewing questions
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
-  
+
   // Question linking mappings
   const [yearMappings, setYearMappings] = useState([
     { id: crypto.randomUUID(), examYearId: "", yearName: "", questionNumbers: "" },
@@ -248,23 +248,16 @@ const ImportExamParCourse = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-rose-600 to-orange-500 p-6 text-white shadow-lg flex justify-between items-center"
-        >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Lier Questions aux Cours</h1>
-            <p className="text-rose-100">
-              Liez les questions des examens par années aux cours thématiques
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900">Lier Questions aux Cours</h2>
+            <p className="text-gray-600">Liez les questions des examens par années aux cours thématiques</p>
           </div>
-          <Link className="w-12 h-12 opacity-80" />
-        </motion.div>
+          <Link className="w-10 h-10 text-blue-600" />
+        </div>
 
         {/* Selection Section */}
         <motion.div
@@ -319,16 +312,16 @@ const ImportExamParCourse = () => {
                     disabled={!selectedModule || loadingCourses}
                   >
                     <SelectTrigger className="border-rose-200">
-                      <SelectValue 
+                      <SelectValue
                         placeholder={
-                          !selectedModule 
-                            ? "Sélectionnez d'abord un module" 
-                            : loadingCourses 
-                              ? "Chargement..." 
+                          !selectedModule
+                            ? "Sélectionnez d'abord un module"
+                            : loadingCourses
+                              ? "Chargement..."
                               : examCourses.length === 0
                                 ? "Aucun cours disponible"
                                 : "Choisir un cours"
-                        } 
+                        }
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -484,7 +477,7 @@ const ImportExamParCourse = () => {
                     <div>
                       <h3 className="font-semibold text-lg">{course.name}</h3>
                       <p className="text-sm text-gray-600">
-                        Catégorie: {course.category} • 
+                        Catégorie: {course.category} •
                         Questions liées: {course.totalQuestions || 0}
                       </p>
                     </div>

@@ -19,10 +19,12 @@ import paypalSettingsRoute from "./paypalSettingsRoute.js";
 import landingPageSettingsRoute from "./landingPageSettingsRoute.js";
 import examCourseRoute from "./examCourseRoute.js";
 import settingsRoute from "./settingsRoute.js";
+import qcmBanqueRoute from "./qcmBanqueRoute.js";
 
 const router = Router();
 
 router.use("/exams", examRoute);
+router.use("/qcm-banque", qcmBanqueRoute);
 router.use("/modules", moduleRoute);
 router.use("/questions", questionRoute);
 router.use("/report-questions", reportQuestionsRoute);

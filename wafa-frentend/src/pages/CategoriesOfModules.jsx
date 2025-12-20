@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
@@ -16,7 +19,7 @@ import NewCategoryForm from "@/components/admin/NewCategoryForm";
 const DEFAULT_CATEGORIES = [
   { value: "Exam par years", label: "Exam par years", color: "bg-blue-100 text-blue-700" },
   { value: "Exam par courses", label: "Exam par courses", color: "bg-purple-100 text-purple-700" },
-  { value: "Résumé et cours", label: "Résumé et cours", color: "bg-green-100 text-green-700" },
+  { value: "QCM banque", label: "QCM banque", color: "bg-green-100 text-green-700" },
 ];
 
 const CategoriesOfModules = () => {
@@ -25,8 +28,21 @@ const CategoriesOfModules = () => {
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [filterModule, setFilterModule] = useState("all");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingModule, setEditingModule] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", semester: "", category: "", difficulty: "" });
+  const [saving, setSaving] = useState(false);
+
+  // Delete state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingModule, setDeletingModule] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -49,13 +65,13 @@ const CategoriesOfModules = () => {
     const term = searchTerm.toLowerCase();
     return modules.filter((m) => {
       const passesCategory = filterCategory === "all" || m.category === filterCategory;
+      const passesModule = filterModule === "all" || m._id === filterModule;
       const passesSearch =
         m.name?.toLowerCase().includes(term) ||
-        m.semester?.toLowerCase().includes(term) ||
-        m.courseNames?.some(c => c.toLowerCase().includes(term));
-      return passesCategory && passesSearch;
+        m.semester?.toLowerCase().includes(term);
+      return passesCategory && passesModule && passesSearch;
     });
-  }, [searchTerm, filterCategory, modules]);
+  }, [searchTerm, filterCategory, filterModule, modules]);
 
   const totalPages = Math.ceil(filteredModules.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -69,13 +85,81 @@ const CategoriesOfModules = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCategory]);
+  }, [searchTerm, filterCategory, filterModule]);
 
   // Stats
   const categoryStats = DEFAULT_CATEGORIES.map(cat => ({
     ...cat,
     count: modules.filter(m => m.category === cat.value).length
   }));
+
+  // Update module category
+  const handleUpdateCategory = async (moduleId, newCategory) => {
+    try {
+      await api.put(`/modules/${moduleId}`, { category: newCategory });
+      toast.success("Catégorie mise à jour avec succès");
+      fetchModules();
+    } catch (err) {
+      console.error("Error updating category:", err);
+      toast.error("Erreur lors de la mise à jour de la catégorie");
+    }
+  };
+
+  // Open edit dialog
+  const handleEdit = (module) => {
+    setEditingModule(module);
+    setEditForm({
+      name: module.name || "",
+      semester: module.semester || "",
+      category: module.category || "Exam par years",
+      difficulty: module.difficulty || "medium"
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Save edit
+  const handleSaveEdit = async () => {
+    if (!editingModule) return;
+
+    try {
+      setSaving(true);
+      await api.put(`/modules/${editingModule._id}`, editForm);
+      toast.success("Module mis à jour avec succès");
+      setEditDialogOpen(false);
+      setEditingModule(null);
+      fetchModules();
+    } catch (err) {
+      console.error("Error updating module:", err);
+      toast.error("Erreur lors de la mise à jour du module");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Open delete confirmation
+  const handleDeleteClick = (module) => {
+    setDeletingModule(module);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const handleConfirmDelete = async () => {
+    if (!deletingModule) return;
+
+    try {
+      setDeleting(true);
+      await api.delete(`/modules/${deletingModule._id}`);
+      toast.success("Module supprimé avec succès");
+      setDeleteDialogOpen(false);
+      setDeletingModule(null);
+      fetchModules();
+    } catch (err) {
+      console.error("Error deleting module:", err);
+      toast.error("Erreur lors de la suppression du module");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -132,19 +216,22 @@ const CategoriesOfModules = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title="Catégories de Modules" description="Gérez les catégories et cours de chaque module" />
-          
-          <Button onClick={() => setShowNewCategoryForm(true)} className="gap-2">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Catégories de Modules</h2>
+            <p className="text-gray-600">Gérez les catégories et cours de chaque module</p>
+          </div>
+
+          <Button onClick={() => setShowNewCategoryForm(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
             <Plus className="h-4 w-4" />
             Ajouter un Module
           </Button>
@@ -176,17 +263,30 @@ const CategoriesOfModules = () => {
             <CardDescription>Modules organisés par les 3 catégories principales</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   type="text"
-                  placeholder="Rechercher par nom, semestre, cours..."
+                  placeholder="Rechercher par nom, semestre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
+              <Select value={filterModule} onValueChange={setFilterModule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les modules" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les modules</SelectItem>
+                  {modules.map((m) => (
+                    <SelectItem key={m._id} value={m._id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger>
                   <SelectValue placeholder="Toutes les catégories" />
@@ -209,7 +309,6 @@ const CategoriesOfModules = () => {
                     <TableHead>Module</TableHead>
                     <TableHead>Semestre</TableHead>
                     <TableHead>Catégorie</TableHead>
-                    <TableHead>Noms des Cours</TableHead>
                     <TableHead>Difficulté</TableHead>
                     <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
@@ -217,7 +316,7 @@ const CategoriesOfModules = () => {
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         Aucun module trouvé
                       </TableCell>
                     </TableRow>
@@ -226,7 +325,7 @@ const CategoriesOfModules = () => {
                       <TableRow key={m._id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div 
+                            <div
                               className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
                               style={{ backgroundColor: m.color || "#6366f1" }}
                             >
@@ -245,32 +344,15 @@ const CategoriesOfModules = () => {
                             {m.category || "Exam par years"}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {m.courseNames && m.courseNames.length > 0 ? (
-                              m.courseNames.slice(0, 3).map((course, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
-                                  {course}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                            {m.courseNames && m.courseNames.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{m.courseNames.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
+
                         <TableCell>
                           <Badge className={
                             m.difficulty === "easy" ? "bg-green-100 text-green-700" :
-                            m.difficulty === "hard" ? "bg-red-100 text-red-700" :
-                            "bg-amber-100 text-amber-700"
+                              m.difficulty === "hard" ? "bg-red-100 text-red-700" :
+                                "bg-amber-100 text-amber-700"
                           }>
                             {m.difficulty === "easy" ? "Facile" :
-                             m.difficulty === "hard" ? "Difficile" : "Moyen"}
+                              m.difficulty === "hard" ? "Difficile" : "Moyen"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -279,6 +361,7 @@ const CategoriesOfModules = () => {
                               variant="ghost"
                               size="icon"
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleEdit(m)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -286,6 +369,7 @@ const CategoriesOfModules = () => {
                               variant="ghost"
                               size="icon"
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteClick(m)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -310,6 +394,129 @@ const CategoriesOfModules = () => {
       {showNewCategoryForm && (
         <NewCategoryForm setShowNewCategoryForm={setShowNewCategoryForm} modules={modules} />
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le Module</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du module
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nom du Module</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="Nom du module"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-semester">Semestre</Label>
+              <Select
+                value={editForm.semester}
+                onValueChange={(value) => setEditForm({ ...editForm, semester: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez un semestre" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="S1">S1</SelectItem>
+                  <SelectItem value="S2">S2</SelectItem>
+                  <SelectItem value="S3">S3</SelectItem>
+                  <SelectItem value="S4">S4</SelectItem>
+                  <SelectItem value="S5">S5</SelectItem>
+                  <SelectItem value="S6">S6</SelectItem>
+                  <SelectItem value="S7">S7</SelectItem>
+                  <SelectItem value="S8">S8</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">Catégorie</Label>
+              <Select
+                value={editForm.category}
+                onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez une catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEFAULT_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-difficulty">Difficulté</Label>
+              <Select
+                value={editForm.difficulty}
+                onValueChange={(value) => setEditForm({ ...editForm, difficulty: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez une difficulté" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Facile</SelectItem>
+                  <SelectItem value="medium">Moyen</SelectItem>
+                  <SelectItem value="hard">Difficile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enregistrement...
+                </>
+              ) : (
+                "Enregistrer"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le module</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer le module "{deletingModule?.name}" ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                "Supprimer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

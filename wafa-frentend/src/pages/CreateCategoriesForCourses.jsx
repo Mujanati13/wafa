@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Filter, Search, Plus, Edit, Trash2, Layers, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Search, Plus, Edit, Trash2, Layers, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const CreateCategoriesForCourses = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -18,47 +20,45 @@ const CreateCategoriesForCourses = () => {
   const [moduleFilter, setModuleFilter] = useState("all");
   const itemsPerPage = 8;
 
-  // Sample data representing categories for courses
-  const categoriesForCourses = useMemo(() => {
-    const placeholderImage =
-      "https://via.placeholder.com/150x100/111827/FFFFFF?text=Image";
-    const modules = [
-      { id: 1, name: "Anatomie 1" },
-      { id: 2, name: "Biophysique" },
-      { id: 3, name: "Embryologie" },
-      { id: 4, name: "Histologie" },
-      { id: 5, name: "Physiologie 1" },
-      { id: 6, name: "Biochimie 1" },
-    ];
+  const [categoriesForCourses, setCategoriesForCourses] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const placeholderImage = "https://via.placeholder.com/150x100/111827/FFFFFF?text=Image";
 
-    const subModules = [
-      "Système cardiovasculaire",
-      "Système respiratoire",
-      "Système digestif",
-      "Système nerveux",
-      "Système endocrinien",
-    ];
-
-    let id = 1;
-    const list = [];
-
-    modules.forEach((m) => {
-      subModules.forEach((sm, idx) => {
-        if (idx % 2 === m.id % 2) {
-          list.push({
-            id: id++,
-            moduleId: m.id,
-            moduleName: m.name,
-            subModuleName: idx % 3 === 0 ? "-" : sm,
-            imageUrl: placeholderImage,
-            totalQuestions: 10 + ((id + idx) % 50),
-          });
-        }
-      });
-    });
-
-    return list;
+  useEffect(() => {
+    fetchCourses();
+    fetchModules();
   }, []);
+
+  const fetchModules = async () => {
+    try {
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/exam-courses");
+      const list = (data?.data || []).map((c) => ({
+        id: c._id,
+        moduleId: c.moduleId?._id || c.moduleId || "",
+        moduleName: c.moduleName || c.moduleId?.name || "",
+        categoryCourseName: c.name || "",
+        imageUrl: c.imageUrl || placeholderImage,
+        totalQuestions: c.totalQuestions || 0,
+      }));
+      setCategoriesForCourses(list);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -67,7 +67,7 @@ const CreateCategoriesForCourses = () => {
         moduleFilter === "all" || String(item.moduleId) === moduleFilter;
       const passesSearch =
         item.moduleName.toLowerCase().includes(term) ||
-        item.subModuleName.toLowerCase().includes(term) ||
+        item.categoryCourseName.toLowerCase().includes(term) ||
         String(item.id).includes(term);
       return passesModule && passesSearch;
     });
@@ -158,7 +158,7 @@ const CreateCategoriesForCourses = () => {
           </div>
           <Button
             size="lg"
-            className="bg-black hover:bg-gray-900 text-white shadow-lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
             onClick={() => setShowCreateForm(true)}
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -188,7 +188,7 @@ const CreateCategoriesForCourses = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     type="text"
-                    placeholder="Search by ID, module or sub-module..."
+                    placeholder="Search by ID, module or category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
@@ -245,7 +245,7 @@ const CreateCategoriesForCourses = () => {
                         <tr className="border-b border-gray-200 bg-gray-50">
                           <th className="text-left py-4 px-6 font-semibold text-black">ID</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
-                          <th className="text-left py-4 px-6 font-semibold text-black">Sub-Module</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Categories of courses names</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Image</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Questions</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Actions</th>
@@ -268,7 +268,7 @@ const CreateCategoriesForCourses = () => {
                                 </Badge>
                               </td>
                               <td className="py-4 px-6 text-black font-medium">{row.moduleName}</td>
-                              <td className="py-4 px-6 text-gray-700">{row.subModuleName}</td>
+                              <td className="py-4 px-6 text-gray-700">{row.categoryCourseName}</td>
                               <td className="py-4 px-6">
                                 <motion.div
                                   whileHover={{ scale: 1.05 }}
@@ -276,7 +276,7 @@ const CreateCategoriesForCourses = () => {
                                 >
                                   <img
                                     src={row.imageUrl}
-                                    alt={row.subModuleName}
+                                    alt={row.categoryCourseName}
                                     className="w-full h-full object-cover"
                                   />
                                 </motion.div>
@@ -353,7 +353,7 @@ const CreateCategoriesForCourses = () => {
                 <DialogHeader>
                   <DialogTitle className="text-black text-xl">Create New Category</DialogTitle>
                   <DialogDescription className="text-gray-600">
-                    Add a new category with module and sub-module information
+                    Add a new category with module and course category information
                   </DialogDescription>
                 </DialogHeader>
 
@@ -394,20 +394,11 @@ const CreateCategoriesForCourses = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-black">Sub-Module (Optional)</Label>
-                    <Select defaultValue="none">
-                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
-                        <SelectValue placeholder="Select a sub-module" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200">
-                        <SelectItem value="none" className="text-black">None</SelectItem>
-                        <SelectItem value="Système cardiovasculaire" className="text-black">Système cardiovasculaire</SelectItem>
-                        <SelectItem value="Système respiratoire" className="text-black">Système respiratoire</SelectItem>
-                        <SelectItem value="Système digestif" className="text-black">Système digestif</SelectItem>
-                        <SelectItem value="Système nerveux" className="text-black">Système nerveux</SelectItem>
-                        <SelectItem value="Système endocrinien" className="text-black">Système endocrinien</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-black">Categories of courses names</Label>
+                    <Input
+                      placeholder="Enter category course name"
+                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
+                    />
                   </div>
 
                   <DialogFooter className="gap-2 pt-4">

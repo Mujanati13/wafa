@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Check, X, Eye, Loader2, BookOpen } from "lucide-react";
+import {
+  FileText, Plus, Loader2, ChevronRight, Upload,
+  FolderOpen, Link as LinkIcon, ExternalLink
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -19,282 +28,326 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
 const Resumes = () => {
   const { t } = useTranslation(['admin', 'common']);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
   const [resumes, setResumes] = useState([]);
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Import dialog state
+  const [importOpen, setImportOpen] = useState(false);
+  const [importForm, setImportForm] = useState({
+    moduleId: "",
+    courseName: "",
+    title: "",
+    pdfFile: null
+  });
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
-    const fetchResumes = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const { data } = await api.get("/resumes");
-        const list = Array.isArray(data?.data) ? data.data : [];
-        const mapped = list.map((item) => ({
-          id: item?._id,
-          username: item?.userId?.email || "—",
-          name: item?.userId?.name || "—",
-          title: item?.title || "—",
-          pdf: item?.pdfUrl || "",
-          approved: String(item?.status || "").toLowerCase() === "approved",
-          date: item?.createdAt
-            ? new Date(item.createdAt).toLocaleDateString('fr-FR')
-            : "—",
-        }));
-        setResumes(mapped);
-      } catch (e) {
-        setError(t('admin:failed_load_resumes'));
-        toast.error(t('common:error_loading'));
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchResumes();
+    fetchModules();
   }, []);
 
-  // Pagination logic
-  const totalPages = Math.ceil(resumes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentResumes = resumes.slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handleApprove = async (id) => {
+  const fetchResumes = async () => {
     try {
-      await api.patch(`/resumes/${id}/status`, { status: "approved" });
-      setResumes((prev) =>
-        prev.map((resume) =>
-          resume.id === id ? { ...resume, approved: true } : resume
-        )
-      );
-      toast.success(t('admin:resume_approved'));
+      setLoading(true);
+      setError("");
+      const { data } = await api.get("/resumes");
+      const list = Array.isArray(data?.data) ? data.data : [];
+      // Only show approved resumes to users
+      const approved = list.filter(r => r.status === "approved");
+      setResumes(approved);
     } catch (e) {
-      toast.error(t('admin:failed_approval'));
+      setError("Erreur lors du chargement des résumés");
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleReject = async (id) => {
+  const fetchModules = async () => {
     try {
-      await api.delete(`/resumes/${id}`);
-      setResumes((prev) => prev.filter((resume) => resume.id !== id));
-      toast.success(t('admin:resume_deleted'));
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
     } catch (e) {
-      toast.error(t('admin:failed_delete'));
+      console.error("Failed to load modules:", e);
     }
   };
+
+  // Group resumes by Module → Course
+  const groupedResumes = resumes.reduce((acc, resume) => {
+    const moduleId = resume.moduleId?._id || resume.moduleId || "unknown";
+    const moduleName = resume.moduleId?.name || "Sans Module";
+    const courseName = resume.courseName || "Sans Cours";
+
+    if (!acc[moduleId]) {
+      acc[moduleId] = {
+        name: moduleName,
+        courses: {}
+      };
+    }
+
+    if (!acc[moduleId].courses[courseName]) {
+      acc[moduleId].courses[courseName] = [];
+    }
+
+    acc[moduleId].courses[courseName].push(resume);
+    return acc;
+  }, {});
 
   const handleSeePDF = (pdfUrl) => {
     if (!pdfUrl) {
-      toast.error(t('admin:pdf_url_unavailable'));
+      toast.error("PDF non disponible");
       return;
     }
     window.open(pdfUrl, "_blank");
   };
 
-  const approvedCount = resumes.filter(r => r.approved).length;
-  const pendingCount = resumes.filter(r => !r.approved).length;
+  const handleImport = async () => {
+    if (!importForm.moduleId || !importForm.courseName || !importForm.title || !importForm.pdfFile) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
 
-  const renderPaginationButtons = () => {
-    const buttons = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("moduleId", importForm.moduleId);
+      formData.append("courseName", importForm.courseName);
+      formData.append("title", importForm.title);
+      formData.append("pdf", importForm.pdfFile);
+      formData.append("isAdminUpload", "false");
+      // Note: User submissions should go through a different endpoint with status "pending"
+
+      await api.post("/resumes/create", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      toast.success("Résumé soumis avec succès! En attente d'approbation.");
+      setImportOpen(false);
+      setImportForm({ moduleId: "", courseName: "", title: "", pdfFile: null });
+      fetchResumes();
+    } catch (e) {
+      toast.error("Erreur lors de la soumission");
+      console.error(e);
+    } finally {
+      setUploading(false);
     }
-    
-    buttons.push(
-      <Button
-        key="prev"
-        variant="outline"
-        size="sm"
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        {t('common:previous')}
-      </Button>
-    );
-    
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <Button
-          key={i}
-          variant={currentPage === i ? "default" : "outline"}
-          size="sm"
-          onClick={() => handlePageChange(i)}
-          className="min-w-[40px]"
-        >
-          {i}
-        </Button>
-      );
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      setImportForm(prev => ({ ...prev, pdfFile: files[0] }));
     }
-    
-    buttons.push(
-      <Button
-        key="next"
-        variant="outline"
-        size="sm"
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        {t('common:next')}
-      </Button>
-    );
-    
-    return buttons;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto" />
-          <p className="text-muted-foreground">{t('admin:loading_resumes')}</p>
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <p className="text-muted-foreground">Chargement des résumés...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <PageHeader
-          title={t('admin:resume_management')}
-          description={t('admin:manage_user_uploaded_resumes')}
-        />
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Header with Import Button */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Résumés et Cours</h2>
+            <p className="text-gray-600">Consultez les résumés disponibles par module</p>
+          </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard
-            title={t('admin:total_resumes')}
-            value={resumes.length.toString()}
-            icon={<BookOpen className="w-6 h-6" />}
-          />
-          <StatCard
-            title={t('admin:approved')}
-            value={approvedCount.toString()}
-            icon={<Check className="w-6 h-6" />}
-          />
-          <StatCard
-            title={t('admin:pending')}
-            value={pendingCount.toString()}
-            icon={<FileText className="w-6 h-6" />}
-          />
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4" />
+                Importer un Résumé
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Importer un Résumé</DialogTitle>
+                <DialogDescription>
+                  Sélectionnez le module et fournissez les détails du fichier
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-4">
+                {/* Module Select */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Module *</Label>
+                    <Select
+                      value={importForm.moduleId}
+                      onValueChange={(v) => setImportForm(prev => ({ ...prev, moduleId: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a module" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modules.map(mod => (
+                          <SelectItem key={mod._id} value={mod._id}>
+                            {mod.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Course name *</Label>
+                    <Input
+                      placeholder="text input"
+                      value={importForm.courseName}
+                      onChange={(e) => setImportForm(prev => ({ ...prev, courseName: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                {/* File Upload Zone */}
+                <div
+                  className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer text-center"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-700">
+                    Drop your file here or click to browse
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supports Excel (.xlsx, .xls) and CSV files
+                  </p>
+                  <Input
+                    type="file"
+                    accept=".pdf,.xlsx,.xls,.csv"
+                    onChange={(e) => setImportForm(prev => ({ ...prev, pdfFile: e.target.files?.[0] }))}
+                    className="hidden"
+                    id="resume-file-input"
+                  />
+                  <label htmlFor="resume-file-input">
+                    <Button variant="outline" className="mt-3" type="button" asChild>
+                      <span>Browse Files</span>
+                    </Button>
+                  </label>
+                </div>
+
+                {/* File Preview */}
+                {importForm.pdfFile && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span className="text-green-700">{importForm.pdfFile.name}</span>
+                  </div>
+                )}
+
+                {/* Resume Name */}
+                <div className="space-y-2">
+                  <Label>Resume Name *</Label>
+                  <Input
+                    placeholder="e.g. Résumé - ECG DS 1"
+                    value={importForm.title}
+                    onChange={(e) => setImportForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This will be used to identify the imported resume
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setImportOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleImport} disabled={uploading}>
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Resumes Table */}
+        {/* Modules Accordion */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t('admin:resume_list')}</CardTitle>
-            <CardDescription>
-              {resumes.length} résumé{resumes.length > 1 ? 's' : ''} au total
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 {error}
               </div>
             )}
-            
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Titre</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>PDF</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentResumes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Aucun résumé disponible
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentResumes.map((resume) => (
-                      <TableRow key={resume.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{resume.name}</div>
-                            <div className="text-xs text-muted-foreground">{resume.username}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{resume.title}</TableCell>
-                        <TableCell>{resume.date}</TableCell>
-                        <TableCell>
-                          <Badge variant={resume.approved ? "default" : "secondary"}>
-                            {resume.approved ? "Approuvé" : "En attente"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSeePDF(resume.pdf)}
-                            className="gap-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Voir
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {!resume.approved && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleApprove(resume.id)}
-                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleReject(resume.id)}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Affichage de {startIndex + 1} à {Math.min(endIndex, resumes.length)} sur{" "}
-                  {resumes.length} résultats
-                </div>
-                <div className="flex items-center gap-2">
-                  {renderPaginationButtons()}
-                </div>
+            {Object.keys(groupedResumes).length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Aucun résumé disponible</p>
+                <p className="text-sm mt-2">Cliquez sur "Importer un Résumé" pour ajouter</p>
               </div>
+            ) : (
+              <Accordion type="single" collapsible className="w-full space-y-2">
+                {Object.entries(groupedResumes).map(([moduleId, moduleData]) => (
+                  <AccordionItem
+                    key={moduleId}
+                    value={moduleId}
+                    className="border rounded-lg px-4 bg-white"
+                  >
+                    <AccordionTrigger className="hover:no-underline py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-gray-900">
+                          {moduleData.name}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="space-y-2 pl-2">
+                        {Object.entries(moduleData.courses).map(([courseName, coursePdfs]) => (
+                          <div key={courseName} className="flex flex-wrap items-center gap-2 py-1">
+                            <span className="text-sm text-gray-600 min-w-[120px]">
+                              - {courseName} :
+                            </span>
+                            {coursePdfs.map((pdf, idx) => (
+                              <React.Fragment key={pdf._id}>
+                                {idx > 0 && <span className="text-gray-400">-</span>}
+                                <button
+                                  onClick={() => handleSeePDF(pdf.pdfUrl)}
+                                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                                >
+                                  {pdf.title || `résumé ${idx + 1}`}
+                                  <span className="text-gray-400">(lien)</span>
+                                </button>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             )}
           </CardContent>
         </Card>

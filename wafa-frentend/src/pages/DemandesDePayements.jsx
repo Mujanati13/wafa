@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
-import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign, Search, Calendar, X, MessageCircle } from "lucide-react";
+import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign, Search, Calendar, X, MessageCircle, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,22 +19,22 @@ import { toast } from "sonner";
 
 const DemandesDePayements = () => {
   const { t } = useTranslation(['admin', 'common']);
-  
+
   // Real data from backend
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0, pages: 0 });
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
   useEffect(() => {
     fetchTransactions(1);
   }, []);
-  
+
   const fetchTransactions = async (page) => {
     try {
       setLoading(true);
@@ -48,7 +48,7 @@ const DemandesDePayements = () => {
       setLoading(false);
     }
   };
-  
+
   // Old hardcoded data (keeping for reference, will be removed)
   const demandesOld = [
     {
@@ -120,11 +120,11 @@ const DemandesDePayements = () => {
 
   // Filter transactions based on search and date
   const filteredTransactions = transactions.filter((t) => {
-    const matchesSearch = 
+    const matchesSearch =
       t.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t._id?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const transactionDate = t.createdAt ? t.createdAt.slice(0, 10) : "";
     let matchesDate = true;
     if (dateFrom) {
@@ -133,7 +133,7 @@ const DemandesDePayements = () => {
     if (dateTo) {
       matchesDate = matchesDate && transactionDate <= dateTo;
     }
-    
+
     return matchesSearch && matchesDate;
   });
 
@@ -142,7 +142,7 @@ const DemandesDePayements = () => {
     const maxVisiblePages = 5;
     const currentPage = pagination.page;
     const totalPages = pagination.pages;
-    
+
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     if (endPage - startPage + 1 < maxVisiblePages) {
@@ -165,11 +165,10 @@ const DemandesDePayements = () => {
         <button
           key={i}
           onClick={() => handlePageChange(i)}
-          className={`min-w-[40px] px-3 py-1 border rounded text-sm ${
-            currentPage === i
-              ? "bg-black text-white"
-              : "bg-white hover:bg-gray-100"
-          }`}
+          className={`min-w-[40px] px-3 py-1 border rounded text-sm ${currentPage === i
+            ? "bg-black text-white"
+            : "bg-white hover:bg-gray-100"
+            }`}
         >
           {i}
         </button>
@@ -285,15 +284,74 @@ const DemandesDePayements = () => {
         >
           <Card className="shadow-lg border-0">
             <CardContent className="p-4">
-              <TableFilters
-                onSearch={setSearchTerm}
-                onDateChange={(from, to) => {
-                  setDateFrom(from);
-                  setDateTo(to);
-                }}
-                placeholder="Rechercher par nom, email, ID..."
-                showYearFilter={false}
-              />
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[300px] max-w-xl">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users by name, username or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 h-10 border border-slate-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Date of demandes Filter */}
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="h-10 px-3 border border-slate-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                      placeholder="Date of demandes"
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <span className="text-slate-400">-</span>
+                  )}
+                  {(dateFrom || dateTo) && (
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="h-10 px-3 border border-slate-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+                    />
+                  )}
+                </div>
+
+                {/* Filters Button */}
+                <Button variant="outline" className="h-10 gap-2 border-slate-200">
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </Button>
+
+                {/* Clear Filters */}
+                {(searchTerm || dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setDateFrom("");
+                      setDateTo("");
+                    }}
+                    className="text-slate-500 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -370,91 +428,90 @@ const DemandesDePayements = () => {
                       </tr>
                     ) : (
                       filteredTransactions.map((t, index) => (
-                      <motion.tr
-                        key={t._id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-gray-100 hover:bg-amber-50/50 transition-colors"
-                      >
-                        <td className="py-4 px-6 text-gray-500 text-sm font-mono">
-                          {t._id.slice(-8).toUpperCase()}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={t.user?.profileImage} />
-                              <AvatarFallback>
-                                {t.user?.name
-                                  ?.split(" ")
-                                  .map((n) => n[0])
-                                  .join("") || "U"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <p className="font-semibold text-gray-900">
-                              {t.user?.name || "Unknown"}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-gray-600">{t.user?.email || "N/A"}</td>
-                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
-                          {new Date(t.createdAt).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="py-4 px-6 text-center text-gray-600 text-sm">
-                          {t.user?.createdAt ? new Date(t.user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <Badge 
-                            className={`border-0 ${
-                              t.paymentMethod === 'Contact' ? 'bg-blue-100 text-blue-800' :
-                              t.paymentMethod === 'PayPal' ? 'bg-indigo-100 text-indigo-800' :
-                              t.paymentMethod === 'Bank Transfer' ? 'bg-emerald-100 text-emerald-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            <MessageCircle className="h-3 w-3 mr-1" />
-                            {t.paymentMethod || 'Contact'}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            {t.semesters && t.semesters.length > 0 ? (
-                              t.semesters.map((sem, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {sem}
-                                </Badge>
-                              ))
-                            ) : t.plan?.semesters && t.plan.semesters.length > 0 ? (
-                              t.plan.semesters.map((sem, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {sem}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-gray-400 text-sm">-</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <Badge variant="outline" className="text-xs font-semibold">
-                            ${t.amount?.toFixed(2) || "0.00"}
-                          </Badge>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-8 px-3 bg-green-600 hover:bg-green-700"
-                              title="Approuver"
+                        <motion.tr
+                          key={t._id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="border-b border-gray-100 hover:bg-amber-50/50 transition-colors"
+                        >
+                          <td className="py-4 px-6 text-gray-500 text-sm font-mono">
+                            {t._id.slice(-8).toUpperCase()}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={t.user?.profileImage} />
+                                <AvatarFallback>
+                                  {t.user?.name
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("") || "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <p className="font-semibold text-gray-900">
+                                {t.user?.name || "Unknown"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-gray-600">{t.user?.email || "N/A"}</td>
+                          <td className="py-4 px-6 text-center text-gray-600 text-sm">
+                            {new Date(t.createdAt).toLocaleDateString('fr-FR')}
+                          </td>
+                          <td className="py-4 px-6 text-center text-gray-600 text-sm">
+                            {t.user?.createdAt ? new Date(t.user.createdAt).toLocaleDateString('fr-FR') : 'N/A'}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <Badge
+                              className={`border-0 ${t.paymentMethod === 'Contact' ? 'bg-blue-100 text-blue-800' :
+                                t.paymentMethod === 'PayPal' ? 'bg-indigo-100 text-indigo-800' :
+                                  t.paymentMethod === 'Bank Transfer' ? 'bg-emerald-100 text-emerald-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}
                             >
-                              <Check className="h-4 w-4 mr-1" />
-                              Approuver
-                            </Button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    )))}
+                              <MessageCircle className="h-3 w-3 mr-1" />
+                              {t.paymentMethod || 'Contact'}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex flex-wrap gap-1 justify-center">
+                              {t.semesters && t.semesters.length > 0 ? (
+                                t.semesters.map((sem, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {sem}
+                                  </Badge>
+                                ))
+                              ) : t.plan?.semesters && t.plan.semesters.length > 0 ? (
+                                t.plan.semesters.map((sem, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {sem}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-gray-400 text-sm">-</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <Badge variant="outline" className="text-xs font-semibold">
+                              ${t.amount?.toFixed(2) || "0.00"}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                                title="Approuver"
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Approuver
+                              </Button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      )))}
                   </tbody>
                 </table>
               </div>

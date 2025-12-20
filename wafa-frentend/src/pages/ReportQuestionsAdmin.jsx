@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileQuestion, Trash2, Check, AlertCircle, FilePenLine, Loader2, Eye, X, BookOpen, Calendar, Hash, Layers } from "lucide-react";
+import { FileQuestion, Trash2, Check, AlertCircle, FilePenLine, Loader2, Eye, X, BookOpen, Calendar, Hash, Layers, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,12 +17,14 @@ const ReportQuestionsAdmin = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
   // Dialog states
   const [selectedReport, setSelectedReport] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -38,7 +40,7 @@ const ReportQuestionsAdmin = () => {
       const response = await api.get("/report-questions/all");
       console.log("Full response:", response);
       console.log("Response data:", response.data);
-      
+
       const list = (response.data?.data || []).map((r) => ({
         id: r?._id,
         name: r?.username || r?.userId?.username || "—",
@@ -55,6 +57,11 @@ const ReportQuestionsAdmin = () => {
         examYear: r?.examYear || "—",
         sessionLabel: r?.questionSessionLabel || "—",
         questionId: r?.questionId?._id || r?.questionId,
+        // Course specific fields
+        courseCategory: r?.courseCategory || "—",
+        courseName: r?.courseName || "—",
+        // Number of questions
+        numberOfQuestions: r?.numberOfQuestions || "—",
       }));
       console.log("Processed list:", list);
       setReports(list);
@@ -81,7 +88,7 @@ const ReportQuestionsAdmin = () => {
 
   const handleDelete = async (id) => {
     if (!confirm(t('admin:confirm_delete_report'))) return;
-    
+
     try {
       await api.delete(`/report-questions/${id}`);
       toast.success(t('admin:report_deleted'));
@@ -113,14 +120,14 @@ const ReportQuestionsAdmin = () => {
     window.open(`/admin/questions/edit/${questionId}`, '_blank');
   };
 
-  // Filter reports based on search and date
+  // Filter reports based on search, date, status, and category
   const filteredReports = reports.filter((report) => {
-    const matchesSearch = 
+    const matchesSearch =
       report.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.question?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.moduleName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.text?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     let matchesDate = true;
     if (dateFrom) {
       matchesDate = matchesDate && report.date >= dateFrom;
@@ -128,8 +135,11 @@ const ReportQuestionsAdmin = () => {
     if (dateTo) {
       matchesDate = matchesDate && report.date <= dateTo;
     }
-    
-    return matchesSearch && matchesDate;
+
+    const matchesStatus = statusFilter === "all" || report.status === statusFilter;
+    const matchesCategory = categoryFilter === "all" || report.moduleCategory === categoryFilter;
+
+    return matchesSearch && matchesDate && matchesStatus && matchesCategory;
   });
 
   // Pagination calculations
@@ -224,8 +234,8 @@ const ReportQuestionsAdmin = () => {
             variant="orange"
           />
           <StatCard
-            title="Approuvés"
-            value={reports.filter(r => r.status === "approved").length}
+            title="Résolus"
+            value={reports.filter(r => r.status === "resolved").length}
             icon={<Check className="w-6 h-6" />}
             variant="green"
           />
@@ -240,15 +250,56 @@ const ReportQuestionsAdmin = () => {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <TableFilters
-              onSearch={setSearchTerm}
-              onDateChange={(from, to) => {
-                setDateFrom(from);
-                setDateTo(to);
-              }}
-              placeholder="Rechercher par utilisateur, question, module..."
-              showYearFilter={false}
-            />
+            <div className="space-y-4">
+              {/* Search and Date Filters */}
+              <TableFilters
+                onSearch={setSearchTerm}
+                onDateChange={(from, to) => {
+                  setDateFrom(from);
+                  setDateTo(to);
+                }}
+                placeholder="Rechercher par utilisateur, question, module..."
+                showYearFilter={false}
+              />
+              
+              {/* Status and Category Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Status Filter */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Statut
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="all">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="resolved">Résolus</option>
+                    <option value="rejected">Rejetés</option>
+                  </select>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Type d'Examen
+                  </label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="all">Tous les types</option>
+                    <option value="Exam par years">Exam par years</option>
+                    <option value="Exam par courses">Exam par courses</option>
+                    <option value="QCM banque">QCM banque</option>
+                    <option value="Résumé et cours">Résumé et cours</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -260,6 +311,9 @@ const ReportQuestionsAdmin = () => {
                   <TableRow>
                     <TableHead>Utilisateur</TableHead>
                     <TableHead>Module</TableHead>
+                    <TableHead>Type d'Examen</TableHead>
+                    <TableHead>Examen / Cours</TableHead>
+                    <TableHead>Nb Questions</TableHead>
                     <TableHead>Question</TableHead>
                     <TableHead>Détails</TableHead>
                     <TableHead>Date</TableHead>
@@ -270,35 +324,89 @@ const ReportQuestionsAdmin = () => {
                 <TableBody>
                   {currentReports.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                         Aucun rapport trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
                     currentReports.map((report) => (
-                      <TableRow key={report.id}>
+                      <TableRow
+                        key={report.id}
+                        className="cursor-pointer hover:bg-slate-50 transition-colors"
+                      >
                         <TableCell className="font-medium">
-                          {report.username}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleViewDetails(report)}
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                            {report.username}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-muted-foreground">{report.moduleName}</span>
+                          <span className="font-medium text-slate-700">{report.moduleName || "—"}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            report.moduleCategory === "Exam par years" ? "default" :
+                              report.moduleCategory === "Exam par courses" ? "secondary" :
+                                report.moduleCategory === "QCM banque" ? "outline" :
+                                  "secondary"
+                          } className="whitespace-nowrap">
+                            {report.moduleCategory || "—"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          {report.moduleCategory === "Exam par years" && (
+                            <div className="text-sm">
+                              <span className="font-medium">{report.examName || "—"}</span>
+                              {report.examYear && report.examYear !== "—" && (
+                                <span className="text-slate-500 ml-1">({report.examYear})</span>
+                              )}
+                            </div>
+                          )}
+                          {report.moduleCategory === "Exam par courses" && (
+                            <div className="text-sm">
+                              {report.courseCategory && report.courseCategory !== "—" && (
+                                <span className="text-slate-500">{report.courseCategory} → </span>
+                              )}
+                              <span className="font-medium">{report.courseName || report.examName || "—"}</span>
+                            </div>
+                          )}
+                          {report.moduleCategory === "QCM banque" && (
+                            <div className="text-sm">
+                              <span className="font-medium">{report.examName || "—"}</span>
+                            </div>
+                          )}
+                          {!report.moduleCategory && (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium text-slate-600">
+                            {report.numberOfQuestions || "—"}
+                          </span>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">
                           {report.question}
                         </TableCell>
                         <TableCell className="max-w-md truncate">
-                          {report.text || "—"}
+                          <div className="text-sm">
+                            {report.text || <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Text</span>}
+                          </div>
                         </TableCell>
                         <TableCell>{report.date || "—"}</TableCell>
                         <TableCell>
                           <Badge variant={
-                            report.status === "approved" ? "success" :
-                            report.status === "rejected" ? "destructive" :
-                            "secondary"
+                            report.status === "resolved" ? "success" :
+                              report.status === "rejected" ? "destructive" :
+                                "secondary"
                           }>
-                            {report.status === "approved" ? "Approuvé" :
-                             report.status === "rejected" ? "Rejeté" :
-                             "En attente"}
+                            {report.status === "resolved" ? "Résolu" :
+                              report.status === "rejected" ? "Rejeté" :
+                                "En attente"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -387,39 +495,174 @@ const ReportQuestionsAdmin = () => {
               Informations complètes sur le rapport de question
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedReport && (
             <div className="space-y-6 mt-4">
-              {/* Question Reference */}
+              {/* Question Reference Cards - Different layouts based on exam type */}
+              <div className="space-y-4">
+                {/* Layout 1: Exam Par Years */}
+                {selectedReport.moduleCategory === "Exam par years" && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.moduleName || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          Exam par years
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Name *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.examName || "—"}
+                        </div>
+                      </div>
+                      <div className="flex items-end">
+                        <div className="text-sm font-semibold text-slate-900 pb-2">
+                          {selectedReport.numberOfQuestions || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Layout 2: QCM banque */}
+                {selectedReport.moduleCategory === "QCM banque" && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.moduleName || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          QCM banque
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">QCM Name *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.examName || "—"}
+                        </div>
+                      </div>
+                      <div className="flex items-end">
+                        <div className="text-sm font-semibold text-slate-900 pb-2">
+                          {selectedReport.numberOfQuestions || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Layout 3: Exam Par Courses */}
+                {selectedReport.moduleCategory === "Exam par courses" && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <div className="space-y-4">
+                      {/* First Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
+                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                            {selectedReport.moduleName || "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
+                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                            Exam par courses
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Category *</label>
+                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                            {selectedReport.courseCategory || "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Course Name *</label>
+                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                            {selectedReport.courseName || selectedReport.examName || "—"}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Second Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Year *</label>
+                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                            {selectedReport.examYear || "—"}
+                          </div>
+                        </div>
+                        <div className="col-span-2"></div>
+                        <div className="flex items-end">
+                          <div className="text-sm font-semibold text-slate-900 pb-2">
+                            {selectedReport.numberOfQuestions || "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Layout 4: Default for Résumé et cours or other types */}
+                {(!selectedReport.moduleCategory || 
+                  (selectedReport.moduleCategory !== "Exam par years" && 
+                   selectedReport.moduleCategory !== "Exam par courses" && 
+                   selectedReport.moduleCategory !== "QCM banque")) && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.moduleName || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Type *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.moduleCategory || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">Nom *</label>
+                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                          {selectedReport.examName || selectedReport.courseName || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Info */}
               <div className="bg-slate-50 rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
-                  Référence de la Question
+                  Référence Complète
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Layers className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Module:</span>
-                    <span className="font-medium">{selectedReport.moduleName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Catégorie:</span>
-                    <span className="font-medium">{selectedReport.moduleCategory}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Examen:</span>
-                    <span className="font-medium">{selectedReport.examName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Année:</span>
-                    <span className="font-medium">{selectedReport.examYear}</span>
-                  </div>
-                  <div className="flex items-center gap-2 col-span-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Session:</span>
-                    <span className="font-medium">{selectedReport.sessionLabel}</span>
-                  </div>
+                  {selectedReport.examYear && selectedReport.examYear !== "—" && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Année:</span>
+                      <span className="font-medium">{selectedReport.examYear}</span>
+                    </div>
+                  )}
+                  {selectedReport.sessionLabel && selectedReport.sessionLabel !== "—" && (
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Session:</span>
+                      <span className="font-medium">{selectedReport.sessionLabel}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

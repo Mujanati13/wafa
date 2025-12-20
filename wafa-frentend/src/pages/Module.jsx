@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { BookOpen, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +46,10 @@ const Module = () => {
         imageUrl: m?.imageUrl || placeholderImage,
         totalQuestions: m.totalQuestions,
         helpText: m?.infoText || "",
+        color: m?.color || "#6366f1",
+        contentType: m?.contentType || "url",
+        textContent: m?.textContent || "",
+        helpContent: m?.helpContent || ""
       }));
       setModules(list);
     } catch (e) {
@@ -71,7 +75,7 @@ const Module = () => {
     if (!confirm(t('admin:confirm_delete_module'))) return;
 
     try {
-      await api.delete(`/modules/${id}`);
+      api.delete(`/modules/${id}`);
       toast.success(t('admin:module_deleted'));
       fetchModules();
     } catch (error) {
@@ -162,19 +166,22 @@ const Module = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <PageHeader title={t('admin:modules')} description={t('admin:manage_modules_by_semester')} />
-          
-          <Button onClick={() => setShowNewModuleForm(true)} className="gap-2">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{t('admin:modules')}</h2>
+            <p className="text-gray-600">{t('admin:manage_modules_by_semester')}</p>
+          </div>
+
+          <Button onClick={() => setShowNewModuleForm(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
             <Plus className="h-4 w-4" />
             {t('admin:add_module')}
           </Button>
@@ -231,28 +238,29 @@ const Module = () => {
                     <TableHead>{t('admin:semester')}</TableHead>
                     <TableHead>{t('admin:module')}</TableHead>
                     <TableHead>{t('admin:image')}</TableHead>
+                    <TableHead className="w-[100px]">color</TableHead>
                     <TableHead>{t('admin:questions')}</TableHead>
-                    <TableHead>{t('admin:help_text')}</TableHead>
+                    <TableHead>Texte d'aide</TableHead>
                     <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                         {t('admin:no_modules_found')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     currentModules.map((m) => (
                       <TableRow key={m.id}>
-                        <TableCell className="font-mono text-sm">{m.id}</TableCell>
+                        <TableCell className="font-mono text-sm">{m.id.slice(-6)}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{m.semester}</Badge>
                         </TableCell>
                         <TableCell className="font-medium">{m.name}</TableCell>
                         <TableCell>
-                          <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border">
+                          <div className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 border relative group">
                             <img
                               src={m.imageUrl}
                               alt={m.name}
@@ -260,9 +268,28 @@ const Module = () => {
                             />
                           </div>
                         </TableCell>
-                        <TableCell>{m.totalQuestions}</TableCell>
-                        <TableCell className="max-w-xs truncate" title={m.helpText}>
-                          {m.helpText || "—"}
+                        <TableCell>
+                          <div
+                            className="w-6 h-6 rounded-full border border-gray-200 shadow-sm"
+                            style={{ backgroundColor: m.color }}
+                            title={m.color}
+                          />
+                        </TableCell>
+                        <TableCell className="pl-6">{m.totalQuestions}</TableCell>
+                        <TableCell>
+                          {m.contentType === 'text' && m.textContent ? (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1.5 font-normal">
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              Text
+                            </Badge>
+                          ) : m.helpText ? (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1.5 font-normal">
+                              <Image className="w-3 h-3" />
+                              1 Image
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">

@@ -2,6 +2,7 @@ import asyncHandler from "../handlers/asyncHandler.js";
 import ExamCourse from "../models/examCourseModel.js";
 import Question from "../models/questionModule.js";
 import ExamParYear from "../models/examParYearModel.js";
+import Module from "../models/moduleModel.js";
 
 export const examCourseController = {
     // Create a new exam course
@@ -269,6 +270,92 @@ export const examCourseController = {
         res.status(200).json({
             success: true,
             data: categories,
+        });
+    }),
+
+    // Seed course categories (Admin only - for testing)
+    createCategoriesForCourses: asyncHandler(async (req, res) => {
+        const categories = [
+            "Anatomie",
+            "Physiologie",
+            "Biochimie",
+            "Histologie",
+            "Embryologie",
+            "Génétique",
+            "Immunologie",
+            "Hématologie",
+            "Microbiologie",
+            "Pharmacologie",
+            "Pathologie",
+            "Sémiologie",
+            "Radiologie",
+            "Cardiologie",
+            "Pneumologie",
+            "Gastro-entérologie",
+            "Néphrologie",
+            "Endocrinologie",
+            "Neurologie",
+            "Psychiatrie",
+            "Dermatologie",
+            "ORL",
+            "Ophtalmologie",
+            "Pédiatrie",
+            "Gynécologie-Obstétrique",
+            "Chirurgie générale",
+            "Orthopédie",
+            "Urologie",
+            "Oncologie",
+            "Médecine d'urgence",
+            "Santé publique",
+            "Éthique médicale"
+        ];
+
+        // Get all modules to create sample exam courses with different categories
+        const modules = await Module.find().limit(5);
+        
+        if (modules.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Aucun module trouvé. Veuillez créer des modules d'abord.",
+            });
+        }
+
+        // Delete existing exam courses (optional - can be removed if you want to keep existing)
+        const deleteResult = await ExamCourse.deleteMany({});
+
+        // Create sample exam courses for each category
+        const examCourses = [];
+        
+        for (let i = 0; i < categories.length; i++) {
+            const category = categories[i];
+            const module = modules[i % modules.length]; // Cycle through modules
+            
+            examCourses.push({
+                name: `Cours ${category}`,
+                moduleId: module._id,
+                category: category,
+                subCategory: i % 3 === 0 ? "Session principale" : i % 3 === 1 ? "Session rattrapage" : "",
+                description: `Cours complet sur ${category.toLowerCase()} avec questions et exercices.`,
+                imageUrl: "",
+                status: i % 4 === 0 ? "draft" : "active",
+                linkedQuestions: [],
+                totalQuestions: 0
+            });
+        }
+
+        const createdCourses = await ExamCourse.insertMany(examCourses);
+        
+        // Get unique categories
+        const uniqueCategories = [...new Set(createdCourses.map(c => c.category))];
+
+        res.status(201).json({
+            success: true,
+            data: {
+                categories: uniqueCategories,
+                coursesCreated: createdCourses.length,
+                coursesDeleted: deleteResult.deletedCount,
+            },
+            message: `${createdCourses.length} cours créés avec ${uniqueCategories.length} catégories`,
         });
     }),
 };

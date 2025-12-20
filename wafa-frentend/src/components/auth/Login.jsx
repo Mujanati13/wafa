@@ -37,10 +37,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const result = await loginWithEmail(formData.email, formData.password);
-      
+
       if (result.needsVerification) {
         toast.warning(t('auth:email_verification'), {
           description: result.message || t('auth:enter_code'),
@@ -51,14 +51,14 @@ const Login = () => {
         navigate('/verify-email-firebase', { state: { email: result.email || formData.email } });
         return;
       }
-      
+
       // Store user data
       localStorage.setItem('user', JSON.stringify(result.user));
-      
+
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
-      
+
       // Redirect based on user role
       setTimeout(() => {
         if (result.user?.isAdmin) {
@@ -78,17 +78,17 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    
+
     try {
       const result = await loginWithGoogle();
-      
+
       // Store user data
       localStorage.setItem('user', JSON.stringify(result.user));
-      
+
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
-      
+
       // Redirect based on user role
       setTimeout(() => {
         if (result.user?.isAdmin) {
@@ -115,22 +115,31 @@ const Login = () => {
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-200 rounded-full opacity-25 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md"
       >
+        {/* Back Button - Top Left */}
+        <Link
+          to="/"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('common:back')}
+        </Link>
+
         {/* Logo & Language Switcher */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block group">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              <img 
-                src={logo} 
-                alt="WAFA Logo" 
+              <img
+                src={logo}
+                alt="WAFA Logo"
                 className="h-16 w-auto mx-auto object-contain"
               />
             </motion.div>
@@ -252,9 +261,9 @@ const Login = () => {
 
               {/* Google Login Button */}
               <div className="grid grid-cols-1 gap-4">
-                <Button 
-                  variant="outline" 
-                  type="button" 
+                <Button
+                  variant="outline"
+                  type="button"
                   disabled={isLoading}
                   onClick={handleGoogleLogin}
                   className="w-full"
@@ -279,23 +288,6 @@ const Login = () => {
             </div>
           </CardFooter>
         </Card>
-
-        {/* Back to Home Link */}
-        <div className="flex items-center justify-between mt-6">
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common:back')}
-          </Link>
-          <Link 
-            to="/admin/login" 
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            Admin
-          </Link>
-        </div>
       </motion.div>
     </div>
   );

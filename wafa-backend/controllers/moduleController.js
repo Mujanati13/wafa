@@ -6,12 +6,17 @@ import questionModule from "../models/questionModule.js";
 
 export const moduleController = {
     create: asyncHandler(async (req, res) => {
-        const { name, semester, imageUrl, infoText } = req.body;
+        const { name, semester, imageUrl, infoText, color, helpContent, difficulty, contentType, textContent } = req.body;
         const newModule = await moduleSchema.create({
             name,
             semester,
             imageUrl,
-            infoText
+            infoText,
+            color: color || "#6366f1",
+            helpContent,
+            difficulty: difficulty || "medium",
+            contentType: contentType || "url",
+            textContent
         });
         res.status(201).json({
             success: true,
@@ -28,6 +33,11 @@ export const moduleController = {
         if (req.body.semester !== undefined) updateData.semester = req.body.semester;
         if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
         if (req.body.infoText !== undefined) updateData.infoText = req.body.infoText;
+        if (req.body.color !== undefined) updateData.color = req.body.color;
+        if (req.body.helpContent !== undefined) updateData.helpContent = req.body.helpContent;
+        if (req.body.difficulty !== undefined) updateData.difficulty = req.body.difficulty;
+        if (req.body.contentType !== undefined) updateData.contentType = req.body.contentType;
+        if (req.body.textContent !== undefined) updateData.textContent = req.body.textContent;
 
         console.log(`Updating module ${id} with data:`, updateData);
 

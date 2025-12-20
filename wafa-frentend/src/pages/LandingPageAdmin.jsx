@@ -7,13 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { 
-  Loader2, 
-  Layout, 
-  Timer, 
-  CreditCard, 
-  HelpCircle, 
-  Phone, 
+import {
+  Loader2,
+  Layout,
+  Timer,
+  CreditCard,
+  HelpCircle,
+  Phone,
   Megaphone,
   Save,
   Plus,
@@ -21,7 +21,9 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  MessageCircle
+  MessageCircle,
+  Image,
+  Globe
 } from "lucide-react";
 import axios from "axios";
 
@@ -32,16 +34,21 @@ const LandingPageAdmin = () => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("hero");
   const [settings, setSettings] = useState({
+    // Branding
+    siteName: "",
+    siteVersion: "",
+    logoUrl: "",
+
     // Hero Section
     heroTitle: "",
     heroSubtitle: "",
     heroDescription: "",
-    
+
     // Timer Section
     timerEnabled: false,
     timerEndDate: "",
     timerTitle: "",
-    
+
     // Pricing Section
     pricingTitle: "",
     pricingSubtitle: "",
@@ -50,11 +57,11 @@ const LandingPageAdmin = () => {
     premiumMonthlyFeatures: [],
     premiumAnnualPrice: 0,
     premiumAnnualFeatures: [],
-    
+
     // FAQ Section
     faqTitle: "",
     faqItems: [],
-    
+
     // Contact Section
     contactEmail: "",
     contactPhone: "",
@@ -62,7 +69,7 @@ const LandingPageAdmin = () => {
     facebookUrl: "",
     instagramUrl: "",
     youtubeUrl: "",
-    
+
     // Promotion Banner
     promotionEnabled: false,
     promotionText: "",
@@ -76,16 +83,21 @@ const LandingPageAdmin = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/landing-settings`, {
         withCredentials: true,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.data.success && response.data.data) {
         const data = response.data.data;
         setSettings({
+          siteName: data.siteName || "",
+          siteVersion: data.siteVersion || "",
+          logoUrl: data.logoUrl || "",
           heroTitle: data.heroTitle || "",
           heroSubtitle: data.heroSubtitle || "",
           heroDescription: data.heroDescription || "",
-          timerEnabled: data.timerEnabled || false,
+          timerEnabled: data.timerEnabled ?? false,
           timerEndDate: data.timerEndDate ? new Date(data.timerEndDate).toISOString().slice(0, 16) : "",
           timerTitle: data.timerTitle || "",
           pricingTitle: data.pricingTitle || "",
@@ -103,7 +115,7 @@ const LandingPageAdmin = () => {
           facebookUrl: data.facebookUrl || "",
           instagramUrl: data.instagramUrl || "",
           youtubeUrl: data.youtubeUrl || "",
-          promotionEnabled: data.promotionEnabled || false,
+          promotionEnabled: data.promotionEnabled ?? false,
           promotionText: data.promotionText || "",
           promotionLink: data.promotionLink || "",
         });
@@ -123,9 +135,17 @@ const LandingPageAdmin = () => {
       setSaving(true);
       let endpoint = "/landing-settings";
       let data = settings;
-      
+
       // Use specific endpoints for different sections
       switch (section) {
+        case "branding":
+          endpoint = "/landing-settings/branding";
+          data = {
+            siteName: settings.siteName,
+            siteVersion: settings.siteVersion,
+            logoUrl: settings.logoUrl,
+          };
+          break;
         case "hero":
           endpoint = "/landing-settings/hero";
           data = {
@@ -184,10 +204,14 @@ const LandingPageAdmin = () => {
           endpoint = "/landing-settings";
       }
 
+      const token = localStorage.getItem('token');
       const response = await axios.patch(
         `${API_URL}${endpoint}`,
         data,
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
 
       if (response.data.success) {
@@ -254,6 +278,40 @@ const LandingPageAdmin = () => {
     }));
   };
 
+  const handleDeleteTimer = async () => {
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `${API_URL}/landing-settings/timer`,
+        {
+          timerEnabled: false,
+          timerEndDate: null,
+          timerTitle: "",
+        },
+        {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      if (response.data.success) {
+        setSettings((prev) => ({
+          ...prev,
+          timerEnabled: false,
+          timerEndDate: "",
+          timerTitle: "",
+        }));
+        toast.success("Timer supprimé avec succès");
+      }
+    } catch (error) {
+      console.error("Error deleting timer:", error);
+      toast.error(error.response?.data?.error || "Erreur lors de la suppression du timer");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -275,7 +333,11 @@ const LandingPageAdmin = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+          <TabsTrigger value="branding" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">Marque</span>
+          </TabsTrigger>
           <TabsTrigger value="hero" className="flex items-center gap-2">
             <Layout className="h-4 w-4" />
             <span className="hidden sm:inline">Hero</span>
@@ -301,6 +363,78 @@ const LandingPageAdmin = () => {
             <span className="hidden sm:inline">Promo</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Branding Tab */}
+        <TabsContent value="branding">
+          <Card>
+            <CardHeader>
+              <CardTitle>Marque et Logo</CardTitle>
+              <CardDescription>
+                Personnalisez le nom du site et le logo affichés sur la page d'accueil
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Nom du Site</Label>
+                  <Input
+                    id="siteName"
+                    placeholder="WAFA"
+                    value={settings.siteName}
+                    onChange={(e) => handleChange("siteName", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="siteVersion">Version</Label>
+                  <Input
+                    id="siteVersion"
+                    placeholder="v1.1"
+                    value={settings.siteVersion}
+                    onChange={(e) => handleChange("siteVersion", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="logoUrl">URL du Logo</Label>
+                <Input
+                  id="logoUrl"
+                  placeholder="https://example.com/logo.png"
+                  value={settings.logoUrl}
+                  onChange={(e) => handleChange("logoUrl", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Entrez l'URL d'une image pour remplacer l'icône par défaut. Laissez vide pour utiliser l'icône par défaut.
+                </p>
+              </div>
+
+              {settings.logoUrl && (
+                <div className="space-y-2">
+                  <Label>Aperçu du Logo</Label>
+                  <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                    <img
+                      src={settings.logoUrl}
+                      alt="Logo preview"
+                      className="h-12 w-12 object-contain rounded-lg"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    <span className="text-lg font-bold">{settings.siteName || "WAFA"}</span>
+                    <span className="text-sm text-muted-foreground">{settings.siteVersion || "v1.1"}</span>
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={() => handleSave("branding")} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Enregistrer
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Hero Section Tab */}
         <TabsContent value="hero">
@@ -402,14 +536,31 @@ const LandingPageAdmin = () => {
                 </>
               )}
 
-              <Button onClick={() => handleSave("timer")} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
+              <div className="flex gap-2">
+                <Button onClick={() => handleSave("timer")} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Enregistrer
+                </Button>
+
+                {settings.timerEnabled && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteTimer}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Supprimer le Timer
+                  </Button>
                 )}
-                Enregistrer
-              </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

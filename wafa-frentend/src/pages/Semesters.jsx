@@ -186,51 +186,31 @@ const Semesters = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
-        <div className="w-full space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg"
-          >
-            <h1 className="text-3xl font-bold mb-2">{t('admin:semesters')}</h1>
-            <p className="text-blue-100">{t('admin:organize_modules_by_semester')}</p>
-          </motion.div>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">{t('admin:loading_modules')}</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">{t('admin:loading_modules')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex justify-between items-center"
-        >
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{t('admin:semesters')}</h1>
-            <p className="text-blue-100">
-              {t('admin:organize_modules_drag_drop')}
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900">{t('admin:semesters')}</h2>
+            <p className="text-gray-600">{t('admin:organize_modules_drag_drop')}</p>
             {totalModules > 0 && (
-              <Badge className="mt-3 bg-blue-200 text-blue-900">
+              <Badge className="mt-2 bg-blue-100 text-blue-700">
                 {totalModules} {t('admin:modules_count')}
               </Badge>
             )}
           </div>
-          <BookOpen className="w-12 h-12 opacity-80" />
-        </motion.div>
+          <BookOpen className="w-10 h-10 text-blue-600" />
+        </div>
 
         {/* Alerts */}
         {error && (

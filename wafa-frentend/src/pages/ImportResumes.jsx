@@ -1,118 +1,91 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { motion } from "framer-motion";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import { Upload, FileText, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronRight, Loader2, Upload, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ImportResumes = () => {
   const { t } = useTranslation(['admin', 'common']);
-  // Demo catalog reused from course-based import: Module -> Categories -> Courses -> Exams
-  const modules = useMemo(
-    () => [
-      "Anatomie 1",
-      "Biophysique",
-      "Embryologie",
-      "Histologie",
-      "Physiologie 1",
-      "Biochimie 1",
-    ],
-    []
-  );
 
-  const catalog = useMemo(
-    () => ({
-      "Anatomie 1": {
-        categories: {
-          Osteologie: {
-            courses: {
-              "Membre supérieur": { exams: ["DS 1", "DS 2", "Rattrapage"] },
-              "Membre inférieur": { exams: ["DS 1", "Final"] },
-            },
-          },
-          Neurologie: {
-            courses: { Encéphale: { exams: ["DS", "Final"] } },
-          },
-        },
-      },
-      Biophysique: {
-        categories: {
-          Mécanique: { courses: { Cinétiques: { exams: ["Quiz", "Final"] } } },
-        },
-      },
-      Embryologie: {
-        categories: { Général: { courses: { Bases: { exams: ["DS 1"] } } } },
-      },
-      Histologie: {
-        categories: { Tissus: { courses: { Épithélium: { exams: ["DS"] } } } },
-      },
-      "Physiologie 1": {
-        categories: {
-          Cardio: { courses: { ECG: { exams: ["DS", "Final"] } } },
-        },
-      },
-      "Biochimie 1": {
-        categories: {
-          Métabolisme: { courses: { Glucides: { exams: ["DS"] } } },
-        },
-      },
-    }),
-    []
-  );
+  const [modules, setModules] = useState([]);
+  const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [expandedModules, setExpandedModules] = useState({});
 
+  // Import form states
   const [selectedModule, setSelectedModule] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("");
-  const [selectedExam, setSelectedExam] = useState("");
-  const [resumeFile, setResumeFile] = useState(null);
+  const [courseName, setCourseName] = useState("");
   const [resumeName, setResumeName] = useState("");
+  const [file, setFile] = useState(null);
 
-  // Dependent options
-  const categoryOptions = selectedModule
-    ? Object.keys(catalog[selectedModule]?.categories || {})
-    : [];
-  const courseOptions = selectedCategory
-    ? Object.keys(
-        catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
-      )
-    : [];
-  const examOptions = selectedCourse
-    ? catalog[selectedModule]?.categories[selectedCategory]?.courses[
-        selectedCourse
-      ]?.exams || []
-    : [];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const canImport =
-    selectedModule &&
-    selectedCategory &&
-    selectedCourse &&
-    selectedExam &&
-    resumeFile &&
-    resumeName.trim().length > 0;
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [modulesRes, resumesRes] = await Promise.all([
+        api.get("/modules"),
+        api.get("/resumes/with-modules")
+      ]);
+      
+      setModules(modulesRes.data?.data || []);
+      setResumes(resumesRes.data?.data || []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      toast.error("Erreur lors du chargement des données");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleImport = () => {
-    // Placeholder handler. Wire to API later.
-    alert(
-      `Import resumes:\n` +
-        `Module: ${selectedModule}\nCategory: ${selectedCategory}\nCourse: ${selectedCourse}\nExam: ${selectedExam}\n` +
-        `Resume name: ${resumeName}\nFile: ${resumeFile?.name}`
+  const toggleModule = (moduleId) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
+  };
+
+  // Group resumes by module and course
+  const getResumesByModule = (moduleId) => {
+    return resumes.filter(r => r.moduleId?._id === moduleId || r.moduleId === moduleId);
+  };
+
+  const getResumesByCourse = (moduleId, courseName) => {
+    return resumes.filter(r => 
+      (r.moduleId?._id === moduleId || r.moduleId === moduleId) && 
+      r.courseName === courseName
     );
+  };
+
+  const getCoursesForModule = (moduleId) => {
+    const moduleResumes = getResumesByModule(moduleId);
+    const courses = [...new Set(moduleResumes.map(r => r.courseName))];
+    return courses.filter(Boolean);
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+    }
   };
 
   const handleDragOver = (e) => {
@@ -120,237 +93,286 @@ const ImportResumes = () => {
     e.stopPropagation();
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      setResumeFile(files[0]);
+  const handleSubmit = async () => {
+    if (!selectedModule || !courseName.trim() || !resumeName.trim() || !file) {
+      toast.error("Veuillez remplir tous les champs requis");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('pdf', file);
+      formData.append('moduleId', selectedModule);
+      formData.append('courseName', courseName.trim());
+      formData.append('title', resumeName.trim());
+
+      const response = await api.post("/resumes/admin-upload", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast.success("Résumé importé avec succès !");
+      
+      // Reset form
+      setSelectedModule("");
+      setCourseName("");
+      setResumeName("");
+      setFile(null);
+      
+      // Refresh data
+      fetchData();
+    } catch (error) {
+      console.error("Error uploading resume:", error);
+      toast.error("Erreur lors de l'import du résumé");
+    } finally {
+      setUploading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
-      <div className="w-full space-y-6">
-        {/* Header with gradient background */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-400 p-6 text-white shadow-lg"
-        >
-          <h1 className="text-3xl font-bold mb-2">Import Resumes</h1>
-          <p className="text-blue-100">
-            Select module, category, course, and exam. Provide a resume name and upload the Excel/CSV file.
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-bold text-gray-900">Résumés</h2>
+          <p className="text-gray-600">Importer et parcourir les résumés par module et cours</p>
+        </div>
 
-        {/* Selection Stats */}
-        {(selectedModule || selectedCategory || selectedCourse || selectedExam) && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-3"
-          >
-            {selectedModule && (
-              <div className="bg-white rounded-lg p-3 border-l-4 border-blue-500 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase">Module</p>
-                <p className="text-sm font-semibold text-gray-800">{selectedModule}</p>
+        {/* Import Section */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <ArrowRight className="w-5 h-5" />
+              For import:
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-sm text-gray-600">
+              Select your module hierarchy and provide the file details
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Module Select */}
+              <div className="space-y-2">
+                <Label className="font-medium text-gray-700">
+                  Module <span className="text-red-500">*</span>
+                </Label>
+                <Select value={selectedModule} onValueChange={setSelectedModule}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Choose a module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modules.map((module) => (
+                      <SelectItem key={module._id} value={module._id}>
+                        {module.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            {selectedCategory && (
-              <div className="bg-white rounded-lg p-3 border-l-4 border-purple-500 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase">Category</p>
-                <p className="text-sm font-semibold text-gray-800">{selectedCategory}</p>
+
+              {/* Course Name Input */}
+              <div className="space-y-2">
+                <Label className="font-medium text-gray-700">
+                  Course name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="text input"
+                  value={courseName}
+                  onChange={(e) => setCourseName(e.target.value)}
+                  className="h-10"
+                />
               </div>
-            )}
-            {selectedCourse && (
-              <div className="bg-white rounded-lg p-3 border-l-4 border-indigo-500 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase">Course</p>
-                <p className="text-sm font-semibold text-gray-800">{selectedCourse}</p>
-              </div>
-            )}
-            {selectedExam && (
-              <div className="bg-white rounded-lg p-3 border-l-4 border-cyan-500 shadow-sm">
-                <p className="text-xs text-gray-500 font-medium uppercase">Exam</p>
-                <p className="text-sm font-semibold text-gray-800">{selectedExam}</p>
-              </div>
-            )}
-          </motion.div>
-        )}
+            </div>
 
-        {/* Main Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <Card className="shadow-lg border-0">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-slate-50 rounded-t-lg">
-              <CardTitle className="text-xl font-bold text-gray-900">
-                Configuration
-              </CardTitle>
-              <CardDescription>
-                Select your module hierarchy and provide the file details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {/* Selection Dropdowns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Module Select */}
-                  <div className="space-y-2">
-                    <Label className="font-semibold text-gray-700">Module *</Label>
-                    <Select value={selectedModule} onValueChange={(val) => {
-                      setSelectedModule(val);
-                      setSelectedCategory("");
-                      setSelectedCourse("");
-                      setSelectedExam("");
-                    }}>
-                      <SelectTrigger className="border-gray-300 h-10">
-                        <SelectValue placeholder="Choose a module" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modules.map((m) => (
-                          <SelectItem key={m} value={m}>
-                            {m}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Category Select */}
-                  <div className="space-y-2">
-                    <Label className="font-semibold text-gray-700">Category *</Label>
-                    <Select value={selectedCategory} onValueChange={(val) => {
-                      setSelectedCategory(val);
-                      setSelectedCourse("");
-                      setSelectedExam("");
-                    }} disabled={!selectedModule}>
-                      <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
-                        <SelectValue placeholder={selectedModule ? "Choose a category" : "Select module first"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categoryOptions.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Course Select */}
-                  <div className="space-y-2">
-                    <Label className="font-semibold text-gray-700">Course *</Label>
-                    <Select value={selectedCourse} onValueChange={(val) => {
-                      setSelectedCourse(val);
-                      setSelectedExam("");
-                    }} disabled={!selectedCategory}>
-                      <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
-                        <SelectValue placeholder={selectedCategory ? "Choose a course" : "Select category first"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courseOptions.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Exam Select */}
-                  <div className="space-y-2">
-                    <Label className="font-semibold text-gray-700">Exam (Par Course) *</Label>
-                    <Select value={selectedExam} onValueChange={setSelectedExam} disabled={!selectedCourse}>
-                      <SelectTrigger className="border-gray-300 h-10 disabled:bg-gray-100">
-                        <SelectValue placeholder={selectedCourse ? "Choose an exam" : "Select course first"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {examOptions.map((ex) => (
-                          <SelectItem key={ex} value={ex}>
-                            {ex}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* File Upload Area */}
+            <div
+              className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <Upload className="w-10 h-10 text-blue-500" />
+                <div className="text-center">
+                  <p className="font-medium text-gray-800">
+                    Drop your file here or click to browse
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Supports Excel (.xlsx, .xls) and CSV files
+                  </p>
                 </div>
-
-                {/* File Upload Section */}
-                <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".xlsx,.xls,.csv,.pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="bg-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById('file-upload')?.click();
+                  }}
                 >
-                  <div className="flex flex-col items-center gap-3">
-                    <Upload className="w-8 h-8 text-blue-600" />
-                    <div className="text-center">
-                      <p className="font-semibold text-gray-800">Drop your file here or click to browse</p>
-                      <p className="text-sm text-gray-600">Supports Excel (.xlsx, .xls) and CSV files</p>
-                    </div>
-                    <Input
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                      className="hidden"
-                      id="resume-file"
-                    />
-                    <label htmlFor="resume-file">
-                      <Button variant="outline" className="bg-white hover:bg-blue-50" type="button">
-                        Browse Files
-                      </Button>
-                    </label>
-                  </div>
-                </div>
-
-                {/* File Preview */}
-                {resumeFile && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-medium text-green-900">File selected</p>
-                      <p className="text-sm text-green-700">{resumeFile.name}</p>
-                    </div>
-                    <FileText className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  </motion.div>
-                )}
-
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <Label className="font-semibold text-gray-700">Resume Name *</Label>
-                  <Input
-                    type="text"
-                    placeholder="e.g. Résumé - ECG DS 1"
-                    value={resumeName}
-                    onChange={(e) => setResumeName(e.target.value)}
-                    className="h-10 border-gray-300"
-                  />
-                  <p className="text-xs text-gray-500">This will be used to identify the imported resume</p>
-                </div>
+                  Browse Files
+                </Button>
               </div>
-            </CardContent>
-            <CardFooter className="bg-gray-50 rounded-b-lg border-t flex justify-end gap-3">
-              <Button variant="outline" className="border-gray-300">
-                Cancel
-              </Button>
+            </div>
+
+            {/* File Preview */}
+            {file && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm font-medium text-green-900">
+                  Selected file: {file.name}
+                </p>
+              </div>
+            )}
+
+            {/* Resume Name Input */}
+            <div className="space-y-2">
+              <Label className="font-medium text-gray-700">
+                Resume Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="e.g. Résumé - ECG DS 1"
+                value={resumeName}
+                onChange={(e) => setResumeName(e.target.value)}
+                className="h-10"
+              />
+              <p className="text-xs text-gray-500">
+                This will be used to identify the imported resume
+              </p>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-start pt-2">
               <Button
-                className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-md"
-                disabled={!canImport}
-                onClick={handleImport}
+                onClick={handleSubmit}
+                disabled={uploading || !selectedModule || !courseName.trim() || !resumeName.trim() || !file}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
               >
-                <Upload className="w-4 h-4 mr-2" />
-                Import Resumes
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Submit
+                  </>
+                )}
               </Button>
-            </CardFooter>
-          </Card>
-        </motion.div>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              → it will be appaired like lien (URL)
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Modules Accordion */}
+        <div className="space-y-3">
+          {modules.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Aucun module trouvé
+            </div>
+          ) : (
+            modules.map((module) => {
+              const courses = getCoursesForModule(module._id);
+              const isExpanded = expandedModules[module._id];
+
+              return (
+                <div key={module._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  {/* Module Header */}
+                  <button
+                    onClick={() => toggleModule(module._id)}
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-semibold text-gray-900">
+                        {module.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? (
+                        <ChevronDown className="w-5 h-5 text-gray-600" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Expanded Content */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="border-t border-gray-200"
+                      >
+                        <div className="px-6 py-4 bg-white">
+                          {courses.length === 0 ? (
+                            <p className="text-sm text-gray-500 italic">Aucun résumé disponible</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {courses.map((courseName, index) => {
+                                const courseResumes = getResumesByCourse(module._id, courseName);
+                                
+                                return (
+                                  <div key={index} className="flex items-start gap-3 text-sm">
+                                    <span className="font-medium text-gray-700 whitespace-nowrap">
+                                      - {courseName} :
+                                    </span>
+                                    <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                      {courseResumes.map((resume, idx) => (
+                                        <React.Fragment key={resume._id}>
+                                          <a
+                                            href={resume.pdfUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                                          >
+                                            {resume.title} (lien)
+                                          </a>
+                                          {idx < courseResumes.length - 1 && (
+                                            <span className="text-gray-400">-</span>
+                                          )}
+                                        </React.Fragment>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );

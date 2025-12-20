@@ -28,7 +28,24 @@ const moduleSchema = joi.object({
         .optional()
         .messages({
             'string.base': 'Info text must be a string'
-        })
+        }),
+    color: joi.string()
+        .allow('')
+        .optional(),
+    helpContent: joi.string()
+        .allow('')
+        .optional(),
+    difficulty: joi.string()
+        .valid('easy', 'medium', 'hard')
+        .default('medium')
+        .optional(),
+    contentType: joi.string()
+        .valid('url', 'text')
+        .default('url')
+        .optional(),
+    textContent: joi.string()
+        .allow('')
+        .optional()
 });
 
 export default moduleSchema;

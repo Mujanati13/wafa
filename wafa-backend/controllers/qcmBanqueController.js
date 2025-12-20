@@ -1,0 +1,107 @@
+import QCMBanque from "../models/qcmBanqueModel.js";
+import asyncHandler from '../handlers/asyncHandler.js';
+import QuestionModel from "../models/questionModule.js";
+
+export const qcmBanqueController = {
+    create: asyncHandler(async (req, res) => {
+        const { name, moduleId, imageUrl, infoText } = req.body;
+        const newQCM = await QCMBanque.create({
+            name,
+            moduleId,
+            imageUrl,
+            infoText
+        });
+        res.status(201).json({
+            success: true,
+            data: newQCM
+        });
+    }),
+
+    update: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { name, moduleId, imageUrl, infoText } = req.body;
+        const updatedQCM = await QCMBanque.findByIdAndUpdate(
+            id,
+            { name, moduleId, imageUrl, infoText },
+            { new: true }
+        );
+        if (!updatedQCM) {
+            return res.status(404).json({
+                success: false,
+                message: "QCM Banque not found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: updatedQCM
+        });
+    }),
+
+    delete: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const deletedQCM = await QCMBanque.findByIdAndDelete(id);
+        if (!deletedQCM) {
+            return res.status(404).json({
+                success: false,
+                message: "QCM Banque not found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "QCM Banque deleted successfully",
+            data: deletedQCM
+        });
+    }),
+
+    getAll: asyncHandler(async (req, res) => {
+        const qcmList = await QCMBanque.find().populate('moduleId', 'name').lean();
+        const qcmIds = qcmList.map(q => q._id);
+
+        // Get questions related to these QCM banques (assuming examId field is used)
+        const questions = await QuestionModel.find({ qcmBanqueId: { $in: qcmIds } }).lean();
+
+        // Group questions by qcmBanqueId
+        const questionsByQCM = {};
+        questions.forEach(q => {
+            const key = q.qcmBanqueId?.toString();
+            if (!questionsByQCM[key]) questionsByQCM[key] = [];
+            questionsByQCM[key].push(q);
+        });
+
+        // Attach questions and moduleName to each QCM
+        const qcmWithQuestions = qcmList.map(qcm => ({
+            ...qcm,
+            moduleName: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.name : undefined,
+            questions: questionsByQCM[qcm._id.toString()] || [],
+            totalQuestions: (questionsByQCM[qcm._id.toString()] || []).length
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: qcmWithQuestions
+        });
+    }),
+
+    getById: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const qcm = await QCMBanque.findById(id).populate('moduleId', 'name').lean();
+        if (!qcm) {
+            return res.status(404).json({
+                success: false,
+                message: "QCM Banque not found"
+            });
+        }
+
+        const questions = await QuestionModel.find({ qcmBanqueId: id }).lean();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...qcm,
+                moduleName: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.name : undefined,
+                totalQuestions: questions.length,
+                questions
+            }
+        });
+    })
+};
