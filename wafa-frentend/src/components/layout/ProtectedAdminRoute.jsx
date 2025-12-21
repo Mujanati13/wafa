@@ -4,14 +4,12 @@ import { Navigate, useLocation } from 'react-router-dom';
 const ROUTE_PERMISSIONS = {
   '/admin/analytics': 'analytics',
   '/admin/subscription': 'payments',
-  '/admin/paypal-settings': 'payments',
 };
 
 // Routes that require super_admin role (not just permissions)
 const SUPER_ADMIN_ONLY_ROUTES = [
   '/admin/analytics',
   '/admin/subscription',
-  '/admin/paypal-settings',
 ];
 
 const ProtectedAdminRoute = ({ children }) => {

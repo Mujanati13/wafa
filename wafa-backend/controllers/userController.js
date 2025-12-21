@@ -96,13 +96,30 @@ export const UserController = {
                 .skip(skip)
                 .limit(limit);
 
+            // Get payment method for each user from their latest completed transaction
+            const Transaction = (await import('../models/transactionModel.js')).default;
+            
+            const usersWithPayment = await Promise.all(users.map(async (user) => {
+                const latestTransaction = await Transaction.findOne({
+                    user: user._id,
+                    status: 'completed'
+                })
+                .sort({ createdAt: -1 })
+                .select('paymentMethod');
+
+                return {
+                    ...user.toObject(),
+                    paymentMethod: latestTransaction?.paymentMethod || 'Contact'
+                };
+            }));
+
             const totalPayingUsers = await User.countDocuments({ plan: { $ne: "Free" } });
             const totalPages = Math.ceil(totalPayingUsers / limit);
 
             res.status(200).json({
                 success: true,
                 data: {
-                    users,
+                    users: usersWithPayment,
                     pagination: {
                         currentPage: page,
                         totalPages,

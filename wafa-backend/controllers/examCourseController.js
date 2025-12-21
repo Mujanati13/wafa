@@ -276,38 +276,38 @@ export const examCourseController = {
     // Seed course categories (Admin only - for testing)
     createCategoriesForCourses: asyncHandler(async (req, res) => {
         const categories = [
-            "Anatomie",
-            "Physiologie",
-            "Biochimie",
-            "Histologie",
-            "Embryologie",
-            "Génétique",
-            "Immunologie",
-            "Hématologie",
-            "Microbiologie",
-            "Pharmacologie",
-            "Pathologie",
-            "Sémiologie",
-            "Radiologie",
-            "Cardiologie",
-            "Pneumologie",
-            "Gastro-entérologie",
-            "Néphrologie",
-            "Endocrinologie",
-            "Neurologie",
-            "Psychiatrie",
-            "Dermatologie",
-            "ORL",
-            "Ophtalmologie",
-            "Pédiatrie",
-            "Gynécologie-Obstétrique",
-            "Chirurgie générale",
-            "Orthopédie",
-            "Urologie",
-            "Oncologie",
-            "Médecine d'urgence",
-            "Santé publique",
-            "Éthique médicale"
+            { name: "Anatomie", color: "#ef4444", difficulty: "medium" },
+            { name: "Physiologie", color: "#f97316", difficulty: "hard" },
+            { name: "Biochimie", color: "#f59e0b", difficulty: "hard" },
+            { name: "Histologie", color: "#eab308", difficulty: "medium" },
+            { name: "Embryologie", color: "#84cc16", difficulty: "medium" },
+            { name: "Génétique", color: "#22c55e", difficulty: "hard" },
+            { name: "Immunologie", color: "#10b981", difficulty: "hard" },
+            { name: "Hématologie", color: "#14b8a6", difficulty: "medium" },
+            { name: "Microbiologie", color: "#06b6d4", difficulty: "medium" },
+            { name: "Pharmacologie", color: "#0ea5e9", difficulty: "hard" },
+            { name: "Pathologie", color: "#3b82f6", difficulty: "hard" },
+            { name: "Sémiologie", color: "#6366f1", difficulty: "medium" },
+            { name: "Radiologie", color: "#8b5cf6", difficulty: "medium" },
+            { name: "Cardiologie", color: "#a855f7", difficulty: "hard" },
+            { name: "Pneumologie", color: "#c026d3", difficulty: "medium" },
+            { name: "Gastro-entérologie", color: "#d946ef", difficulty: "medium" },
+            { name: "Néphrologie", color: "#ec4899", difficulty: "hard" },
+            { name: "Endocrinologie", color: "#f43f5e", difficulty: "hard" },
+            { name: "Neurologie", color: "#dc2626", difficulty: "hard" },
+            { name: "Psychiatrie", color: "#ea580c", difficulty: "medium" },
+            { name: "Dermatologie", color: "#d97706", difficulty: "easy" },
+            { name: "ORL", color: "#ca8a04", difficulty: "medium" },
+            { name: "Ophtalmologie", color: "#65a30d", difficulty: "medium" },
+            { name: "Pédiatrie", color: "#16a34a", difficulty: "medium" },
+            { name: "Gynécologie-Obstétrique", color: "#059669", difficulty: "hard" },
+            { name: "Chirurgie générale", color: "#0d9488", difficulty: "hard" },
+            { name: "Orthopédie", color: "#0891b2", difficulty: "medium" },
+            { name: "Urologie", color: "#0284c7", difficulty: "medium" },
+            { name: "Oncologie", color: "#2563eb", difficulty: "hard" },
+            { name: "Médecine d'urgence", color: "#4f46e5", difficulty: "hard" },
+            { name: "Santé publique", color: "#7c3aed", difficulty: "easy" },
+            { name: "Éthique médicale", color: "#9333ea", difficulty: "easy" }
         ];
 
         // Get all modules to create sample exam courses with different categories
@@ -327,15 +327,18 @@ export const examCourseController = {
         const examCourses = [];
         
         for (let i = 0; i < categories.length; i++) {
-            const category = categories[i];
+            const categoryData = categories[i];
             const module = modules[i % modules.length]; // Cycle through modules
             
             examCourses.push({
-                name: `Cours ${category}`,
+                name: `Cours ${categoryData.name}`,
                 moduleId: module._id,
-                category: category,
+                category: categoryData.name,
                 subCategory: i % 3 === 0 ? "Session principale" : i % 3 === 1 ? "Session rattrapage" : "",
-                description: `Cours complet sur ${category.toLowerCase()} avec questions et exercices.`,
+                description: `Cours complet sur ${categoryData.name.toLowerCase()} avec questions et exercices.`,
+                difficulty: categoryData.difficulty,
+                color: categoryData.color,
+                contentType: "text",
                 imageUrl: "",
                 status: i % 4 === 0 ? "draft" : "active",
                 linkedQuestions: [],
@@ -345,8 +348,12 @@ export const examCourseController = {
 
         const createdCourses = await ExamCourse.insertMany(examCourses);
         
-        // Get unique categories
-        const uniqueCategories = [...new Set(createdCourses.map(c => c.category))];
+        // Get unique categories with their colors and difficulties
+        const uniqueCategories = categories.map(c => ({
+            name: c.name,
+            color: c.color,
+            difficulty: c.difficulty
+        }));
 
         res.status(201).json({
             success: true,

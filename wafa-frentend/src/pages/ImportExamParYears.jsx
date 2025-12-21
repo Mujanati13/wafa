@@ -81,14 +81,65 @@ const ImportExamParYears = () => {
   const handleRemoveSubModuleRow = (id) =>
     setSubModuleMappings((prev) => prev.filter((r) => r.id !== id));
 
+  const [uploading, setUploading] = useState(false);
+
   const canImport = selectedModule && selectedExam && excelFile;
 
-  const handleImport = () => {
-    // Placeholder handler. Wire to API later.
-    alert(
-      `Import ready:\nModule: ${selectedModule}\nExam: ${selectedExam}\nExcel: ${excelFile?.name}\n` +
-      `Images rows: ${imageMappings.length}\nSub-modules rows: ${subModuleMappings.length}`
+  const handleImport = async () => {
+    if (!selectedExam) {
+      toast.error("Veuillez sélectionner un examen");
+      return;
+    }
+
+    // Check if we have any images to upload
+    const validImageMappings = imageMappings.filter(
+      (m) => m.file && m.questionNumbers.trim()
     );
+
+    if (validImageMappings.length === 0) {
+      toast.info("Aucune image à télécharger");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Process each image mapping
+      for (const mapping of validImageMappings) {
+        // 1. Upload image to Cloudinary
+        const formData = new FormData();
+        formData.append("images", mapping.file);
+
+        const uploadRes = await api.post("/questions/upload-images", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        if (!uploadRes.data.success) {
+          throw new Error("Échec du téléchargement de l'image");
+        }
+
+        const imageUrls = uploadRes.data.data.map((img) => img.url);
+
+        // 2. Attach images to questions
+        await api.post("/questions/attach-images", {
+          examId: selectedExam,
+          imageUrls,
+          questionNumbers: mapping.questionNumbers,
+        });
+      }
+
+      toast.success(`${validImageMappings.length} image(s) téléchargée(s) et attachée(s)`);
+
+      // Reset image mappings
+      setImageMappings([
+        { id: crypto.randomUUID(), file: null, questionNumbers: "" },
+      ]);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error(error.response?.data?.message || "Erreur lors du téléchargement");
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Filter exams by selected module
@@ -145,8 +196,8 @@ const ImportExamParYears = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
+                        <SelectItem key={m._id} value={m._id}>
+                          {m.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -170,8 +221,8 @@ const ImportExamParYears = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {examOptions.map((ex) => (
-                        <SelectItem key={ex} value={ex}>
-                          {ex}
+                        <SelectItem key={ex._id} value={ex._id}>
+                          {ex.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -247,62 +298,92 @@ const ImportExamParYears = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2, delay: idx * 0.05 }}
-                        className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end p-3 bg-slate-50 rounded-lg border border-slate-200"
+                        className="p-3 bg-slate-50 rounded-lg border border-slate-200"
                       >
-                        <div className="sm:col-span-2 space-y-1">
-                          <Label className="text-xs font-semibold">Image</Label>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0] || null;
-                              setImageMappings((prev) =>
-                                prev.map((r) =>
-                                  r.id === row.id ? { ...r, file } : r
+                        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">
+                          <div className="sm:col-span-2 space-y-1">
+                            <Label className="text-xs font-semibold">Image</Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setImageMappings((prev) =>
+                                  prev.map((r) =>
+                                    r.id === row.id ? { ...r, file } : r
+                                  )
+                                );
+                              }}
+                              className="text-xs"
+                            />
+                          </div>
+                          <div className="sm:col-span-2 space-y-1">
+                            <Label className="text-xs font-semibold">Questions</Label>
+                            <Input
+                              placeholder="ex: 1,2,5-7"
+                              value={row.questionNumbers}
+                              onChange={(e) =>
+                                setImageMappings((prev) =>
+                                  prev.map((r) =>
+                                    r.id === row.id
+                                      ? { ...r, questionNumbers: e.target.value }
+                                      : r
+                                  )
                                 )
-                              );
-                            }}
-                            className="text-xs"
-                          />
+                              }
+                              className="text-xs"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveImageRow(row.id)}
+                            disabled={imageMappings.length === 1}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <div className="sm:col-span-2 space-y-1">
-                          <Label className="text-xs font-semibold">Questions</Label>
-                          <Input
-                            placeholder="ex: 1,2,5-7"
-                            value={row.questionNumbers}
-                            onChange={(e) =>
-                              setImageMappings((prev) =>
-                                prev.map((r) =>
-                                  r.id === row.id
-                                    ? { ...r, questionNumbers: e.target.value }
-                                    : r
-                                )
-                              )
-                            }
-                            className="text-xs"
-                          />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveImageRow(row.id)}
-                          disabled={imageMappings.length === 1}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {/* Image Preview */}
+                        {row.file && (
+                          <div className="mt-2 flex items-center gap-2 p-2 bg-white rounded border">
+                            <img
+                              src={URL.createObjectURL(row.file)}
+                              alt="Preview"
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <div className="text-xs text-gray-600">
+                              <p className="font-medium truncate max-w-32">{row.file.name}</p>
+                              <p>{(row.file.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     ))}
                   </div>
 
-                  <Button
-                    variant="outline"
-                    onClick={handleAddImageRow}
-                    className="w-full gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Ajouter une Ligne d'Image
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleAddImageRow}
+                      className="flex-1 gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Ajouter
+                    </Button>
+                    <Button
+                      onClick={handleImport}
+                      disabled={uploading || !selectedExam || !imageMappings.some(m => m.file && m.questionNumbers.trim())}
+                      className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {uploading ? "Téléchargement..." : "Télécharger Images"}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Right: Sub-modules */}

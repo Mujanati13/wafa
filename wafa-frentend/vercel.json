@@ -1,4 +1,6 @@
 {
+    "buildCommand": "rm -rf node_modules/.vite dist && npm ci && npm run build",
+    "outputDirectory": "dist",
     "rewrites": [
       { "source": "/(.*)", "destination": "/" }
     ]

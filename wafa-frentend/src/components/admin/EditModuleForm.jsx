@@ -47,9 +47,10 @@ const PRESET_COLORS = [
 
 // Difficulty levels with colors
 const DIFFICULTY_LEVELS = [
-  { value: "easy", label: "Facile", color: "#6366f1", bgColor: "bg-indigo-100", textColor: "text-indigo-700", borderColor: "border-indigo-300" },
-  { value: "medium", label: "Moyen", color: "#22c55e", bgColor: "bg-green-100", textColor: "text-green-700", borderColor: "border-green-300" },
-  { value: "hard", label: "Difficile", color: "#06b6d4", bgColor: "bg-cyan-100", textColor: "text-cyan-700", borderColor: "border-cyan-300" },
+  { value: "QE", label: "QE", color: "#f97316", bgColor: "bg-orange-100", textColor: "text-orange-700", borderColor: "border-orange-300" },
+  { value: "easy", label: "easy", color: "#84cc16", bgColor: "bg-lime-100", textColor: "text-lime-700", borderColor: "border-lime-300" },
+  { value: "medium", label: "medium", color: "#14b8a6", bgColor: "bg-teal-100", textColor: "text-teal-700", borderColor: "border-teal-300" },
+  { value: "hard", label: "hard", color: "#ef4444", bgColor: "bg-red-100", textColor: "text-red-700", borderColor: "border-red-300" },
 ];
 
 const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
@@ -58,7 +59,14 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   const [selectedColor, setSelectedColor] = useState("#6366f1");
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [contentType, setContentType] = useState("url"); // "url" or "text"
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("QE");
+  const [difficultyColors, setDifficultyColors] = useState({
+    QE: "#f97316",
+    easy: "#84cc16",
+    medium: "#14b8a6",
+    hard: "#ef4444"
+  });
+  const [showDifficultyColorPicker, setShowDifficultyColorPicker] = useState(null);
 
   const editModuleSchema = z.object({
     name: z.string().min(2, t("admin:module_name_required")),
@@ -224,23 +232,63 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
               <Label className="text-sm font-semibold text-gray-900">
                 Niveau de Difficulté
               </Label>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 {DIFFICULTY_LEVELS.map((level) => (
-                  <button
-                    key={level.value}
-                    type="button"
-                    onClick={() => setDifficulty(level.value)}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${difficulty === level.value
-                      ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
-                      : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
-                      }`}
-                  >
-                    <CircleDot
-                      className="h-4 w-4"
-                      style={{ color: difficulty === level.value ? level.color : "#9ca3af" }}
-                    />
-                    <span className="font-medium">{level.label}</span>
-                  </button>
+                  <div key={level.value} className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDifficulty(level.value)}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${difficulty === level.value
+                        ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
+                        : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                    >
+                      <CircleDot
+                        className="h-4 w-4"
+                        style={{ color: difficulty === level.value ? difficultyColors[level.value] : "#9ca3af" }}
+                      />
+                      <span className="font-medium">{level.label}</span>
+                    </button>
+                    <Popover 
+                      open={showDifficultyColorPicker === level.value} 
+                      onOpenChange={(open) => setShowDifficultyColorPicker(open ? level.value : null)}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-8 border-gray-300"
+                        >
+                          <div
+                            className="w-4 h-4 rounded border mr-2"
+                            style={{ backgroundColor: difficultyColors[level.value] }}
+                          />
+                          <span className="text-xs font-mono">{difficultyColors[level.value]}</span>
+                          <Palette className="w-3 h-3 ml-auto text-gray-400" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-3">
+                        <div className="space-y-3">
+                          <Label className="text-xs font-semibold">Couleur pour {level.label}</Label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={difficultyColors[level.value]}
+                              onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                              className="w-10 h-9 rounded border cursor-pointer"
+                            />
+                            <Input
+                              type="text"
+                              value={difficultyColors[level.value]}
+                              onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                              className="flex-1 h-9 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 ))}
               </div>
             </div>

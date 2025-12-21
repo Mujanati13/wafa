@@ -81,13 +81,15 @@ const ImportExplications = () => {
   const [explicationName, setExplicationName] = useState("");
 
   // Derived lists
-  const categoryOptions = selectedModule
-    ? Object.keys(catalog[selectedModule]?.categories || {})
+  const examsForModule = selectedModule ? getExamsForModule(selectedModule) : [];
+  const categoryOptions = examType === "courses" 
+    ? [...new Set(examsForModule.map(e => e.category))].filter(Boolean)
     : [];
   const courseOptions = selectedCategory
-    ? Object.keys(
-      catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
-    )
+    ? examsForModule
+        .filter(e => e.category === selectedCategory)
+        .map(e => e.courseName)
+        .filter(Boolean)
     : [];
 
   const hasContextSelected = (() => {
@@ -199,8 +201,8 @@ const ImportExplications = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
+                        <SelectItem key={m._id} value={m._id}>
+                          {m.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -240,9 +242,13 @@ const ImportExplications = () => {
                         <SelectValue placeholder="Choose an exam name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? examNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => e.examType === "years" || !e.examType)
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -307,9 +313,13 @@ const ImportExplications = () => {
                         <SelectValue placeholder="Choose a TP name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? tpNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => e.examType === "tp" || e.contentType === "tp")
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -323,9 +333,13 @@ const ImportExplications = () => {
                         <SelectValue placeholder="Choose a QCM name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? qcmNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => e.examType === "qcm" || e.contentType === "qcm")
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

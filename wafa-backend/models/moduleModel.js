@@ -42,8 +42,8 @@ const moduleSchema = new mongoose.Schema(
         // Difficulty level
         difficulty: {
                 type: String,
-                enum: ["easy", "medium", "hard"],
-                default: "medium",
+                enum: ["QE", "easy", "medium", "hard"],
+                default: "QE",
         },
         // Content type: image/pdf URL or text description
         contentType: {

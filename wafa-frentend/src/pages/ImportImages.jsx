@@ -191,8 +191,8 @@ const ImportImages = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
+                        <SelectItem key={m._id} value={m._id}>
+                          {m.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

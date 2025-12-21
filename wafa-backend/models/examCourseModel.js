@@ -23,6 +23,20 @@ const examCourseSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        difficulty: {
+            type: String,
+            enum: ["QE", "easy", "medium", "hard"],
+            default: "QE",
+        },
+        color: {
+            type: String,
+            default: "#6366f1",
+        },
+        contentType: {
+            type: String,
+            enum: ["image", "text"],
+            default: "text",
+        },
         imageUrl: {
             type: String,
             default: "",

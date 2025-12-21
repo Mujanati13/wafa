@@ -55,7 +55,7 @@ export const questionController = {
     // Get questions with advanced filters (module, exam type, category, course name)
     getFiltered: asyncHandler(async (req, res) => {
         const { moduleId, examType, category, courseName, page = 1, limit = 50 } = req.query;
-        
+
         // Build filter for exams first
         const examFilter = {};
         if (moduleId) examFilter.moduleId = moduleId;
@@ -111,10 +111,10 @@ export const questionController = {
             const examFilter = {};
             if (moduleId) examFilter.moduleId = moduleId;
             if (courseName) examFilter.courseName = courseName;
-            
+
             const exams = await ExamParYear.find(examFilter).select('_id');
             const examIds = exams.map(e => e._id);
-            
+
             const result = await QuestionModel.deleteMany({ examId: { $in: examIds } });
             deletedCount = result.deletedCount;
         } else {
@@ -136,7 +136,7 @@ export const questionController = {
         const { examId, moduleId, courseName, category } = req.query;
 
         let filter = {};
-        
+
         if (examId) {
             filter.examId = examId;
         } else if (moduleId || courseName || category) {
@@ -144,7 +144,7 @@ export const questionController = {
             if (moduleId) examFilter.moduleId = moduleId;
             if (category) examFilter.category = category;
             if (courseName) examFilter.courseName = courseName;
-            
+
             const exams = await ExamParYear.find(examFilter).select('_id');
             const examIds = exams.map(e => e._id);
             filter.examId = { $in: examIds };
@@ -188,6 +188,90 @@ export const questionController = {
             data: exportData,
             count: exportData.length,
             filename: `questions_export_${new Date().toISOString().split('T')[0]}.xlsx`
+        });
+    }),
+
+    // Upload images to Cloudinary and return URLs
+    uploadImages: asyncHandler(async (req, res) => {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Aucune image fournie"
+            });
+        }
+
+        // Dynamic import to avoid circular dependency
+        const { uploadImagesToCloudinary } = await import("../middleware/uploadMiddleware.js");
+
+        const uploadedImages = await uploadImagesToCloudinary(req.files);
+
+        res.status(200).json({
+            success: true,
+            message: `${uploadedImages.length} image(s) téléchargée(s) avec succès`,
+            data: uploadedImages
+        });
+    }),
+
+    // Attach images to questions by question numbers
+    attachImagesToQuestions: asyncHandler(async (req, res) => {
+        const { examId, imageUrls, questionNumbers } = req.body;
+
+        if (!examId || !imageUrls || !questionNumbers) {
+            return res.status(400).json({
+                success: false,
+                message: "examId, imageUrls et questionNumbers sont requis"
+            });
+        }
+
+        // Parse question numbers (e.g., "1-3,5,7-9" => [1,2,3,5,7,8,9])
+        const parseNumbers = (str) => {
+            const result = [];
+            const parts = str.split(',').map(s => s.trim());
+            for (const part of parts) {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    for (let i = start; i <= end; i++) {
+                        result.push(i);
+                    }
+                } else {
+                    result.push(Number(part));
+                }
+            }
+            return [...new Set(result)].sort((a, b) => a - b);
+        };
+
+        const numbers = parseNumbers(questionNumbers);
+
+        // Get questions for this exam
+        const questions = await QuestionModel.find({ examId }).sort({ createdAt: 1 });
+
+        if (questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucune question trouvée pour cet examen"
+            });
+        }
+
+        // Attach images to specified questions (1-indexed)
+        let updatedCount = 0;
+        for (const num of numbers) {
+            const index = num - 1; // Convert to 0-indexed
+            if (index >= 0 && index < questions.length) {
+                const question = questions[index];
+                const currentImages = question.images || [];
+                const newImages = [...currentImages, ...imageUrls];
+
+                await QuestionModel.findByIdAndUpdate(question._id, {
+                    images: newImages
+                });
+                updatedCount++;
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Images attachées à ${updatedCount} question(s)`,
+            updatedCount
         });
     })
 };

@@ -107,6 +107,31 @@ const AddQuestions = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [examQuestions, setExamQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  
+  // Filters for questions table
+  const [filterModule, setFilterModule] = useState("all");
+  const [filterExamType, setFilterExamType] = useState("all");
+  
+  // Selected questions for bulk operations
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  
+  // Toggle select all
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedQuestions(examQuestions.map(q => q._id || q.id));
+    } else {
+      setSelectedQuestions([]);
+    }
+  };
+  
+  // Toggle individual question selection
+  const handleSelectQuestion = (questionId, checked) => {
+    if (checked) {
+      setSelectedQuestions(prev => [...prev, questionId]);
+    } else {
+      setSelectedQuestions(prev => prev.filter(id => id !== questionId));
+    }
+  };
 
   const handleAddOption = () => {
     setOptions((prev) => [...prev, { id: crypto.randomUUID(), text: "", isCorrect: false }]);
@@ -131,11 +156,21 @@ const AddQuestions = () => {
 
   const canSubmit = hasContextSelected && hasBasicQuestion && hasAtLeastOneCorrect;
 
-  // Fetch all questions on mount
+  // Fetch all questions on mount or with filters
   const fetchAllQuestions = async () => {
     try {
       setLoadingQuestions(true);
-      const response = await api.get('/questions/all');
+      let url = '/questions/all';
+      const params = new URLSearchParams();
+      
+      if (filterModule && filterModule !== 'all') params.append('moduleId', filterModule);
+      if (filterExamType && filterExamType !== 'all') params.append('examType', filterExamType);
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await api.get(url);
       setExamQuestions(response.data?.data || []);
     } catch (err) {
       console.error("Error fetching all questions:", err);
@@ -144,6 +179,18 @@ const AddQuestions = () => {
       setLoadingQuestions(false);
     }
   };
+
+  // Refetch when filters change
+  useEffect(() => {
+    if (!hasContextSelected) {
+      fetchAllQuestions();
+    }
+  }, [filterModule, filterExamType]);
+  
+  // Clear selections when questions change
+  useEffect(() => {
+    setSelectedQuestions([]);
+  }, [examQuestions.length]);
 
   // Load questions when exam context changes
   useEffect(() => {
@@ -210,14 +257,18 @@ const AddQuestions = () => {
 
   // Handle Export to Excel
   const handleExportToExcel = () => {
-    if (examQuestions.length === 0) {
+    const questionsToExport = selectedQuestions.length > 0 
+      ? examQuestions.filter(q => selectedQuestions.includes(q._id || q.id))
+      : examQuestions;
+    
+    if (questionsToExport.length === 0) {
       toast.error("Aucune question à exporter");
       return;
     }
 
     // Create CSV content
     const headers = ["ID", "Question", "Option A", "Option B", "Option C", "Option D", "Option E", "Correct Answer"];
-    const rows = examQuestions.map(q => {
+    const rows = questionsToExport.map(q => {
       const correctOption = q.options?.find(opt => opt.isCorrect);
       return [
         q._id || q.id,
@@ -244,26 +295,35 @@ const AddQuestions = () => {
     link.click();
     document.body.removeChild(link);
 
-    toast.success(`${examQuestions.length} questions exportées avec succès`);
+    toast.success(`${questionsToExport.length} questions exportées avec succès`);
+    setSelectedQuestions([]);
   };
 
   // Handle Delete All Questions
   const handleDeleteAllQuestions = async () => {
-    if (examQuestions.length === 0) {
+    const questionsToDelete = selectedQuestions.length > 0 
+      ? selectedQuestions
+      : examQuestions.map(q => q._id || q.id);
+    
+    if (questionsToDelete.length === 0) {
       toast.error("Aucune question à supprimer");
       return;
     }
 
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer les ${examQuestions.length} questions de cet examen ? Cette action est irréversible.`)) {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${questionsToDelete.length} question(s) ? Cette action est irréversible.`)) {
       return;
     }
 
     try {
-      const questionIds = examQuestions.map(q => q._id || q.id);
-      await api.post("/questions/bulk-delete", { questionIds });
-      setExamQuestions([]);
-      toast.success(`${questionIds.length} questions supprimées avec succès`);
-      fetchExamQuestions(); // Refresh the list
+      await api.post("/questions/bulk-delete", { questionIds: questionsToDelete });
+      setExamQuestions(prev => prev.filter(q => !questionsToDelete.includes(q._id || q.id)));
+      setSelectedQuestions([]);
+      toast.success(`${questionsToDelete.length} question(s) supprimée(s) avec succès`);
+      if (hasContextSelected) {
+        fetchExamQuestions(); // Refresh the list
+      } else {
+        fetchAllQuestions();
+      }
     } catch (err) {
       console.error("Error deleting questions:", err);
       toast.error("Erreur lors de la suppression des questions");
@@ -291,7 +351,27 @@ const AddQuestions = () => {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <PageHeader title={t('admin:add_questions')} description={t('admin:select_context_add_content')} />
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportToExcel}
+              disabled={examQuestions.length === 0}
+              className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Exporter {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteAllQuestions}
+              disabled={examQuestions.length === 0}
+              className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
+            </Button>
             <Button variant="outline" onClick={() => setShowPreview((p) => !p)}>
               <Eye className="h-4 w-4 mr-2" />
               {t('admin:preview')}
@@ -591,40 +671,72 @@ const AddQuestions = () => {
 
         {/* Questions List Table */}
         <Card>
-            <CardHeader className="border-b">
+            <CardHeader className="border-b space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {hasContextSelected ? "Questions de l'Examen" : "Toutes les Questions"}
                     <Badge variant="secondary">{examQuestions.length} Total</Badge>
+                    {selectedQuestions.length > 0 && (
+                      <Badge variant="default" className="bg-blue-500">{selectedQuestions.length} sélectionnée(s)</Badge>
+                    )}
                   </CardTitle>
                   <CardDescription>
                     {hasContextSelected ? "Toutes les questions de cet examen" : "Toutes les questions de tous les examens"}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportToExcel}
-                    disabled={examQuestions.length === 0}
-                    className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Exporter Excel
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDeleteAllQuestions}
-                    disabled={examQuestions.length === 0}
-                    className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Supprimer Tout
-                  </Button>
-                </div>
               </div>
+
+              {/* Filters - Only show when no context is selected */}
+              {!hasContextSelected && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filtrer par Module</Label>
+                    <Select value={filterModule} onValueChange={setFilterModule}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les modules" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les modules</SelectItem>
+                        {modules.map((m) => (
+                          <SelectItem key={m._id} value={m._id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
+                    <Select value={filterExamType} onValueChange={setFilterExamType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les types</SelectItem>
+                        <SelectItem value="years">Exam par années</SelectItem>
+                        <SelectItem value="courses">Exam par courses</SelectItem>
+                        <SelectItem value="tp">Exam TP</SelectItem>
+                        <SelectItem value="qcm">Exam QCM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 flex items-end">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setFilterModule("all");
+                        setFilterExamType("all");
+                      }}
+                    >
+                      Réinitialiser les filtres
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -632,7 +744,10 @@ const AddQuestions = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">
-                        <Checkbox />
+                        <Checkbox 
+                          checked={examQuestions.length > 0 && selectedQuestions.length === examQuestions.length}
+                          onCheckedChange={handleSelectAll}
+                        />
                       </TableHead>
                       <TableHead>ID</TableHead>
                       <TableHead>Image</TableHead>
@@ -664,7 +779,10 @@ const AddQuestions = () => {
                       examQuestions.map((q, idx) => (
                         <TableRow key={q._id || q.id}>
                           <TableCell>
-                            <Checkbox />
+                            <Checkbox 
+                              checked={selectedQuestions.includes(q._id || q.id)}
+                              onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
+                            />
                           </TableCell>
                           <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
                           <TableCell>

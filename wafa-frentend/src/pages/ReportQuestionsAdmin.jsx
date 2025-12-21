@@ -485,131 +485,175 @@ const ReportQuestionsAdmin = () => {
 
       {/* Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileQuestion className="h-5 w-5 text-blue-500" />
+        <DialogContent className="w-[700px] max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-2xl">
+              <FileQuestion className="h-6 w-6 text-blue-600" />
               Détails du Rapport
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-lg">
               Informations complètes sur le rapport de question
             </DialogDescription>
           </DialogHeader>
 
           {selectedReport && (
-            <div className="space-y-6 mt-4">
-              {/* Question Reference Cards - Different layouts based on exam type */}
-              <div className="space-y-4">
+            <div className="space-y-6 mt-6">
+              {/* User & Status Header Card */}
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-600">Signalé par:</span>
+                        <span className="font-bold text-slate-900">{selectedReport.username}</span>
+                      </div>
+                      {selectedReport.userEmail && selectedReport.userEmail !== "—" && (
+                        <div className="text-sm text-slate-600">{selectedReport.userEmail}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm text-slate-600">
+                        <Calendar className="h-4 w-4 inline mr-1" />
+                        {selectedReport.date}
+                      </div>
+                      <Badge variant={
+                        selectedReport.status === "resolved" ? "success" :
+                        selectedReport.status === "rejected" ? "destructive" :
+                        "secondary"
+                      } className="text-sm px-3 py-1">
+                        {selectedReport.status === "resolved" ? "Résolu" :
+                         selectedReport.status === "rejected" ? "Rejeté" :
+                         "En attente"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Context Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-indigo-600" />
+                  Contexte de la Question
+                </h3>
+                
                 {/* Layout 1: Exam Par Years */}
                 {selectedReport.moduleCategory === "Exam par years" && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.moduleName || "—"}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          Exam par years
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Name *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.examName || "—"}
-                        </div>
-                      </div>
-                      <div className="flex items-end">
-                        <div className="text-sm font-semibold text-slate-900 pb-2">
-                          {selectedReport.numberOfQuestions || "—"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Layout 2: QCM banque */}
-                {selectedReport.moduleCategory === "QCM banque" && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.moduleName || "—"}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          QCM banque
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">QCM Name *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.examName || "—"}
-                        </div>
-                      </div>
-                      <div className="flex items-end">
-                        <div className="text-sm font-semibold text-slate-900 pb-2">
-                          {selectedReport.numberOfQuestions || "—"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Layout 3: Exam Par Courses */}
-                {selectedReport.moduleCategory === "Exam par courses" && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="space-y-4">
-                      {/* First Row */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
-                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
+                  <Card>
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Module</label>
+                          <div className="text-base font-semibold text-slate-900 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-4 py-3">
                             {selectedReport.moduleName || "—"}
                           </div>
                         </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Exam Type *</label>
-                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                            Exam par courses
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Type d'Examen</label>
+                          <div className="text-base font-semibold text-slate-900 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-4 py-3">
+                            Exam par years
                           </div>
                         </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Category *</label>
-                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                            {selectedReport.courseCategory || "—"}
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Nom de l'Examen</label>
+                          <div className="text-base font-semibold text-slate-900 bg-indigo-50 border-2 border-indigo-200 rounded-lg px-4 py-3">
+                            {selectedReport.examName || "—"}
                           </div>
                         </div>
-                        <div>
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Course Name *</label>
-                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                            {selectedReport.courseName || selectedReport.examName || "—"}
-                          </div>
-                        </div>
-                      </div>
-                      {/* Second Row */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Year *</label>
-                          <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                            {selectedReport.examYear || "—"}
-                          </div>
-                        </div>
-                        <div className="col-span-2"></div>
-                        <div className="flex items-end">
-                          <div className="text-sm font-semibold text-slate-900 pb-2">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Nb Questions</label>
+                          <div className="text-base font-bold text-indigo-700 bg-indigo-100 border-2 border-indigo-300 rounded-lg px-4 py-3 text-center">
                             {selectedReport.numberOfQuestions || "—"}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Layout 2: QCM banque */}
+                {selectedReport.moduleCategory === "QCM banque" && (
+                  <Card>
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-teal-600 uppercase tracking-wide">Module</label>
+                          <div className="text-base font-semibold text-slate-900 bg-teal-50 border-2 border-teal-200 rounded-lg px-4 py-3">
+                            {selectedReport.moduleName || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-teal-600 uppercase tracking-wide">Type d'Examen</label>
+                          <div className="text-base font-semibold text-slate-900 bg-teal-50 border-2 border-teal-200 rounded-lg px-4 py-3">
+                            QCM banque
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-teal-600 uppercase tracking-wide">Nom du QCM</label>
+                          <div className="text-base font-semibold text-slate-900 bg-teal-50 border-2 border-teal-200 rounded-lg px-4 py-3">
+                            {selectedReport.examName || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-teal-600 uppercase tracking-wide">Nb Questions</label>
+                          <div className="text-base font-bold text-teal-700 bg-teal-100 border-2 border-teal-300 rounded-lg px-4 py-3 text-center">
+                            {selectedReport.numberOfQuestions || "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Layout 3: Exam Par Courses */}
+                {selectedReport.moduleCategory === "Exam par courses" && (
+                  <Card>
+                    <CardContent className="p-5">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Module</label>
+                            <div className="text-base font-semibold text-slate-900 bg-purple-50 border-2 border-purple-200 rounded-lg px-4 py-3">
+                              {selectedReport.moduleName || "—"}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Type d'Examen</label>
+                            <div className="text-base font-semibold text-slate-900 bg-purple-50 border-2 border-purple-200 rounded-lg px-4 py-3">
+                              Exam par courses
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Catégorie</label>
+                            <div className="text-base font-semibold text-slate-900 bg-purple-50 border-2 border-purple-200 rounded-lg px-4 py-3">
+                              {selectedReport.courseCategory || "—"}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Nom du Cours</label>
+                            <div className="text-base font-semibold text-slate-900 bg-purple-50 border-2 border-purple-200 rounded-lg px-4 py-3">
+                              {selectedReport.courseName || selectedReport.examName || "—"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Année</label>
+                            <div className="text-base font-semibold text-slate-900 bg-purple-50 border-2 border-purple-200 rounded-lg px-4 py-3">
+                              {selectedReport.examYear || "—"}
+                            </div>
+                          </div>
+                          <div className="sm:col-span-2 lg:col-span-2"></div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Nb Questions</label>
+                            <div className="text-base font-bold text-purple-700 bg-purple-100 border-2 border-purple-300 rounded-lg px-4 py-3 text-center">
+                              {selectedReport.numberOfQuestions || "—"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* Layout 4: Default for Résumé et cours or other types */}
@@ -617,84 +661,100 @@ const ReportQuestionsAdmin = () => {
                   (selectedReport.moduleCategory !== "Exam par years" && 
                    selectedReport.moduleCategory !== "Exam par courses" && 
                    selectedReport.moduleCategory !== "QCM banque")) && (
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Module *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.moduleName || "—"}
+                  <Card>
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Module</label>
+                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                            {selectedReport.moduleName || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Type</label>
+                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                            {selectedReport.moduleCategory || "—"}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Nom</label>
+                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                            {selectedReport.examName || selectedReport.courseName || "—"}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Type *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.moduleCategory || "—"}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Nom *</label>
-                        <div className="text-sm font-semibold text-slate-900 bg-white border rounded px-3 py-2">
-                          {selectedReport.examName || selectedReport.courseName || "—"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
 
-              {/* Additional Info */}
-              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Référence Complète
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  {selectedReport.examYear && selectedReport.examYear !== "—" && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Année:</span>
-                      <span className="font-medium">{selectedReport.examYear}</span>
+              {/* Additional Info - Session & Year */}
+              {(selectedReport.sessionLabel && selectedReport.sessionLabel !== "—") && (
+                <Card className="bg-amber-50 border-amber-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-5 w-5 text-amber-600" />
+                        <span className="text-sm font-medium text-slate-600">Session:</span>
+                        <span className="font-bold text-amber-900">{selectedReport.sessionLabel}</span>
+                      </div>
+                      {selectedReport.examYear && selectedReport.examYear !== "—" && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-amber-600" />
+                          <span className="text-sm font-medium text-slate-600">Année:</span>
+                          <span className="font-bold text-amber-900">{selectedReport.examYear}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {selectedReport.sessionLabel && selectedReport.sessionLabel !== "—" && (
-                    <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Session:</span>
-                      <span className="font-medium">{selectedReport.sessionLabel}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              {/* Question Text */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm text-slate-700">Question Signalée</h4>
-                <p className="text-sm bg-white border rounded-lg p-3">{selectedReport.question}</p>
-              </div>
-
-              {/* Report Details */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm text-slate-700">Détails du Signalement</h4>
-                <p className="text-sm bg-white border rounded-lg p-3">{selectedReport.text || "Aucun détail fourni"}</p>
-              </div>
-
-              {/* Reporter Info */}
-              <div className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+              {/* Question & Report Details */}
+              <div className="space-y-4">
                 <div>
-                  <span>Signalé par: </span>
-                  <span className="font-medium text-foreground">{selectedReport.username}</span>
-                  {selectedReport.userEmail && selectedReport.userEmail !== "—" && (
-                    <span className="ml-2">({selectedReport.userEmail})</span>
-                  )}
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                    Question Signalée
+                  </h3>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-base leading-relaxed text-slate-800">{selectedReport.question}</p>
+                    </CardContent>
+                  </Card>
                 </div>
+
                 <div>
-                  <span>Date: </span>
-                  <span className="font-medium text-foreground">{selectedReport.date}</span>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-green-600" />
+                    Explications
+                  </h3>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-base leading-relaxed text-slate-700 min-h-32 max-h-60 overflow-y-auto bg-green-50 rounded-lg p-4 border border-green-100">
+                        {selectedReport.explanation || <span className="italic text-slate-400">Aucune explication fournie</span>}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-orange-600" />
+                    Détails du Signalement
+                  </h3>
+                  <Card>
+                    <CardContent className="p-5">
+                      <p className="text-base leading-relaxed text-slate-700 min-h-40 max-h-80 overflow-y-auto bg-slate-50 rounded-lg p-4 border border-orange-100">
+                        {selectedReport.text || <span className="italic text-slate-400">Aucun détail fourni</span>}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
                 {selectedReport.status === "pending" && (
                   <>
                     <Button
@@ -703,7 +763,7 @@ const ReportQuestionsAdmin = () => {
                         handleReject(selectedReport.id);
                         setDetailsOpen(false);
                       }}
-                      className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                      className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:border-orange-400"
                     >
                       <X className="h-4 w-4 mr-2" />
                       Rejeter
@@ -713,7 +773,7 @@ const ReportQuestionsAdmin = () => {
                         handleApprove(selectedReport.id);
                         setDetailsOpen(false);
                       }}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-white"
                     >
                       <Check className="h-4 w-4 mr-2" />
                       Approuver
@@ -723,7 +783,7 @@ const ReportQuestionsAdmin = () => {
                 <Button
                   variant="outline"
                   onClick={() => handleEditQuestion(selectedReport.questionId)}
-                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  className="text-purple-600 border-purple-300 hover:bg-purple-50 hover:border-purple-400"
                 >
                   <FilePenLine className="h-4 w-4 mr-2" />
                   Modifier la Question

@@ -23,7 +23,9 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  Eye
+  Eye,
+  Upload,
+  ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -62,6 +64,7 @@ const ImportExamParCourse = () => {
   const [loadingExamYears, setLoadingExamYears] = useState(false);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Selection state
   const [selectedModule, setSelectedModule] = useState("");
@@ -74,6 +77,80 @@ const ImportExamParCourse = () => {
   const [yearMappings, setYearMappings] = useState([
     { id: crypto.randomUUID(), examYearId: "", yearName: "", questionNumbers: "" },
   ]);
+
+  // Image mappings for attaching images to linked questions
+  const [imageMappings, setImageMappings] = useState([
+    { id: crypto.randomUUID(), file: null, questionNumbers: "" },
+  ]);
+
+  const handleAddImageRow = () =>
+    setImageMappings((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), file: null, questionNumbers: "" },
+    ]);
+
+  const handleRemoveImageRow = (id) =>
+    setImageMappings((prev) => prev.filter((r) => r.id !== id));
+
+  // Handle image upload for course questions  
+  const handleUploadImages = async () => {
+    const validMappings = imageMappings.filter(
+      (m) => m.file && m.questionNumbers.trim()
+    );
+
+    if (validMappings.length === 0) {
+      toast.info("Aucune image à télécharger");
+      return;
+    }
+
+    // We need to find the linked exam to attach images
+    const validYearMappings = yearMappings.filter(
+      m => m.examYearId && m.questionNumbers.trim()
+    );
+
+    if (validYearMappings.length === 0) {
+      toast.error("Veuillez d'abord lier des questions à un examen");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      for (const mapping of validMappings) {
+        // 1. Upload image to Cloudinary
+        const formData = new FormData();
+        formData.append("images", mapping.file);
+
+        const uploadRes = await axios.post(`${API_URL}/questions/upload-images`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        });
+
+        if (!uploadRes.data.success) {
+          throw new Error("Échec du téléchargement de l'image");
+        }
+
+        const imageUrls = uploadRes.data.data.map((img) => img.url);
+
+        // 2. Attach images to questions for the first exam year mapping
+        await axios.post(`${API_URL}/questions/attach-images`, {
+          examId: validYearMappings[0].examYearId,
+          imageUrls,
+          questionNumbers: mapping.questionNumbers,
+        }, { withCredentials: true });
+      }
+
+      toast.success(`${validMappings.length} image(s) téléchargée(s) et attachée(s)`);
+      setImageMappings([
+        { id: crypto.randomUUID(), file: null, questionNumbers: "" },
+      ]);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error(error.response?.data?.message || "Erreur lors du téléchargement");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Fetch modules on mount
   useEffect(() => {
@@ -454,6 +531,120 @@ const ImportExamParCourse = () => {
                 Lier les Questions
               </Button>
             </CardFooter>
+          </Card>
+        </motion.div>
+
+        {/* Image Attachment Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-purple-900">
+                <ImageIcon className="w-5 h-5" />
+                Attacher des Images (Optionnel)
+              </CardTitle>
+              <CardDescription>
+                Associez des images aux questions liées
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                {imageMappings.map((row, idx) => (
+                  <motion.div
+                    key={row.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: idx * 0.05 }}
+                    className="p-3 bg-slate-50 rounded-lg border border-slate-200"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">
+                      <div className="sm:col-span-2 space-y-1">
+                        <Label className="text-xs font-semibold">Image</Label>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setImageMappings((prev) =>
+                              prev.map((r) =>
+                                r.id === row.id ? { ...r, file } : r
+                              )
+                            );
+                          }}
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 space-y-1">
+                        <Label className="text-xs font-semibold">Questions</Label>
+                        <Input
+                          placeholder="ex: 1,2,5-7"
+                          value={row.questionNumbers}
+                          onChange={(e) =>
+                            setImageMappings((prev) =>
+                              prev.map((r) =>
+                                r.id === row.id
+                                  ? { ...r, questionNumbers: e.target.value }
+                                  : r
+                              )
+                            )
+                          }
+                          className="text-xs"
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveImageRow(row.id)}
+                        disabled={imageMappings.length === 1}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {/* Image Preview */}
+                    {row.file && (
+                      <div className="mt-2 flex items-center gap-2 p-2 bg-white rounded border">
+                        <img
+                          src={URL.createObjectURL(row.file)}
+                          alt="Preview"
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <div className="text-xs text-gray-600">
+                          <p className="font-medium truncate max-w-32">{row.file.name}</p>
+                          <p>{(row.file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleAddImageRow}
+                  className="flex-1 gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </Button>
+                <Button
+                  onClick={handleUploadImages}
+                  disabled={uploading || !yearMappings.some(m => m.examYearId) || !imageMappings.some(m => m.file && m.questionNumbers.trim())}
+                  className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  {uploading ? "Téléchargement..." : "Télécharger Images"}
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </motion.div>
 
