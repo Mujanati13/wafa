@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, RotateCcw, ChevronDown, BookOpen, GraduationCap, Lock, FileQuestion, ListChecks, Shuffle } from "lucide-react";
+import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ const ProgressCircle = ({ progress, size = 48 }) => {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
-  
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90" width={size} height={size}>
@@ -52,14 +52,58 @@ const ProgressCircle = ({ progress, size = 48 }) => {
   );
 };
 
+// Exam Card Component
+const ExamCard = ({ exam, onStart, index }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+    >
+      <Card
+        className="hover:shadow-lg transition-all cursor-pointer group"
+        onClick={() => onStart(exam.id)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            {/* Icon */}
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <FileQuestion className="h-6 w-6 text-white" />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                {exam.name}
+              </h3>
+              <p className="text-sm text-gray-500">{exam.questions} Questions</p>
+            </div>
+
+            {/* Progress */}
+            <ProgressCircle progress={exam.progress || 0} size={48} />
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+};
+
 const SubjectsPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
+  const [selectedExamType, setSelectedExamType] = useState("year");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [course, setCourse] = useState(null);
+  const [module, setModule] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(true);
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
+
+  // Exam data by type
+  const [examsParYear, setExamsParYear] = useState([]);
+  const [examsParCours, setExamsParCours] = useState([]);
+  const [qcmBanque, setQcmBanque] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const { courseId } = useParams();
   const navigate = useNavigate();
 
@@ -75,7 +119,6 @@ const SubjectsPage = () => {
         localStorage.setItem("user", JSON.stringify(userProfile));
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        // Fallback to localStorage
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -89,17 +132,16 @@ const SubjectsPage = () => {
 
   // Helper function to check if user has access to a semester
   const hasAccessToSemester = (semester) => {
-    // If user has semesters defined, check against those
     if (userSemesters && userSemesters.length > 0) {
       return userSemesters.includes(semester);
     }
-    // For Free plan users with no semesters set, give access to S1 by default
     if (userPlan === "Free" || !userPlan) {
       return semester === "S1";
     }
     return false;
   };
 
+  // Fetch module data and exams
   useEffect(() => {
     const fetchData = async (id) => {
       setIsLoading(true);
@@ -109,16 +151,22 @@ const SubjectsPage = () => {
 
         if (!moduleData) return;
 
-        // Check if user has access to this module's semester
+        // Check access
         if (!hasAccessToSemester(moduleData.semester)) {
           setHasAccess(false);
-          setCourse({ name: moduleData.name, semester: moduleData.semester });
+          setModule({ name: moduleData.name, semester: moduleData.semester });
           setIsLoading(false);
           return;
         }
         setHasAccess(true);
 
-        // Build a map of examId -> questions count
+        setModule({
+          id: moduleData._id,
+          name: moduleData.name,
+          semester: moduleData.semester,
+        });
+
+        // Build question count map
         const examIdToQuestionCount = (moduleData.questions || []).reduce(
           (acc, q) => {
             const key = q.examId;
@@ -128,29 +176,36 @@ const SubjectsPage = () => {
           {}
         );
 
-        // Normalize exams to UI structure
-        const normalizedExams = (moduleData.exams || []).map((e) => ({
+        // Process exams and categorize by type
+        // For now, we'll use the existing exams structure and simulate the 3 types
+        // In production, you'd fetch from separate endpoints
+        const allExams = (moduleData.exams || []).map((e) => ({
           id: e._id,
           name: e.name,
           questions: examIdToQuestionCount[e._id] || 0,
-          completed: 0,
           progress: 0,
-          description: e.infoText,
-          imageUrl: e.imageUrl,
-          infoText: e.infoText,
-          category: "all",
+          category: e.category || "Général",
+          year: e.year,
+          type: e.type || "year", // Default to year type
         }));
 
-        // Minimal categories for filters
-        const categories = [{ id: "all", name: t('common:all') }];
+        // Separate exams by type (simulated - in production use real type field)
+        // For demo: first 1/3 = year, middle 1/3 = course, last 1/3 = qcm
+        const yearExams = allExams.filter((_, i) => i % 3 === 0 || allExams.length <= 3);
+        const courseExams = allExams.filter((_, i) => i % 3 === 1);
+        const qcmExams = allExams.filter((_, i) => i % 3 === 2);
 
-        setCourse({
-          id: moduleData._id,
-          name: moduleData.name,
-          image: "📘",
-          categories,
-          exams: normalizedExams,
-        });
+        setExamsParYear(yearExams);
+        setExamsParCours(courseExams);
+        setQcmBanque(qcmExams);
+
+        // Extract unique categories from course exams
+        const uniqueCategories = [...new Set(courseExams.map(e => e.category))];
+        setCategories([
+          { id: "all", name: t('common:all', 'Tous') },
+          ...uniqueCategories.map(cat => ({ id: cat, name: cat }))
+        ]);
+
       } catch (error) {
         console.error(error);
         toast.error(t('dashboard:error_loading_module'));
@@ -158,30 +213,46 @@ const SubjectsPage = () => {
         setIsLoading(false);
       }
     };
+
     if (courseId) {
       fetchData(courseId);
     }
   }, [courseId, userSemesters, userPlan]);
 
-  const filteredExams = course?.exams?.filter(
+  // Filter course exams by category
+  const filteredCourseExams = examsParCours.filter(
     (exam) => selectedCategory === "all" || exam.category === selectedCategory
-  ) || [];
-
-  const totalQuestions = course?.exams?.reduce((sum, exam) => sum + exam.questions, 0) || 0;
-  const completedExams = course?.exams?.filter(exam => exam.progress === 100).length || 0;
+  );
 
   const handleStartExam = (examId) => {
     navigate(`/exam/${examId}`);
   };
+
+  // Get current exams based on selected type
+  const getCurrentExams = () => {
+    switch (selectedExamType) {
+      case "year":
+        return examsParYear;
+      case "course":
+        return filteredCourseExams;
+      case "qcm":
+        return qcmBanque;
+      default:
+        return [];
+    }
+  };
+
+  const currentExams = getCurrentExams();
+  const totalQuestions = currentExams.reduce((sum, exam) => sum + exam.questions, 0);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
         <div className="max-w-7xl mx-auto space-y-6">
           <Skeleton className="h-12 w-64" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-48" />
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
         </div>
@@ -189,7 +260,7 @@ const SubjectsPage = () => {
     );
   }
 
-  if (!course) {
+  if (!module) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
@@ -215,7 +286,6 @@ const SubjectsPage = () => {
     );
   }
 
-  // Access denied - user doesn't have subscription for this semester
   if (!hasAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
@@ -234,7 +304,7 @@ const SubjectsPage = () => {
                     {t('dashboard:module_not_in_plan', "Ce module n'est pas inclus dans votre abonnement actuel.")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    <strong>{course?.name}</strong> - {course?.semester}
+                    <strong>{module?.name}</strong> - {module?.semester}
                   </p>
                 </div>
                 <div className="flex gap-3 mt-2">
@@ -267,168 +337,185 @@ const SubjectsPage = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
-            <PageHeader
-              title={course.name}
-              description={`${course.exams.length} ${t('dashboard:exams_available')}`}
-            />
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{module.name}</h1>
+            <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-indigo-500 mt-2 rounded-full" />
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('dashboard:total_questions')}</p>
-                  <p className="text-2xl font-bold">{totalQuestions}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center">
-                  <GraduationCap className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('dashboard:exams')}</p>
-                  <p className="text-2xl font-bold">{course.exams.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center">
-                  <Play className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('dashboard:completed')}</p>
-                  <p className="text-2xl font-bold">{completedExams}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        {course.categories.length > 1 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">{t('dashboard:category')}:</span>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {course.categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Exams List - QCMOLOGY Style */}
-        <div className="space-y-4">
-          {filteredExams.map((exam, index) => (
-            <motion.div
-              key={exam.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+        {/* Exam Type Tabs */}
+        <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-white border shadow-sm">
+            <TabsTrigger
+              value="year"
+              className="flex items-center gap-2 py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
-              <Card className="hover:shadow-lg transition-all overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Left Side: Exam Info */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                          <FileQuestion className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 line-clamp-1">{exam.name}</h3>
-                          <p className="text-sm text-gray-500">{exam.questions} Questions</p>
-                        </div>
-                      </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-500">Progression</span>
-                          <span className="font-medium text-gray-700">{exam.progress}%</span>
-                        </div>
-                        <Progress value={exam.progress} className="h-2" />
-                      </div>
-                    </div>
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Exam par Year</span>
+              <span className="sm:hidden">Par Year</span>
+              {examsParYear.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+                  {examsParYear.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="course"
+              className="flex items-center gap-2 py-3 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Par Cours</span>
+              <span className="sm:hidden">Cours</span>
+              {examsParCours.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 data-[state=active]:bg-orange-400 data-[state=active]:text-white">
+                  {examsParCours.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="qcm"
+              className="flex items-center gap-2 py-3 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
+              <Library className="h-4 w-4" />
+              <span className="hidden sm:inline">QCM Banque</span>
+              <span className="sm:hidden">Banque</span>
+              {qcmBanque.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                  {qcmBanque.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-                    {/* Right Side: Mode Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
-                      <Button 
-                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => navigate(`/exam/${exam.id}?mode=exam`)}
-                      >
-                        <Play className="h-4 w-4" />
-                        Mode Examen
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        className="gap-2 border-green-200 text-green-700 hover:bg-green-50"
-                        onClick={() => navigate(`/exam/${exam.id}?mode=course`)}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        Mode Cours
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
-                        onClick={() => navigate(`/exam/${exam.id}?mode=bank`)}
-                      >
-                        <Shuffle className="h-4 w-4" />
-                        Mode Banque
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {filteredExams.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-blue-50 flex items-center justify-center">
-                  <BookOpen className="h-10 w-10 text-blue-500" />
+          {/* Category Filter - Only for "Par Cours" */}
+          {selectedExamType === "course" && categories.length > 1 && (
+            <Card className="mt-4">
+              <CardContent className="p-4">
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <Button
+                      key={cat.id}
+                      variant={selectedCategory === cat.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={selectedCategory === cat.id ? "bg-orange-500 hover:bg-orange-600" : ""}
+                    >
+                      {cat.name}
+                    </Button>
+                  ))}
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">{t('dashboard:no_exams_available')}</h3>
-                  <p className="text-muted-foreground">
-                    {selectedCategory === "all" 
-                      ? t('dashboard:no_exams_in_module')
-                      : t('dashboard:no_exams_in_category')
-                    }
-                  </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Stats Summary */}
+          <Card className="mt-4">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
+                    <FileQuestion className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Questions</p>
+                    <p className="text-xl font-bold">{totalQuestions}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center">
+                    <GraduationCap className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Examens</p>
+                    <p className="text-xl font-bold">{currentExams.length}</p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Exam Lists */}
+          <div className="mt-4">
+            <TabsContent value="year" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {examsParYear.map((exam, index) => (
+                  <ExamCard
+                    key={exam.id}
+                    exam={exam}
+                    onStart={handleStartExam}
+                    index={index}
+                  />
+                ))}
+              </div>
+              {examsParYear.length === 0 && (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center">
+                        <Calendar className="h-8 w-8 text-blue-400" />
+                      </div>
+                      <p className="text-muted-foreground">Aucun examen par année disponible</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="course" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCourseExams.map((exam, index) => (
+                  <ExamCard
+                    key={exam.id}
+                    exam={exam}
+                    onStart={handleStartExam}
+                    index={index}
+                  />
+                ))}
+              </div>
+              {filteredCourseExams.length === 0 && (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-orange-50 flex items-center justify-center">
+                        <BookOpen className="h-8 w-8 text-orange-400" />
+                      </div>
+                      <p className="text-muted-foreground">
+                        {selectedCategory === "all"
+                          ? "Aucun examen par cours disponible"
+                          : "Aucun examen dans cette catégorie"
+                        }
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="qcm" className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {qcmBanque.map((exam, index) => (
+                  <ExamCard
+                    key={exam.id}
+                    exam={exam}
+                    onStart={handleStartExam}
+                    index={index}
+                  />
+                ))}
+              </div>
+              {qcmBanque.length === 0 && (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-purple-50 flex items-center justify-center">
+                        <Library className="h-8 w-8 text-purple-400" />
+                      </div>
+                      <p className="text-muted-foreground">Aucun QCM banque disponible</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </div>
   );

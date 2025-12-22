@@ -9,7 +9,6 @@ const ROUTE_PERMISSIONS = {
 // Routes that require super_admin role (not just permissions)
 const SUPER_ADMIN_ONLY_ROUTES = [
   '/admin/analytics',
-  '/admin/subscription',
 ];
 
 const ProtectedAdminRoute = ({ children }) => {

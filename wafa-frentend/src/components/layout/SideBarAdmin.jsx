@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/collapsible";
 
 // Items that require super_admin role (editors cannot see these)
-const RESTRICTED_ITEMS = ['analytics', 'subscription'];
+const RESTRICTED_ITEMS = ['analytics'];
 const RESTRICTED_CATEGORIES = []; // Entire category hidden for non-super-admins
 
 const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {

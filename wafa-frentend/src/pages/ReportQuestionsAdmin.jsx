@@ -29,6 +29,18 @@ const ReportQuestionsAdmin = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
+  // Popup states for Question and Details
+  const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
+  const [detailsPopup, setDetailsPopup] = useState({ open: false, text: '' });
+
+  const openQuestionPopup = (questionText) => {
+    setQuestionPopup({ open: true, text: questionText });
+  };
+
+  const openDetailsPopup = (detailsText) => {
+    setDetailsPopup({ open: true, text: detailsText || 'Aucun détail fourni' });
+  };
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -261,7 +273,7 @@ const ReportQuestionsAdmin = () => {
                 placeholder="Rechercher par utilisateur, question, module..."
                 showYearFilter={false}
               />
-              
+
               {/* Status and Category Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Status Filter */}
@@ -389,13 +401,23 @@ const ReportQuestionsAdmin = () => {
                             {report.numberOfQuestions || "—"}
                           </span>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {report.question}
+                        <TableCell className="max-w-xs">
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+                            onClick={() => openQuestionPopup(report.question)}
+                          >
+                            Voir la question
+                          </Badge>
                         </TableCell>
-                        <TableCell className="max-w-md truncate">
-                          <div className="text-sm">
-                            {report.text || <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Text</span>}
-                          </div>
+                        <TableCell className="max-w-md">
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer bg-green-50 text-green-700 border-green-200 hover:bg-green-100 transition-colors"
+                            onClick={() => openDetailsPopup(report.text)}
+                          >
+                            Voir les détails
+                          </Badge>
                         </TableCell>
                         <TableCell>{report.date || "—"}</TableCell>
                         <TableCell>
@@ -518,12 +540,12 @@ const ReportQuestionsAdmin = () => {
                       </div>
                       <Badge variant={
                         selectedReport.status === "resolved" ? "success" :
-                        selectedReport.status === "rejected" ? "destructive" :
-                        "secondary"
+                          selectedReport.status === "rejected" ? "destructive" :
+                            "secondary"
                       } className="text-sm px-3 py-1">
                         {selectedReport.status === "resolved" ? "Résolu" :
-                         selectedReport.status === "rejected" ? "Rejeté" :
-                         "En attente"}
+                          selectedReport.status === "rejected" ? "Rejeté" :
+                            "En attente"}
                       </Badge>
                     </div>
                   </div>
@@ -536,7 +558,7 @@ const ReportQuestionsAdmin = () => {
                   <Layers className="h-5 w-5 text-indigo-600" />
                   Contexte de la Question
                 </h3>
-                
+
                 {/* Layout 1: Exam Par Years */}
                 {selectedReport.moduleCategory === "Exam par years" && (
                   <Card>
@@ -657,35 +679,35 @@ const ReportQuestionsAdmin = () => {
                 )}
 
                 {/* Layout 4: Default for Résumé et cours or other types */}
-                {(!selectedReport.moduleCategory || 
-                  (selectedReport.moduleCategory !== "Exam par years" && 
-                   selectedReport.moduleCategory !== "Exam par courses" && 
-                   selectedReport.moduleCategory !== "QCM banque")) && (
-                  <Card>
-                    <CardContent className="p-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Module</label>
-                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
-                            {selectedReport.moduleName || "—"}
+                {(!selectedReport.moduleCategory ||
+                  (selectedReport.moduleCategory !== "Exam par years" &&
+                    selectedReport.moduleCategory !== "Exam par courses" &&
+                    selectedReport.moduleCategory !== "QCM banque")) && (
+                    <Card>
+                      <CardContent className="p-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Module</label>
+                            <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                              {selectedReport.moduleName || "—"}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Type</label>
+                            <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                              {selectedReport.moduleCategory || "—"}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Nom</label>
+                            <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
+                              {selectedReport.examName || selectedReport.courseName || "—"}
+                            </div>
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Type</label>
-                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
-                            {selectedReport.moduleCategory || "—"}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Nom</label>
-                          <div className="text-base font-semibold text-slate-900 bg-blue-50 border-2 border-blue-200 rounded-lg px-4 py-3">
-                            {selectedReport.examName || selectedReport.courseName || "—"}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      </CardContent>
+                    </Card>
+                  )}
               </div>
 
               {/* Additional Info - Session & Year */}
@@ -791,6 +813,64 @@ const ReportQuestionsAdmin = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Popup Dialog */}
+      <Dialog open={questionPopup.open} onOpenChange={(open) => setQuestionPopup({ ...questionPopup, open })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              Question Signalée
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-6">
+                <p className="text-base leading-relaxed text-slate-800 whitespace-pre-wrap break-words">
+                  {questionPopup.text || '—'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setQuestionPopup({ open: false, text: '' })}
+            >
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Popup Dialog */}
+      <Dialog open={detailsPopup.open} onOpenChange={(open) => setDetailsPopup({ ...detailsPopup, open })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-5 w-5 text-green-600" />
+              Détails du Signalement
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-6">
+                <p className="text-base leading-relaxed text-slate-700 whitespace-pre-wrap break-words">
+                  {detailsPopup.text || <span className="italic text-slate-400">Aucun détail fourni</span>}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDetailsPopup({ open: false, text: '' })}
+            >
+              Fermer
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

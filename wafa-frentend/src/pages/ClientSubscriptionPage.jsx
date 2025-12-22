@@ -19,7 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const ClientSubscriptionPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const location = useLocation();
-  
+
   const [userSubscription, setUserSubscription] = useState(null);
   const [allPlans, setAllPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,15 +64,15 @@ const ClientSubscriptionPage = () => {
   const fetchSubscriptionData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch user's current subscription
       const subResponse = await dashboardService.getUserSubscriptionInfo();
       setUserSubscription(subResponse.data || {});
 
       // Fetch all available plans
       const plansResponse = await subscriptionPlanService.getAllPlans();
-      const plansData = Array.isArray(plansResponse.data) 
-        ? plansResponse.data 
+      const plansData = Array.isArray(plansResponse.data)
+        ? plansResponse.data
         : plansResponse.data?.data || [];
       setAllPlans(plansData);
     } catch (error) {
@@ -89,7 +89,7 @@ const ClientSubscriptionPage = () => {
       toast.info('Vous avez déjà ce plan');
       return;
     }
-    
+
     // Don't allow selecting free plan
     if (plan.price === 0) {
       toast.info('Vous êtes déjà sur le plan gratuit');
@@ -105,7 +105,7 @@ const ClientSubscriptionPage = () => {
   // Handle semester selection
   const handleSemesterChange = (semester, checked) => {
     const maxSemesters = getMaxSemesters(selectedPlan);
-    
+
     if (checked) {
       if (selectedSemesters.length < maxSemesters) {
         setSelectedSemesters([...selectedSemesters, semester]);
@@ -140,7 +140,7 @@ const ClientSubscriptionPage = () => {
 
       // Create payment request in the backend
       const semestersList = selectedSemesters.sort().join(', ');
-      
+
       const requestData = {
         planId: selectedPlan._id,
         planName: selectedPlan.name,
@@ -165,11 +165,11 @@ const ClientSubscriptionPage = () => {
         const message = encodeURIComponent(
           `Bonjour! Je souhaite souscrire au plan ${selectedPlan.name} (${selectedPlan.price} MAD).\n\nSemestres choisis: ${semestersList}\n\nJ'ai créé une demande de paiement (#${response.data.requestId || 'N/A'}).\n\nMerci de me contacter pour finaliser mon abonnement.`
         );
-        
+
         // Open WhatsApp with pre-filled message
         const whatsappUrl = `https://wa.me/212${WHATSAPP_NUMBER.replace(/^0/, '')}?text=${message}`;
         window.open(whatsappUrl, '_blank');
-        
+
         // Close dialogs
         setShowConfirmDialog(false);
         setShowPaymentDialog(false);
@@ -210,7 +210,7 @@ const ClientSubscriptionPage = () => {
       // Create PayPal order with selected semesters
       const response = await axios.post(
         `${API_URL}/payments/create-order`,
-        { 
+        {
           duration,
           semesters: selectedSemesters,
           planId: selectedPlan._id
@@ -221,7 +221,7 @@ const ClientSubscriptionPage = () => {
       if (response.data.success && response.data.orderId) {
         // Store selected semesters in localStorage to use after payment
         localStorage.setItem('pendingSubscriptionSemesters', JSON.stringify(selectedSemesters));
-        
+
         // Redirect to PayPal
         const paypalUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${response.data.orderId}`;
         window.location.href = paypalUrl;
@@ -316,7 +316,7 @@ const ClientSubscriptionPage = () => {
                 {allPlans.map((plan, index) => {
                   const isCurrentPlan = userSubscription?.plan === plan.name;
                   const isFree = plan.price === 0;
-                  
+
                   return (
                     <motion.div
                       key={plan._id}
@@ -324,12 +324,11 @@ const ClientSubscriptionPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
                     >
-                      <Card 
-                        className={`flex flex-col h-full relative ${
-                          isCurrentPlan
+                      <Card
+                        className={`flex flex-col h-full relative ${isCurrentPlan
                             ? 'ring-2 ring-blue-500 shadow-lg'
                             : ''
-                        }`}
+                          }`}
                       >
                         {/* Current Plan Badge */}
                         {isCurrentPlan && (
@@ -366,7 +365,7 @@ const ClientSubscriptionPage = () => {
                             {plan.features && plan.features.map((feature, idx) => {
                               const featureText = typeof feature === 'string' ? feature : feature.text;
                               const isIncluded = typeof feature === 'string' ? true : feature.included;
-                              
+
                               return (
                                 <div key={idx} className={`flex items-start gap-3 ${!isIncluded ? 'opacity-50' : ''}`}>
                                   <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isIncluded ? 'text-green-500' : 'text-slate-400'}`} />
@@ -390,11 +389,10 @@ const ClientSubscriptionPage = () => {
                           <Button
                             onClick={() => handleSelectPlan(plan)}
                             disabled={isCurrentPlan || isFree}
-                            className={`w-full ${
-                              isCurrentPlan || isFree
+                            className={`w-full ${isCurrentPlan || isFree
                                 ? 'opacity-50 cursor-default'
                                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                            }`}
+                              }`}
                             variant={isCurrentPlan ? 'outline' : 'default'}
                           >
                             {isCurrentPlan ? (
@@ -477,51 +475,229 @@ const ClientSubscriptionPage = () => {
                 <p className="text-sm text-slate-500">
                   Choisissez les semestres auxquels vous souhaitez accéder avec votre abonnement
                 </p>
-                
-                <div className="grid grid-cols-5 gap-3 mt-3">
-                  {allSemesters.map((semester) => {
-                    const isSelected = selectedSemesters.includes(semester);
-                    const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
-                    
-                    return (
-                      <div
-                        key={semester}
-                        className={`
-                          relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
-                          ${isSelected 
-                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                            : isDisabled 
-                              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50' 
-                              : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
-                          }
-                        `}
-                        onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
-                      >
-                        <Checkbox 
-                          id={semester}
-                          checked={isSelected}
-                          disabled={isDisabled}
-                          onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
-                          className="hidden"
-                        />
-                        <span className="text-sm font-bold">{semester}</span>
-                        {isSelected && (
-                          <div className="absolute -top-1 -right-1">
-                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                              <Check className="w-3 h-3 text-white" />
-                            </div>
+
+                <div className="space-y-4 mt-3">
+                  {/* Year 1 - S1, S2 */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">1ère Année</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["S1", "S2"].map((semester) => {
+                        const isSelected = selectedSemesters.includes(semester);
+                        const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+
+                        return (
+                          <div
+                            key={semester}
+                            className={`
+                              relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                              ${isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDisabled
+                                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'
+                                  : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                            onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                          >
+                            <Checkbox
+                              id={semester}
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                              className="hidden"
+                            />
+                            <span className="text-sm font-bold">{semester}</span>
+                            {isSelected && (
+                              <div className="absolute -top-1 -right-1">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Year 2 - S3, S4 */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">2ème Année</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["S3", "S4"].map((semester) => {
+                        const isSelected = selectedSemesters.includes(semester);
+                        const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+
+                        return (
+                          <div
+                            key={semester}
+                            className={`
+                              relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                              ${isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDisabled
+                                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'
+                                  : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                            onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                          >
+                            <Checkbox
+                              id={semester}
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                              className="hidden"
+                            />
+                            <span className="text-sm font-bold">{semester}</span>
+                            {isSelected && (
+                              <div className="absolute -top-1 -right-1">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Year 3 - S5, S6 */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">3ème Année</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["S5", "S6"].map((semester) => {
+                        const isSelected = selectedSemesters.includes(semester);
+                        const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+
+                        return (
+                          <div
+                            key={semester}
+                            className={`
+                              relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                              ${isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDisabled
+                                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'
+                                  : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                            onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                          >
+                            <Checkbox
+                              id={semester}
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                              className="hidden"
+                            />
+                            <span className="text-sm font-bold">{semester}</span>
+                            {isSelected && (
+                              <div className="absolute -top-1 -right-1">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Year 4 - S7, S8 */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">4ème Année</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["S7", "S8"].map((semester) => {
+                        const isSelected = selectedSemesters.includes(semester);
+                        const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+
+                        return (
+                          <div
+                            key={semester}
+                            className={`
+                              relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                              ${isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDisabled
+                                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'
+                                  : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                            onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                          >
+                            <Checkbox
+                              id={semester}
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                              className="hidden"
+                            />
+                            <span className="text-sm font-bold">{semester}</span>
+                            {isSelected && (
+                              <div className="absolute -top-1 -right-1">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Year 5 - S9, S10 */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">5ème Année</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {["S9", "S10"].map((semester) => {
+                        const isSelected = selectedSemesters.includes(semester);
+                        const isDisabled = !isSelected && selectedSemesters.length >= getMaxSemesters(selectedPlan);
+
+                        return (
+                          <div
+                            key={semester}
+                            className={`
+                              relative flex flex-col items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                              ${isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDisabled
+                                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-50'
+                                  : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                              }
+                            `}
+                            onClick={() => !isDisabled && handleSemesterChange(semester, !isSelected)}
+                          >
+                            <Checkbox
+                              id={semester}
+                              checked={isSelected}
+                              disabled={isDisabled}
+                              onCheckedChange={(checked) => handleSemesterChange(semester, checked)}
+                              className="hidden"
+                            />
+                            <span className="text-sm font-bold">{semester}</span>
+                            {isSelected && (
+                              <div className="absolute -top-1 -right-1">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Selection summary */}
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-700">
                     <strong>Semestres sélectionnés:</strong>{' '}
-                    {selectedSemesters.length > 0 
+                    {selectedSemesters.length > 0
                       ? selectedSemesters.sort().join(', ')
                       : 'Aucun sélectionné'
                     }
@@ -537,8 +713,8 @@ const ClientSubscriptionPage = () => {
                   onClick={() => setPaymentMethod('card')}
                   className={`
                     relative p-5 rounded-xl border-2 cursor-pointer transition-all
-                    ${paymentMethod === 'card' 
-                      ? 'border-purple-500 bg-purple-50 shadow-lg' 
+                    ${paymentMethod === 'card'
+                      ? 'border-purple-500 bg-purple-50 shadow-lg'
                       : 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
                     }
                   `}
@@ -550,18 +726,18 @@ const ClientSubscriptionPage = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                       <CreditCard className="w-6 h-6 text-white" />
                     </div>
                     <h4 className="font-bold text-lg text-slate-900">Paiement par Carte Débit</h4>
                   </div>
-                  
+
                   <p className="text-sm text-slate-600 mb-4">
                     Paiement direct avec activation immédiate de votre compte
                   </p>
-                  
+
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2 text-sm text-slate-700">
                       <div className="w-2 h-2 rounded-full bg-purple-500"></div>
@@ -576,7 +752,7 @@ const ClientSubscriptionPage = () => {
                       Traitement instantané et sécurisé
                     </li>
                   </ul>
-                  
+
                   <div className="mt-4 flex items-center gap-2 text-purple-600">
                     <Zap className="w-4 h-4" />
                     <span className="text-sm font-medium">Activation instantanée</span>
@@ -588,8 +764,8 @@ const ClientSubscriptionPage = () => {
                   onClick={() => setPaymentMethod('transfer')}
                   className={`
                     relative p-5 rounded-xl border-2 cursor-pointer transition-all
-                    ${paymentMethod === 'transfer' 
-                      ? 'border-blue-500 bg-blue-50 shadow-lg' 
+                    ${paymentMethod === 'transfer'
+                      ? 'border-blue-500 bg-blue-50 shadow-lg'
                       : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
                     }
                   `}
@@ -601,19 +777,19 @@ const ClientSubscriptionPage = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                       <Building2 className="w-6 h-6 text-white" />
                     </div>
                     <h4 className="font-bold text-lg text-slate-900">Contact puis Transfert</h4>
                   </div>
-                  
+
                   <p className="text-sm text-slate-600 mb-2">
                     Contactez-nous sur WhatsApp pour finaliser votre commande et obtenir tous les détails
                   </p>
                   <p className="text-xl font-bold text-blue-600 mb-4">{WHATSAPP_NUMBER}</p>
-                  
+
                   <ul className="space-y-2">
                     <li className="flex items-center gap-2 text-sm text-slate-700">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -628,7 +804,7 @@ const ClientSubscriptionPage = () => {
                       Activation sous 24H Inchallah (délai étendu à 48H lors des fortes sollicitations)
                     </li>
                   </ul>
-                  
+
                   <div className="mt-4 flex items-center gap-2 text-slate-500">
                     <Clock className="w-4 h-4" />
                     <span className="text-sm font-medium">24-48H</span>
@@ -650,7 +826,7 @@ const ClientSubscriptionPage = () => {
             >
               Annuler
             </Button>
-            
+
             {paymentMethod === 'card' && (
               <Button
                 onClick={handlePayWithPayPal}
@@ -670,7 +846,7 @@ const ClientSubscriptionPage = () => {
                 )}
               </Button>
             )}
-            
+
             {paymentMethod === 'transfer' && (
               <Button
                 onClick={handleContactWhatsApp}
@@ -681,7 +857,7 @@ const ClientSubscriptionPage = () => {
                 Demande
               </Button>
             )}
-            
+
             {!paymentMethod && (
               <Button
                 disabled
@@ -705,7 +881,7 @@ const ClientSubscriptionPage = () => {
               Êtes-vous sûr de vouloir continuer avec le transfert bancaire ?
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-semibold text-slate-900 mb-2">Détails de votre commande</h4>

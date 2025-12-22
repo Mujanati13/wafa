@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 import { dashboardService } from "@/services/dashboardService";
+import { useSemester } from "@/context/SemesterContext";
 import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, ChevronLeft, ChevronRight, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts";
 import ModuleCard from "@/components/Dashboard/ModuleCard";
@@ -41,12 +42,14 @@ const Dashboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
   const contactRef = useRef(null);
-  const [semester, setSemester] = useState(null);
+
+  // Use shared semester context instead of local state
+  const { selectedSemester: semester, setSelectedSemester: setSemester, userSemesters } = useSemester();
+
   const [coursesData, setCoursesData] = useState(null);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [userSemesters, setUserSemesters] = useState([]);
   const [contactFilter, setContactFilter] = useState("all");
   const [selectedModule, setSelectedModule] = useState(null);
   const [showModuleDialog, setShowModuleDialog] = useState(false);
@@ -71,7 +74,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch modules
         const { data: modulesData } = await moduleService.getAllmodules();
         localStorage.setItem("modules", JSON.stringify(modulesData.data));
@@ -81,25 +84,30 @@ const Dashboard = () => {
         const profileData = await dashboardService.getUserProfile();
         const userData = profileData.data?.user || profileData.data;
         setUser(userData);
-        
-        // Get user's subscribed semesters
-        const subscribedSemesters = userData?.semesters || [];
-        setUserSemesters(subscribedSemesters);
-        
-        // Set default semester to the first subscribed semester
-        if (subscribedSemesters.length > 0) {
-          setSemester(subscribedSemesters[0]);
-        }
 
-        // Fetch user stats
-        const statsData = await dashboardService.getUserStats();
-        
-        // Fetch user's rank
-        const { rank } = await dashboardService.getLeaderboardRank();
+        // Note: userSemesters and semester are now managed by SemesterContext
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error(t('dashboard:error_loading_dashboard'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-        // Calculate module progress data for charts
-        const modules = modulesData.data || [];
-        
+  // Fetch semester-specific stats when semester changes
+  useEffect(() => {
+    const fetchSemesterData = async () => {
+      if (!semester) return;
+
+      try {
+        // Fetch user stats filtered by semester
+        const statsData = await dashboardService.getUserStats(semester);
+
+        // Fetch user's rank (grouped by year - 2 semesters share same ranking)
+        const { rank } = await dashboardService.getLeaderboardRank(semester);
+
         // Transform module progress data from backend
         if (statsData.data.moduleProgress && statsData.data.moduleProgress.length > 0) {
           const progressByModule = statsData.data.moduleProgress.slice(0, 6).map(mp => ({
@@ -109,13 +117,8 @@ const Dashboard = () => {
           }));
           setModuleProgress(progressByModule);
         } else {
-          // Fallback to module names with zero progress if no stats yet
-          const progressByModule = modules.slice(0, 6).map(mod => ({
-            name: mod.name.substring(0, 12),
-            completed: 0,
-            pending: 0
-          }));
-          setModuleProgress(progressByModule);
+          // Fallback to empty progress if no stats yet
+          setModuleProgress([]);
         }
 
         // Transform weekly activity for study time chart
@@ -126,12 +129,11 @@ const Dashboard = () => {
             const date = new Date(activity.date);
             return {
               day: days[date.getDay()],
-              hours: Math.round((activity.timeSpent || 0) / 60 * 10) / 10 // Convert minutes to hours
+              hours: Math.round((activity.timeSpent || 0) / 60 * 10) / 10
             };
           });
           setWeeklyActivity(studyTimeData);
         } else {
-          // Default empty week
           setWeeklyActivity([
             { day: 'Lun', hours: 0 },
             { day: 'Mar', hours: 0 },
@@ -147,23 +149,23 @@ const Dashboard = () => {
         if (statsData.data.weeklyActivity && statsData.data.weeklyActivity.length > 0) {
           const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
           const monthlyData = {};
-          
+
           statsData.data.weeklyActivity.forEach(activity => {
             const date = new Date(activity.date);
             const monthKey = `${months[date.getMonth()]}`;
-            
+
             if (!monthlyData[monthKey]) {
               monthlyData[monthKey] = { total: 0, correct: 0 };
             }
-            
+
             monthlyData[monthKey].total += activity.questionsAttempted || 0;
             monthlyData[monthKey].correct += activity.correctAnswers || 0;
           });
 
           const trendData = Object.keys(monthlyData).slice(-6).map(month => ({
             month,
-            score: monthlyData[month].total > 0 
-              ? Math.round((monthlyData[month].correct / monthlyData[month].total) * 100) 
+            score: monthlyData[month].total > 0
+              ? Math.round((monthlyData[month].correct / monthlyData[month].total) * 100)
               : 0
           }));
           setPerformanceTrend(trendData.length > 0 ? trendData : [
@@ -175,7 +177,6 @@ const Dashboard = () => {
             { month: 'Juin', score: 0 }
           ]);
         } else {
-          // Default 6 months with no data
           setPerformanceTrend([
             { month: 'Jan', score: 0 },
             { month: 'Fév', score: 0 },
@@ -186,11 +187,11 @@ const Dashboard = () => {
           ]);
         }
 
-        // Calculate completion rate from overall stats
-        const totalQuestions = statsData.data.stats.totalQuestionsAttempted || 0;
-        const correctAnswers = statsData.data.stats.totalCorrectAnswers || 0;
-        const incorrectAnswers = statsData.data.stats.totalIncorrectAnswers || 0;
-        
+        // Calculate completion rate from stats
+        const totalQuestions = statsData.data.stats?.totalQuestionsAttempted || 0;
+        const correctAnswers = statsData.data.stats?.totalCorrectAnswers || 0;
+        const incorrectAnswers = statsData.data.stats?.totalIncorrectAnswers || 0;
+
         if (totalQuestions > 0) {
           setCompletionData([
             { name: 'Correct', value: correctAnswers, fill: '#4ade80' },
@@ -203,26 +204,24 @@ const Dashboard = () => {
         }
 
         setStats({
-          examsCompleted: statsData.data.stats.examsCompleted || 0,
-          averageScore: statsData.data.stats.averageScore || 0,
-          studyHours: statsData.data.stats.studyHours || 0,
+          examsCompleted: statsData.data.stats?.examsCompleted || 0,
+          averageScore: statsData.data.stats?.averageScore || 0,
+          studyHours: statsData.data.stats?.studyHours || 0,
           rank: rank || 0,
         });
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        toast.error(t('dashboard:error_loading_dashboard'));
-      } finally {
-        setLoading(false);
+        console.error("Error fetching semester data:", error);
       }
     };
-    fetchData();
-  }, []);
+
+    fetchSemesterData();
+  }, [semester]);
 
   // Filter courses based on selected semester and user's subscription
   useEffect(() => {
     if (coursesData && semester && userSemesters.length > 0) {
       // Only show modules for the selected semester if user is subscribed to it
-      const filtered = coursesData.filter(course => 
+      const filtered = coursesData.filter(course =>
         course.semester === semester && userSemesters.includes(course.semester)
       );
       setFilteredCourses(filtered);
@@ -233,7 +232,7 @@ const Dashboard = () => {
       setFilteredCourses([]);
     }
   }, [coursesData, semester, userSemesters]);
-  
+
   const handleCourseClick = (courseId) => {
     // Navigate directly to the module without showing intermediate popup
     navigate(`/dashboard/subjects/${courseId}`);
@@ -248,7 +247,7 @@ const Dashboard = () => {
 
   const handleDownloadPDF = async () => {
     if (!selectedModule) return;
-    
+
     try {
       // Create a PDF-like document with module information
       const pdfContent = `
@@ -275,7 +274,7 @@ ${selectedModule.exams?.map((exam, i) => `${i + 1}. ${exam.name || exam.year || 
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('Module téléchargé avec succès');
     } catch (error) {
       console.error('Error downloading module:', error);
@@ -285,7 +284,7 @@ ${selectedModule.exams?.map((exam, i) => `${i + 1}. ${exam.name || exam.year || 
 
   const handleViewText = () => {
     if (!selectedModule) return;
-    
+
     // Create a formatted text view
     const textContent = `
 📚 ${selectedModule.name}
@@ -371,7 +370,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     </div>
                     <Award className="h-10 w-10 text-white opacity-80" />
                   </div>
-                  
+
                   <div className="bg-white rounded-xl p-4 shadow-md border border-slate-200">
                     <p className="text-sm font-semibold text-slate-700 mb-3">Mes Semestres</p>
                     <div className="flex items-center gap-2">
@@ -394,13 +393,12 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                               size="sm"
                               disabled={!isSubscribed}
                               onClick={() => setSemester(sem)}
-                              className={`min-w-[60px] ${
-                                semester === sem 
-                                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                                  : isSubscribed 
-                                    ? 'hover:bg-blue-50' 
-                                    : 'opacity-40'
-                              }`}
+                              className={`min-w-[60px] ${semester === sem
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : isSubscribed
+                                  ? 'hover:bg-blue-50'
+                                  : 'opacity-40'
+                                }`}
                             >
                               {sem}
                               {!isSubscribed && <Lock className="ml-1 h-3 w-3" />}
@@ -490,18 +488,18 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                           <Lock className="h-8 w-8 text-slate-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-slate-700">
-                          {userSemesters.length === 0 
-                            ? "Aucun semestre souscrit" 
+                          {userSemesters.length === 0
+                            ? "Aucun semestre souscrit"
                             : "Aucun module disponible"
                           }
                         </h3>
                         <p className="text-slate-500">
-                          {userSemesters.length === 0 
-                            ? "Abonnez-vous pour accéder aux modules et commencer votre apprentissage" 
+                          {userSemesters.length === 0
+                            ? "Abonnez-vous pour accéder aux modules et commencer votre apprentissage"
                             : "Sélectionnez un autre semestre ou vérifiez votre abonnement"
                           }
                         </p>
-                        <Button 
+                        <Button
                           onClick={() => navigate('/dashboard/subscription')}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
@@ -529,7 +527,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
             </h2>
             <div className="h-1 w-16 bg-gradient-to-r from-blue-600 to-teal-500 mt-2 rounded-full" />
           </div>
-          
+
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
@@ -587,13 +585,13 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
             </h2>
             <div className="h-1 w-16 bg-gradient-to-r from-purple-600 to-pink-500 mt-2 rounded-full" />
           </div>
-          
+
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
               <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
               <TabsTrigger value="detailed">Détails</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 {/* Module Progress Chart */}
@@ -612,7 +610,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="name" fontSize={11} angle={-45} textAnchor="end" height={70} />
                           <YAxis fontSize={11} />
-                          <Tooltip 
+                          <Tooltip
                             contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                             cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                           />
@@ -650,15 +648,15 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="month" fontSize={11} />
                           <YAxis fontSize={11} domain={[0, 100]} />
-                          <Tooltip 
+                          <Tooltip
                             contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                             cursor={{ stroke: '#10b981', strokeWidth: 2 }}
                           />
                           <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                          <Line 
-                            type="monotone" 
-                            dataKey="score" 
-                            stroke="#10b981" 
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            stroke="#10b981"
                             strokeWidth={3}
                             dot={{ fill: '#10b981', r: 4 }}
                             activeDot={{ r: 6 }}
@@ -675,7 +673,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                 </Card>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="detailed" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 {/* Completion Rate Pie Chart */}
@@ -738,7 +736,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="day" fontSize={11} />
                           <YAxis fontSize={11} />
-                          <Tooltip 
+                          <Tooltip
                             contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                             formatter={(value) => `${value}h`}
                             cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
@@ -800,7 +798,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
                         <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                         </svg>
                       </div>
                       <div>
@@ -840,7 +838,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
                         <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
+                          <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" />
                         </svg>
                       </div>
                       <div>

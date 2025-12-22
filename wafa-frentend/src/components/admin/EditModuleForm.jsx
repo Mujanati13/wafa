@@ -80,14 +80,6 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       .string()
       .optional()
       .transform((v) => (v == null ? "" : v)),
-    helpText: z
-      .string()
-      .optional()
-      .transform((v) => (v == null ? "" : v)),
-    helpContent: z
-      .string()
-      .optional()
-      .transform((v) => (v == null ? "" : v)),
   });
 
   const form = useForm({
@@ -97,8 +89,6 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       semester: "",
       imageUrl: "",
       textContent: "",
-      helpText: "",
-      helpContent: "",
     },
   });
 
@@ -110,8 +100,6 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
         semester: module.semester || "",
         imageUrl: module.imageUrl || "",
         textContent: module.textContent || "",
-        helpText: module.helpText || module.infoText || "",
-        helpContent: module.helpContent || "",
       });
       setSelectedColor(module.color || "#6366f1");
       setDifficulty(module.difficulty || "medium");
@@ -129,9 +117,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
         textContent: contentType === "text" ? data.textContent : "",
         contentType: contentType,
         difficulty: difficulty,
-        infoText: data.helpText,
         color: selectedColor,
-        helpContent: data.helpContent,
       });
 
       console.log("Module updated:", res.data);
@@ -249,8 +235,8 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       />
                       <span className="font-medium">{level.label}</span>
                     </button>
-                    <Popover 
-                      open={showDifficultyColorPicker === level.value} 
+                    <Popover
+                      open={showDifficultyColorPicker === level.value}
                       onOpenChange={(open) => setShowDifficultyColorPicker(open ? level.value : null)}
                     >
                       <PopoverTrigger asChild>
@@ -268,20 +254,20 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                           <Palette className="w-3 h-3 ml-auto text-gray-400" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-64 p-3">
+                      <PopoverContent className="w-64 p-3 z-[100001]">
                         <div className="space-y-3">
                           <Label className="text-xs font-semibold">Couleur pour {level.label}</Label>
                           <div className="flex gap-2">
                             <input
                               type="color"
                               value={difficultyColors[level.value]}
-                              onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                              onChange={(e) => setDifficultyColors({ ...difficultyColors, [level.value]: e.target.value })}
                               className="w-10 h-9 rounded border cursor-pointer"
                             />
                             <Input
                               type="text"
                               value={difficultyColors[level.value]}
-                              onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                              onChange={(e) => setDifficultyColors({ ...difficultyColors, [level.value]: e.target.value })}
                               className="flex-1 h-9 text-xs font-mono"
                             />
                           </div>
@@ -314,7 +300,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       <Palette className="w-4 h-4 ml-auto text-gray-400" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3" align="start">
+                  <PopoverContent className="w-64 p-3 z-[100001]" align="start">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Couleurs prédéfinies</span>
@@ -461,49 +447,6 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                 )}
               </div>
             </div>
-
-            <FormField
-              control={form.control}
-              name="helpText"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    {t("admin:help_text_tooltip")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("admin:help_text_tooltip_placeholder")}
-                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="helpContent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Contenu d'aide détaillé
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Décrivez le module, son contenu, et comment l'utiliser..."
-                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400 min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ce texte s'affichera dans la fenêtre d'aide du module
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end space-x-3 pt-4">
               <Button

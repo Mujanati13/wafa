@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router";
 import SideBar from "./SideBar";
 import TopBar from "./TopBar";
+import { SemesterProvider } from "@/context/SemesterContext";
 
 const DashBoardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -24,24 +25,27 @@ const DashBoardLayout = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-white">
-      <TopBar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        isMobile={isMobile}
-      />
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        <SideBar
+    <SemesterProvider>
+      <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-white">
+        <TopBar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           isMobile={isMobile}
         />
-        <main className="flex-1 overflow-y-auto p-4">
-          <Outlet />
-        </main>
+        <div className="flex flex-1 overflow-hidden min-h-0">
+          <SideBar
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            isMobile={isMobile}
+          />
+          <main className="flex-1 overflow-y-auto p-4">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </SemesterProvider>
   );
 };
 
 export default DashBoardLayout;
+

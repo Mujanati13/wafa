@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle } from "lucide-react";
+import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatCard } from "@/components/shared";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,12 @@ const Explications = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Popup state for question viewing
+  const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
+
+  const openQuestionPopup = (questionText) => {
+    setQuestionPopup({ open: true, text: questionText });
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,6 +53,15 @@ const Explications = () => {
             : "—",
           images: item?.imageUrl ? [item.imageUrl] : [],
           text: item?.contentText || "",
+          status: item?.status || "pending",
+          // New module and exam fields
+          moduleName: item?.moduleName || "—",
+          moduleCategory: item?.moduleCategory || "—",
+          examName: item?.examName || "—",
+          examYear: item?.examYear || "—",
+          courseCategory: item?.courseCategory || "—",
+          courseName: item?.courseName || "—",
+          numberOfQuestions: item?.numberOfQuestions || "—",
         }));
         setExplanations(mapped);
       } catch (e) {
@@ -236,6 +252,10 @@ const Explications = () => {
                   <TableHeader>
                     <TableRow className="bg-slate-50 hover:bg-slate-50 border-slate-200">
                       <TableHead className="font-semibold text-slate-700">User</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Module</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Type d'Examen</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Examen / Cours</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Nb Questions</TableHead>
                       <TableHead className="font-semibold text-slate-700">Question</TableHead>
                       <TableHead className="font-semibold text-slate-700">Title</TableHead>
                       <TableHead className="font-semibold text-slate-700">Date</TableHead>
@@ -259,7 +279,57 @@ const Explications = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-sm text-slate-700 line-clamp-2 max-w-xs">{report.question}</p>
+                          <span className="font-medium text-slate-700">{report.moduleName}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            report.moduleCategory === "Exam par years" ? "default" :
+                              report.moduleCategory === "Exam par courses" ? "secondary" :
+                                report.moduleCategory === "QCM banque" ? "outline" :
+                                  "secondary"
+                          } className="whitespace-nowrap">
+                            {report.moduleCategory}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          {report.moduleCategory === "Exam par years" && (
+                            <div className="text-sm">
+                              <span className="font-medium">{report.examName}</span>
+                              {report.examYear && report.examYear !== "—" && (
+                                <span className="text-slate-500 ml-1">({report.examYear})</span>
+                              )}
+                            </div>
+                          )}
+                          {report.moduleCategory === "Exam par courses" && (
+                            <div className="text-sm">
+                              {report.courseCategory && report.courseCategory !== "—" && (
+                                <span className="text-slate-500">{report.courseCategory} → </span>
+                              )}
+                              <span className="font-medium">{report.courseName || report.examName}</span>
+                            </div>
+                          )}
+                          {report.moduleCategory === "QCM banque" && (
+                            <div className="text-sm">
+                              <span className="font-medium">{report.examName}</span>
+                            </div>
+                          )}
+                          {report.moduleCategory === "—" && (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium text-slate-600">
+                            {report.numberOfQuestions}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 transition-colors"
+                            onClick={() => openQuestionPopup(report.question)}
+                          >
+                            Voir la question
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-slate-700 border-slate-300">
@@ -335,6 +405,35 @@ const Explications = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Question Popup Dialog */}
+      <Dialog open={questionPopup.open} onOpenChange={(open) => setQuestionPopup({ ...questionPopup, open })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+              Question
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-6">
+                <p className="text-base leading-relaxed text-slate-800 whitespace-pre-wrap break-words">
+                  {questionPopup.text || '—'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setQuestionPopup({ open: false, text: '' })}
+            >
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

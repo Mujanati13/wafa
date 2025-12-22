@@ -89,14 +89,6 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
       .string()
       .optional()
       .transform((v) => (v == null ? "" : v)),
-    helpText: z
-      .string()
-      .optional()
-      .transform((v) => (v == null ? "" : v)),
-    helpContent: z
-      .string()
-      .optional()
-      .transform((v) => (v == null ? "" : v)),
   });
 
   const form = useForm({
@@ -106,8 +98,6 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
       semester: "",
       imageUrl: "",
       textContent: "",
-      helpText: "",
-      helpContent: "",
     },
   });
 
@@ -121,9 +111,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
         textContent: contentType === "text" ? data.textContent : "",
         contentType: contentType,
         difficulty: difficulty,
-        infoText: data.helpText,
         color: selectedColor,
-        helpContent: data.helpContent,
       });
 
       form.reset();
@@ -243,8 +231,8 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                           type="button"
                           onClick={() => setDifficulty(level.value)}
                           className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${difficulty === level.value
-                              ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
-                              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                            ? `${level.bgColor} ${level.borderColor} ${level.textColor} shadow-md`
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                             }`}
                         >
                           <CircleDot
@@ -253,8 +241,8 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                           />
                           <span className="font-medium">{level.label}</span>
                         </button>
-                        <Popover 
-                          open={showDifficultyColorPicker === level.value} 
+                        <Popover
+                          open={showDifficultyColorPicker === level.value}
                           onOpenChange={(open) => setShowDifficultyColorPicker(open ? level.value : null)}
                         >
                           <PopoverTrigger asChild>
@@ -272,20 +260,20 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                               <Palette className="w-3 h-3 ml-auto text-gray-400" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 p-3">
+                          <PopoverContent className="w-64 p-3 z-[100001]">
                             <div className="space-y-3">
                               <Label className="text-xs font-semibold">Couleur pour {level.label}</Label>
                               <div className="flex gap-2">
                                 <input
                                   type="color"
                                   value={difficultyColors[level.value]}
-                                  onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                                  onChange={(e) => setDifficultyColors({ ...difficultyColors, [level.value]: e.target.value })}
                                   className="w-10 h-9 rounded border cursor-pointer"
                                 />
                                 <Input
                                   type="text"
                                   value={difficultyColors[level.value]}
-                                  onChange={(e) => setDifficultyColors({...difficultyColors, [level.value]: e.target.value})}
+                                  onChange={(e) => setDifficultyColors({ ...difficultyColors, [level.value]: e.target.value })}
                                   className="flex-1 h-9 text-xs font-mono"
                                 />
                               </div>
@@ -318,7 +306,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                           <Palette className="w-4 h-4 ml-auto text-gray-400" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-72 p-4" align="start">
+                      <PopoverContent className="w-72 p-4 z-[100001]" align="start">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-semibold text-gray-900">Couleurs prédéfinies</span>
@@ -329,8 +317,8 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                                 key={color}
                                 type="button"
                                 className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${selectedColor === color
-                                    ? "border-gray-900 scale-110 ring-2 ring-blue-300"
-                                    : "border-gray-300"
+                                  ? "border-gray-900 scale-110 ring-2 ring-blue-300"
+                                  : "border-gray-300"
                                   }`}
                                 style={{ backgroundColor: color }}
                                 onClick={() => {
@@ -394,8 +382,8 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                         type="button"
                         onClick={() => setContentType("url")}
                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "url"
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                       >
                         <Image className="h-4 w-4" />
@@ -405,8 +393,8 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                         type="button"
                         onClick={() => setContentType("text")}
                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "text"
-                            ? "bg-purple-50 border-purple-300 text-purple-700"
-                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "bg-purple-50 border-purple-300 text-purple-700"
+                          : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                       >
                         <FileText className="h-4 w-4" />
@@ -459,52 +447,6 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                     )}
                   </div>
                 </div>
-
-                {/* Help Text */}
-                <FormField
-                  control={form.control}
-                  name="helpText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-900">
-                        {t("admin:help_text_tooltip")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("admin:help_text_tooltip_placeholder")}
-                          className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                          {...field}
-                        />
-                      </FormControl>
-                      <p className="text-xs text-gray-500 mt-1">Texte court qui s'affichera au survol du module</p>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Help Content */}
-                <FormField
-                  control={form.control}
-                  name="helpContent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold text-gray-900">
-                        Contenu d'aide détaillé
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Décrivez le module, son contenu, les objectifs et comment l'utiliser..."
-                          className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Ce texte s'affichera dans la fenêtre d'aide détaillée du module
-                      </p>
-                      <FormMessage className="text-red-500" />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Info Box */}
                 <div className="flex gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">

@@ -8,7 +8,7 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
     totalVotes: 0,
     optionVotes: {},
   });
-  
+
   const canVote = userLevel >= requiredLevel;
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
         mockVotes[letter] = votes;
         total += votes;
       });
-      
+
       setStats({
         totalVotes: total,
         optionVotes: mockVotes,
@@ -40,7 +40,7 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
     if (stats.totalVotes === 0) return 0;
     return ((stats.optionVotes[option] / stats.totalVotes) * 100).toFixed(1);
   };
-  
+
   const correctPercentage = () => {
     if (!questionOptions || stats.totalVotes === 0) return 0;
     let correctVotes = 0;
@@ -103,7 +103,7 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
                 <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
                   <Lock className="h-5 w-5 text-amber-500 shrink-0" />
                   <p className="text-sm text-amber-700">
-                    Vous devez atteindre <strong>{requiredLevel}%</strong> de progression dans ce module pour voter. 
+                    Vous devez atteindre <strong>{requiredLevel}%</strong> de progression dans ce module pour voter.
                     Niveau actuel: <strong>{userLevel}%</strong>
                   </p>
                 </div>
@@ -121,34 +121,31 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
                       key={option}
                       onClick={() => handleVote(option)}
                       disabled={!canVote}
-                      className={`relative w-full overflow-hidden rounded-xl border-2 transition-all ${
-                        isCorrect
+                      className={`relative w-full overflow-hidden rounded-xl border-2 transition-all ${isCorrect
                           ? "border-emerald-500 bg-emerald-50"
                           : isUserVote
-                          ? "border-teal-500 bg-teal-50"
-                          : "border-gray-200 bg-white hover:border-gray-300"
-                      } ${!canVote ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+                            ? "border-teal-500 bg-teal-50"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        } ${!canVote ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
                     >
                       {/* Progress bar background */}
                       <div
-                        className={`absolute inset-0 transition-all duration-500 ${
-                          isCorrect
+                        className={`absolute inset-0 transition-all duration-500 ${isCorrect
                             ? "bg-emerald-200/50"
                             : "bg-teal-200/30"
-                        }`}
+                          }`}
                         style={{ width: `${percentage}%` }}
                       />
 
                       <div className="relative flex items-center justify-between p-3">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
-                              isCorrect
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${isCorrect
                                 ? "bg-emerald-500 text-white"
                                 : isUserVote
-                                ? "bg-teal-500 text-white"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
+                                  ? "bg-teal-500 text-white"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
                           >
                             {isCorrect ? <Check className="h-4 w-4" /> : option}
                           </div>
@@ -183,6 +180,40 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
                 <p className="text-sm text-gray-700 text-center">
                   💡 <strong>{correctPercentage()}%</strong> de la communauté a choisi la bonne réponse
                 </p>
+              </div>
+
+              {/* User vote info */}
+              {userVote && (
+                <div className="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-lg text-center">
+                  <p className="text-sm text-teal-700">
+                    Tu as voté pour <strong className="text-teal-800">{userVote}</strong> comme réponse juste
+                  </p>
+                </div>
+              )}
+
+              {/* Vote multiplier info */}
+              <div className="mt-4 space-y-2">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💎 Si tu veux ajouter à votre vote une forte valeur (comme si 20 personnes a voté votre choix),
+                    <strong> ajouté un explication</strong>.
+                  </p>
+                </div>
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-700">
+                    🎯 En plus tu vas <strong>gagner un point bleu</strong> si ton explication est approuvée!
+                  </p>
+                </div>
+              </div>
+
+              {/* Explanation button */}
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  explication
+                </button>
               </div>
             </div>
           </motion.div>

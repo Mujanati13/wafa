@@ -45,7 +45,9 @@ import {
   Eye,
   EyeOff,
   Users,
-  LayoutGrid
+  LayoutGrid,
+  ListMusic,
+  Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -66,7 +68,7 @@ import ResumesModal from "@/components/ExamsPage/ResumesModal";
 const triggerConfetti = () => {
   const colors = ['#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#10B981'];
   const confettiCount = 100;
-  
+
   for (let i = 0; i < confettiCount; i++) {
     const confetti = document.createElement('div');
     confetti.style.cssText = `
@@ -100,7 +102,7 @@ const ExamPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const { examId } = useParams();
   const navigate = useNavigate();
-  
+
   // Core state
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -111,7 +113,7 @@ const ExamPage = () => {
   const [error, setError] = useState(null);
   const [flaggedQuestions, setFlaggedQuestions] = useState(new Set());
   const [showSidebar, setShowSidebar] = useState(false);
-  
+
   // Modal states
   const [showExplanation, setShowExplanation] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -122,14 +124,15 @@ const ExamPage = () => {
   const [showResumesModal, setShowResumesModal] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
   const [showVueEnsemble, setShowVueEnsemble] = useState(false);
-  
+  const [showImageGallery, setShowImageGallery] = useState(false);
+
   // Track visited questions (for orange color)
   const [visitedQuestions, setVisitedQuestions] = useState(new Set([0]));
-  
+
   // Verification state - per question
   const [verifiedQuestions, setVerifiedQuestions] = useState({});
   const [validationError, setValidationError] = useState(null);
-  
+
   // UI preferences
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('examFontSize');
@@ -137,7 +140,7 @@ const ExamPage = () => {
   });
   const [collapsedSessions, setCollapsedSessions] = useState(new Set());
   const [soundEnabled, setSoundEnabled] = useState(true);
-  
+
   // Animation states
   const [answerAnimation, setAnswerAnimation] = useState(null);
   const [questionTransition, setQuestionTransition] = useState('next');
@@ -164,7 +167,7 @@ const ExamPage = () => {
         setLoading(true);
         const response = await api.get(`exams/all/${examId}`);
         setExamData(response.data.data);
-        
+
         // Restore progress
         const savedProgress = localStorage.getItem(`exam_progress_${examId}`);
         if (savedProgress) {
@@ -190,7 +193,7 @@ const ExamPage = () => {
   // Auto-save progress
   useEffect(() => {
     if (!examData || showResults) return;
-    
+
     const saveProgress = () => {
       const progress = {
         answers: selectedAnswers,
@@ -251,29 +254,26 @@ const ExamPage = () => {
     return 'text-emerald-600 bg-emerald-50 border-emerald-200';
   };
 
-  // Handle answer selection
+  // Handle answer selection - always allow multi-select
   const handleAnswerSelect = useCallback((questionIndex, optionIndex) => {
     const question = questions[questionIndex];
     if (!question || showResults) return;
 
+    // Check if question is already verified - don't allow changes
+    if (verifiedQuestions[questionIndex]) return;
+
     setAnswerAnimation({ questionIndex, optionIndex });
     setTimeout(() => setAnswerAnimation(null), 300);
 
-    const correctCount = question.options.filter(opt => opt.isCorrect).length;
-    const isMultipleChoice = correctCount > 1;
-
-    if (isMultipleChoice) {
-      const current = selectedAnswers[questionIndex] || [];
-      const updated = current.includes(optionIndex)
-        ? current.filter(i => i !== optionIndex)
-        : [...current, optionIndex];
-      setSelectedAnswers({ ...selectedAnswers, [questionIndex]: updated });
-    } else {
-      setSelectedAnswers({ ...selectedAnswers, [questionIndex]: [optionIndex] });
-    }
+    // Always allow multiple selection (toggle behavior)
+    const current = selectedAnswers[questionIndex] || [];
+    const updated = current.includes(optionIndex)
+      ? current.filter(i => i !== optionIndex)
+      : [...current, optionIndex];
+    setSelectedAnswers({ ...selectedAnswers, [questionIndex]: updated });
 
     playSound('select');
-  }, [questions, selectedAnswers, showResults, playSound]);
+  }, [questions, selectedAnswers, showResults, verifiedQuestions, playSound]);
 
   // Toggle flag
   const toggleFlag = useCallback((index) => {
@@ -300,7 +300,7 @@ const ExamPage = () => {
       setTimeout(() => setValidationError(null), 3000);
       return;
     }
-    
+
     setVerifiedQuestions(prev => ({
       ...prev,
       [currentQuestion]: true
@@ -368,10 +368,10 @@ const ExamPage = () => {
       const correctAnswers = question.options
         .map((opt, i) => opt.isCorrect ? i : -1)
         .filter(i => i !== -1);
-      
+
       const isCorrect = userAnswers.length === correctAnswers.length &&
         userAnswers.every(ans => correctAnswers.includes(ans));
-      
+
       if (isCorrect) correct++;
     });
     return { correct, total: questions.length };
@@ -382,15 +382,15 @@ const ExamPage = () => {
     setShowResults(true);
     setShowConfirmSubmit(false);
     localStorage.removeItem(`exam_progress_${examId}`);
-    
+
     const score = calculateScore();
     const percentage = Math.round((score.correct / score.total) * 100);
-    
+
     // Trigger confetti for good scores
     if (percentage >= 70) {
       triggerConfetti();
     }
-    
+
     playSound('complete');
     toast.success(t('dashboard:exam_completed') || 'Exam completed!', {
       icon: <Trophy className="h-4 w-4 text-yellow-500" />
@@ -409,7 +409,7 @@ const ExamPage = () => {
   }, [examId, t]);
 
   const score = useMemo(() => calculateScore(), [calculateScore]);
-  const progress = useMemo(() => 
+  const progress = useMemo(() =>
     (Object.keys(selectedAnswers).length / Math.max(questions.length, 1)) * 100,
     [selectedAnswers, questions.length]
   );
@@ -420,35 +420,35 @@ const ExamPage = () => {
     const isVerified = verifiedQuestions[index];
     const isFlagged = flaggedQuestions.has(index);
     const isVisited = visitedQuestions.has(index);
-    
+
     if (showResults || isVerified) {
       const question = questions[index];
       const userAnswers = selectedAnswers[index] || [];
       const correctAnswers = question.options
         .map((opt, i) => opt.isCorrect ? i : -1)
         .filter(i => i !== -1);
-      
+
       const isCorrect = userAnswers.length === correctAnswers.length &&
         userAnswers.every(ans => correctAnswers.includes(ans));
-      
+
       return { status: isCorrect ? 'correct' : 'incorrect', isFlagged, isVisited };
     }
-    
+
     // Flagged takes priority (purple)
     if (isFlagged) {
       return { status: 'flagged', isFlagged: true, isVisited };
     }
-    
+
     // Answered (blue)
     if (hasAnswer) {
       return { status: 'answered', isFlagged, isVisited };
     }
-    
+
     // Visited but not answered (orange)
     if (isVisited) {
       return { status: 'visited', isFlagged, isVisited: true };
     }
-    
+
     return { status: 'unanswered', isFlagged, isVisited: false };
   }, [selectedAnswers, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
 
@@ -456,8 +456,8 @@ const ExamPage = () => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      
-      switch(e.key) {
+
+      switch (e.key) {
         case 'ArrowRight':
           if (!showResults) goToNext();
           break;
@@ -492,7 +492,7 @@ const ExamPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center space-y-6"
@@ -531,7 +531,7 @@ const ExamPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <CardContent className="p-6 space-y-6">
               <div className="space-y-3">
                 <p className="text-gray-700 leading-relaxed">
@@ -561,16 +561,16 @@ const ExamPage = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  onClick={() => window.location.reload()} 
+                <Button
+                  onClick={() => window.location.reload()}
                   variant="outline"
                   className="flex-1 gap-2"
                 >
                   <RefreshCcw className="h-4 w-4" />
                   {t('dashboard:refresh_page') || 'Actualiser'}
                 </Button>
-                <Button 
-                  onClick={() => navigate('/dashboard/home')} 
+                <Button
+                  onClick={() => navigate('/dashboard/home')}
                   className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 >
                   <Home className="h-4 w-4" />
@@ -596,9 +596,9 @@ const ExamPage = () => {
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Left Section */}
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigate('/dashboard/home')}
                 className="shrink-0 hover:bg-gray-100"
               >
@@ -620,8 +620,8 @@ const ExamPage = () => {
             {/* Right Section */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Timer Badge */}
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={cn(
                   "gap-1.5 font-mono text-xs sm:text-sm px-2 sm:px-3 py-1 transition-colors",
                   getTimeColor()
@@ -658,9 +658,9 @@ const ExamPage = () => {
               </div>
 
               {/* Overview Button - Desktop */}
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="hidden lg:flex gap-2"
                 onClick={() => setShowSidebar(!showSidebar)}
               >
@@ -681,7 +681,7 @@ const ExamPage = () => {
 
               {/* Submit Button */}
               {!showResults && (
-                <Button 
+                <Button
                   onClick={() => setShowConfirmSubmit(true)}
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
                 >
@@ -696,7 +696,7 @@ const ExamPage = () => {
 
         {/* Progress Bar */}
         <div className="h-1 bg-gray-100">
-          <motion.div 
+          <motion.div
             className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -709,50 +709,6 @@ const ExamPage = () => {
         <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Main Question Area */}
           <div className="lg:col-span-3 space-y-4 sm:space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg shadow-blue-500/20">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-blue-100 text-xs sm:text-sm">{t('dashboard:answered') || 'Answered'}</p>
-                      <p className="text-xl sm:text-2xl font-bold">{answeredCount}/{questions.length}</p>
-                    </div>
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0 shadow-lg shadow-amber-500/20">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-amber-100 text-xs sm:text-sm">{t('dashboard:flagged') || 'Flagged'}</p>
-                      <p className="text-xl sm:text-2xl font-bold">{flaggedCount}</p>
-                    </div>
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Flag className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white border-0 shadow-lg shadow-emerald-500/20">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-emerald-100 text-xs sm:text-sm">{t('dashboard:remaining') || 'Remaining'}</p>
-                      <p className="text-xl sm:text-2xl font-bold">{questions.length - answeredCount}</p>
-                    </div>
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Circle className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Question Card */}
             <AnimatePresence mode="wait">
@@ -790,6 +746,16 @@ const ExamPage = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-1">
+                        {/* Image Gallery Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowImageGallery(true)}
+                          className="shrink-0 text-gray-400 hover:text-purple-600 hover:bg-purple-50 h-8 w-8"
+                          title="Images"
+                        >
+                          <Image className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -814,8 +780,8 @@ const ExamPage = () => {
                           onClick={() => toggleFlag(currentQuestion)}
                           className={cn(
                             "shrink-0 transition-all h-8 w-8",
-                            flaggedQuestions.has(currentQuestion) 
-                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50" 
+                            flaggedQuestions.has(currentQuestion)
+                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                               : "text-gray-400 hover:text-gray-600"
                           )}
                           title="Surligner"
@@ -842,7 +808,7 @@ const ExamPage = () => {
                     </div>
 
                     {/* Question Text */}
-                    <div 
+                    <div
                       className="text-gray-800 leading-relaxed font-medium"
                       style={{ fontSize: `${fontSize}px`, lineHeight: '1.7' }}
                     >
@@ -852,8 +818,8 @@ const ExamPage = () => {
                     {/* Question Image */}
                     {currentQuestionData.image && (
                       <div className="relative rounded-xl overflow-hidden border bg-gray-50">
-                        <img 
-                          src={currentQuestionData.image} 
+                        <img
+                          src={currentQuestionData.image}
                           alt="Question illustration"
                           className="w-full max-h-80 object-contain"
                         />
@@ -866,8 +832,8 @@ const ExamPage = () => {
                         const isSelected = (selectedAnswers[currentQuestion] || []).includes(index);
                         const isCorrect = option.isCorrect;
                         const showCorrectness = showResults || isQuestionVerified;
-                        const isAnimating = answerAnimation?.questionIndex === currentQuestion && 
-                                           answerAnimation?.optionIndex === index;
+                        const isAnimating = answerAnimation?.questionIndex === currentQuestion &&
+                          answerAnimation?.optionIndex === index;
 
                         return (
                           <motion.button
@@ -923,7 +889,7 @@ const ExamPage = () => {
                               </div>
 
                               {/* Option Text */}
-                              <span 
+                              <span
                                 className="flex-1 pt-1"
                                 style={{ fontSize: `${fontSize - 1}px` }}
                               >
@@ -993,6 +959,32 @@ const ExamPage = () => {
                           <BookOpen className="h-5 w-5 text-purple-600" />
                         </div>
                         <span className="text-xs font-medium">Résumés</span>
+                      </button>
+
+                      {/* Playlist Button */}
+                      <button
+                        onClick={() => {
+                          // Add to playlist logic
+                          const questionId = currentQuestionData?._id;
+                          if (questionId) {
+                            const playlist = JSON.parse(localStorage.getItem('questionPlaylist') || '[]');
+                            if (!playlist.includes(questionId)) {
+                              playlist.push(questionId);
+                              localStorage.setItem('questionPlaylist', JSON.stringify(playlist));
+                              toast.success('Question ajoutée à la playlist!', {
+                                icon: <ListMusic className="h-4 w-4 text-pink-500" />
+                              });
+                            } else {
+                              toast.info('Question déjà dans la playlist');
+                            }
+                          }
+                        }}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-pink-50 text-pink-600 border-r border-gray-100"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mb-1">
+                          <ListMusic className="h-5 w-5 text-pink-600" />
+                        </div>
+                        <span className="text-xs font-medium">Playlist</span>
                       </button>
 
                       {/* Ressayer Button */}
@@ -1075,8 +1067,8 @@ const ExamPage = () => {
                       onClick={() => goToQuestion(actualIndex)}
                       className={cn(
                         "w-2 h-2 rounded-full transition-all",
-                        actualIndex === currentQuestion 
-                          ? "w-6 bg-blue-500" 
+                        actualIndex === currentQuestion
+                          ? "w-6 bg-blue-500"
                           : "bg-gray-300 hover:bg-gray-400"
                       )}
                     />
@@ -1110,24 +1102,24 @@ const ExamPage = () => {
                     const correctIndices = questions[i].options
                       .map((opt, idx) => opt.isCorrect ? idx : null)
                       .filter(idx => idx !== null);
-                    return selected.length === correctIndices.length && 
+                    return selected.length === correctIndices.length &&
                       selected.every(s => correctIndices.includes(s));
                   }).length;
-                  
+
                   const incorrectCount = Object.keys(verifiedQuestions).length - correctCount;
                   const unansweredCount = questions.length - Object.keys(verifiedQuestions).length;
-                  
+
                   const correctPct = (correctCount / questions.length) * 100;
                   const incorrectPct = (incorrectCount / questions.length) * 100;
-                  
+
                   return (
                     <>
-                      <div 
-                        className="bg-emerald-500 transition-all" 
+                      <div
+                        className="bg-emerald-500 transition-all"
                         style={{ width: `${correctPct}%` }}
                       />
-                      <div 
-                        className="bg-red-500 transition-all" 
+                      <div
+                        className="bg-red-500 transition-all"
                         style={{ width: `${incorrectPct}%` }}
                       />
                     </>
@@ -1197,7 +1189,7 @@ const ExamPage = () => {
                     {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
                       const isCollapsed = collapsedSessions.has(sessionName);
                       const startIndex = questions.findIndex(q => q.sessionLabel === sessionName);
-                      
+
                       return (
                         <div key={sessionName} className="space-y-2">
                           <button
@@ -1226,7 +1218,7 @@ const ExamPage = () => {
                               )}
                             </div>
                           </button>
-                          
+
                           <AnimatePresence>
                             {!isCollapsed && (
                               <motion.div
@@ -1240,7 +1232,7 @@ const ExamPage = () => {
                                     const globalIndex = startIndex + qIndex;
                                     const { status, isFlagged } = getQuestionStatus(globalIndex);
                                     const isCurrent = globalIndex === currentQuestion;
-                                    
+
                                     return (
                                       <button
                                         key={globalIndex}
@@ -1291,8 +1283,8 @@ const ExamPage = () => {
                         </p>
                       </div>
                     </div>
-                    <Progress 
-                      value={(score.correct / score.total) * 100} 
+                    <Progress
+                      value={(score.correct / score.total) * 100}
                       className="h-2"
                     />
                     <Button
@@ -1346,13 +1338,13 @@ const ExamPage = () => {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
+
               <ScrollArea className="h-[calc(100vh-130px)]">
                 <div className="p-4 space-y-4">
                   {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
                     const isCollapsed = collapsedSessions.has(sessionName);
                     const startIndex = questions.findIndex(q => q.sessionLabel === sessionName);
-                    
+
                     return (
                       <div key={sessionName} className="space-y-2">
                         <button
@@ -1373,13 +1365,13 @@ const ExamPage = () => {
                             {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                           </div>
                         </button>
-                        
+
                         {!isCollapsed && (
                           <div className="grid grid-cols-5 gap-1.5">
                             {sessionQuestions.map((_, qIndex) => {
                               const globalIndex = startIndex + qIndex;
                               const { status, isFlagged } = getQuestionStatus(globalIndex);
-                              
+
                               return (
                                 <button
                                   key={globalIndex}
@@ -1528,7 +1520,7 @@ const ExamPage = () => {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              
+
               <div className="space-y-3">
                 {[
                   { keys: ['←', '→'], action: t('dashboard:navigate_questions') || 'Navigate questions' },
@@ -1590,7 +1582,7 @@ const ExamPage = () => {
           correctAnswer={currentQuestionData.options
             .map((opt, i) => opt.isCorrect ? String.fromCharCode(65 + i) : null)
             .filter(Boolean)}
-          userLevel={20} // TODO: Pass actual user level from module stats
+          userLevel={20}
           requiredLevel={20}
         />
       )}
@@ -1603,28 +1595,29 @@ const ExamPage = () => {
         />
       )}
 
-      {/* Vue d'ensemble Modal */}
+      {/* Vue d'ensemble Modal - Shows all questions with their choices */}
       <AnimatePresence>
         {showVueEnsemble && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4"
             onClick={() => setShowVueEnsemble(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-xl">
+              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-xl shrink-0">
                 <div className="flex items-center gap-3">
                   <LayoutGrid className="h-6 w-6" />
                   <h2 className="text-xl font-bold">Vue d'ensemble</h2>
+                  <Badge className="bg-white/20 text-white">{questions.length} questions</Badge>
                 </div>
                 <button
                   onClick={() => setShowVueEnsemble(false)}
@@ -1634,117 +1627,229 @@ const ExamPage = () => {
                 </button>
               </div>
 
-              {/* Questions List */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
+              {/* Questions Grid - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {questions.map((q, index) => {
-                    const { status, isFlagged } = getQuestionStatus(index);
-                    const hasAnswer = selectedAnswers[index]?.length > 0;
+                    const { status } = getQuestionStatus(index);
                     const selectedOpts = selectedAnswers[index] || [];
-                    
+                    const isVerified = verifiedQuestions[index] || showResults;
+
                     return (
-                      <div 
+                      <div
                         key={index}
                         className={cn(
-                          "p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md",
-                          status === 'correct' && "border-emerald-300 bg-emerald-50",
-                          status === 'incorrect' && "border-red-300 bg-red-50",
-                          status === 'verified' && "border-blue-300 bg-blue-50",
+                          "p-4 rounded-lg border-2 cursor-pointer transition-all hover:shadow-lg",
+                          status === 'correct' && "border-emerald-400 bg-emerald-50",
+                          status === 'incorrect' && "border-red-400 bg-red-50",
+                          status === 'answered' && "border-blue-300 bg-blue-50/50",
+                          status === 'visited' && "border-orange-300 bg-orange-50/50",
                           status === 'flagged' && "border-purple-300 bg-purple-50",
-                          status === 'answered' && "border-blue-200 bg-blue-50/50",
-                          status === 'visited' && "border-orange-200 bg-orange-50/50",
                           status === 'unanswered' && "border-gray-200 bg-gray-50",
-                          index === currentQuestion && "ring-2 ring-indigo-500 ring-offset-2"
+                          index === currentQuestion && "ring-2 ring-indigo-500"
                         )}
                         onClick={() => {
                           goToQuestion(index);
                           setShowVueEnsemble(false);
                         }}
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge 
-                                variant="outline" 
+                        {/* Question Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <span className="font-semibold text-gray-700 text-sm">
+                            {index + 1}.) {q.question?.substring(0, 80)}{q.question?.length > 80 ? '...' : ''}
+                          </span>
+                        </div>
+
+                        {/* Answer Options */}
+                        <div className="space-y-2">
+                          {q.options?.map((option, optIdx) => {
+                            const isSelected = selectedOpts.includes(optIdx);
+                            const isCorrect = option.isCorrect;
+                            const showResult = isVerified;
+
+                            return (
+                              <div
+                                key={optIdx}
                                 className={cn(
-                                  "font-bold",
-                                  status === 'correct' && "border-emerald-500 text-emerald-700",
-                                  status === 'incorrect' && "border-red-500 text-red-700",
-                                  status === 'verified' && "border-blue-500 text-blue-700",
-                                  status === 'flagged' && "border-purple-500 text-purple-700",
-                                  status === 'answered' && "border-blue-400 text-blue-600",
-                                  status === 'visited' && "border-orange-400 text-orange-600",
-                                  status === 'unanswered' && "border-gray-400 text-gray-600"
+                                  "flex items-center gap-2 p-2 rounded-lg border text-sm transition-colors",
+                                  !showResult && !isSelected && "border-gray-200 bg-white",
+                                  !showResult && isSelected && "border-blue-400 bg-blue-50",
+                                  showResult && isCorrect && "border-emerald-400 bg-emerald-50",
+                                  showResult && isSelected && !isCorrect && "border-red-400 bg-red-50"
                                 )}
                               >
-                                Q{index + 1}
-                              </Badge>
-                              {isFlagged && (
-                                <Flag className="h-4 w-4 fill-purple-500 text-purple-500" />
-                              )}
-                              {q.source && (
-                                <span className="text-xs text-gray-500">
-                                  {q.source.year && `${q.source.year}`}
-                                  {q.source.session && ` - ${q.source.session}`}
+                                {/* Checkbox */}
+                                <div className={cn(
+                                  "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0",
+                                  !showResult && !isSelected && "border-gray-300 bg-white",
+                                  !showResult && isSelected && "border-blue-500 bg-blue-500",
+                                  showResult && isCorrect && "border-emerald-500 bg-emerald-500",
+                                  showResult && isSelected && !isCorrect && "border-red-500 bg-red-500"
+                                )}>
+                                  {(isSelected || (showResult && isCorrect)) && (
+                                    <Check className="h-3 w-3 text-white" />
+                                  )}
+                                </div>
+
+                                {/* Option Label */}
+                                <span className={cn(
+                                  "font-medium",
+                                  showResult && isCorrect && "text-emerald-700",
+                                  showResult && isSelected && !isCorrect && "text-red-700"
+                                )}>
+                                  {String.fromCharCode(65 + optIdx)}-
                                 </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-700 line-clamp-2">
-                              {q.question}
-                            </p>
-                            {hasAnswer && (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {selectedOpts.map(optIdx => (
-                                  <Badge 
-                                    key={optIdx} 
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {String.fromCharCode(65 + optIdx)}
-                                  </Badge>
-                                ))}
+
+                                {/* Option Text */}
+                                <span className={cn(
+                                  "flex-1 truncate",
+                                  showResult && isCorrect && "text-emerald-700",
+                                  showResult && isSelected && !isCorrect && "text-red-700 line-through"
+                                )}>
+                                  {option.text}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                          <div className="shrink-0">
-                            {status === 'correct' && <CheckCircle2 className="h-6 w-6 text-emerald-500" />}
-                            {status === 'incorrect' && <XCircle className="h-6 w-6 text-red-500" />}
-                            {status === 'verified' && <Check className="h-6 w-6 text-blue-500" />}
-                            {status === 'answered' && <Circle className="h-6 w-6 text-blue-400" />}
-                            {status === 'visited' && <Eye className="h-6 w-6 text-orange-400" />}
-                            {status === 'unanswered' && <Circle className="h-6 w-6 text-gray-300" />}
-                          </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
-                <div className="flex items-center justify-between">
+              <div className="p-4 border-t bg-gray-50 rounded-b-xl shrink-0">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
+                      <div className="w-4 h-4 rounded bg-emerald-100 border-2 border-emerald-400 flex items-center justify-center">
+                        <Check className="h-2.5 w-2.5 text-emerald-600" />
+                      </div>
                       Correct
                     </span>
                     <span className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                      <div className="w-4 h-4 rounded bg-red-100 border-2 border-red-400 flex items-center justify-center">
+                        <X className="h-2.5 w-2.5 text-red-600" />
+                      </div>
                       Incorrect
                     </span>
                     <span className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
-                      Visité
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
-                      Surligné
+                      <div className="w-4 h-4 rounded bg-blue-100 border-2 border-blue-400"></div>
+                      Sélectionné
                     </span>
                   </div>
                   <Button
                     variant="outline"
                     onClick={() => setShowVueEnsemble(false)}
+                  >
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Gallery Modal */}
+      <AnimatePresence>
+        {showImageGallery && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowImageGallery(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-xl">
+                <div className="flex items-center gap-3">
+                  <Image className="h-6 w-6" />
+                  <h2 className="text-xl font-bold">Images de l'examen</h2>
+                </div>
+                <button
+                  onClick={() => setShowImageGallery(false)}
+                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Images Grid */}
+              <ScrollArea className="flex-1 p-4">
+                {(() => {
+                  const allImages = questions.reduce((acc, q, idx) => {
+                    if (q.image) {
+                      acc.push({
+                        src: q.image,
+                        questionIndex: idx,
+                        questionText: q.question?.substring(0, 50) + '...'
+                      });
+                    }
+                    return acc;
+                  }, []);
+
+                  if (allImages.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                          <Image className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <h4 className="text-lg font-medium text-gray-700 mb-2">
+                          Aucune image dans cet examen
+                        </h4>
+                        <p className="text-gray-500 text-sm">
+                          Cet examen ne contient pas d'images.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {allImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all"
+                          onClick={() => {
+                            goToQuestion(img.questionIndex);
+                            setShowImageGallery(false);
+                          }}
+                        >
+                          <img
+                            src={img.src}
+                            alt={`Question ${img.questionIndex + 1}`}
+                            className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <span className="text-white text-xs font-medium">
+                              Q{img.questionIndex + 1}
+                            </span>
+                          </div>
+                          <Badge className="absolute top-2 left-2 bg-purple-600">
+                            Q{img.questionIndex + 1}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </ScrollArea>
+
+              {/* Footer */}
+              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowImageGallery(false)}
                   >
                     Fermer
                   </Button>

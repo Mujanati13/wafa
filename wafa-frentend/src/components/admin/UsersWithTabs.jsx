@@ -673,6 +673,12 @@ const UsersWithTabs = () => {
                               Paiement
                             </div>
                           </th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-700">
+                            <div className="flex items-center gap-1">
+                              <CreditCard className="w-4 h-4 text-purple-600" />
+                              Mode de paiement
+                            </div>
+                          </th>
                         </>
                       )}
                       <th className="text-left py-3 px-4 font-medium text-gray-700">
@@ -775,6 +781,24 @@ const UsersWithTabs = () => {
                                     {new Date(user.paymentDate).toLocaleDateString("fr-FR")}
                                   </span>
                                 </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              {user.paymentMethod ? (
+                                <Badge 
+                                  variant="outline" 
+                                  className={
+                                    user.paymentMethod === 'PayPal' 
+                                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                      : user.paymentMethod === 'Bank Transfer'
+                                      ? 'bg-green-50 text-green-700 border-green-200'
+                                      : 'bg-purple-50 text-purple-700 border-purple-200'
+                                  }
+                                >
+                                  {user.paymentMethod}
+                                </Badge>
                               ) : (
                                 <span className="text-sm text-gray-400">-</span>
                               )}

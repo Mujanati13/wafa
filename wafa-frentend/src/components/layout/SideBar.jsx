@@ -25,7 +25,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
-import { userService } from "@/services/userService";
+import { useSemester } from "@/context/SemesterContext";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -46,8 +46,10 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userSemesters, setUserSemesters] = useState([]);
-  const [userPlan, setUserPlan] = useState("Free");
+
+  // Use shared semester context - only show modules for the selected semester
+  const { selectedSemester, userSemesters } = useSemester();
+
   // Collapsible section open states (all collapsed by default)
   const [openGroups, setOpenGroups] = useState({
     dashboard: false,
@@ -58,30 +60,6 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
   const toggleGroup = (groupKey) =>
     setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
-
-  // Fetch user profile to get semesters
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const userProfile = await userService.getUserProfile();
-        setUserSemesters(userProfile.semesters || []);
-        setUserPlan(userProfile.plan || "Free");
-        // Update localStorage with latest user data
-        localStorage.setItem("user", JSON.stringify(userProfile));
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        // Fallback to localStorage
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setUserSemesters(user.semesters || []);
-          setUserPlan(user.plan || "Free");
-        }
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -106,18 +84,18 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     fetchModules();
   }, []);
 
-  // Filter modules based on user's subscribed semesters
+  // Filter modules based on selected semester from context
   const filteredModules = modules.filter((module) => {
-    // If user has semesters defined, use those
+    // If a specific semester is selected, show only modules from that semester
+    if (selectedSemester) {
+      return module.semester === selectedSemester;
+    }
+    // If no semester selected but user has subscribed semesters, show all subscribed
     if (userSemesters && userSemesters.length > 0) {
       return userSemesters.includes(module.semester);
     }
-    // For Free plan users with no semesters set, give access to S1 by default
-    if (userPlan === "Free" || !userPlan) {
-      return module.semester === "S1";
-    }
-    // No access if no semesters and not Free plan
-    return false;
+    // Default: show S1 for free users
+    return module.semester === "S1";
   });
 
   // Group modules by semester
@@ -242,11 +220,9 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
           width: isMobile ? 256 : sidebarOpen ? 256 : 80,
         }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
-        className={`${isMobile ? "fixed" : "relative"} z-50 ${
-          isMobile ? "h-[calc(100vh-4rem)]" : "h-full"
-        } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${
-          isMobile ? "top-16" : "top-0"
-        } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden`}
+        className={`${isMobile ? "fixed" : "relative"} z-50 ${isMobile ? "h-[calc(100vh-4rem)]" : "h-full"
+          } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${isMobile ? "top-16" : "top-0"
+          } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden`}
       >
         {/* Navigation */}
         <ScrollArea className="flex-1 h-0 min-h-0">
@@ -257,139 +233,139 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                 sidebarOpen ? "p-4 pt-4" : "p-2 pt-4"
               )}
             >
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                {sidebarOpen && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-sm text-muted-foreground font-medium"
-                  >
-                    {t('dashboard:loading_modules')}
-                  </motion.span>
-                )}
-              </div>
-            ) : (
-            <>
-              {/* Dashboard - Direct Link (no submenu) */}
-              <SidebarItem
-                item={dashboardItem}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                navigate={navigate}
-                isMobile={isMobile}
-                sidebarOpen={sidebarOpen}
-                setSidebarOpen={setSidebarOpen}
-              />
-
-              <Separator className="my-2" />
-
-              {/* Group: Modules - Grouped by Semester */}
-              <CollapsibleSection
-                id="modules"
-                title={t('dashboard:modules')}
-                count={filteredModules.length}
-                isOpen={openGroups.modules}
-                forceOpen={!sidebarOpen}
-                onToggle={() => toggleGroup("modules")}
-                sidebarOpen={sidebarOpen}
-                icon={Book}
-              >
-                {filteredModules.length === 0 ? (
-                  sidebarOpen && (
-                    <div className="px-3 py-4 text-center">
-                      <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        {t('dashboard:no_modules_available', 'Aucun module disponible')}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('dashboard:subscribe_to_access', 'Souscrivez à un plan pour accéder aux modules')}
-                      </p>
-                    </div>
-                  )
-                ) : (
-                  sortedSemesters.map((semester) => (
-                    <CollapsibleSection
-                      key={semester}
-                      id={`semester-${semester}`}
-                      title={semester}
-                      count={modulesBySemester[semester].length}
-                      isOpen={openGroups[`semester-${semester}`]}
-                      forceOpen={!sidebarOpen}
-                      onToggle={() => toggleGroup(`semester-${semester}`)}
-                      sidebarOpen={sidebarOpen}
-                      icon={GraduationCap}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  {sidebarOpen && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-sm text-muted-foreground font-medium"
                     >
-                      {modulesBySemester[semester].map((module) => (
-                        <SidebarItem
-                          key={module._id}
-                          item={createModuleSidebarItem(module)}
-                          activeTab={activeTab}
-                          setActiveTab={setActiveTab}
-                          navigate={navigate}
-                          isMobile={isMobile}
+                      {t('dashboard:loading_modules')}
+                    </motion.span>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Dashboard - Direct Link (no submenu) */}
+                  <SidebarItem
+                    item={dashboardItem}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    navigate={navigate}
+                    isMobile={isMobile}
+                    sidebarOpen={sidebarOpen}
+                    setSidebarOpen={setSidebarOpen}
+                  />
+
+                  <Separator className="my-2" />
+
+                  {/* Group: Modules - Grouped by Semester */}
+                  <CollapsibleSection
+                    id="modules"
+                    title={t('dashboard:modules')}
+                    count={filteredModules.length}
+                    isOpen={openGroups.modules}
+                    forceOpen={!sidebarOpen}
+                    onToggle={() => toggleGroup("modules")}
+                    sidebarOpen={sidebarOpen}
+                    icon={Book}
+                  >
+                    {filteredModules.length === 0 ? (
+                      sidebarOpen && (
+                        <div className="px-3 py-4 text-center">
+                          <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                          <p className="text-xs text-muted-foreground">
+                            {t('dashboard:no_modules_available', 'Aucun module disponible')}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('dashboard:subscribe_to_access', 'Souscrivez à un plan pour accéder aux modules')}
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      sortedSemesters.map((semester) => (
+                        <CollapsibleSection
+                          key={semester}
+                          id={`semester-${semester}`}
+                          title={semester}
+                          count={modulesBySemester[semester].length}
+                          isOpen={openGroups[`semester-${semester}`]}
+                          forceOpen={!sidebarOpen}
+                          onToggle={() => toggleGroup(`semester-${semester}`)}
                           sidebarOpen={sidebarOpen}
-                          setSidebarOpen={setSidebarOpen}
-                          extraClassName={sidebarOpen ? "pl-4" : ""}
-                        />
-                      ))}
-                    </CollapsibleSection>
-                  ))
-                )}
-              </CollapsibleSection>
+                          icon={GraduationCap}
+                        >
+                          {modulesBySemester[semester].map((module) => (
+                            <SidebarItem
+                              key={module._id}
+                              item={createModuleSidebarItem(module)}
+                              activeTab={activeTab}
+                              setActiveTab={setActiveTab}
+                              navigate={navigate}
+                              isMobile={isMobile}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                              extraClassName={sidebarOpen ? "pl-4" : ""}
+                            />
+                          ))}
+                        </CollapsibleSection>
+                      ))
+                    )}
+                  </CollapsibleSection>
 
-              {/* Group: Analyse */}
-              <CollapsibleSection
-                id="analysis"
-                title={t('dashboard:analysis')}
-                count={analysisItems.length}
-                isOpen={openGroups.analysis}
-                forceOpen={!sidebarOpen}
-                onToggle={() => toggleGroup("analysis")}
-                sidebarOpen={sidebarOpen}
-                icon={Trophy}
-              >
-                {analysisItems.map((item) => (
-                  <SidebarItem
-                    key={item.id}
-                    item={item}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    navigate={navigate}
-                    isMobile={isMobile}
+                  {/* Group: Analyse */}
+                  <CollapsibleSection
+                    id="analysis"
+                    title={t('dashboard:analysis')}
+                    count={analysisItems.length}
+                    isOpen={openGroups.analysis}
+                    forceOpen={!sidebarOpen}
+                    onToggle={() => toggleGroup("analysis")}
                     sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                  />
-                ))}
-              </CollapsibleSection>
+                    icon={Trophy}
+                  >
+                    {analysisItems.map((item) => (
+                      <SidebarItem
+                        key={item.id}
+                        item={item}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        navigate={navigate}
+                        isMobile={isMobile}
+                        sidebarOpen={sidebarOpen}
+                        setSidebarOpen={setSidebarOpen}
+                      />
+                    ))}
+                  </CollapsibleSection>
 
-              {/* Group: Bibliothèque */}
-              <CollapsibleSection
-                id="library"
-                title={t('dashboard:library')}
-                count={libraryItems.length}
-                isOpen={openGroups.library}
-                forceOpen={!sidebarOpen}
-                onToggle={() => toggleGroup("library")}
-                sidebarOpen={sidebarOpen}
-                icon={SquareLibrary}
-              >
-                {libraryItems.map((item) => (
-                  <SidebarItem
-                    key={item.id}
-                    item={item}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    navigate={navigate}
-                    isMobile={isMobile}
+                  {/* Group: Bibliothèque */}
+                  <CollapsibleSection
+                    id="library"
+                    title={t('dashboard:library')}
+                    count={libraryItems.length}
+                    isOpen={openGroups.library}
+                    forceOpen={!sidebarOpen}
+                    onToggle={() => toggleGroup("library")}
                     sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                  />
-                ))}
-              </CollapsibleSection>
-            </>
-          )}
+                    icon={SquareLibrary}
+                  >
+                    {libraryItems.map((item) => (
+                      <SidebarItem
+                        key={item.id}
+                        item={item}
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        navigate={navigate}
+                        isMobile={isMobile}
+                        sidebarOpen={sidebarOpen}
+                        setSidebarOpen={setSidebarOpen}
+                      />
+                    ))}
+                  </CollapsibleSection>
+                </>
+              )}
             </nav>
           </TooltipProvider>
         </ScrollArea>
@@ -511,7 +487,7 @@ const CollapsibleSection = ({
   forceOpen = false,
 }) => {
   const showChildren = forceOpen || isOpen;
-  
+
   if (!sidebarOpen) {
     // When sidebar is collapsed, show items directly without grouping
     return (
@@ -546,8 +522,8 @@ const CollapsibleSection = ({
             {Icon && <Icon className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />}
             <span>{title}</span>
             {count !== undefined && (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className="ml-1 h-5 min-w-5 px-1.5 text-[10px] font-semibold"
               >
                 {count}
@@ -578,7 +554,7 @@ const CollapsibleSection = ({
           )}
         </AnimatePresence>
       </CollapsibleContent>
-      
+
       <Separator className="my-3" />
     </Collapsible>
   );

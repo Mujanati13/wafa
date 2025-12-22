@@ -11,9 +11,12 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const PrivacyPolicyAdmin = () => {
   const [content, setContent] = useState('');
+  const [termsContent, setTermsContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingTerms, setSavingTerms] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [lastSavedTerms, setLastSavedTerms] = useState(null);
 
   useEffect(() => {
     fetchPolicy();
@@ -22,17 +25,25 @@ const PrivacyPolicyAdmin = () => {
   const fetchPolicy = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/settings/privacy-policy`, {
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setContent(response.data.data?.content || '');
-        setLastSaved(response.data.data?.updatedAt);
+      const [policyResponse, termsResponse] = await Promise.all([
+        axios.get(`${API_URL}/settings/privacy-policy`, { withCredentials: true }),
+        axios.get(`${API_URL}/settings/terms-of-use`, { withCredentials: true })
+      ]);
+
+      if (policyResponse.data.success) {
+        setContent(policyResponse.data.data?.content || '');
+        setLastSaved(policyResponse.data.data?.updatedAt);
+      }
+
+      if (termsResponse.data.success) {
+        setTermsContent(termsResponse.data.data?.content || '');
+        setLastSavedTerms(termsResponse.data.data?.updatedAt);
       }
     } catch (error) {
-      console.error('Error fetching privacy policy:', error);
+      console.error('Error fetching policies:', error);
       // If no policy exists yet, start with default content
       setContent(getDefaultContent());
+      setTermsContent(getDefaultTermsContent());
     } finally {
       setLoading(false);
     }
@@ -56,6 +67,27 @@ const PrivacyPolicyAdmin = () => {
       toast.error('Erreur lors de l\'enregistrement');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveTerms = async () => {
+    try {
+      setSavingTerms(true);
+      const response = await axios.put(
+        `${API_URL}/settings/terms-of-use`,
+        { content: termsContent },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success('Conditions d\'utilisation enregistrées avec succès');
+        setLastSavedTerms(new Date().toISOString());
+      }
+    } catch (error) {
+      console.error('Error saving terms of use:', error);
+      toast.error('Erreur lors de l\'enregistrement');
+    } finally {
+      setSavingTerms(false);
     }
   };
 
@@ -137,6 +169,103 @@ Pour toute question concernant cette politique, contactez-nous à : contact@wafa
 `;
   };
 
+  const getDefaultTermsContent = () => {
+    return `# Conditions d'Utilisation - WAFA
+
+Dernière mise à jour : ${new Date().toLocaleDateString('fr-FR')}
+
+## 1. Acceptation des Conditions
+
+En utilisant la plateforme WAFA, vous acceptez les présentes conditions d'utilisation dans leur intégralité.
+
+## 2. Utilisation Acceptable
+
+### Droits d'Utilisation
+- Utiliser la plateforme uniquement à des fins éducatives personnelles
+- Accéder au contenu dans le cadre de votre abonnement actif
+- Respecter les droits de propriété intellectuelle de WAFA
+
+### Comportement sur la Plateforme
+- Maintenir un comportement respectueux envers les autres utilisateurs
+- Signaler tout contenu inapproprié ou erreur que vous rencontrez
+- Respecter les règles du système de points et du classement
+- Participer de manière constructive aux discussions et contributions
+
+## 3. Utilisations Interdites
+
+Les actions suivantes sont strictement interdites :
+
+### Protection du Contenu
+- Partager, revendre ou distribuer le contenu de la plateforme
+- Copier, reproduire ou télécharger massivement les questions, explications ou résumés
+- Prendre des captures d'écran ou enregistrements pour redistribution
+- Utiliser le contenu en dehors de la plateforme sans autorisation écrite
+
+### Sécurité et Intégrité
+- Utiliser des scripts, bots ou outils automatisés
+- Tenter de contourner les mesures de sécurité ou les restrictions d'accès
+- Créer plusieurs comptes pour manipuler le classement ou obtenir des avantages déloyaux
+- Tenter d'accéder à des zones non autorisées de la plateforme
+
+### Contenu Approprié
+- Publier du contenu offensant, diffamatoire ou illégal
+- Harceler ou intimider d'autres utilisateurs
+- Partager des informations fausses ou trompeuses
+
+## 4. Compte Utilisateur
+
+### Responsabilités
+- Un compte est strictement personnel et ne peut être partagé
+- Vous êtes responsable de la confidentialité de vos identifiants
+- Vous devez fournir des informations exactes lors de l'inscription
+- Vous devez mettre à jour vos informations en cas de changement
+
+### Violations
+Toute violation des présentes conditions peut entraîner :
+- Un avertissement
+- Une suspension temporaire de votre compte
+- Une suppression définitive de votre compte
+- Des poursuites judiciaires si applicable
+
+## 5. Propriété Intellectuelle
+
+Tout le contenu présent sur WAFA (questions, explications, résumés, graphiques, etc.) est protégé par le droit d'auteur et appartient à WAFA ou à ses partenaires.
+
+## 6. Abonnements et Paiements
+
+### Modalités de Paiement
+- Les paiements sont traités de manière sécurisée via PayPal
+- Les abonnements sont facturés selon la période choisie (mensuel/annuel)
+- Le renouvellement est automatique sauf annulation préalable
+- Les prix peuvent être modifiés avec un préavis de 30 jours
+
+### Remboursements
+- Remboursement possible dans les 14 jours suivant le premier achat
+- Aucun remboursement n'est accordé pour les renouvellements
+- Les remboursements partiels ne sont pas disponibles
+
+### Annulation
+- Vous pouvez annuler votre abonnement à tout moment depuis votre profil
+- L'accès reste actif jusqu'à la fin de la période payée
+- Aucun remboursement au prorata n'est accordé en cas d'annulation
+
+## 7. Limitation de Responsabilité
+
+WAFA ne peut être tenue responsable de :
+- L'exactitude ou l'exhaustivité du contenu éducatif
+- Toute perte ou dommage résultant de l'utilisation de la plateforme
+- Les interruptions de service ou problèmes techniques
+
+## 8. Modifications
+
+Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications prennent effet dès leur publication sur la plateforme.
+
+## 9. Contact
+
+Pour toute question concernant ces conditions, contactez-nous à : contact@wafa.ma
+`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -196,6 +325,54 @@ Pour toute question concernant cette politique, contactez-nous à : contact@wafa
             </Button>
             <Button variant="outline" asChild>
               <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">
+                <Eye className="h-4 w-4 mr-2" />
+                Prévisualiser
+              </a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Terms of Use Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Conditions d'Utilisation</CardTitle>
+          <CardDescription>
+            Gérez les conditions d'utilisation de votre plateforme.
+            {lastSavedTerms && (
+              <span className="block mt-2 text-xs text-green-600">
+                Dernière sauvegarde : {new Date(lastSavedTerms).toLocaleString('fr-FR')}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="termsContent">Contenu (Markdown supporté)</Label>
+            <Textarea
+              id="termsContent"
+              value={termsContent}
+              onChange={(e) => setTermsContent(e.target.value)}
+              rows={20}
+              className="font-mono text-sm"
+              placeholder="Rédigez vos conditions d'utilisation..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Utilisez Markdown pour formater le texte (# pour les titres, ** pour le gras, etc.)
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={handleSaveTerms} disabled={savingTerms}>
+              {savingTerms ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Mettre à jour
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/terms-of-use" target="_blank" rel="noopener noreferrer">
                 <Eye className="h-4 w-4 mr-2" />
                 Prévisualiser
               </a>

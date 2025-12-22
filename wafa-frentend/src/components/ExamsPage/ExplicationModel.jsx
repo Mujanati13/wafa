@@ -1,5 +1,5 @@
-import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [submissionText, setSubmissionText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Get user explanations (limit to 3)
   const userExplanations = useMemo(() => {
@@ -28,8 +30,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   const aiExplanation = {
     text: question?.explanation || null,
     images: (() => {
-      const images = Array.isArray(question?.explanationImages) 
-        ? question.explanationImages 
+      const images = Array.isArray(question?.explanationImages)
+        ? question.explanationImages
         : [];
       if (!images.length && question?.explanationImage) {
         images.push(question.explanationImage);
@@ -49,17 +51,39 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
     setIsSubmitting(true);
     try {
-      // TODO: API call to submit explanation
-      // await api.post(`/explanations/${question._id}`, { text: submissionText });
+      // TODO: API call to submit explanation with file
+      // const formData = new FormData();
+      // formData.append('text', submissionText);
+      // if (uploadedFile) formData.append('file', uploadedFile);
+      // await api.post(`/explanations/${question._id}`, formData);
       toast.success("Votre explication a été soumise pour révision !", {
-        description: "Elle sera publiée après validation par notre équipe."
+        description: "Elle sera publiée après validation par notre équipe. Vous gagnerez 1 point bleu si approuvée!"
       });
       setSubmissionText("");
+      setUploadedFile(null);
       setShowSubmitForm(false);
     } catch (error) {
       toast.error("Erreur lors de la soumission");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type (image or PDF)
+      if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+        toast.error("Seuls les images et PDF sont acceptés");
+        return;
+      }
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Le fichier ne doit pas dépasser 5 Mo");
+        return;
+      }
+      setUploadedFile(file);
+      toast.success(`Fichier ajouté: ${file.name}`);
     }
   };
 
@@ -79,8 +103,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
               {(hasAIExplanation ? 1 : 0) + userExplanations.length} / {MAX_EXPLANATIONS + 1}
             </Badge>
           </div>
-          <button 
-            onClick={() => setShowExplanation(false)} 
+          <button
+            onClick={() => setShowExplanation(false)}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
           >
             <X className="h-5 w-5 text-gray-500" />
@@ -89,13 +113,12 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
         {/* Main Tabs */}
         <div className="flex border-b border-gray-200">
-          <button 
+          <button
             onClick={() => setActiveTab("ai")}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-              activeTab === "ai" 
-                ? "border-b-2 border-blue-600 text-blue-700 bg-blue-50/50" 
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "ai"
+                ? "border-b-2 border-blue-600 text-blue-700 bg-blue-50/50"
                 : "text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <Bot className="h-4 w-4" />
             Explication IA
@@ -103,13 +126,12 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
               <span className="w-2 h-2 rounded-full bg-green-500" />
             )}
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab("user")}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${
-              activeTab === "user" 
-                ? "border-b-2 border-purple-600 text-purple-700 bg-purple-50/50" 
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "user"
+                ? "border-b-2 border-purple-600 text-purple-700 bg-purple-50/50"
                 : "text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             <Users className="h-4 w-4" />
             Explications Communauté
@@ -188,17 +210,16 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                     <button
                       key={idx}
                       onClick={() => setActiveExplanationIndex(idx)}
-                      className={`px-4 py-1.5 rounded-full font-medium transition-all ${
-                        activeExplanationIndex === idx
+                      className={`px-4 py-1.5 rounded-full font-medium transition-all ${activeExplanationIndex === idx
                           ? "bg-purple-100 text-purple-700 border-2 border-purple-300"
                           : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-                      }`}
+                        }`}
                     >
                       <User className="inline h-3 w-3 mr-1" />
                       Explication {idx + 1}
                     </button>
                   ))}
-                  
+
                   {/* Add button if slots available */}
                   {canAddExplanation && (
                     <button
@@ -240,7 +261,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   <p className="text-gray-500 text-sm mb-4">
                     Soyez le premier à partager votre compréhension !
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => setShowSubmitForm(true)}
                     className="gap-2 bg-purple-600 hover:bg-purple-700"
                   >
@@ -262,17 +283,61 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   <Textarea
                     value={submissionText}
                     onChange={(e) => setSubmissionText(e.target.value)}
-                    placeholder="Écrivez votre explication ici... Soyez clair et précis pour aider les autres étudiants."
+                    placeholder="Votre explication doit contenir les explications de tous les choix: pourquoi il est faux et pourquoi il est vrais, à partir des cours magistraux."
                     className="min-h-[120px] mb-3"
                   />
+
+                  {/* File Upload Section */}
+                  <div className="mb-3">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept="image/*,.pdf"
+                      className="hidden"
+                    />
+
+                    {uploadedFile ? (
+                      <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-purple-200">
+                        {uploadedFile.type.startsWith('image/') ? (
+                          <FileImage className="h-5 w-5 text-purple-600" />
+                        ) : (
+                          <FileText className="h-5 w-5 text-purple-600" />
+                        )}
+                        <span className="flex-1 text-sm text-gray-700 truncate">{uploadedFile.name}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setUploadedFile(null)}
+                          className="text-red-500 hover:text-red-600 h-7 w-7 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Image ou PDF
+                      </Button>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between">
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setShowSubmitForm(false)}
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setShowSubmitForm(false);
+                        setUploadedFile(null);
+                      }}
                     >
                       Annuler
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSubmitExplanation}
                       disabled={isSubmitting || !submissionText.trim()}
                       className="gap-2 bg-purple-600 hover:bg-purple-700"
@@ -293,7 +358,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium text-gray-600">Réponses correctes:</span>
               <div className="flex gap-1">
-                {question.options.map((opt, idx) => 
+                {question.options.map((opt, idx) =>
                   opt.isCorrect && (
                     <Badge key={idx} className="bg-emerald-100 text-emerald-700">
                       {String.fromCharCode(65 + idx)}
