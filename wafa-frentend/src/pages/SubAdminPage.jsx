@@ -538,7 +538,15 @@ const SubAdminPage = () => {
                               <Edit className="w-4 h-4" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
+                            <DropdownMenuItem
+                              className="gap-2"
+                              onClick={() => {
+                                setSelectedAdmin(admin);
+                                setAdminRole(admin.adminRole || "admin");
+                                setSelectedPermissions(admin.permissions || []);
+                                setShowEditDialog(true);
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                               Voir le profil
                             </DropdownMenuItem>
@@ -597,11 +605,10 @@ const SubAdminPage = () => {
                     <div
                       key={user._id}
                       onClick={() => setSelectedUser(user)}
-                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedUser?._id === user._id
+                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${selectedUser?._id === user._id
                           ? "bg-purple-50 border-l-4 border-purple-500"
                           : ""
-                      }`}
+                        }`}
                     >
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium text-sm">
                         {(user.name || user.username)?.[0]?.toUpperCase()}
@@ -645,11 +652,10 @@ const SubAdminPage = () => {
                     <div
                       key={role.value}
                       onClick={() => setAdminRole(role.value)}
-                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-all ${
-                        adminRole === role.value
+                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-all ${adminRole === role.value
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       <role.icon
                         className={`w-6 h-6 ${adminRole === role.value ? "text-purple-500" : "text-gray-400"}`}
@@ -674,11 +680,10 @@ const SubAdminPage = () => {
                     <div
                       key={key}
                       onClick={() => togglePermission(key)}
-                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                        selectedPermissions.includes(key)
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${selectedPermissions.includes(key)
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       <Checkbox checked={selectedPermissions.includes(key)} />
                       <div className="flex-1">
@@ -748,11 +753,10 @@ const SubAdminPage = () => {
                     <div
                       key={role.value}
                       onClick={() => setAdminRole(role.value)}
-                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-all ${
-                        adminRole === role.value
+                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-all ${adminRole === role.value
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       <role.icon
                         className={`w-6 h-6 ${adminRole === role.value ? "text-purple-500" : "text-gray-400"}`}
@@ -777,11 +781,10 @@ const SubAdminPage = () => {
                     <div
                       key={key}
                       onClick={() => togglePermission(key)}
-                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                        selectedPermissions.includes(key)
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all ${selectedPermissions.includes(key)
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
-                      }`}
+                        }`}
                     >
                       <Checkbox checked={selectedPermissions.includes(key)} />
                       <div className="flex-1">

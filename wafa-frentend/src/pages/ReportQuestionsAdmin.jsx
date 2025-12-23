@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PageHeader, StatCard, TableFilters } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
@@ -32,6 +36,8 @@ const ReportQuestionsAdmin = () => {
   // Popup states for Question and Details
   const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
   const [detailsPopup, setDetailsPopup] = useState({ open: false, text: '' });
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const openQuestionPopup = (questionText) => {
     setQuestionPopup({ open: true, text: questionText });
@@ -127,9 +133,15 @@ const ReportQuestionsAdmin = () => {
     setDetailsOpen(true);
   };
 
-  const handleEditQuestion = (questionId) => {
-    // Navigate to question edit page or open edit modal
-    window.open(`/admin/questions/edit/${questionId}`, '_blank');
+  const handleEditQuestion = async (questionId) => {
+    try {
+      const response = await api.get(`/questions/all/${questionId}`);
+      setEditingQuestion(response.data?.data || response.data);
+      setShowEditDialog(true);
+    } catch (err) {
+      console.error("Error fetching question:", err);
+      toast.error("Erreur lors du chargement de la question");
+    }
   };
 
   // Filter reports based on search, date, status, and category
@@ -873,6 +885,81 @@ const ReportQuestionsAdmin = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Question Dialog */}
+      {showEditDialog && editingQuestion && (
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Modifier la Question</DialogTitle>
+              <DialogDescription>Modifiez les détails de la question signalée</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Question</Label>
+                <Textarea
+                  value={editingQuestion.text || ''}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, text: e.target.value })}
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-3">
+                <Label>Options</Label>
+                {editingQuestion.options?.map((opt, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <Checkbox
+                      checked={opt.isCorrect || false}
+                      onCheckedChange={(checked) => {
+                        const newOptions = [...editingQuestion.options];
+                        newOptions[idx] = { ...opt, isCorrect: checked };
+                        setEditingQuestion({ ...editingQuestion, options: newOptions });
+                      }}
+                    />
+                    <Input
+                      value={opt.text || ''}
+                      onChange={(e) => {
+                        const newOptions = [...editingQuestion.options];
+                        newOptions[idx] = { ...opt, text: e.target.value };
+                        setEditingQuestion({ ...editingQuestion, options: newOptions });
+                      }}
+                      placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                      className="flex-1"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label>Note (optionnel)</Label>
+                <Textarea
+                  value={editingQuestion.note || ''}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, note: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
+              <Button onClick={async () => {
+                try {
+                  await api.patch(`/questions/update/${editingQuestion._id || editingQuestion.id}`, {
+                    text: editingQuestion.text,
+                    options: editingQuestion.options,
+                    note: editingQuestion.note
+                  });
+                  toast.success("Question mise à jour avec succès");
+                  setShowEditDialog(false);
+                  fetchReports(); // Refresh the reports list
+                } catch (err) {
+                  console.error("Error updating question:", err);
+                  toast.error("Erreur lors de la mise à jour");
+                }
+              }}>
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

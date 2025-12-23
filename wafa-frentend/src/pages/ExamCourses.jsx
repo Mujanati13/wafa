@@ -20,6 +20,9 @@ const ExamCourses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddCourseForm, setShowAddCourseForm] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [viewingCourse, setViewingCourse] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
@@ -198,6 +201,56 @@ const ExamCourses = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleEditCourse = (course) => {
+    setFormData({
+      courseName: course.courseName,
+      moduleName: course.moduleName,
+      category: course.category,
+      imageUrl: course.imageUrl === placeholderImage ? "" : course.imageUrl,
+      helpText: course.helpText || "",
+    });
+    setEditingCourse(course);
+    setShowAddCourseForm(true);
+  };
+
+  const handleUpdateCourse = async () => {
+    if (!formData.courseName || !formData.moduleName || !formData.category) {
+      toast.error(t('admin:fill_required_fields'));
+      return;
+    }
+
+    try {
+      const selectedModule = modules.find(m => m.name === formData.moduleName);
+      if (!selectedModule) {
+        toast.error("Module non trouvé");
+        return;
+      }
+
+      await api.put(`/exam-courses/${editingCourse.id}`, {
+        name: formData.courseName,
+        moduleId: selectedModule._id,
+        category: formData.category,
+        imageUrl: formData.imageUrl || "",
+        helpText: formData.helpText || "",
+      });
+
+      setShowAddCourseForm(false);
+      setEditingCourse(null);
+      setFormData({
+        courseName: "",
+        moduleName: "",
+        category: "",
+        imageUrl: "",
+        helpText: "",
+      });
+      toast.success("Cours mis à jour avec succès");
+      fetchCourses();
+    } catch (err) {
+      console.error("Error updating course:", err);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -313,10 +366,23 @@ const ExamCourses = () => {
                         <TableCell>{course.totalQuestions}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => {
+                                setViewingCourse(course);
+                                setShowViewDialog(true);
+                              }}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleEditCourse(course)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
@@ -351,7 +417,7 @@ const ExamCourses = () => {
       <AnimatePresence>
         {showAddCourseForm && (
           <Dialog open={showAddCourseForm} onOpenChange={setShowAddCourseForm}>
-            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md">
+            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md max-h-[80vh] overflow-y-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -359,13 +425,15 @@ const ExamCourses = () => {
                 transition={{ duration: 0.2 }}
               >
                 <DialogHeader>
-                  <DialogTitle className="text-black text-xl">Créer un nouveau cours</DialogTitle>
+                  <DialogTitle className="text-black text-xl">
+                    {editingCourse ? "Modifier le cours" : "Créer un nouveau cours"}
+                  </DialogTitle>
                   <DialogDescription className="text-gray-600">
                     Ajouter un cours avec tous les détails nécessaires
                   </DialogDescription>
                 </DialogHeader>
 
-                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); handleAddCourse(); }}>
+                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingCourse ? handleUpdateCourse() : handleAddCourse(); }}>
                   <div className="space-y-2">
                     <Label className="text-black font-medium">Nom du cours *</Label>
                     <Input
@@ -435,7 +503,11 @@ const ExamCourses = () => {
                       type="button"
                       variant="outline"
                       className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                      onClick={() => setShowAddCourseForm(false)}
+                      onClick={() => {
+                        setShowAddCourseForm(false);
+                        setEditingCourse(null);
+                        setFormData({ courseName: "", moduleName: "", category: "", imageUrl: "", helpText: "" });
+                      }}
                     >
                       Annuler
                     </Button>
@@ -445,14 +517,59 @@ const ExamCourses = () => {
                     >
                       <Button
                         type="submit"
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                        className={editingCourse ? "bg-green-600 hover:bg-green-700 text-white" : "bg-purple-600 hover:bg-purple-700 text-white"}
                       >
-                        Créer Cours
+                        {editingCourse ? "Mettre à jour" : "Créer Cours"}
                       </Button>
                     </motion.div>
                   </DialogFooter>
                 </form>
               </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* View Dialog */}
+        {showViewDialog && viewingCourse && (
+          <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Détails du Cours</DialogTitle>
+                <DialogDescription>Informations complètes du cours</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Nom du cours</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.courseName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Module</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.moduleName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Catégorie</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.categoryName}</p>
+                </div>
+                {viewingCourse.imageUrl && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Image</Label>
+                    <img src={viewingCourse.imageUrl} alt={viewingCourse.courseName} className="w-full h-32 object-cover rounded border" />
+                  </div>
+                )}
+                {viewingCourse.helpText && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Texte d'aide</Label>
+                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.helpText}</p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Total Questions</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.totalQuestions}</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setShowViewDialog(false)}>Fermer</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}

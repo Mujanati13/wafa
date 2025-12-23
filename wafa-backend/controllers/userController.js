@@ -98,14 +98,14 @@ export const UserController = {
 
             // Get payment method for each user from their latest completed transaction
             const Transaction = (await import('../models/transactionModel.js')).default;
-            
+
             const usersWithPayment = await Promise.all(users.map(async (user) => {
                 const latestTransaction = await Transaction.findOne({
                     user: user._id,
                     status: 'completed'
                 })
-                .sort({ createdAt: -1 })
-                .select('paymentMethod');
+                    .sort({ createdAt: -1 })
+                    .select('paymentMethod');
 
                 return {
                     ...user.toObject(),
@@ -298,6 +298,41 @@ export const UserController = {
         }
     },
 
+    // Delete user (admin only)
+    deleteUser: async (req, res) => {
+        try {
+            const { userId } = req.params;
+
+            const user = await User.findByIdAndDelete(userId);
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            // Also delete user stats if exists
+            try {
+                await UserStats.deleteOne({ userId: userId });
+            } catch (e) {
+                console.log('No user stats to delete or error:', e.message);
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'User deleted successfully'
+            });
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to delete user',
+                error: error.message
+            });
+        }
+    },
+
     // Upload profile picture
     uploadProfilePicture: asyncHandler(async (req, res) => {
         if (!req.file) {
@@ -391,7 +426,7 @@ export const UserController = {
     // Get current user profile
     getProfile: asyncHandler(async (req, res) => {
         const user = await User.findById(req.user._id).select("-password -emailVerificationToken -emailVerificationExpires -resetPasswordToken -resetPasswordExpires");
-        
+
         if (!user) {
             res.status(404);
             throw new Error("Utilisateur non trouvé");
@@ -406,9 +441,9 @@ export const UserController = {
     // Get current user's stats and achievements
     getMyStats: asyncHandler(async (req, res) => {
         const UserStats = (await import("../models/userStatsModel.js")).default;
-        
+
         let userStats = await UserStats.findOne({ userId: req.user._id });
-        
+
         // If no stats exist, create default stats
         if (!userStats) {
             userStats = await UserStats.create({
@@ -441,9 +476,9 @@ export const UserController = {
     // Get user's subscription information
     getSubscriptionInfo: asyncHandler(async (req, res) => {
         const userId = req.user._id;
-        
+
         const user = await User.findById(userId).select('plan subscription email');
-        
+
         if (!user) {
             return res.status(404).json({
                 success: false,

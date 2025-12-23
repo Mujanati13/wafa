@@ -20,6 +20,9 @@ const ExamParYears = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddExamForm, setShowAddExamForm] = useState(false);
+  const [editingExam, setEditingExam] = useState(null);
+  const [viewingExam, setViewingExam] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
@@ -101,6 +104,56 @@ const ExamParYears = () => {
     } catch (err) {
       console.error("Error deleting exam:", err);
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleEditExam = (exam) => {
+    setFormData({
+      examName: exam.examName,
+      moduleName: exam.moduleName,
+      year: exam.year,
+      imageUrl: exam.imageUrl === placeholderImage ? "" : exam.imageUrl,
+      helpText: exam.helpText || "",
+    });
+    setEditingExam(exam);
+    setShowAddExamForm(true);
+  };
+
+  const handleUpdateExam = async () => {
+    if (!formData.examName || !formData.moduleName || !formData.year) {
+      toast.error(t('admin:fill_required_fields'));
+      return;
+    }
+
+    try {
+      const selectedModule = modules.find(m => m.name === formData.moduleName);
+      if (!selectedModule) {
+        toast.error("Module non trouvé");
+        return;
+      }
+
+      await api.patch(`/exams/update/${editingExam.id}`, {
+        name: formData.examName,
+        moduleId: selectedModule._id,
+        year: formData.year,
+        imageUrl: formData.imageUrl || "",
+        infoText: formData.helpText || "",
+      });
+
+      setShowAddExamForm(false);
+      setEditingExam(null);
+      setFormData({
+        examName: "",
+        moduleName: "",
+        year: "",
+        imageUrl: "",
+        helpText: "",
+      });
+      toast.success("Examen mis à jour avec succès");
+      fetchExams();
+    } catch (err) {
+      console.error("Error updating exam:", err);
+      toast.error("Erreur lors de la mise à jour");
     }
   };
 
@@ -195,8 +248,8 @@ const ExamParYears = () => {
     return <div className="flex items-center gap-2">{buttons}</div>;
   };
 
-  const uniqueModules = Array.from(new Set(exams.map((e) => e.moduleName)));
-  const uniqueYears = Array.from(new Set(exams.map((e) => e.year))).sort((a, b) => b - a);
+  const uniqueModules = Array.from(new Set(exams.map((e) => e.moduleName).filter(m => m && m !== "")));
+  const uniqueYears = Array.from(new Set(exams.map((e) => e.year).filter(y => y && y !== ""))).sort((a, b) => b - a);
 
   if (loading) {
     return (
@@ -255,7 +308,7 @@ const ExamParYears = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les modules</SelectItem>
-                  {Array.from(new Set(exams.map((e) => e.moduleName))).map((module) => (
+                  {Array.from(new Set(exams.map((e) => e.moduleName).filter(m => m && m !== ""))).map((module) => (
                     <SelectItem key={module} value={module}>
                       {module}
                     </SelectItem>
@@ -268,7 +321,7 @@ const ExamParYears = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes les années</SelectItem>
-                  {Array.from(new Set(exams.map((e) => e.year))).sort((a, b) => b - a).map((year) => (
+                  {Array.from(new Set(exams.map((e) => e.year).filter(y => y && y !== ""))).sort((a, b) => b - a).map((year) => (
                     <SelectItem key={year} value={year}>
                       {year}
                     </SelectItem>
@@ -320,10 +373,23 @@ const ExamParYears = () => {
                         <TableCell>{exam.totalQuestions}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => {
+                                setViewingExam(exam);
+                                setShowViewDialog(true);
+                              }}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleEditExam(exam)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
@@ -358,7 +424,7 @@ const ExamParYears = () => {
       <AnimatePresence>
         {showAddExamForm && (
           <Dialog open={showAddExamForm} onOpenChange={setShowAddExamForm}>
-            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md">
+            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md max-h-[80vh] overflow-y-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -366,13 +432,15 @@ const ExamParYears = () => {
                 transition={{ duration: 0.2 }}
               >
                 <DialogHeader>
-                  <DialogTitle className="text-black text-xl">Créer un nouvel examen</DialogTitle>
+                  <DialogTitle className="text-black text-xl">
+                    {editingExam ? "Modifier l'examen" : "Créer un nouvel examen"}
+                  </DialogTitle>
                   <DialogDescription className="text-gray-600">
                     Ajouter un examen avec tous les détails nécessaires
                   </DialogDescription>
                 </DialogHeader>
 
-                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); handleAddExam(); }}>
+                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingExam ? handleUpdateExam() : handleAddExam(); }}>
                   <div className="space-y-2">
                     <Label className="text-black font-medium">Nom de l'examen *</Label>
                     <Input
@@ -440,7 +508,11 @@ const ExamParYears = () => {
                       type="button"
                       variant="outline"
                       className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                      onClick={() => setShowAddExamForm(false)}
+                      onClick={() => {
+                        setShowAddExamForm(false);
+                        setEditingExam(null);
+                        setFormData({ examName: "", moduleName: "", year: "", imageUrl: "", helpText: "" });
+                      }}
                     >
                       Annuler
                     </Button>
@@ -450,14 +522,63 @@ const ExamParYears = () => {
                     >
                       <Button
                         type="submit"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className={editingExam ? "bg-green-600 hover:bg-green-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"}
                       >
-                        Créer Examen
+                        {editingExam ? "Mettre à jour" : "Créer Examen"}
                       </Button>
                     </motion.div>
                   </DialogFooter>
                 </form>
               </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* View Dialog */}
+        {showViewDialog && viewingExam && (
+          <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Détails de l'Examen</DialogTitle>
+                <DialogDescription>
+                  Informations complètes de l'examen
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Nom de l'examen</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingExam.examName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Module</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingExam.moduleName}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Année</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingExam.year}</p>
+                </div>
+                {viewingExam.imageUrl && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Image</Label>
+                    <img src={viewingExam.imageUrl} alt={viewingExam.examName} className="w-full h-32 object-cover rounded border" />
+                  </div>
+                )}
+                {viewingExam.helpText && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Texte d'aide</Label>
+                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingExam.helpText}</p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Total Questions</Label>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingExam.totalQuestions}</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setShowViewDialog(false)}>
+                  Fermer
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         )}

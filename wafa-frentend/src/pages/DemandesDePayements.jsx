@@ -30,6 +30,7 @@ const DemandesDePayements = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [actionLoading, setActionLoading] = useState(null); // Track loading state per transaction ID
 
   useEffect(() => {
     fetchTransactions(1);
@@ -46,6 +47,21 @@ const DemandesDePayements = () => {
       toast.error('Erreur', { description: 'Impossible de charger les transactions.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle approve transaction
+  const handleApprove = async (transactionId) => {
+    setActionLoading(transactionId);
+    try {
+      await paymentService.approveTransaction(transactionId);
+      toast.success('Succès', { description: 'Transaction approuvée avec succès.' });
+      fetchTransactions(pagination.page); // Refresh the list
+    } catch (error) {
+      toast.error('Erreur', { description: 'Impossible d\'approuver la transaction.' });
+      console.error('Approve error:', error);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -499,15 +515,28 @@ const DemandesDePayements = () => {
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="h-8 px-3 bg-green-600 hover:bg-green-700"
-                                title="Approuver"
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Approuver
-                              </Button>
+                              {t.status === 'pending' ? (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                                  title="Approuver"
+                                  onClick={() => handleApprove(t._id)}
+                                  disabled={actionLoading === t._id}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  {actionLoading === t._id ? 'Approbation...' : 'Approuver'}
+                                </Button>
+                              ) : (
+                                <Badge className={
+                                  t.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                    t.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                      'bg-gray-100 text-gray-700'
+                                }>
+                                  {t.status === 'completed' ? 'Approuvé' :
+                                    t.status === 'cancelled' ? 'Rejeté' : t.status}
+                                </Badge>
+                              )}
                             </div>
                           </td>
                         </motion.tr>

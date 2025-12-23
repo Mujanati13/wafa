@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatCard } from "@/components/shared";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,46 +32,97 @@ const Explications = () => {
   // Popup state for question viewing
   const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
 
+  // Action dialog states
+  const [selectedExplanation, setSelectedExplanation] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
   const openQuestionPopup = (questionText) => {
     setQuestionPopup({ open: true, text: questionText });
   };
+
+  // Fetch explanations
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const { data } = await api.get("/explanations");
+      const list = Array.isArray(data?.data) ? data.data : [];
+      const mapped = list.map((item) => ({
+        id: item?._id,
+        username: item?.userId?.email || "—",
+        name: item?.userId?.name || "—",
+        question: item?.questionId?.text || "—",
+        explicationTitle: item?.title || "—",
+        date: item?.createdAt
+          ? new Date(item.createdAt).toISOString().slice(0, 10)
+          : "—",
+        images: item?.imageUrl ? [item.imageUrl] : [],
+        text: item?.contentText || "",
+        status: item?.status || "pending",
+        // New module and exam fields
+        moduleName: item?.moduleName || "—",
+        moduleCategory: item?.moduleCategory || "—",
+        examName: item?.examName || "—",
+        examYear: item?.examYear || "—",
+        courseCategory: item?.courseCategory || "—",
+        courseName: item?.courseName || "—",
+        numberOfQuestions: item?.numberOfQuestions || "—",
+      }));
+      setExplanations(mapped);
+    } catch (e) {
+      setError(t('admin:failed_load_explanations'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError("");
-        const { data } = await api.get("/explanations");
-        const list = Array.isArray(data?.data) ? data.data : [];
-        const mapped = list.map((item) => ({
-          id: item?._id,
-          username: item?.userId?.email || "—",
-          name: item?.userId?.name || "—",
-          question: item?.questionId?.text || "—",
-          explicationTitle: item?.title || "—",
-          date: item?.createdAt
-            ? new Date(item.createdAt).toISOString().slice(0, 10)
-            : "—",
-          images: item?.imageUrl ? [item.imageUrl] : [],
-          text: item?.contentText || "",
-          status: item?.status || "pending",
-          // New module and exam fields
-          moduleName: item?.moduleName || "—",
-          moduleCategory: item?.moduleCategory || "—",
-          examName: item?.examName || "—",
-          examYear: item?.examYear || "—",
-          courseCategory: item?.courseCategory || "—",
-          courseName: item?.courseName || "—",
-          numberOfQuestions: item?.numberOfQuestions || "—",
-        }));
-        setExplanations(mapped);
-      } catch (e) {
-        setError(t('admin:failed_load_explanations'));
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  // Handler functions
+  const handleViewDetails = (explanation) => {
+    setSelectedExplanation(explanation);
+    setShowViewDialog(true);
+  };
+
+  const handleApprove = async (explanation) => {
+    setActionLoading(true);
+    try {
+      await api.patch(`/explanations/${explanation.id}/status`, { status: 'approved' });
+      toast.success("Explication approuvée avec succès");
+      fetchData(); // Refresh list
+    } catch (error) {
+      toast.error("Erreur lors de l'approbation");
+      console.error("Approve error:", error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (explanation) => {
+    setSelectedExplanation(explanation);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedExplanation) return;
+    setActionLoading(true);
+    try {
+      await api.delete(`/explanations/${selectedExplanation.id}`);
+      toast.success("Explication supprimée avec succès");
+      setShowDeleteDialog(false);
+      setSelectedExplanation(null);
+      fetchData(); // Refresh list
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+      console.error("Delete error:", error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Calculate pagination
   const totalPages = Math.max(1, Math.ceil(explanations.length / itemsPerPage));
@@ -362,20 +413,32 @@ const Explications = () => {
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="cursor-pointer gap-2">
+                              <DropdownMenuItem
+                                className="cursor-pointer gap-2"
+                                onClick={() => handleViewDetails(report)}
+                              >
                                 <Eye className="h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer gap-2">
+                              <DropdownMenuItem
+                                className="cursor-pointer gap-2"
+                                onClick={() => handleViewDetails(report)}
+                              >
                                 <Edit className="h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="cursor-pointer gap-2 text-green-600 focus:text-green-700 focus:bg-green-50">
+                              <DropdownMenuItem
+                                className="cursor-pointer gap-2 text-green-600 focus:text-green-700 focus:bg-green-50"
+                                onClick={() => handleApprove(report)}
+                              >
                                 <CheckCircle2 className="h-4 w-4" />
                                 Approve
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer gap-2 text-red-600 focus:text-red-700 focus:bg-red-50">
+                              <DropdownMenuItem
+                                className="cursor-pointer gap-2 text-red-600 focus:text-red-700 focus:bg-red-50"
+                                onClick={() => handleDeleteClick(report)}
+                              >
                                 <Trash className="h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>
@@ -432,6 +495,84 @@ const Explications = () => {
               Fermer
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Détails de l'explication
+            </DialogTitle>
+          </DialogHeader>
+          {selectedExplanation && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Utilisateur</p>
+                  <p className="font-medium">{selectedExplanation.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-medium">{selectedExplanation.username}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Module</p>
+                  <p className="font-medium">{selectedExplanation.moduleName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Date</p>
+                  <p className="font-medium">{selectedExplanation.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Statut</p>
+                  <Badge className={selectedExplanation.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                    {selectedExplanation.status}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Question</p>
+                <p className="font-medium mt-1">{selectedExplanation.question}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Titre</p>
+                <p className="font-medium mt-1">{selectedExplanation.explicationTitle}</p>
+              </div>
+              {selectedExplanation.text && (
+                <div>
+                  <p className="text-sm text-gray-500">Contenu</p>
+                  <p className="mt-1 whitespace-pre-wrap">{selectedExplanation.text}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowViewDialog(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash className="h-5 w-5" />
+              Confirmer la suppression
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette explication de <strong>{selectedExplanation?.name}</strong> ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={actionLoading}>
+              {actionLoading ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 // Define which permissions are required for each route
 const ROUTE_PERMISSIONS = {
   '/admin/analytics': 'analytics',
-  '/admin/subscription': 'payments',
+  // Note: subscription page is accessible to all admins
 };
 
 // Routes that require super_admin role (not just permissions)

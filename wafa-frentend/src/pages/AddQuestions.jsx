@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Save, Eye, HelpCircle, Download, FileSpreadsheet, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Eye, Edit, HelpCircle, Download, FileSpreadsheet, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
@@ -107,14 +108,18 @@ const AddQuestions = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [examQuestions, setExamQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
-  
+  const [viewingQuestion, setViewingQuestion] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+
   // Filters for questions table
   const [filterModule, setFilterModule] = useState("all");
   const [filterExamType, setFilterExamType] = useState("all");
-  
+
   // Selected questions for bulk operations
   const [selectedQuestions, setSelectedQuestions] = useState([]);
-  
+
   // Toggle select all
   const handleSelectAll = (checked) => {
     if (checked) {
@@ -123,7 +128,7 @@ const AddQuestions = () => {
       setSelectedQuestions([]);
     }
   };
-  
+
   // Toggle individual question selection
   const handleSelectQuestion = (questionId, checked) => {
     if (checked) {
@@ -162,14 +167,14 @@ const AddQuestions = () => {
       setLoadingQuestions(true);
       let url = '/questions/all';
       const params = new URLSearchParams();
-      
+
       if (filterModule && filterModule !== 'all') params.append('moduleId', filterModule);
       if (filterExamType && filterExamType !== 'all') params.append('examType', filterExamType);
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`;
       }
-      
+
       const response = await api.get(url);
       setExamQuestions(response.data?.data || []);
     } catch (err) {
@@ -186,7 +191,7 @@ const AddQuestions = () => {
       fetchAllQuestions();
     }
   }, [filterModule, filterExamType]);
-  
+
   // Clear selections when questions change
   useEffect(() => {
     setSelectedQuestions([]);
@@ -205,7 +210,7 @@ const AddQuestions = () => {
     try {
       setLoadingQuestions(true);
       let examId = null;
-      
+
       // Determine exam ID based on exam type
       if (examType === "years" && selectedExamNameYears) {
         const exam = exams.find(e => e._id === selectedExamNameYears);
@@ -257,10 +262,10 @@ const AddQuestions = () => {
 
   // Handle Export to Excel
   const handleExportToExcel = () => {
-    const questionsToExport = selectedQuestions.length > 0 
+    const questionsToExport = selectedQuestions.length > 0
       ? examQuestions.filter(q => selectedQuestions.includes(q._id || q.id))
       : examQuestions;
-    
+
     if (questionsToExport.length === 0) {
       toast.error("Aucune question à exporter");
       return;
@@ -301,10 +306,10 @@ const AddQuestions = () => {
 
   // Handle Delete All Questions
   const handleDeleteAllQuestions = async () => {
-    const questionsToDelete = selectedQuestions.length > 0 
+    const questionsToDelete = selectedQuestions.length > 0
       ? selectedQuestions
       : examQuestions.map(q => q._id || q.id);
-    
+
     if (questionsToDelete.length === 0) {
       toast.error("Aucune question à supprimer");
       return;
@@ -671,176 +676,326 @@ const AddQuestions = () => {
 
         {/* Questions List Table */}
         <Card>
-            <CardHeader className="border-b space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {hasContextSelected ? "Questions de l'Examen" : "Toutes les Questions"}
-                    <Badge variant="secondary">{examQuestions.length} Total</Badge>
-                    {selectedQuestions.length > 0 && (
-                      <Badge variant="default" className="bg-blue-500">{selectedQuestions.length} sélectionnée(s)</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    {hasContextSelected ? "Toutes les questions de cet examen" : "Toutes les questions de tous les examens"}
-                  </CardDescription>
+          <CardHeader className="border-b space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {hasContextSelected ? "Questions de l'Examen" : "Toutes les Questions"}
+                  <Badge variant="secondary">{examQuestions.length} Total</Badge>
+                  {selectedQuestions.length > 0 && (
+                    <Badge variant="default" className="bg-blue-500">{selectedQuestions.length} sélectionnée(s)</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {hasContextSelected ? "Toutes les questions de cet examen" : "Toutes les questions de tous les examens"}
+                </CardDescription>
+              </div>
+            </div>
+
+            {/* Filters - Only show when no context is selected */}
+            {!hasContextSelected && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Filtrer par Module</Label>
+                  <Select value={filterModule} onValueChange={setFilterModule}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les modules" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les modules</SelectItem>
+                      {modules.map((m) => (
+                        <SelectItem key={m._id} value={m._id}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
+                  <Select value={filterExamType} onValueChange={setFilterExamType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les types</SelectItem>
+                      <SelectItem value="years">Exam par années</SelectItem>
+                      <SelectItem value="courses">Exam par courses</SelectItem>
+                      <SelectItem value="tp">Exam TP</SelectItem>
+                      <SelectItem value="qcm">Exam QCM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 flex items-end">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setFilterModule("all");
+                      setFilterExamType("all");
+                    }}
+                  >
+                    Réinitialiser les filtres
+                  </Button>
                 </div>
               </div>
-
-              {/* Filters - Only show when no context is selected */}
-              {!hasContextSelected && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Filtrer par Module</Label>
-                    <Select value={filterModule} onValueChange={setFilterModule}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tous les modules" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les modules</SelectItem>
-                        {modules.map((m) => (
-                          <SelectItem key={m._id} value={m._id}>
-                            {m.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
-                    <Select value={filterExamType} onValueChange={setFilterExamType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tous les types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        <SelectItem value="years">Exam par années</SelectItem>
-                        <SelectItem value="courses">Exam par courses</SelectItem>
-                        <SelectItem value="tp">Exam TP</SelectItem>
-                        <SelectItem value="qcm">Exam QCM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 flex items-end">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        setFilterModule("all");
-                        setFilterExamType("all");
-                      }}
-                    >
-                      Réinitialiser les filtres
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox 
-                          checked={examQuestions.length > 0 && selectedQuestions.length === examQuestions.length}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Image</TableHead>
-                      <TableHead>Question</TableHead>
-                      <TableHead>Option A</TableHead>
-                      <TableHead>Option B</TableHead>
-                      <TableHead>Option C</TableHead>
-                      <TableHead>Option D</TableHead>
-                      <TableHead>Option E</TableHead>
-                      <TableHead>Level</TableHead>
-                      <TableHead className="text-right">Operate</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loadingQuestions ? (
-                      <TableRow>
-                        <TableCell colSpan={11} className="text-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
-                          <p className="text-muted-foreground mt-2">Chargement des questions...</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : examQuestions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
-                          Aucune question trouvée pour cet examen
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      examQuestions.map((q, idx) => (
-                        <TableRow key={q._id || q.id}>
-                          <TableCell>
-                            <Checkbox 
-                              checked={selectedQuestions.includes(q._id || q.id)}
-                              onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
-                          <TableCell>
-                            {q.images?.length > 0 ? (
-                              <Badge variant="outline" className="text-xs">
-                                {q.images.length} image(s)
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate" title={q.text}>
-                            {q.text}
-                          </TableCell>
-                          <TableCell className="text-sm">{q.options?.[0]?.text || "—"}</TableCell>
-                          <TableCell className="text-sm">{q.options?.[1]?.text || "—"}</TableCell>
-                          <TableCell className="text-sm">{q.options?.[2]?.text || "—"}</TableCell>
-                          <TableCell className="text-sm">{q.options?.[3]?.text || "—"}</TableCell>
-                          <TableCell className="text-sm">{q.options?.[4]?.text || "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">{q.sessionLabel || "—"}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title="Voir"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleDeleteQuestion(q._id || q.id)}
-                                title="Supprimer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-            {examQuestions.length > 0 && (
-              <CardFooter className="border-t bg-slate-50/50">
-                <div className="text-sm text-muted-foreground">
-                  Affichage de {examQuestions.length} questions
-                </div>
-              </CardFooter>
             )}
-          </Card>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={examQuestions.length > 0 && selectedQuestions.length === examQuestions.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Question</TableHead>
+                    <TableHead>Option A</TableHead>
+                    <TableHead>Option B</TableHead>
+                    <TableHead>Option C</TableHead>
+                    <TableHead>Option D</TableHead>
+                    <TableHead>Option E</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead className="text-right">Operate</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingQuestions ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
+                        <p className="text-muted-foreground mt-2">Chargement des questions...</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : examQuestions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
+                        Aucune question trouvée pour cet examen
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    examQuestions.map((q, idx) => (
+                      <TableRow key={q._id || q.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedQuestions.includes(q._id || q.id)}
+                            onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                        <TableCell>
+                          {q.images?.length > 0 ? (
+                            <Badge variant="outline" className="text-xs">
+                              {q.images.length} image(s)
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate" title={q.text}>
+                          {q.text}
+                        </TableCell>
+                        <TableCell className="text-sm">{q.options?.[0]?.text || "—"}</TableCell>
+                        <TableCell className="text-sm">{q.options?.[1]?.text || "—"}</TableCell>
+                        <TableCell className="text-sm">{q.options?.[2]?.text || "—"}</TableCell>
+                        <TableCell className="text-sm">{q.options?.[3]?.text || "—"}</TableCell>
+                        <TableCell className="text-sm">{q.options?.[4]?.text || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{q.sessionLabel || "—"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Voir"
+                              onClick={() => {
+                                setViewingQuestion(q);
+                                setShowViewDialog(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Modifier"
+                              onClick={() => {
+                                setEditingQuestion(q);
+                                setShowEditDialog(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteQuestion(q._id || q.id)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+          {examQuestions.length > 0 && (
+            <CardFooter className="border-t bg-slate-50/50">
+              <div className="text-sm text-muted-foreground">
+                Affichage de {examQuestions.length} questions
+              </div>
+            </CardFooter>
+          )}
+        </Card>
+
+        {/* View Question Dialog */}
+        {showViewDialog && viewingQuestion && (
+          <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Détails de la Question</DialogTitle>
+                <DialogDescription>Informations complètes de la question</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Question</Label>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded border">{viewingQuestion.text}</p>
+                </div>
+                {viewingQuestion.images && viewingQuestion.images.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Images</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {viewingQuestion.images.map((img, idx) => (
+                        <img key={idx} src={img} alt={`Question image ${idx + 1}`} className="w-full h-32 object-cover rounded border" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">Options</Label>
+                  <div className="space-y-2">
+                    {viewingQuestion.options?.map((opt, idx) => (
+                      <div key={idx} className={`p-2 rounded border ${opt.isCorrect ? 'bg-green-50 border-green-300' : 'bg-gray-50'}`}>
+                        <span className="font-medium">{String.fromCharCode(65 + idx)}. </span>
+                        {opt.text}
+                        {opt.isCorrect && <Badge className="ml-2 bg-green-600">Correct</Badge>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {viewingQuestion.note && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Note</Label>
+                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQuestion.note}</p>
+                  </div>
+                )}
+                {viewingQuestion.sessionLabel && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-gray-700">Niveau</Label>
+                    <Badge variant="secondary">{viewingQuestion.sessionLabel}</Badge>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button onClick={() => setShowViewDialog(false)}>Fermer</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Edit Question Dialog */}
+        {showEditDialog && editingQuestion && (
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Modifier la Question</DialogTitle>
+                <DialogDescription>Modifiez les détails de la question</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Question</Label>
+                  <Textarea
+                    value={editingQuestion.text}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, text: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label>Options</Label>
+                  {editingQuestion.options?.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-3">
+                      <Checkbox
+                        checked={opt.isCorrect}
+                        onCheckedChange={(checked) => {
+                          const newOptions = [...editingQuestion.options];
+                          newOptions[idx] = { ...opt, isCorrect: checked };
+                          setEditingQuestion({ ...editingQuestion, options: newOptions });
+                        }}
+                      />
+                      <Input
+                        value={opt.text}
+                        onChange={(e) => {
+                          const newOptions = [...editingQuestion.options];
+                          newOptions[idx] = { ...opt, text: e.target.value };
+                          setEditingQuestion({ ...editingQuestion, options: newOptions });
+                        }}
+                        placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                        className="flex-1"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Note (optionnel)</Label>
+                  <Textarea
+                    value={editingQuestion.note || ''}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, note: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
+                <Button onClick={async () => {
+                  try {
+                    await api.patch(`/questions/update/${editingQuestion._id || editingQuestion.id}`, {
+                      text: editingQuestion.text,
+                      options: editingQuestion.options,
+                      note: editingQuestion.note
+                    });
+                    toast.success("Question mise à jour avec succès");
+                    setShowEditDialog(false);
+                    if (hasContextSelected) {
+                      fetchExamQuestions();
+                    } else {
+                      fetchAllQuestions();
+                    }
+                  } catch (err) {
+                    console.error("Error updating question:", err);
+                    toast.error("Erreur lors de la mise à jour");
+                  }
+                }}>
+                  Enregistrer
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

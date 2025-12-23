@@ -18,6 +18,9 @@ const QCMBanque = () => {
     const { t } = useTranslation(['admin', 'common']);
     const [searchTerm, setSearchTerm] = useState("");
     const [showAddQCMForm, setShowAddQCMForm] = useState(false);
+    const [editingQCM, setEditingQCM] = useState(null);
+    const [viewingQCM, setViewingQCM] = useState(null);
+    const [showViewDialog, setShowViewDialog] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const [moduleFilter, setModuleFilter] = useState("all");
@@ -104,6 +107,36 @@ const QCMBanque = () => {
         } catch (err) {
             console.error("Error deleting QCM Banque:", err);
             toast.error("Erreur lors de la suppression");
+        }
+    };
+
+    const handleEdit = (qcm) => {
+        setFormData({
+            name: qcm.name,
+            moduleId: qcm.moduleId,
+            imageUrl: qcm.imageUrl === placeholderImage ? "" : qcm.imageUrl,
+            infoText: qcm.infoText || "",
+        });
+        setEditingQCM(qcm);
+        setShowAddQCMForm(true);
+    };
+
+    const handleUpdate = async () => {
+        if (!formData.name || !formData.moduleId) {
+            toast.error("Veuillez remplir les champs obligatoires");
+            return;
+        }
+
+        try {
+            await api.put(`/qcm-banque/${editingQCM.id}`, formData);
+            toast.success("QCM Banque mis à jour avec succès");
+            setShowAddQCMForm(false);
+            setEditingQCM(null);
+            setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
+            fetchQCMList();
+        } catch (err) {
+            console.error("Error updating QCM Banque:", err);
+            toast.error("Erreur lors de la mise à jour");
         }
     };
 
@@ -276,10 +309,23 @@ const QCMBanque = () => {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                            onClick={() => {
+                                                                setViewingQCM(qcm);
+                                                                setShowViewDialog(true);
+                                                            }}
+                                                        >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={() => handleEdit(qcm)}
+                                                        >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
                                                         <Button
@@ -312,7 +358,7 @@ const QCMBanque = () => {
             <AnimatePresence>
                 {showAddQCMForm && (
                     <Dialog open={showAddQCMForm} onOpenChange={setShowAddQCMForm}>
-                        <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md">
+                        <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md max-h-[80vh] overflow-y-auto">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -320,13 +366,15 @@ const QCMBanque = () => {
                                 transition={{ duration: 0.2 }}
                             >
                                 <DialogHeader>
-                                    <DialogTitle className="text-black text-xl">Créer un QCM Banque</DialogTitle>
+                                    <DialogTitle className="text-black text-xl">
+                                        {editingQCM ? "Modifier le QCM Banque" : "Créer un QCM Banque"}
+                                    </DialogTitle>
                                     <DialogDescription className="text-gray-600">
                                         Ajouter un nouveau QCM Banque avec les détails nécessaires
                                     </DialogDescription>
                                 </DialogHeader>
 
-                                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingQCM ? handleUpdate() : handleSubmit(); }}>
                                     <div className="space-y-2">
                                         <Label className="text-black font-medium">Nom du QCM *</Label>
                                         <Input
@@ -378,7 +426,11 @@ const QCMBanque = () => {
                                             type="button"
                                             variant="outline"
                                             className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                                            onClick={() => setShowAddQCMForm(false)}
+                                            onClick={() => {
+                                                setShowAddQCMForm(false);
+                                                setEditingQCM(null);
+                                                setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
+                                            }}
                                         >
                                             Annuler
                                         </Button>
@@ -388,14 +440,55 @@ const QCMBanque = () => {
                                         >
                                             <Button
                                                 type="submit"
-                                                className="bg-green-600 hover:bg-green-700 text-white"
+                                                className={editingQCM ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}
                                             >
-                                                Créer QCM Banque
+                                                {editingQCM ? "Mettre à jour" : "Créer QCM Banque"}
                                             </Button>
                                         </motion.div>
                                     </DialogFooter>
                                 </form>
                             </motion.div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
+                {/* View Dialog */}
+                {showViewDialog && viewingQCM && (
+                    <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+                        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Détails du QCM</DialogTitle>
+                                <DialogDescription>Informations complètes du QCM</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-gray-700">Nom du QCM</Label>
+                                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQCM.name}</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-gray-700">Module</Label>
+                                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQCM.moduleName}</p>
+                                </div>
+                                {viewingQCM.imageUrl && (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold text-gray-700">Image</Label>
+                                        <img src={viewingQCM.imageUrl} alt={viewingQCM.name} className="w-full h-32 object-cover rounded border" />
+                                    </div>
+                                )}
+                                {viewingQCM.helpText && (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-semibold text-gray-700">Texte d'aide</Label>
+                                        <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQCM.helpText}</p>
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-gray-700">Total Questions</Label>
+                                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQCM.totalQuestions}</p>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={() => setShowViewDialog(false)}>Fermer</Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 )}

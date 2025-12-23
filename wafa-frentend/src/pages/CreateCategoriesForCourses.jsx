@@ -16,6 +16,13 @@ const CreateCategoriesForCourses = () => {
   const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    moduleId: "",
+    category: "",
+    imageUrl: "",
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [moduleFilter, setModuleFilter] = useState("all");
   const itemsPerPage = 8;
@@ -57,6 +64,81 @@ const CreateCategoriesForCourses = () => {
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreate = async () => {
+    if (!formData.name || !formData.moduleId || !formData.category) {
+      toast.error("Veuillez remplir les champs obligatoires");
+      return;
+    }
+
+    try {
+      await api.post("/exam-courses", {
+        name: formData.name,
+        moduleId: formData.moduleId,
+        category: formData.category,
+        imageUrl: formData.imageUrl || "",
+      });
+      toast.success("Catégorie créée avec succès");
+      setShowCreateForm(false);
+      setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      fetchCourses();
+    } catch (err) {
+      console.error("Error creating category:", err);
+      toast.error("Erreur lors de la création");
+    }
+  };
+
+  const handleEdit = (category) => {
+    setFormData({
+      name: category.categoryCourseName,
+      moduleId: category.moduleId,
+      category: category.category || "",
+      imageUrl: category.imageUrl === placeholderImage ? "" : category.imageUrl,
+    });
+    setEditingCategory(category);
+    setShowCreateForm(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!formData.name || !formData.moduleId || !formData.category) {
+      toast.error("Veuillez remplir les champs obligatoires");
+      return;
+    }
+
+    try {
+      await api.put(`/exam-courses/${editingCategory.id}`, {
+        name: formData.name,
+        moduleId: formData.moduleId,
+        category: formData.category,
+        imageUrl: formData.imageUrl || "",
+      });
+      toast.success("Catégorie mise à jour avec succès");
+      setShowCreateForm(false);
+      setEditingCategory(null);
+      setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      fetchCourses();
+    } catch (err) {
+      console.error("Error updating category:", err);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return;
+
+    try {
+      await api.delete(`/exam-courses/${id}`);
+      toast.success("Catégorie supprimée avec succès");
+      fetchCourses();
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      toast.error("Erreur lors de la suppression");
     }
   };
 
@@ -200,7 +282,7 @@ const CreateCategoriesForCourses = () => {
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-200">
                     <SelectItem value="all" className="text-black">All Modules</SelectItem>
-                    {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId))).map((moduleId) => {
+                    {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId).filter(id => id && id !== ""))).map((moduleId) => {
                       const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
                       return (
                         <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
@@ -292,6 +374,7 @@ const CreateCategoriesForCourses = () => {
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.95 }}
                                     className="p-2 text-blue-600 hover:text-blue-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                    onClick={() => handleEdit(row)}
                                   >
                                     <Edit size={18} />
                                   </motion.button>
@@ -299,6 +382,7 @@ const CreateCategoriesForCourses = () => {
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.95 }}
                                     className="p-2 text-red-600 hover:text-red-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                    onClick={() => handleDelete(row.id)}
                                   >
                                     <Trash2 size={18} />
                                   </motion.button>
@@ -351,17 +435,21 @@ const CreateCategoriesForCourses = () => {
                 transition={{ duration: 0.2 }}
               >
                 <DialogHeader>
-                  <DialogTitle className="text-black text-xl">Create New Category</DialogTitle>
+                  <DialogTitle className="text-black text-xl">
+                    {editingCategory ? "Modifier la catégorie" : "Create New Category"}
+                  </DialogTitle>
                   <DialogDescription className="text-gray-600">
                     Add a new category with module and course category information
                   </DialogDescription>
                 </DialogHeader>
 
-                <form className="space-y-4 py-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingCategory ? handleUpdate() : handleCreate(); }}>
                   <div className="space-y-2">
                     <Label className="text-black">Category Name</Label>
                     <Input
                       placeholder="Enter category name"
+                      value={formData.name}
+                      onChange={(e) => handleFormChange("name", e.target.value)}
                       className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
                     />
                   </div>
@@ -370,18 +458,20 @@ const CreateCategoriesForCourses = () => {
                     <Label className="text-black">Image URL</Label>
                     <Input
                       placeholder="https://..."
+                      value={formData.imageUrl}
+                      onChange={(e) => handleFormChange("imageUrl", e.target.value)}
                       className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-black">Select Module</Label>
-                    <Select>
+                    <Select value={formData.moduleId} onValueChange={(value) => handleFormChange("moduleId", value)}>
                       <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
                         <SelectValue placeholder="Choose module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId))).map((moduleId) => {
+                        {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId).filter(id => id && id !== ""))).map((moduleId) => {
                           const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
                           return (
                             <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
@@ -389,6 +479,20 @@ const CreateCategoriesForCourses = () => {
                             </SelectItem>
                           );
                         })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-black">Category *</Label>
+                    <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Choose category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="Exam par years" className="text-black">Exam par years</SelectItem>
+                        <SelectItem value="Exam par courses" className="text-black">Exam par courses</SelectItem>
+                        <SelectItem value="QCM banque" className="text-black">QCM banque</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -406,7 +510,11 @@ const CreateCategoriesForCourses = () => {
                       type="button"
                       variant="outline"
                       className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                      onClick={() => setShowCreateForm(false)}
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        setEditingCategory(null);
+                        setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+                      }}
                     >
                       Cancel
                     </Button>
@@ -416,9 +524,9 @@ const CreateCategoriesForCourses = () => {
                     >
                       <Button
                         type="submit"
-                        className="bg-black hover:bg-gray-900 text-white"
+                        className={editingCategory ? "bg-green-600 hover:bg-green-700 text-white" : "bg-black hover:bg-gray-900 text-white"}
                       >
-                        Create Category
+                        {editingCategory ? "Mettre à jour" : "Create Category"}
                       </Button>
                     </motion.div>
                   </DialogFooter>

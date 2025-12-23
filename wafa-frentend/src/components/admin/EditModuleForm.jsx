@@ -139,7 +139,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] absolute top-0 left-0 w-full h-full overflow-y-auto">
+    <div className="flex justify-center items-center min-h-screen bg-black/50 p-4 z-[99999999999] fixed top-0 left-0 w-full h-full overflow-y-auto">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200 p-6 my-8">
         <div className="mb-6 flex justify-between items-center">
           <div>
@@ -254,7 +254,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                           <Palette className="w-3 h-3 ml-auto text-gray-400" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-64 p-3 z-[100001]">
+                      <PopoverContent className="w-64 p-3 z-[9999999999999]">
                         <div className="space-y-3">
                           <Label className="text-xs font-semibold">Couleur pour {level.label}</Label>
                           <div className="flex gap-2">
@@ -300,7 +300,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       <Palette className="w-4 h-4 ml-auto text-gray-400" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-3 z-[100001]" align="start">
+                  <PopoverContent className="w-64 p-3 z-[9999999999999]" align="start">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Couleurs prédéfinies</span>

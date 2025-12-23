@@ -15,6 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { cn } from "../../lib/utils";
 import {
   Download,
@@ -41,6 +51,7 @@ import {
   CheckCircle,
   CreditCard,
   GraduationCap,
+  X,
 } from "lucide-react";
 import { TableFilters } from "../shared";
 import NewUserForm from "./NewUserForm";
@@ -48,6 +59,7 @@ import { userService } from "../../services/userService";
 import { Badge } from "../ui/badge";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 const studentYears = [
   { value: "1", label: "1ère année" },
@@ -69,7 +81,15 @@ const UsersWithTabs = () => {
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({});
   const [exporting, setExporting] = useState(false);
-  
+
+  // Dialog states
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [actionLoading, setActionLoading] = useState(false);
+
   // New filter states
   const [studentYear, setStudentYear] = useState("all");
   const [startDate, setStartDate] = useState(undefined);
@@ -139,7 +159,7 @@ const UsersWithTabs = () => {
       if (!response.success) {
         throw new Error("Failed to fetch users");
       }
-      
+
       const allUsers = response.data.users;
       const headers = ["Nom", "Email", "Plan", "Statut", "Date d'inscription"];
       const csvContent = [
@@ -183,7 +203,7 @@ const UsersWithTabs = () => {
       if (!response.success) {
         throw new Error("Failed to fetch users");
       }
-      
+
       const allUsers = response.data.users;
       const doc = new jsPDF();
 
@@ -196,7 +216,7 @@ const UsersWithTabs = () => {
       doc.setFontSize(10);
       doc.setTextColor(100);
       doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, 14, 28);
-      
+
       // Stats summary
       doc.setFontSize(11);
       doc.setTextColor(60);
@@ -281,29 +301,29 @@ const UsersWithTabs = () => {
   // Filter users based on search term and filters
   const filteredUsers = users.filter((user) => {
     // Search filter
-    const matchesSearch = 
+    const matchesSearch =
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     // Student year filter
     const matchesYear = studentYear === "all" || user.currentYear === studentYear;
-    
+
     // Registration date filter
     const userRegDate = new Date(user.createdAt);
-    const matchesRegDate = 
+    const matchesRegDate =
       (!startDate || userRegDate >= startDate) &&
       (!endDate || userRegDate <= endDate);
-    
+
     // Payment date filter (only for paying users)
     let matchesPaymentDate = true;
     if (activeTab === "paying" && user.paymentDate) {
       const userPayDate = new Date(user.paymentDate);
-      matchesPaymentDate = 
+      matchesPaymentDate =
         (!paymentStartDate || userPayDate >= paymentStartDate) &&
         (!paymentEndDate || userPayDate <= paymentEndDate);
     }
-    
+
     return matchesSearch && matchesYear && matchesRegDate && matchesPaymentDate;
   });
 
@@ -316,10 +336,10 @@ const UsersWithTabs = () => {
     setPaymentEndDate(undefined);
   };
 
-  const activeFilterCount = 
-    (searchTerm ? 1 : 0) + 
-    (studentYear !== "all" ? 1 : 0) + 
-    (startDate || endDate ? 1 : 0) + 
+  const activeFilterCount =
+    (searchTerm ? 1 : 0) +
+    (studentYear !== "all" ? 1 : 0) +
+    (startDate || endDate ? 1 : 0) +
     (paymentStartDate || paymentEndDate ? 1 : 0);
 
   const handlePageChange = (page) => {
@@ -329,6 +349,69 @@ const UsersWithTabs = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
+  };
+
+  // View user details
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setShowViewDialog(true);
+  };
+
+  // Open edit dialog
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setEditFormData({
+      name: user.name || "",
+      email: user.email || "",
+      username: user.username || "",
+      currentYear: user.currentYear || "",
+      plan: user.plan || "Free",
+      isAactive: user.isAactive ?? true,
+    });
+    setShowEditDialog(true);
+  };
+
+  // Update user
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      await userService.updateUser(selectedUser._id, editFormData);
+      toast.success("Utilisateur mis à jour avec succès");
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      fetchUsers(); // Refresh list
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
+      console.error("Update error:", error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Open delete confirmation
+  const handleDeleteClick = (user) => {
+    setSelectedUser(user);
+    setShowDeleteDialog(true);
+  };
+
+  // Confirm delete user
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      await userService.deleteUser(selectedUser._id);
+      toast.success("Utilisateur supprimé avec succès");
+      setShowDeleteDialog(false);
+      setSelectedUser(null);
+      fetchUsers(); // Refresh list
+      fetchStats(); // Refresh stats
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+      console.error("Delete error:", error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const renderPaginationButtons = () => {
@@ -505,8 +588,8 @@ const UsersWithTabs = () => {
                   <p className="text-sm text-gray-500 mt-1">
                     {stats.totalUsers
                       ? ((stats.payingUsers / stats.totalUsers) * 100).toFixed(
-                          1
-                        )
+                        1
+                      )
                       : 0}
                     % of total
                   </p>
@@ -532,8 +615,8 @@ const UsersWithTabs = () => {
                   <p className="text-sm text-gray-500 mt-1">
                     {stats.totalUsers
                       ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(
-                          1
-                        )
+                        1
+                      )
                       : 0}
                     % of total
                   </p>
@@ -704,11 +787,11 @@ const UsersWithTabs = () => {
                               <span className="text-gray-600 font-medium text-sm">
                                 {user.name
                                   ? user.name
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
                                   : user.username?.charAt(0).toUpperCase() ||
-                                    "U"}
+                                  "U"}
                               </span>
                             </div>
                             <div className="min-w-0 flex-1">
@@ -787,14 +870,14 @@ const UsersWithTabs = () => {
                             </td>
                             <td className="py-4 px-4">
                               {user.paymentMethod ? (
-                                <Badge 
-                                  variant="outline" 
+                                <Badge
+                                  variant="outline"
                                   className={
-                                    user.paymentMethod === 'PayPal' 
-                                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                    user.paymentMethod === 'PayPal'
+                                      ? 'bg-blue-50 text-blue-700 border-blue-200'
                                       : user.paymentMethod === 'Bank Transfer'
-                                      ? 'bg-green-50 text-green-700 border-green-200'
-                                      : 'bg-purple-50 text-purple-700 border-purple-200'
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-purple-50 text-purple-700 border-purple-200'
                                   }
                                 >
                                   {user.paymentMethod}
@@ -826,22 +909,31 @@ const UsersWithTabs = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="flex items-center gap-2">
+                              <DropdownMenuItem
+                                className="flex items-center gap-2 cursor-pointer"
+                                onClick={() => handleViewUser(user)}
+                              >
                                 <Eye className="w-4 h-4" />
                                 Voir
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="flex items-center gap-2">
+                              <DropdownMenuItem
+                                className="flex items-center gap-2 cursor-pointer"
+                                onClick={() => handleEditUser(user)}
+                              >
                                 <Edit className="w-4 h-4" />
                                 Modifier
                               </DropdownMenuItem>
                               {user.consentAcceptedAt && (
-                                <DropdownMenuItem className="flex items-center gap-2">
+                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
                                   <FileText className="w-4 h-4" />
                                   Voir consentement
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="flex items-center gap-2 text-red-600">
+                              <DropdownMenuItem
+                                className="flex items-center gap-2 text-red-600 cursor-pointer"
+                                onClick={() => handleDeleteClick(user)}
+                              >
                                 <Trash2 className="w-4 h-4" />
                                 Supprimer
                               </DropdownMenuItem>
@@ -878,6 +970,143 @@ const UsersWithTabs = () => {
       {showNewUserForm && (
         <NewUserForm setShowNewUserForm={setShowNewUserForm} />
       )}
+
+      {/* View User Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Détails de l'utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-gray-500">Nom</Label>
+                  <p className="font-medium">{selectedUser.name || selectedUser.username || "-"}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Username</Label>
+                  <p className="font-medium">@{selectedUser.username}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Email</Label>
+                  <p className="font-medium">{selectedUser.email}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Plan</Label>
+                  <Badge className={getPlanBadgeColor(selectedUser.plan)}>
+                    {selectedUser.plan || "Free"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Statut</Label>
+                  <Badge className={getStatusBadgeColor(selectedUser.isAactive)}>
+                    {selectedUser.isAactive ? "Actif" : "Inactif"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Année d'étude</Label>
+                  <p className="font-medium">{selectedUser.currentYear ? `${selectedUser.currentYear}ème année` : "-"}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Date d'inscription</Label>
+                  <p className="font-medium">{new Date(selectedUser.createdAt).toLocaleDateString("fr-FR")}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">CGU accepté</Label>
+                  <p className="font-medium">{selectedUser.consentAcceptedAt ? "Oui" : "Non"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowViewDialog(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Modifier l'utilisateur
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Nom</Label>
+              <Input
+                id="edit-name"
+                value={editFormData.name || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-plan">Plan</Label>
+              <select
+                id="edit-plan"
+                className="w-full p-2 border rounded-md"
+                value={editFormData.plan || "Free"}
+                onChange={(e) => setEditFormData({ ...editFormData, plan: e.target.value })}
+              >
+                <option value="Free">Free</option>
+                <option value="Premium">Premium</option>
+                <option value="Enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="edit-active"
+                checked={editFormData.isAactive ?? true}
+                onChange={(e) => setEditFormData({ ...editFormData, isAactive: e.target.checked })}
+              />
+              <Label htmlFor="edit-active">Actif</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
+            <Button onClick={handleUpdateUser} disabled={actionLoading}>
+              {actionLoading ? "Mise à jour..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Confirmer la suppression
+            </DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{selectedUser?.name || selectedUser?.username}</strong> ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={actionLoading}>
+              {actionLoading ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

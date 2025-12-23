@@ -78,14 +78,14 @@ export const userService = {
             if (forceRefresh) {
                 localStorage.removeItem('userProfile');
             }
-            
+
             console.log('Fetching user profile from: /users/profile');
             const response = await api.get('/users/profile');
             const user = response.data.data.user;
-            
+
             // Update localStorage with fresh data
             localStorage.setItem('userProfile', JSON.stringify(user));
-            
+
             return user;
         } catch (error) {
             console.error('Error fetching user profile:', error);
@@ -144,6 +144,18 @@ export const userService = {
             return response.data;
         } catch (error) {
             console.error('Error updating user:', error);
+            throw error;
+        }
+    },
+
+    // Delete user (for admin purposes)
+    deleteUser: async (userId) => {
+        try {
+            console.log(`Deleting user ${userId}`);
+            const response = await api.delete(`/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error deleting user:', error);
             throw error;
         }
     },

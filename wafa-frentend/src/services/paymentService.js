@@ -25,10 +25,16 @@ export const paymentService = {
     const response = await api.get('/payments/admin/transactions', { params });
     return response.data;
   },
-  
-  // Update transaction status (admin only)
-  updateTransactionStatus: async (transactionId, status) => {
-    const response = await api.patch(`/payments/admin/transactions/${transactionId}/status`, { status });
+
+  // Approve transaction (admin only)
+  approveTransaction: async (transactionId) => {
+    const response = await api.post(`/payments/admin/approve/${transactionId}`);
+    return response.data;
+  },
+
+  // Reject transaction (admin only)
+  rejectTransaction: async (transactionId) => {
+    const response = await api.post(`/payments/admin/reject/${transactionId}`);
     return response.data;
   }
 };

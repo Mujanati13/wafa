@@ -47,4 +47,7 @@ router.patch("/:userId/status", UserController.toggleUserStatus);
 // Update user (admin only - for role and permissions)
 router.put("/:userId", UserController.updateUser);
 
+// Delete user (admin only)
+router.delete("/:userId", UserController.deleteUser);
+
 export default router;

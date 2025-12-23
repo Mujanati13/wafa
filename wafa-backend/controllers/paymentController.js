@@ -34,7 +34,7 @@ export const clearPaypalSettingsCache = () => {
 // PayPal environment setup - now uses database settings with fallback to env vars
 const environment = async () => {
   const settings = await getPaypalSettings();
-  
+
   const clientId = settings?.clientId || process.env.PAYPAL_CLIENT_ID;
   const clientSecret = settings?.clientSecret || process.env.PAYPAL_CLIENT_SECRET;
   const mode = settings?.mode || process.env.PAYPAL_MODE || "sandbox";
@@ -62,7 +62,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const settings = await getPaypalSettings();
   const clientId = settings?.clientId || process.env.PAYPAL_CLIENT_ID;
   const clientSecret = settings?.clientSecret || process.env.PAYPAL_CLIENT_SECRET;
-  
+
   if (!clientId || !clientSecret) {
     res.status(400);
     throw new Error("PayPal n'est pas configuré. Veuillez contacter l'administrateur.");
@@ -81,7 +81,7 @@ const createOrder = asyncHandler(async (req, res) => {
   // Validate semesters
   const validSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
   const selectedSemesters = semesters || [];
-  
+
   if (selectedSemesters.length === 0) {
     res.status(400);
     throw new Error("Veuillez sélectionner au moins un semestre");
@@ -208,15 +208,15 @@ const capturePayment = asyncHandler(async (req, res) => {
       };
 
       const daysToAdd = durationMap[transaction.duration];
-      const currentExpiry = user.planExpiry && user.planExpiry > new Date() 
-        ? new Date(user.planExpiry) 
+      const currentExpiry = user.planExpiry && user.planExpiry > new Date()
+        ? new Date(user.planExpiry)
         : new Date();
-      
+
       currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
 
       user.plan = "Premium";
       user.planExpiry = currentExpiry;
-      
+
       // Update user's semesters with the selected ones
       if (transaction.semesters && transaction.semesters.length > 0) {
         // Merge existing semesters with new ones (avoid duplicates)
@@ -224,7 +224,7 @@ const capturePayment = asyncHandler(async (req, res) => {
         const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
         user.semesters = newSemesters;
       }
-      
+
       await user.save();
 
       // Send subscription notification
@@ -402,22 +402,22 @@ const handleWebhook = asyncHandler(async (req, res) => {
           };
 
           const daysToAdd = durationMap[transaction.duration];
-          const currentExpiry = user.planExpiry && user.planExpiry > new Date() 
-            ? new Date(user.planExpiry) 
+          const currentExpiry = user.planExpiry && user.planExpiry > new Date()
+            ? new Date(user.planExpiry)
             : new Date();
-          
+
           currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
 
           user.plan = "Premium";
           user.planExpiry = currentExpiry;
-          
+
           // Update user's semesters with the selected ones
           if (transaction.semesters && transaction.semesters.length > 0) {
             const existingSemesters = user.semesters || [];
             const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
             user.semesters = newSemesters;
           }
-          
+
           await user.save();
         }
       }
@@ -512,10 +512,10 @@ const createBankTransferRequest = asyncHandler(async (req, res) => {
 // Admin: Approve a payment request
 const approvePayment = asyncHandler(async (req, res) => {
   const { transactionId } = req.params;
-  const { duration } = req.body; // Optional: override duration
+  const { duration } = req.body || {}; // Optional: override duration
 
   const transaction = await Transaction.findById(transactionId);
-  
+
   if (!transaction) {
     res.status(404);
     throw new Error("Transaction non trouvée");
@@ -551,24 +551,24 @@ const approvePayment = asyncHandler(async (req, res) => {
   };
 
   const daysToAdd = durationMap[duration || transaction.duration] || 30;
-  const currentExpiry = user.planExpiry && user.planExpiry > new Date() 
-    ? new Date(user.planExpiry) 
+  const currentExpiry = user.planExpiry && user.planExpiry > new Date()
+    ? new Date(user.planExpiry)
     : new Date();
-  
+
   currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
 
   user.plan = "Premium";
   user.planExpiry = currentExpiry;
   user.approvalDate = new Date();
   user.paymentDate = new Date();
-  
+
   // Update user's semesters with the selected ones
   if (transaction.semesters && transaction.semesters.length > 0) {
     const existingSemesters = user.semesters || [];
     const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
     user.semesters = newSemesters;
   }
-  
+
   await user.save();
 
   // Send notification to user
@@ -602,7 +602,7 @@ const rejectPayment = asyncHandler(async (req, res) => {
   const { reason } = req.body;
 
   const transaction = await Transaction.findById(transactionId);
-  
+
   if (!transaction) {
     res.status(404);
     throw new Error("Transaction non trouvée");
@@ -644,7 +644,7 @@ const getPendingPayments = asyncHandler(async (req, res) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const filter = { status: 'pending' };
-  
+
   // Date filter
   if (dateFrom || dateTo) {
     filter.createdAt = {};
@@ -661,7 +661,7 @@ const getPendingPayments = asyncHandler(async (req, res) => {
   // Search filter (applied after population)
   if (search) {
     const searchLower = search.toLowerCase();
-    transactions = transactions.filter(t => 
+    transactions = transactions.filter(t =>
       t.user?.name?.toLowerCase().includes(searchLower) ||
       t.user?.email?.toLowerCase().includes(searchLower) ||
       t.user?.username?.toLowerCase().includes(searchLower)
