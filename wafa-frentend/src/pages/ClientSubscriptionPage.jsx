@@ -413,29 +413,6 @@ const ClientSubscriptionPage = () => {
                 })}
               </div>
             </div>
-
-            {/* Help Section */}
-            <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Besoin d'Aide ?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-slate-700">
-                <p>
-                  Vous avez des questions sur vos abonnements ? Consultez notre documentation ou contactez notre équipe d'assistance.
-                </p>
-                <div className="flex gap-3">
-                  <Button variant="outline" size="sm">
-                    Documentation
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Contacter le Support
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </>
         )}
       </div>
