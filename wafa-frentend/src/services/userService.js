@@ -71,26 +71,70 @@ export const userService = {
         }
     },
 
-    // Get current user profile
+    // Cache for user profile to prevent redundant API calls
+    _profileCache: null,
+    _profileCacheTime: null,
+    _profileCacheExpiry: 30000, // 30 seconds cache
+    _pendingProfileRequest: null,
+
+    // Get current user profile with caching
     getUserProfile: async (forceRefresh = false) => {
         try {
+            const now = Date.now();
+            
+            // Return cached data if valid and not forcing refresh
+            if (!forceRefresh && 
+                userService._profileCache && 
+                userService._profileCacheTime && 
+                (now - userService._profileCacheTime) < userService._profileCacheExpiry) {
+                return userService._profileCache;
+            }
+
+            // If there's already a pending request, wait for it (prevents duplicate calls)
+            if (userService._pendingProfileRequest) {
+                return userService._pendingProfileRequest;
+            }
+
             // Clear cached user data if force refresh is requested
             if (forceRefresh) {
                 localStorage.removeItem('userProfile');
+                userService._profileCache = null;
             }
 
-            console.log('Fetching user profile from: /users/profile');
-            const response = await api.get('/users/profile');
-            const user = response.data.data.user;
+            // Create the request and store it
+            userService._pendingProfileRequest = (async () => {
+                const response = await api.get('/users/profile');
+                const user = response.data.data.user;
 
-            // Update localStorage with fresh data
-            localStorage.setItem('userProfile', JSON.stringify(user));
+                // Update cache
+                userService._profileCache = user;
+                userService._profileCacheTime = Date.now();
+                localStorage.setItem('userProfile', JSON.stringify(user));
 
-            return user;
+                return user;
+            })();
+
+            const result = await userService._pendingProfileRequest;
+            userService._pendingProfileRequest = null;
+            return result;
         } catch (error) {
+            userService._pendingProfileRequest = null;
             console.error('Error fetching user profile:', error);
+            
+            // Return cached data from localStorage as fallback
+            const cached = localStorage.getItem('userProfile');
+            if (cached) {
+                return JSON.parse(cached);
+            }
             throw error;
         }
+    },
+
+    // Clear profile cache (call this on logout or profile update)
+    clearProfileCache: () => {
+        userService._profileCache = null;
+        userService._profileCacheTime = null;
+        localStorage.removeItem('userProfile');
     },
 
     // Update user profile

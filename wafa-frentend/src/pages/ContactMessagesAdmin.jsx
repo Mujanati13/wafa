@@ -1,0 +1,347 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { MessageCircle, Trash2, Eye, Calendar, Mail, User, CheckCircle2, XCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import axios from 'axios';
+
+const ContactMessagesAdmin = () => {
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [showViewDialog, setShowViewDialog] = useState(false);
+
+    useEffect(() => {
+        fetchMessages();
+    }, []);
+
+    const fetchMessages = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/contact`, {
+                withCredentials: true
+            });
+            setMessages(response.data?.data || response.data || []);
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+            toast.error('Erreur lors du chargement des messages');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleView = (message) => {
+        setSelectedMessage(message);
+        setShowViewDialog(true);
+    };
+
+    const handleUpdateStatus = async (id, status) => {
+        try {
+            await axios.patch(
+                `${import.meta.env.VITE_API_URL}/contact/${id}/status`,
+                { status },
+                { withCredentials: true }
+            );
+            toast.success('Statut mis à jour avec succès');
+            fetchMessages();
+        } catch (error) {
+            console.error('Error updating status:', error);
+            toast.error('Erreur lors de la mise à jour du statut');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return;
+
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/contact/${id}`, {
+                withCredentials: true
+            });
+            toast.success('Message supprimé avec succès');
+            fetchMessages();
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            toast.error('Erreur lors de la suppression du message');
+        }
+    };
+
+    const filteredMessages = messages.filter(msg =>
+        msg.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.message?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const stats = {
+        total: messages.length,
+        pending: messages.filter(m => m.status === 'pending').length,
+        answered: messages.filter(m => m.status === 'answered').length,
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                                <MessageCircle className="h-6 w-6 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-slate-900">Messages de Contact</h1>
+                        </div>
+                        <p className="text-slate-500">Gérez les messages reçus depuis le formulaire de contact</p>
+                    </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-600">Total Messages</p>
+                                    <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+                                </div>
+                                <MessageCircle className="h-10 w-10 text-blue-500" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-600">En Attente</p>
+                                    <p className="text-3xl font-bold text-orange-600">{stats.pending}</p>
+                                </div>
+                                <XCircle className="h-10 w-10 text-orange-500" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-slate-600">Répondus</p>
+                                    <p className="text-3xl font-bold text-green-600">{stats.answered}</p>
+                                </div>
+                                <CheckCircle2 className="h-10 w-10 text-green-500" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Search */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Liste des Messages</CardTitle>
+                            <Input
+                                type="text"
+                                placeholder="Rechercher..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="max-w-sm"
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            </div>
+                        ) : filteredMessages.length === 0 ? (
+                            <div className="text-center py-12">
+                                <MessageCircle className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500">Aucun message trouvé</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Nom</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Message</TableHead>
+                                            <TableHead>Statut</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredMessages.map((msg) => (
+                                            <motion.tr
+                                                key={msg._id}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="border-b hover:bg-slate-50 transition-colors"
+                                            >
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                                        <Calendar className="h-4 w-4" />
+                                                        {new Date(msg.createdAt).toLocaleDateString('fr-FR')}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="h-4 w-4 text-slate-400" />
+                                                        <span className="font-medium">{msg.name}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <Mail className="h-4 w-4 text-slate-400" />
+                                                        <a href={`mailto:${msg.email}`} className="text-blue-600 hover:underline">
+                                                            {msg.email}
+                                                        </a>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <p className="text-sm text-slate-600 line-clamp-2 max-w-xs">
+                                                        {msg.message}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        className={
+                                                            msg.status === 'answered'
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : 'bg-orange-100 text-orange-700'
+                                                        }
+                                                    >
+                                                        {msg.status === 'answered' ? 'Répondu' : 'En attente'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleView(msg)}
+                                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        {msg.status === 'pending' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => handleUpdateStatus(msg._id, 'answered')}
+                                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                title="Marquer comme répondu"
+                                                            >
+                                                                <CheckCircle2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleDelete(msg._id)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </motion.tr>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* View Message Dialog */}
+            <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <MessageCircle className="h-5 w-5 text-blue-600" />
+                            Détails du Message
+                        </DialogTitle>
+                        <DialogDescription>
+                            Reçu le {selectedMessage && new Date(selectedMessage.createdAt).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            })}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedMessage && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <User className="h-4 w-4 text-blue-600" />
+                                        Nom
+                                    </label>
+                                    <p className="text-slate-900 bg-slate-50 p-3 rounded-lg">{selectedMessage.name}</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-blue-600" />
+                                        Email
+                                    </label>
+                                    <a
+                                        href={`mailto:${selectedMessage.email}`}
+                                        className="block text-blue-600 bg-slate-50 p-3 rounded-lg hover:underline"
+                                    >
+                                        {selectedMessage.email}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                    <MessageCircle className="h-4 w-4 text-blue-600" />
+                                    Message
+                                </label>
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <p className="text-slate-900 whitespace-pre-wrap">{selectedMessage.message}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                                <Badge
+                                    className={
+                                        selectedMessage.status === 'answered'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-orange-100 text-orange-700'
+                                    }
+                                >
+                                    {selectedMessage.status === 'answered' ? 'Répondu' : 'En attente'}
+                                </Badge>
+
+                                {selectedMessage.status === 'pending' && (
+                                    <Button
+                                        onClick={() => {
+                                            handleUpdateStatus(selectedMessage._id, 'answered');
+                                            setShowViewDialog(false);
+                                        }}
+                                        className="bg-green-600 hover:bg-green-700"
+                                    >
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                                        Marquer comme répondu
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+};
+
+export default ContactMessagesAdmin;

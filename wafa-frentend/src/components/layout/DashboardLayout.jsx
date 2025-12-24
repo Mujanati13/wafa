@@ -28,8 +28,8 @@ const DashBoardLayout = () => {
     <SemesterProvider>
       <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 to-white">
         <TopBar
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
           isMobile={isMobile}
         />
         <div className="flex flex-1 overflow-hidden min-h-0">

@@ -103,6 +103,17 @@ const ExamPage = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
 
+  // Helper function to darken/lighten color
+  const adjustColor = (color, amount) => {
+    if (!color) return null;
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  };
+
   // Core state
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -125,6 +136,9 @@ const ExamPage = () => {
   const [showOverview, setShowOverview] = useState(false);
   const [showVueEnsemble, setShowVueEnsemble] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
+
+  // Extract module color from exam data
+  const moduleColor = examData?.moduleColor || '#6366f1'; // Default indigo
 
   // Track visited questions (for orange color)
   const [visitedQuestions, setVisitedQuestions] = useState(new Set([0]));
@@ -520,14 +534,19 @@ const ExamPage = () => {
           className="w-full max-w-lg"
         >
           <Card className="shadow-2xl border-0 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 text-white">
+            <div 
+              className="p-6 text-white"
+              style={{
+                background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+              }}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <AlertCircle className="h-6 w-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">{t('dashboard:oops') || 'Oups !'}</h3>
-                  <p className="text-blue-100 text-sm">{t('dashboard:exam_unavailable') || 'Examen non disponible'}</p>
+                  <p className="text-white/80 text-sm">{t('dashboard:exam_unavailable') || 'Examen non disponible'}</p>
                 </div>
               </div>
             </div>
@@ -539,22 +558,28 @@ const ExamPage = () => {
                 </p>
                 <ul className="space-y-2 text-sm text-gray-600 ml-4">
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span className="mt-0.5" style={{ color: moduleColor }}>•</span>
                     <span>{t('dashboard:exam_removed') || "L'examen a peut-être été supprimé ou déplacé"}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span className="mt-0.5" style={{ color: moduleColor }}>•</span>
                     <span>{t('dashboard:exam_temp_unavailable') || "Le contenu est temporairement indisponible"}</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span className="mt-0.5" style={{ color: moduleColor }}>•</span>
                     <span>{t('dashboard:exam_access_issue') || "Vous n'avez peut-être pas accès à ce contenu"}</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                <p className="text-sm text-blue-900 flex items-start gap-2">
+              <div 
+                className="border rounded-lg p-4"
+                style={{ 
+                  backgroundColor: `${moduleColor}10`, 
+                  borderColor: `${moduleColor}30` 
+                }}
+              >
+                <p className="text-sm flex items-start gap-2" style={{ color: adjustColor(moduleColor, -60) }}>
                   <Lightbulb className="h-4 w-4 mt-0.5 shrink-0" />
                   <span>{t('dashboard:try_refresh') || "Essayez de rafraîchir la page ou retournez au tableau de bord pour explorer d'autres contenus."}</span>
                 </p>
@@ -571,7 +596,10 @@ const ExamPage = () => {
                 </Button>
                 <Button
                   onClick={() => navigate('/dashboard/home')}
-                  className="flex-1 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  className="flex-1 gap-2 text-white"
+                  style={{
+                    background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                  }}
                 >
                   <Home className="h-4 w-4" />
                   {t('dashboard:back_to_dashboard') || 'Tableau de bord'}
@@ -683,7 +711,11 @@ const ExamPage = () => {
               {!showResults && (
                 <Button
                   onClick={() => setShowConfirmSubmit(true)}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
+                  className="text-white"
+                  style={{
+                    background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`,
+                    boxShadow: `0 10px 25px -5px ${moduleColor}25`
+                  }}
                 >
                   <CheckCircle className="mr-1.5 h-4 w-4" />
                   <span className="hidden sm:inline">{t('dashboard:finish_exam') || 'Finish'}</span>
@@ -697,7 +729,10 @@ const ExamPage = () => {
         {/* Progress Bar */}
         <div className="h-1 bg-gray-100">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+            className="h-full"
+            style={{
+              background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
+            }}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -707,6 +742,151 @@ const ExamPage = () => {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Sidebar - Desktop */}
+          <div className="hidden lg:block lg:col-span-1">
+            <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b py-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>{t('dashboard:questions_by_session') || 'Questions'}</span>
+                  <Badge className="bg-blue-100 text-blue-700">{questions.length}</Badge>
+                </CardTitle>
+                {/* Legend */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px]">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                    <span className="text-gray-500">Non visité</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                    <span className="text-gray-500">Visité</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
+                    <span className="text-gray-500">Répondu</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                    <span className="text-gray-500">Surligné</span>
+                  </div>
+                  {showResults && (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
+                        <span className="text-gray-500">Correct</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                        <span className="text-gray-500">Incorrect</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[450px]">
+                  <div className="p-4 space-y-4">
+                    {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
+                      const isCollapsed = collapsedSessions.has(sessionName);
+                      return (
+                        <div key={sessionName} className="space-y-2">
+                          <button
+                            onClick={() => {
+                              const newCollapsed = new Set(collapsedSessions);
+                              if (isCollapsed) {
+                                newCollapsed.delete(sessionName);
+                              } else {
+                                newCollapsed.add(sessionName);
+                              }
+                              setCollapsedSessions(newCollapsed);
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium text-sm text-gray-700">{sessionName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {sessionQuestions.length}
+                              </Badge>
+                              {isCollapsed ? (
+                                <ChevronDown className="h-4 w-4 text-gray-400" />
+                              ) : (
+                                <ChevronUp className="h-4 w-4 text-gray-400" />
+                              )}
+                            </div>
+                          </button>
+                          {!isCollapsed && (
+                            <div className="grid grid-cols-5 gap-1.5 pl-2">
+                              {sessionQuestions.map((q, idx) => {
+                                const globalIndex = questions.findIndex(question => question._id === q._id);
+                                const { status, isFlagged } = getQuestionStatus(globalIndex);
+                                const isCurrent = globalIndex === currentQuestion;
+                                return (
+                                  <button
+                                    key={q._id}
+                                    onClick={() => goToQuestion(globalIndex)}
+                                    className={cn(
+                                      "relative aspect-square rounded-md text-xs font-medium transition-all border-2",
+                                      isCurrent && "ring-2 ring-blue-500 ring-offset-1 scale-110",
+                                      status === 'correct' && "bg-emerald-100 border-emerald-400 text-emerald-700",
+                                      status === 'incorrect' && "bg-red-100 border-red-400 text-red-700",
+                                      status === 'answered' && !isFlagged && "bg-blue-100 border-blue-300 text-blue-700",
+                                      status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
+                                      status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
+                                      isFlagged && !showResults && "bg-purple-100 border-purple-400 text-purple-700",
+                                      "hover:scale-105"
+                                    )}
+                                  >
+                                    {globalIndex + 1}
+                                    {isFlagged && !showResults && (
+                                      <Flag className="absolute -top-1 -right-1 h-3 w-3 fill-purple-500 text-purple-500" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+
+                {/* Score Summary */}
+                {showResults && (
+                  <div className="border-t p-4 space-y-4 bg-gradient-to-br from-gray-50 to-white">
+                    <div className="text-center space-y-2">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                        <Trophy className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <p className="text-3xl font-bold text-gray-900">
+                          {Math.round((score.correct / score.total) * 100)}%
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {score.correct}/{score.total} {t('dashboard:correct') || 'correct'}
+                        </p>
+                      </div>
+                    </div>
+                    <Progress
+                      value={(score.correct / score.total) * 100}
+                      className="h-2"
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={handleRetry}
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                      {t('dashboard:retry') || 'Try Again'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Main Question Area */}
           <div className="lg:col-span-3 space-y-4 sm:space-y-6">
 
@@ -724,7 +904,13 @@ const ExamPage = () => {
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-4 sm:px-6 py-3 sm:py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 font-semibold">
+                        <Badge 
+                          className="font-semibold"
+                          style={{
+                            backgroundColor: `${moduleColor}20`,
+                            color: adjustColor(moduleColor, -60)
+                          }}
+                        >
                           Q{currentQuestion + 1}
                         </Badge>
                         {currentQuestionData.sessionLabel && (
@@ -733,7 +919,13 @@ const ExamPage = () => {
                           </Badge>
                         )}
                         {isMultipleChoice && (
-                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 gap-1">
+                          <Badge 
+                            className="gap-1"
+                            style={{
+                              backgroundColor: `${moduleColor}15`,
+                              color: adjustColor(moduleColor, -40)
+                            }}
+                          >
                             <CheckCircle2 className="h-3 w-3" />
                             {t('dashboard:multiple_choice') || 'Multiple'}
                           </Badge>
@@ -751,7 +943,19 @@ const ExamPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowImageGallery(true)}
-                          className="shrink-0 text-gray-400 hover:text-purple-600 hover:bg-purple-50 h-8 w-8"
+                          className="shrink-0 text-gray-400 h-8 w-8"
+                          style={{
+                            '--hover-color': moduleColor,
+                            '--hover-bg': `${moduleColor}10`
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = moduleColor;
+                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = '';
+                            e.currentTarget.style.backgroundColor = '';
+                          }}
                           title="Images"
                         >
                           <Image className="h-4 w-4" />
@@ -760,7 +964,15 @@ const ExamPage = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowNoteModal(true)}
-                          className="shrink-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 h-8 w-8"
+                          className="shrink-0 text-gray-400 h-8 w-8"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = moduleColor;
+                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = '';
+                            e.currentTarget.style.backgroundColor = '';
+                          }}
                           title="Note"
                         >
                           <NotebookPen className="h-4 w-4" />
@@ -843,30 +1055,44 @@ const ExamPage = () => {
                             animate={isAnimating ? { scale: [1, 1.02, 1] } : {}}
                             className={cn(
                               "w-full text-left rounded-xl border-2 transition-all duration-200",
-                              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                              "focus:outline-none focus:ring-2 focus:ring-offset-2",
                               !showCorrectness && "hover:shadow-md cursor-pointer",
                               showCorrectness && "cursor-default",
                               // Default state
                               !isSelected && !showCorrectness && "border-gray-200 bg-white hover:border-gray-300",
-                              // Selected state (before results)
-                              isSelected && !showCorrectness && "border-blue-500 bg-blue-50 shadow-md shadow-blue-100",
                               // Correct answer (results)
                               showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50",
                               // Wrong answer selected (results)
                               showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50"
                             )}
+                            style={
+                              isSelected && !showCorrectness
+                                ? {
+                                    borderColor: moduleColor,
+                                    backgroundColor: `${moduleColor}10`,
+                                    boxShadow: `0 4px 6px -1px ${moduleColor}15`,
+                                    '--ring-color': moduleColor
+                                  }
+                                : {}
+                            }
                             onClick={() => !showCorrectness && handleAnswerSelect(currentQuestion, index)}
                             disabled={showCorrectness}
                           >
                             <div className="p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
                               {/* Option Letter/Icon */}
-                              <div className={cn(
-                                "shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base transition-all",
-                                !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
-                                isSelected && !showCorrectness && "bg-blue-500 text-white",
-                                showCorrectness && isCorrect && "bg-emerald-500 text-white",
-                                showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white"
-                              )}>
+                              <div 
+                                className={cn(
+                                  "shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base transition-all",
+                                  !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
+                                  showCorrectness && isCorrect && "bg-emerald-500 text-white",
+                                  showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white"
+                                )}
+                                style={
+                                  isSelected && !showCorrectness
+                                    ? { backgroundColor: moduleColor, color: 'white' }
+                                    : {}
+                                }
+                              >
                                 {showCorrectness ? (
                                   isCorrect ? (
                                     <Check className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -920,19 +1146,34 @@ const ExamPage = () => {
                       <button
                         onClick={handleVerifyQuestion}
                         disabled={isQuestionVerified || showResults}
-                        className={cn(
-                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all",
-                          "border-r border-gray-100",
-                          isQuestionVerified || showResults
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "hover:bg-emerald-50 text-emerald-600"
-                        )}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        style={{
+                          backgroundColor: isQuestionVerified || showResults ? `${moduleColor}10` : 'transparent',
+                          color: moduleColor
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isQuestionVerified && !showResults) {
+                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isQuestionVerified && !showResults) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
                       >
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
-                          isQuestionVerified || showResults ? "bg-emerald-500" : "bg-emerald-100"
-                        )}>
-                          <Check className={cn("h-5 w-5", isQuestionVerified || showResults ? "text-white" : "text-emerald-600")} />
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          style={{
+                            backgroundColor: isQuestionVerified || showResults ? moduleColor : `${moduleColor}20`
+                          }}
+                        >
+                          <Check 
+                            className="h-5 w-5" 
+                            style={{ 
+                              color: isQuestionVerified || showResults ? 'white' : moduleColor 
+                            }} 
+                          />
                         </div>
                         <span className="text-xs font-medium">
                           {isQuestionVerified || showResults ? 'Correct' : 'Verifier'}
@@ -942,10 +1183,18 @@ const ExamPage = () => {
                       {/* Community Button */}
                       <button
                         onClick={() => setShowCommunityModal(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-teal-50 text-teal-600 border-r border-gray-100"
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100 text-gray-600"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${moduleColor}08`;
+                          e.currentTarget.style.color = moduleColor;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#4B5563';
+                        }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mb-1">
-                          <Users className="h-5 w-5 text-teal-600" />
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1">
+                          <Users className="h-5 w-5 text-gray-500" />
                         </div>
                         <span className="text-xs font-medium">A Community</span>
                       </button>
@@ -953,56 +1202,57 @@ const ExamPage = () => {
                       {/* Resumes/Cours Button */}
                       <button
                         onClick={() => setShowResumesModal(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-purple-50 text-purple-600 border-r border-gray-100"
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100 text-gray-600"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${moduleColor}08`;
+                          e.currentTarget.style.color = moduleColor;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#4B5563';
+                        }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-1">
-                          <BookOpen className="h-5 w-5 text-purple-600" />
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1">
+                          <BookOpen className="h-5 w-5 text-gray-500" />
                         </div>
                         <span className="text-xs font-medium">Résumés</span>
-                      </button>
-
-                      {/* Playlist Button */}
-                      <button
-                        onClick={() => {
-                          // Add to playlist logic
-                          const questionId = currentQuestionData?._id;
-                          if (questionId) {
-                            const playlist = JSON.parse(localStorage.getItem('questionPlaylist') || '[]');
-                            if (!playlist.includes(questionId)) {
-                              playlist.push(questionId);
-                              localStorage.setItem('questionPlaylist', JSON.stringify(playlist));
-                              toast.success('Question ajoutée à la playlist!', {
-                                icon: <ListMusic className="h-4 w-4 text-pink-500" />
-                              });
-                            } else {
-                              toast.info('Question déjà dans la playlist');
-                            }
-                          }
-                        }}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-pink-50 text-pink-600 border-r border-gray-100"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mb-1">
-                          <ListMusic className="h-5 w-5 text-pink-600" />
-                        </div>
-                        <span className="text-xs font-medium">Playlist</span>
                       </button>
 
                       {/* Ressayer Button */}
                       <button
                         onClick={handleResetQuestion}
                         disabled={!isQuestionVerified && !showResults}
-                        className={cn(
-                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100",
-                          (!isQuestionVerified && !showResults)
-                            ? "opacity-50 cursor-not-allowed text-gray-400"
-                            : "hover:bg-orange-50 text-orange-500"
-                        )}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        style={{
+                          opacity: (!isQuestionVerified && !showResults) ? 0.5 : 1,
+                          cursor: (!isQuestionVerified && !showResults) ? 'not-allowed' : 'pointer',
+                          color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (isQuestionVerified || showResults) {
+                            e.currentTarget.style.backgroundColor = `${moduleColor}08`;
+                            e.currentTarget.style.color = moduleColor;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (isQuestionVerified || showResults) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#6B7280';
+                          }
+                        }}
                       >
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
-                          (!isQuestionVerified && !showResults) ? "bg-gray-100" : "bg-orange-100"
-                        )}>
-                          <RefreshCcw className={cn("h-5 w-5", (!isQuestionVerified && !showResults) ? "text-gray-400" : "text-orange-500")} />
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          style={{
+                            backgroundColor: (!isQuestionVerified && !showResults) ? '#F3F4F6' : '#E5E7EB'
+                          }}
+                        >
+                          <RefreshCcw 
+                            className="h-5 w-5" 
+                            style={{ 
+                              color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280' 
+                            }} 
+                          />
                         </div>
                         <span className="text-xs font-medium">Ressayer</span>
                       </button>
@@ -1011,18 +1261,37 @@ const ExamPage = () => {
                       <button
                         onClick={() => setShowExplanation(true)}
                         disabled={!isQuestionVerified && !showResults}
-                        className={cn(
-                          "flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100",
-                          (!isQuestionVerified && !showResults)
-                            ? "opacity-50 cursor-not-allowed text-gray-400"
-                            : "hover:bg-blue-50 text-blue-600"
-                        )}
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        style={{
+                          opacity: (!isQuestionVerified && !showResults) ? 0.5 : 1,
+                          cursor: (!isQuestionVerified && !showResults) ? 'not-allowed' : 'pointer',
+                          color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (isQuestionVerified || showResults) {
+                            e.currentTarget.style.backgroundColor = `${moduleColor}08`;
+                            e.currentTarget.style.color = moduleColor;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (isQuestionVerified || showResults) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#6B7280';
+                          }
+                        }}
                       >
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center mb-1",
-                          (!isQuestionVerified && !showResults) ? "bg-gray-100" : "bg-blue-100"
-                        )}>
-                          <Lightbulb className={cn("h-5 w-5", (!isQuestionVerified && !showResults) ? "text-gray-400" : "text-blue-600")} />
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          style={{
+                            backgroundColor: (!isQuestionVerified && !showResults) ? '#F3F4F6' : '#E5E7EB'
+                          }}
+                        >
+                          <Lightbulb 
+                            className="h-5 w-5" 
+                            style={{ 
+                              color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280' 
+                            }} 
+                          />
                         </div>
                         <span className="text-xs font-medium">Explication</span>
                       </button>
@@ -1030,10 +1299,20 @@ const ExamPage = () => {
                       {/* Vue d'ensemble Button */}
                       <button
                         onClick={() => setShowVueEnsemble(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all hover:bg-indigo-50 text-indigo-600"
+                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all"
+                        style={{ color: moduleColor }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-1">
-                          <LayoutGrid className="h-5 w-5 text-indigo-600" />
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          style={{ backgroundColor: `${moduleColor}20` }}
+                        >
+                          <LayoutGrid className="h-5 w-5" style={{ color: moduleColor }} />
                         </div>
                         <span className="text-xs font-medium">Vue d'ensemble</span>
                       </button>
@@ -1068,9 +1347,14 @@ const ExamPage = () => {
                       className={cn(
                         "w-2 h-2 rounded-full transition-all",
                         actualIndex === currentQuestion
-                          ? "w-6 bg-blue-500"
+                          ? "w-6"
                           : "bg-gray-300 hover:bg-gray-400"
                       )}
+                      style={
+                        actualIndex === currentQuestion
+                          ? { backgroundColor: moduleColor }
+                          : {}
+                      }
                     />
                   );
                 })}
@@ -1142,169 +1426,11 @@ const ExamPage = () => {
               </div>
             </div>
           </div>
-
-          {/* Sidebar - Desktop */}
-          <div className="hidden lg:block lg:col-span-1">
-            <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b py-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>{t('dashboard:questions_by_session') || 'Questions'}</span>
-                  <Badge className="bg-blue-100 text-blue-700">{questions.length}</Badge>
-                </CardTitle>
-                {/* Legend */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px]">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
-                    <span className="text-gray-500">Non visité</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
-                    <span className="text-gray-500">Visité</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
-                    <span className="text-gray-500">Répondu</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
-                    <span className="text-gray-500">Surligné</span>
-                  </div>
-                  {showResults && (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
-                        <span className="text-gray-500">Correct</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
-                        <span className="text-gray-500">Incorrect</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[450px]">
-                  <div className="p-4 space-y-4">
-                    {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
-                      const isCollapsed = collapsedSessions.has(sessionName);
-                      const startIndex = questions.findIndex(q => q.sessionLabel === sessionName);
-
-                      return (
-                        <div key={sessionName} className="space-y-2">
-                          <button
-                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                            onClick={() => {
-                              const newCollapsed = new Set(collapsedSessions);
-                              if (newCollapsed.has(sessionName)) {
-                                newCollapsed.delete(sessionName);
-                              } else {
-                                newCollapsed.add(sessionName);
-                              }
-                              setCollapsedSessions(newCollapsed);
-                            }}
-                          >
-                            <span className="text-sm font-medium text-gray-700 truncate">
-                              {sessionName}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {sessionQuestions.length}
-                              </Badge>
-                              {isCollapsed ? (
-                                <ChevronDown className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <ChevronUp className="h-4 w-4 text-gray-400" />
-                              )}
-                            </div>
-                          </button>
-
-                          <AnimatePresence>
-                            {!isCollapsed && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="grid grid-cols-5 gap-1.5 pl-2">
-                                  {sessionQuestions.map((_, qIndex) => {
-                                    const globalIndex = startIndex + qIndex;
-                                    const { status, isFlagged } = getQuestionStatus(globalIndex);
-                                    const isCurrent = globalIndex === currentQuestion;
-
-                                    return (
-                                      <button
-                                        key={globalIndex}
-                                        className={cn(
-                                          "relative h-8 rounded-lg text-xs font-medium transition-all",
-                                          "focus:outline-none focus:ring-2 focus:ring-blue-500",
-                                          isCurrent && "ring-2 ring-blue-500 ring-offset-1",
-                                          status === 'correct' && "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-                                          status === 'incorrect' && "bg-red-100 text-red-700 hover:bg-red-200",
-                                          status === 'verified' && "bg-blue-100 text-blue-700 hover:bg-blue-200",
-                                          status === 'flagged' && "bg-purple-100 text-purple-700 hover:bg-purple-200",
-                                          status === 'answered' && !isCurrent && "bg-blue-100 text-blue-700 hover:bg-blue-200",
-                                          status === 'visited' && "bg-orange-100 text-orange-700 hover:bg-orange-200",
-                                          status === 'unanswered' && "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                        )}
-                                        onClick={() => goToQuestion(globalIndex)}
-                                      >
-                                        {qIndex + 1}
-                                        {isFlagged && (
-                                          <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-purple-500 text-purple-500" />
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-
-                {/* Results Summary */}
-                {showResults && (
-                  <div className="border-t p-4 space-y-4 bg-gradient-to-br from-gray-50 to-white">
-                    <div className="text-center space-y-2">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                        <Trophy className="h-8 w-8" />
-                      </div>
-                      <div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          {Math.round((score.correct / score.total) * 100)}%
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {score.correct}/{score.total} {t('dashboard:correct') || 'correct'}
-                        </p>
-                      </div>
-                    </div>
-                    <Progress
-                      value={(score.correct / score.total) * 100}
-                      className="h-2"
-                    />
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      onClick={handleRetry}
-                    >
-                      <RefreshCcw className="h-4 w-4" />
-                      {t('dashboard:retry') || 'Try Again'}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
 
       {/* Mobile FAB - positioned higher to avoid overlapping with bottom toolbar */}
-      <div className="lg:hidden fixed bottom-24 right-4 z-30">
+      <div className="lg:hidden fixed bottom-24 left-4 z-30">
         <Button
           size="lg"
           className="h-12 w-12 rounded-full shadow-xl bg-gradient-to-br from-blue-600 to-indigo-600"
@@ -1325,11 +1451,11 @@ const ExamPage = () => {
             onClick={() => setShowSidebar(false)}
           >
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl"
+              className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b bg-gray-50">
@@ -1578,12 +1704,12 @@ const ExamPage = () => {
           isOpen={showCommunityModal}
           onClose={() => setShowCommunityModal(false)}
           questionId={currentQuestionData._id}
+          questionText={currentQuestionData.question || currentQuestionData.text}
           questionOptions={currentQuestionData.options}
-          correctAnswer={currentQuestionData.options
-            .map((opt, i) => opt.isCorrect ? String.fromCharCode(65 + i) : null)
-            .filter(Boolean)}
-          userLevel={20}
+          userLevel={20} // TODO: Get actual user level in this module
           requiredLevel={20}
+          moduleColor={moduleColor}
+          onOpenExplanation={() => setShowExplanation(true)}
         />
       )}
 

@@ -1,9 +1,47 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { FiMessageCircle, FiSend, FiStar, FiHeart } from 'react-icons/fi'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiMessageCircle, FiSend, FiStar, FiHeart, FiMail, FiUser, FiCheck } from 'react-icons/fi'
 import { BiLike } from 'react-icons/bi'
+import axios from 'axios'
 
 const FeedbackSection = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null) // 'success' | 'error'
+  const [showForm, setShowForm] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus(null)
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/contact`, formData)
+      setSubmitStatus('success')
+      setFormData({ name: '', email: '', message: '' })
+      setTimeout(() => {
+        setShowForm(false)
+        setSubmitStatus(null)
+      }, 3000)
+    } catch (error) {
+      console.error('Error submitting feedback:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -39,26 +77,26 @@ const FeedbackSection = () => {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
-          animate={{ 
+          animate={{
             rotate: 360,
             scale: [1, 1.1, 1]
           }}
-          transition={{ 
-            duration: 20, 
-            repeat: Infinity, 
-            ease: "linear" 
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
           }}
           className="absolute -top-10 -right-10 w-40 h-40 bg-blue-100/20 rounded-full blur-xl"
         />
         <motion.div
-          animate={{ 
+          animate={{
             rotate: -360,
             scale: [1, 1.2, 1]
           }}
-          transition={{ 
-            duration: 25, 
-            repeat: Infinity, 
-            ease: "linear" 
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
           }}
           className="absolute -bottom-10 -left-10 w-32 h-32 bg-teal-100/20 rounded-full blur-xl"
         />
@@ -77,7 +115,7 @@ const FeedbackSection = () => {
             <motion.div
               key={index}
               initial={{ opacity: 0, scale: 0 }}
-              animate={{ 
+              animate={{
                 opacity: [0, 1, 0.8, 1],
                 scale: [0, 1.2, 1],
                 x: [0, x, 0],
@@ -113,96 +151,219 @@ const FeedbackSection = () => {
           </motion.div>
         </motion.div>
 
-        <motion.h2 
+        <motion.h2
           variants={itemVariants}
           className="text-4xl md:text-6xl font-bold mb-6 text-gray-900"
         >
           Nous voulons vos <span className="text-blue-600">retours</span>
         </motion.h2>
 
-        <motion.p 
+        <motion.p
           variants={itemVariants}
           className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed"
         >
-          Aidez-nous à améliorer WAFA en partageant vos pensées et suggestions. 
+          Aidez-nous à améliorer WAFA en partageant vos pensées et suggestions.
           Votre contribution alimente notre innovation.
         </motion.p>
 
-        {/* Action buttons */}
-        <motion.div 
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-        >
-          <motion.button
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0 20px 40px rgba(59, 130, 246, 0.25)"
-            }}
-            whileTap={{ scale: 0.98 }}
-            className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center relative overflow-hidden"
-          >
+        {/* Form or Buttons */}
+        <AnimatePresence mode="wait">
+          {!showForm ? (
             <motion.div
-              whileHover={{ x: 5 }}
-              transition={{ duration: 0.2 }}
+              key="buttons"
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
-              <FiSend className="text-xl" />
-            </motion.div>
-            <span>Donner votre avis</span>
-            
-            {/* Button glow effect */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={false}
-              animate={{ x: ['-100%', '100%'] }}
-              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
-            />
-          </motion.button>
+              <motion.button
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: "0 20px 40px rgba(59, 130, 246, 0.25)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowForm(true)}
+                className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center relative overflow-hidden"
+              >
+                <motion.div
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <FiSend className="text-xl" />
+                </motion.div>
+                <span>Donner votre avis</span>
 
-          <motion.button
-            whileHover={{ 
-              scale: 1.05,
-              borderColor: "rgb(59, 130, 246)"
-            }}
-            whileTap={{ scale: 0.98 }}
-            className="border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center bg-white shadow-md"
-          >
-            <FiStar className="text-xl" />
-            <span>Évaluer l'app</span>
-          </motion.button>
-        </motion.div>
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  initial={false}
+                  animate={{ x: ['-100%', '100%'] }}
+                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                />
+              </motion.button>
+
+              <motion.button
+                whileHover={{
+                  scale: 1.05,
+                  borderColor: "rgb(59, 130, 246)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 flex items-center gap-3 min-w-[200px] justify-center bg-white shadow-md"
+              >
+                <FiStar className="text-xl" />
+                <span>Évaluer l'app</span>
+              </motion.button>
+            </motion.div>
+          ) : (
+            <motion.form
+              key="form"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              onSubmit={handleSubmit}
+              className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-2xl border border-blue-100"
+            >
+              {submitStatus === 'success' ? (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="text-center py-8"
+                >
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FiCheck className="text-3xl text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Merci pour votre retour!</h3>
+                  <p className="text-gray-600">Nous avons reçu votre message et vous répondrons bientôt.</p>
+                </motion.div>
+              ) : (
+                <>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <FiUser className="text-blue-600" />
+                        Nom
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Votre nom"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <FiMail className="text-blue-600" />
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="votre@email.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                        <FiMessageCircle className="text-blue-600" />
+                        Message
+                      </label>
+                      <textarea
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                        rows="5"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Partagez vos pensées, suggestions ou questions..."
+                      />
+                    </div>
+
+                    {submitStatus === 'error' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+                      >
+                        Une erreur s'est produite. Veuillez réessayer.
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4 mt-8">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      disabled={isSubmitting}
+                      className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Envoi...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiSend />
+                          <span>Envoyer</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.form>
+          )}
+        </AnimatePresence>
 
         {/* Testimonial preview cards */}
-        <motion.div 
-          variants={itemVariants}
-          className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto"
-        >
-          {[
-            { text: "Interface intuitive", author: "Sarah M." },
-            { text: "Très utile au quotidien", author: "Ahmed K." },
-            { text: "Design moderne", author: "Marie L." }
-          ].map((testimonial, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ y: -5, scale: 1.02 }}
-              className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center shadow-lg"
-            >
-              <div className="flex justify-center mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 + i * 0.1 }}
-                  >
-                    <FiStar className="text-yellow-400 fill-current text-sm" />
-                  </motion.div>
-                ))}
-              </div>
-              <p className="text-gray-700 font-medium text-sm mb-2">"{testimonial.text}"</p>
-              <p className="text-blue-600 text-xs font-semibold">- {testimonial.author}</p>
-            </motion.div>
-          ))}
-        </motion.div>
+        {!showForm && (
+          <motion.div
+            variants={itemVariants}
+            className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto"
+          >
+            {[
+              { text: "Interface intuitive", author: "Sarah M." },
+              { text: "Très utile au quotidien", author: "Ahmed K." },
+              { text: "Design moderne", author: "Marie L." }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center shadow-lg"
+              >
+                <div className="flex justify-center mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 + i * 0.1 }}
+                    >
+                      <FiStar className="text-yellow-400 fill-current text-sm" />
+                    </motion.div>
+                  ))}
+                </div>
+                <p className="text-gray-700 font-medium text-sm mb-2">"{testimonial.text}"</p>
+                <p className="text-blue-600 text-xs font-semibold">- {testimonial.author}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </motion.div>
     </section>
   )

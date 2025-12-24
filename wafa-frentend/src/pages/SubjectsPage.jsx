@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 // Progress Circle Component
-const ProgressCircle = ({ progress, size = 48 }) => {
+const ProgressCircle = ({ progress, size = 48, color }) => {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -33,12 +33,12 @@ const ProgressCircle = ({ progress, size = 48 }) => {
           cy={size / 2}
         />
         <circle
-          className="text-blue-600 transition-all duration-500"
+          className={!color ? "text-blue-600 transition-all duration-500" : "transition-all duration-500"}
           strokeWidth="4"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          stroke="currentColor"
+          stroke={color || "currentColor"}
           fill="transparent"
           r={radius}
           cx={size / 2}
@@ -53,7 +53,18 @@ const ProgressCircle = ({ progress, size = 48 }) => {
 };
 
 // Exam Card Component
-const ExamCard = ({ exam, onStart, index }) => {
+const ExamCard = ({ exam, onStart, index, moduleColor }) => {
+  // Helper function to adjust color
+  const adjustColorLocal = (color, amount) => {
+    if (!color) return null;
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,20 +78,28 @@ const ExamCard = ({ exam, onStart, index }) => {
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             {/* Icon */}
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+            <div 
+              className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${!moduleColor ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : ''}`}
+              style={moduleColor ? {
+                background: `linear-gradient(to bottom right, ${moduleColor}, ${adjustColorLocal(moduleColor, -30)})`
+              } : undefined}
+            >
               <FileQuestion className="h-6 w-6 text-white" />
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+              <h3 
+                className="font-semibold text-gray-900 line-clamp-1 transition-colors"
+                style={{ color: moduleColor ? undefined : undefined }}
+              >
                 {exam.name}
               </h3>
               <p className="text-sm text-gray-500">{exam.questions} Questions</p>
             </div>
 
             {/* Progress */}
-            <ProgressCircle progress={exam.progress || 0} size={48} />
+            <ProgressCircle progress={exam.progress || 0} size={48} color={moduleColor} />
           </div>
         </CardContent>
       </Card>
@@ -97,6 +116,17 @@ const SubjectsPage = () => {
   const [hasAccess, setHasAccess] = useState(true);
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
+
+  // Helper function to darken/lighten color (same as ModuleCard)
+  function adjustColor(color, amount) {
+    if (!color) return null;
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  }
 
   // Exam data by type
   const [examsParYear, setExamsParYear] = useState([]);
@@ -164,6 +194,7 @@ const SubjectsPage = () => {
           id: moduleData._id,
           name: moduleData.name,
           semester: moduleData.semester,
+          color: moduleData.color,
         });
 
         // Build question count map
@@ -338,7 +369,12 @@ const SubjectsPage = () => {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{module.name}</h1>
-            <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-indigo-500 mt-2 rounded-full" />
+            <div 
+              className={`h-1 w-24 mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
+              style={module.color ? {
+                background: `linear-gradient(to right, ${module.color}, ${adjustColor(module.color, -30)})`
+              } : undefined}
+            />
           </div>
         </div>
 
@@ -347,7 +383,12 @@ const SubjectsPage = () => {
           <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-white border shadow-sm">
             <TabsTrigger
               value="year"
-              className="flex items-center gap-2 py-3 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
+              style={module.color ? {
+                '--tw-bg-opacity': '1',
+                backgroundColor: selectedExamType === 'year' ? module.color : undefined
+              } : undefined}
+              data-state={selectedExamType === 'year' ? 'active' : 'inactive'}
             >
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Exam par Year</span>
@@ -360,7 +401,11 @@ const SubjectsPage = () => {
             </TabsTrigger>
             <TabsTrigger
               value="course"
-              className="flex items-center gap-2 py-3 data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
+              style={module.color ? {
+                backgroundColor: selectedExamType === 'course' ? module.color : undefined
+              } : undefined}
+              data-state={selectedExamType === 'course' ? 'active' : 'inactive'}
             >
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">Par Cours</span>
@@ -373,7 +418,11 @@ const SubjectsPage = () => {
             </TabsTrigger>
             <TabsTrigger
               value="qcm"
-              className="flex items-center gap-2 py-3 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
+              style={module.color ? {
+                backgroundColor: selectedExamType === 'qcm' ? module.color : undefined
+              } : undefined}
+              data-state={selectedExamType === 'qcm' ? 'active' : 'inactive'}
             >
               <Library className="h-4 w-4" />
               <span className="hidden sm:inline">QCM Banque</span>
@@ -397,7 +446,11 @@ const SubjectsPage = () => {
                       variant={selectedCategory === cat.id ? "default" : "outline"}
                       size="sm"
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={selectedCategory === cat.id ? "bg-orange-500 hover:bg-orange-600" : ""}
+                      style={module.color && selectedCategory === cat.id ? {
+                        backgroundColor: module.color,
+                        borderColor: module.color
+                      } : undefined}
+                      className={selectedCategory === cat.id && !module.color ? "bg-orange-500 hover:bg-orange-600" : ""}
                     >
                       {cat.name}
                     </Button>
@@ -408,30 +461,53 @@ const SubjectsPage = () => {
           )}
 
           {/* Stats Summary */}
-          <Card className="mt-4">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center">
-                    <FileQuestion className="h-5 w-5 text-blue-600" />
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Total Questions Card */}
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
+                    style={module.color ? {
+                      backgroundColor: `${module.color}20`
+                    } : undefined}
+                  >
+                    <FileQuestion 
+                      className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
+                      style={module.color ? { color: module.color } : undefined}
+                    />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Questions</p>
-                    <p className="text-xl font-bold">{totalQuestions}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Total Questions</p>
+                    <p className="text-3xl font-bold text-gray-900">{totalQuestions}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center">
-                    <GraduationCap className="h-5 w-5 text-green-600" />
+              </CardContent>
+            </Card>
+
+            {/* Examens Card */}
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
+                    style={module.color ? {
+                      backgroundColor: `${module.color}15`
+                    } : undefined}
+                  >
+                    <GraduationCap 
+                      className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
+                      style={module.color ? { color: module.color } : undefined}
+                    />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Examens</p>
-                    <p className="text-xl font-bold">{currentExams.length}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Examens</p>
+                    <p className="text-3xl font-bold text-gray-900">{currentExams.length}</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Exam Lists */}
           <div className="mt-4">
@@ -443,6 +519,7 @@ const SubjectsPage = () => {
                     exam={exam}
                     onStart={handleStartExam}
                     index={index}
+                    moduleColor={module?.color}
                   />
                 ))}
               </div>
@@ -468,6 +545,7 @@ const SubjectsPage = () => {
                     exam={exam}
                     onStart={handleStartExam}
                     index={index}
+                    moduleColor={module?.color}
                   />
                 ))}
               </div>
@@ -498,6 +576,7 @@ const SubjectsPage = () => {
                     exam={exam}
                     onStart={handleStartExam}
                     index={index}
+                    moduleColor={module?.color}
                   />
                 ))}
               </div>

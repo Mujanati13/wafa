@@ -63,6 +63,7 @@ import SubAdminPage from "./pages/SubAdminPage";
 import AdminPaypalSettings from "./pages/AdminPaypalSettings";
 import LandingPageAdmin from "./pages/LandingPageAdmin";
 import PrivacyPolicyAdmin from "./pages/PrivacyPolicyAdmin";
+import ContactMessagesAdmin from "./pages/ContactMessagesAdmin";
 import StatisticsPage from "./pages/StatisticsPage";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminLogin from "./components/auth/AdminLogin";
@@ -147,6 +148,7 @@ export default function App() {
           <Route path="paypal-settings" element={<AdminPaypalSettings />} />
           <Route path="landing-settings" element={<LandingPageAdmin />} />
           <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
+          <Route path="contact-messages" element={<ContactMessagesAdmin />} />
         </Route>
         <Route path="/exam/:examId" element={<ExamPage />} />
 

@@ -1,6 +1,8 @@
 import asyncHandler from "../handlers/asyncHandler.js";
 import QuestionModel from "../models/questionModule.js";
 import ExamParYear from "../models/examParYearModel.js";
+import UserModel from "../models/userModel.js";
+import PointModel from "../models/pointModel.js";
 
 export const questionController = {
     create: asyncHandler(async (req, res) => {
@@ -273,5 +275,205 @@ export const questionController = {
             message: `Images attachées à ${updatedCount} question(s)`,
             updatedCount
         });
+    }),
+
+    // Community vote - submit a vote for a question
+    submitCommunityVote: asyncHandler(async (req, res) => {
+        const { questionId } = req.params;
+        const { selectedOptions } = req.body;
+        const userId = req.user._id;
+
+        if (!selectedOptions || !Array.isArray(selectedOptions) || selectedOptions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Veuillez sélectionner au moins une réponse"
+            });
+        }
+
+        const question = await QuestionModel.findById(questionId);
+        if (!question) {
+            return res.status(404).json({
+                success: false,
+                message: "Question non trouvée"
+            });
+        }
+
+        // Check if user already voted
+        const existingVoteIndex = question.communityVotes.findIndex(
+            v => v.userId.toString() === userId.toString()
+        );
+
+        if (existingVoteIndex !== -1) {
+            // Update existing vote
+            question.communityVotes[existingVoteIndex].selectedOptions = selectedOptions;
+            question.communityVotes[existingVoteIndex].votedAt = new Date();
+        } else {
+            // Add new vote
+            question.communityVotes.push({
+                userId,
+                selectedOptions,
+                hasExplanation: false,
+                explanationApproved: false,
+                voteWeight: 1,
+                votedAt: new Date()
+            });
+        }
+
+        // Recalculate vote stats
+        const optionVotes = {};
+        let totalVotes = 0;
+
+        question.communityVotes.forEach(vote => {
+            vote.selectedOptions.forEach(optIndex => {
+                const letter = String.fromCharCode(65 + optIndex);
+                const weight = vote.voteWeight || 1;
+                optionVotes[letter] = (optionVotes[letter] || 0) + weight;
+                totalVotes += weight;
+            });
+        });
+
+        question.voteStats = {
+            totalVotes,
+            optionVotes
+        };
+
+        await question.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Vote enregistré avec succès",
+            data: {
+                voteStats: question.voteStats,
+                userVote: selectedOptions
+            }
+        });
+    }),
+
+    // Get community vote stats for a question
+    getCommunityVotes: asyncHandler(async (req, res) => {
+        const { questionId } = req.params;
+        const userId = req.user?._id;
+
+        const question = await QuestionModel.findById(questionId)
+            .select('options communityVotes voteStats text');
+
+        if (!question) {
+            return res.status(404).json({
+                success: false,
+                message: "Question non trouvée"
+            });
+        }
+
+        // Find user's vote if exists
+        let userVote = null;
+        if (userId) {
+            const userVoteData = question.communityVotes.find(
+                v => v.userId.toString() === userId.toString()
+            );
+            if (userVoteData) {
+                userVote = {
+                    selectedOptions: userVoteData.selectedOptions,
+                    hasExplanation: userVoteData.hasExplanation,
+                    explanationApproved: userVoteData.explanationApproved,
+                    voteWeight: userVoteData.voteWeight
+                };
+            }
+        }
+
+        // Calculate correct answer percentage
+        let correctVotes = 0;
+        const correctIndices = question.options
+            .map((opt, i) => opt.isCorrect ? i : -1)
+            .filter(i => i !== -1);
+
+        correctIndices.forEach(idx => {
+            const letter = String.fromCharCode(65 + idx);
+            correctVotes += question.voteStats?.optionVotes?.get?.(letter) || 
+                           question.voteStats?.optionVotes?.[letter] || 0;
+        });
+
+        const totalVotes = question.voteStats?.totalVotes || 0;
+        const correctPercentage = totalVotes > 0 
+            ? ((correctVotes / totalVotes) * 100).toFixed(1) 
+            : 0;
+
+        res.status(200).json({
+            success: true,
+            data: {
+                questionText: question.text,
+                options: question.options,
+                voteStats: {
+                    totalVotes: question.voteStats?.totalVotes || 0,
+                    optionVotes: question.voteStats?.optionVotes || {}
+                },
+                correctPercentage,
+                userVote,
+                totalVoters: question.communityVotes.length
+            }
+        });
+    }),
+
+    // Mark that user added explanation (called from explanation controller)
+    markVoteWithExplanation: asyncHandler(async (questionId, userId) => {
+        const question = await QuestionModel.findById(questionId);
+        if (!question) return false;
+
+        const voteIndex = question.communityVotes.findIndex(
+            v => v.userId.toString() === userId.toString()
+        );
+
+        if (voteIndex !== -1) {
+            question.communityVotes[voteIndex].hasExplanation = true;
+            await question.save();
+            return true;
+        }
+        return false;
+    }),
+
+    // Approve explanation and multiply vote weight (called when explanation is approved)
+    approveVoteExplanation: asyncHandler(async (questionId, userId) => {
+        const question = await QuestionModel.findById(questionId);
+        if (!question) return false;
+
+        const voteIndex = question.communityVotes.findIndex(
+            v => v.userId.toString() === userId.toString()
+        );
+
+        if (voteIndex !== -1) {
+            question.communityVotes[voteIndex].explanationApproved = true;
+            question.communityVotes[voteIndex].voteWeight = 20; // Multiply by 20
+
+            // Recalculate vote stats
+            const optionVotes = {};
+            let totalVotes = 0;
+
+            question.communityVotes.forEach(vote => {
+                vote.selectedOptions.forEach(optIndex => {
+                    const letter = String.fromCharCode(65 + optIndex);
+                    const weight = vote.voteWeight || 1;
+                    optionVotes[letter] = (optionVotes[letter] || 0) + weight;
+                    totalVotes += weight;
+                });
+            });
+
+            question.voteStats = {
+                totalVotes,
+                optionVotes
+            };
+
+            await question.save();
+
+            // Award blue point to user
+            await PointModel.create({
+                userId,
+                points: 1,
+                type: 'bluePoints',
+                reason: 'Explication approuvée pour la communauté',
+                questionId
+            });
+
+            return true;
+        }
+        return false;
     })
 };

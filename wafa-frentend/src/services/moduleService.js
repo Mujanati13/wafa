@@ -1,15 +1,70 @@
 import { api } from "@/lib/utils";
 
+// Module cache
+let moduleCache = null;
+let moduleCacheTime = null;
+const MODULE_CACHE_EXPIRY = 60000; // 1 minute cache
+let pendingModuleRequest = null;
+
 export const moduleService = {
-    // Get all modules
-    getAllmodules: async () => {
+    // Get all modules with caching
+    getAllmodules: async (forceRefresh = false) => {
         try {
-            const response = await api.get("/modules");
-            return response;
+            const now = Date.now();
+
+            // Return cached data if valid
+            if (!forceRefresh && 
+                moduleCache && 
+                moduleCacheTime && 
+                (now - moduleCacheTime) < MODULE_CACHE_EXPIRY) {
+                return { data: moduleCache };
+            }
+
+            // If there's already a pending request, wait for it
+            if (pendingModuleRequest) {
+                return pendingModuleRequest;
+            }
+
+            // Try localStorage first for instant display
+            if (!forceRefresh) {
+                const cached = localStorage.getItem('modules');
+                if (cached) {
+                    const parsedCache = JSON.parse(cached);
+                    // Return cached immediately but still fetch in background
+                    moduleCache = { data: parsedCache };
+                    moduleCacheTime = now;
+                }
+            }
+
+            // Create the request
+            pendingModuleRequest = (async () => {
+                const response = await api.get("/modules");
+                moduleCache = response.data;
+                moduleCacheTime = Date.now();
+                localStorage.setItem("modules", JSON.stringify(response.data.data));
+                return response;
+            })();
+
+            const result = await pendingModuleRequest;
+            pendingModuleRequest = null;
+            return result;
         } catch (error) {
+            pendingModuleRequest = null;
             console.error('Error fetching all modules:', error);
+            
+            // Return cached data as fallback
+            const cached = localStorage.getItem('modules');
+            if (cached) {
+                return { data: { data: JSON.parse(cached) } };
+            }
             throw error;
         }
+    },
+
+    // Clear module cache
+    clearCache: () => {
+        moduleCache = null;
+        moduleCacheTime = null;
     },
 
     // Get module by ID

@@ -31,7 +31,7 @@ const SettingsPage = () => {
     currentYear: '1ère année',
     emailNotifications: true,
     pushNotifications: false,
-    profileVisibility: 'public',
+    profileVisibility: 'private',
     shareProgress: true,
     twoFactorAuth: false,
   });

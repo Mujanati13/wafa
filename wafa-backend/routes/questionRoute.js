@@ -23,6 +23,10 @@ router.get("/export", isAuthenticated, isAdmin, questionController.exportToExcel
 router.post("/upload-images", isAuthenticated, isAdmin, uploadQuestionImages, questionController.uploadImages);
 router.post("/attach-images", isAuthenticated, isAdmin, questionController.attachImagesToQuestions);
 
+// Community voting endpoints
+router.post("/community-vote/:questionId", isAuthenticated, questionController.submitCommunityVote);
+router.get("/community-votes/:questionId", isAuthenticated, questionController.getCommunityVotes);
+
 export default router;
 
 

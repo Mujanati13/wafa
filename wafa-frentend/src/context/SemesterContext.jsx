@@ -4,15 +4,34 @@ import { userService } from '@/services/userService';
 const SemesterContext = createContext();
 
 export const SemesterProvider = ({ children }) => {
-    const [selectedSemester, setSelectedSemester] = useState(null);
-    const [userSemesters, setUserSemesters] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Initialize from localStorage for instant display
+    const [selectedSemester, setSelectedSemester] = useState(() => {
+        const cached = localStorage.getItem('userProfile');
+        if (cached) {
+            const user = JSON.parse(cached);
+            return user.semesters?.[0] || null;
+        }
+        return null;
+    });
+    const [userSemesters, setUserSemesters] = useState(() => {
+        const cached = localStorage.getItem('userProfile');
+        if (cached) {
+            const user = JSON.parse(cached);
+            return user.semesters || [];
+        }
+        return [];
+    });
+    const [loading, setLoading] = useState(false);
 
     // Fetch user profile to get subscribed semesters
     useEffect(() => {
         const fetchUserSemesters = async () => {
             try {
-                setLoading(true);
+                // Only show loading if we don't have cached data
+                if (userSemesters.length === 0) {
+                    setLoading(true);
+                }
+                
                 const userProfile = await userService.getUserProfile();
                 const semesters = userProfile.semesters || [];
                 setUserSemesters(semesters);
@@ -26,16 +45,7 @@ export const SemesterProvider = ({ children }) => {
                 localStorage.setItem("user", JSON.stringify(userProfile));
             } catch (error) {
                 console.error("Error fetching user semesters:", error);
-                // Fallback to localStorage
-                const storedUser = localStorage.getItem("user");
-                if (storedUser) {
-                    const user = JSON.parse(storedUser);
-                    const semesters = user.semesters || [];
-                    setUserSemesters(semesters);
-                    if (semesters.length > 0 && !selectedSemester) {
-                        setSelectedSemester(semesters[0]);
-                    }
-                }
+                // Fallback to localStorage - already initialized above
             } finally {
                 setLoading(false);
             }

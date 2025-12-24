@@ -261,7 +261,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
                   <Separator className="my-2" />
 
-                  {/* Group: Modules - Grouped by Semester */}
+                  {/* Group: Modules - Display directly without semester grouping */}
                   <CollapsibleSection
                     id="modules"
                     title={t('dashboard:modules')}
@@ -285,32 +285,17 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                         </div>
                       )
                     ) : (
-                      sortedSemesters.map((semester) => (
-                        <CollapsibleSection
-                          key={semester}
-                          id={`semester-${semester}`}
-                          title={semester}
-                          count={modulesBySemester[semester].length}
-                          isOpen={openGroups[`semester-${semester}`]}
-                          forceOpen={!sidebarOpen}
-                          onToggle={() => toggleGroup(`semester-${semester}`)}
+                      filteredModules.map((module) => (
+                        <SidebarItem
+                          key={module._id}
+                          item={createModuleSidebarItem(module)}
+                          activeTab={activeTab}
+                          setActiveTab={setActiveTab}
+                          navigate={navigate}
+                          isMobile={isMobile}
                           sidebarOpen={sidebarOpen}
-                          icon={GraduationCap}
-                        >
-                          {modulesBySemester[semester].map((module) => (
-                            <SidebarItem
-                              key={module._id}
-                              item={createModuleSidebarItem(module)}
-                              activeTab={activeTab}
-                              setActiveTab={setActiveTab}
-                              navigate={navigate}
-                              isMobile={isMobile}
-                              sidebarOpen={sidebarOpen}
-                              setSidebarOpen={setSidebarOpen}
-                              extraClassName={sidebarOpen ? "pl-4" : ""}
-                            />
-                          ))}
-                        </CollapsibleSection>
+                          setSidebarOpen={setSidebarOpen}
+                        />
                       ))
                     )}
                   </CollapsibleSection>

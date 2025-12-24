@@ -26,6 +26,7 @@ import {
   Bell,
   Shield,
   Layout,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -273,6 +274,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           label: t('admin:sub_admins', 'Sous-admins'),
           icon: Shield,
           path: "/admin/sub-admins",
+        },
+        {
+          id: "contactMessages",
+          label: t('admin:contact_messages', 'Messages de Contact'),
+          icon: MessageCircle,
+          path: "/admin/contact-messages",
         },
         {
           id: "landingSettings",

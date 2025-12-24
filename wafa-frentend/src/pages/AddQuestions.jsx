@@ -562,6 +562,32 @@ const AddQuestions = () => {
                 </div>
               )}
             </div>
+
+            {/* Export and Delete buttons - Only show when context is selected */}
+            {hasContextSelected && (
+              <div className="flex flex-wrap gap-3 pt-4 mt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportToExcel}
+                  disabled={examQuestions.length === 0}
+                  className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Exporter {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeleteAllQuestions}
+                  disabled={examQuestions.length === 0}
+                  className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -694,53 +720,79 @@ const AddQuestions = () => {
 
             {/* Filters - Only show when no context is selected */}
             {!hasContextSelected && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filtrer par Module</Label>
-                  <Select value={filterModule} onValueChange={setFilterModule}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tous les modules" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les modules</SelectItem>
-                      {modules.map((m) => (
-                        <SelectItem key={m._id} value={m._id}>
-                          {m.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filtrer par Module</Label>
+                    <Select value={filterModule} onValueChange={setFilterModule}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les modules" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les modules</SelectItem>
+                        {modules.map((m) => (
+                          <SelectItem key={m._id} value={m._id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
+                    <Select value={filterExamType} onValueChange={setFilterExamType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les types</SelectItem>
+                        <SelectItem value="years">Exam par années</SelectItem>
+                        <SelectItem value="courses">Exam par courses</SelectItem>
+                        <SelectItem value="tp">Exam TP</SelectItem>
+                        <SelectItem value="qcm">Exam QCM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 flex items-end">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setFilterModule("all");
+                        setFilterExamType("all");
+                      }}
+                    >
+                      Réinitialiser les filtres
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
-                  <Select value={filterExamType} onValueChange={setFilterExamType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tous les types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les types</SelectItem>
-                      <SelectItem value="years">Exam par années</SelectItem>
-                      <SelectItem value="courses">Exam par courses</SelectItem>
-                      <SelectItem value="tp">Exam TP</SelectItem>
-                      <SelectItem value="qcm">Exam QCM</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 flex items-end">
+                {/* Export and Delete buttons for filtered questions */}
+                <div className="flex flex-wrap gap-3 pt-4 border-t mt-4">
                   <Button
                     variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setFilterModule("all");
-                      setFilterExamType("all");
-                    }}
+                    size="sm"
+                    onClick={handleExportToExcel}
+                    disabled={examQuestions.length === 0}
+                    className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
                   >
-                    Réinitialiser les filtres
+                    <FileSpreadsheet className="h-4 w-4" />
+                    Exporter {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteAllQuestions}
+                    disabled={examQuestions.length === 0}
+                    className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Supprimer {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
                   </Button>
                 </div>
-              </div>
+              </>
             )}
           </CardHeader>
           <CardContent className="p-0">
@@ -762,7 +814,7 @@ const AddQuestions = () => {
                     <TableHead>Option C</TableHead>
                     <TableHead>Option D</TableHead>
                     <TableHead>Option E</TableHead>
-                    <TableHead>Level</TableHead>
+                    <TableHead>Insert</TableHead>
                     <TableHead className="text-right">Operate</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -34,6 +34,47 @@ const questionSchema = new mongoose.Schema(
         sessionLabel: {
             type: String,
             required: true
+        },
+        // Community voting system
+        communityVotes: [
+            {
+                userId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                    required: true
+                },
+                selectedOptions: [{
+                    type: Number // Index of selected options (0-based)
+                }],
+                hasExplanation: {
+                    type: Boolean,
+                    default: false
+                },
+                explanationApproved: {
+                    type: Boolean,
+                    default: false
+                },
+                voteWeight: {
+                    type: Number,
+                    default: 1 // 1 for normal vote, 20 if explanation is approved
+                },
+                votedAt: {
+                    type: Date,
+                    default: Date.now
+                }
+            }
+        ],
+        // Aggregated vote counts per option (for quick access)
+        voteStats: {
+            totalVotes: {
+                type: Number,
+                default: 0
+            },
+            optionVotes: {
+                type: Map,
+                of: Number,
+                default: {}
+            }
         }
     },
     { timestamps: true }

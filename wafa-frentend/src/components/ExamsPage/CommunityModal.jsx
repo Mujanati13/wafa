@@ -1,59 +1,143 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Users, Lock, Check } from "lucide-react";
+import { X, Users, Lock, Check, Loader2 } from "lucide-react";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
-const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctAnswer, userLevel = 0, requiredLevel = 20 }) => {
+const CommunityModal = ({ 
+  isOpen, 
+  onClose, 
+  questionId,
+  questionText,
+  questionOptions, 
+  userLevel = 0, 
+  requiredLevel = 20,
+  moduleColor = "#6366f1",
+  onOpenExplanation
+}) => {
+  const [selectedOptions, setSelectedOptions] = useState([]);
   const [userVote, setUserVote] = useState(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [stats, setStats] = useState({
     totalVotes: 0,
     optionVotes: {},
+    correctPercentage: 0,
+    totalVoters: 0
   });
 
   const canVote = userLevel >= requiredLevel;
 
-  useEffect(() => {
-    if (isOpen && questionOptions) {
-      // Generate mock stats based on number of options
-      const mockVotes = {};
-      let total = 0;
-      questionOptions.forEach((opt, index) => {
-        const letter = String.fromCharCode(65 + index);
-        const votes = opt.isCorrect ? Math.floor(Math.random() * 100) + 100 : Math.floor(Math.random() * 50);
-        mockVotes[letter] = votes;
-        total += votes;
-      });
+  // Helper function to darken/lighten color
+  const adjustColor = (color, amount) => {
+    if (!color) return '#6366f1';
+    const hex = color.replace('#', '');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+  };
 
-      setStats({
-        totalVotes: total,
-        optionVotes: mockVotes,
-      });
+  // Fetch existing votes
+  const fetchVotes = useCallback(async () => {
+    if (!questionId) return;
+    
+    try {
+      setLoading(true);
+      const response = await api.get(`questions/community-votes/${questionId}`);
+      if (response.data.success) {
+        const data = response.data.data;
+        setStats({
+          totalVotes: data.voteStats.totalVotes || 0,
+          optionVotes: data.voteStats.optionVotes || {},
+          correctPercentage: data.correctPercentage || 0,
+          totalVoters: data.totalVoters || 0
+        });
+        
+        if (data.userVote) {
+          setUserVote(data.userVote);
+          setSelectedOptions(data.userVote.selectedOptions || []);
+          setHasVoted(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching votes:", error);
+      // Use mock data if API fails
+      if (questionOptions) {
+        const mockVotes = {};
+        let total = 0;
+        questionOptions.forEach((opt, index) => {
+          const letter = String.fromCharCode(65 + index);
+          const votes = opt.isCorrect ? Math.floor(Math.random() * 100) + 100 : Math.floor(Math.random() * 50);
+          mockVotes[letter] = votes;
+          total += votes;
+        });
+        setStats({
+          totalVotes: total,
+          optionVotes: mockVotes,
+          correctPercentage: 0,
+          totalVoters: Math.floor(total / 1.5)
+        });
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [isOpen, questionOptions]);
+  }, [questionId, questionOptions]);
 
-  const handleVote = (option) => {
-    if (!canVote) return;
-    setUserVote(option);
-    // Send vote to backend
-  };
+  useEffect(() => {
+    if (isOpen) {
+      fetchVotes();
+      setSelectedOptions([]);
+      setHasVoted(false);
+    }
+  }, [isOpen, fetchVotes]);
 
-  const getPercentage = (option) => {
-    if (stats.totalVotes === 0) return 0;
-    return ((stats.optionVotes[option] / stats.totalVotes) * 100).toFixed(1);
-  };
-
-  const correctPercentage = () => {
-    if (!questionOptions || stats.totalVotes === 0) return 0;
-    let correctVotes = 0;
-    questionOptions.forEach((opt, index) => {
-      if (opt.isCorrect) {
-        const letter = String.fromCharCode(65 + index);
-        correctVotes += stats.optionVotes[letter] || 0;
+  const toggleOption = (index) => {
+    if (!canVote || hasVoted) return;
+    
+    setSelectedOptions(prev => {
+      if (prev.includes(index)) {
+        return prev.filter(i => i !== index);
+      } else {
+        return [...prev, index];
       }
     });
-    return ((correctVotes / stats.totalVotes) * 100).toFixed(1);
   };
 
-  const options = questionOptions ? questionOptions.map((_, i) => String.fromCharCode(65 + i)) : [];
+  const handleConfirmVote = async () => {
+    if (!canVote || selectedOptions.length === 0) return;
+
+    try {
+      setSubmitting(true);
+      const response = await api.post(`questions/community-vote/${questionId}`, {
+        selectedOptions
+      });
+
+      if (response.data.success) {
+        setHasVoted(true);
+        setUserVote({ selectedOptions });
+        toast.success("Vote enregistré avec succès!");
+        
+        // Update stats
+        if (response.data.data.voteStats) {
+          setStats(prev => ({
+            ...prev,
+            totalVotes: response.data.data.voteStats.totalVotes,
+            optionVotes: response.data.data.voteStats.optionVotes
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+      toast.error("Erreur lors de l'enregistrement du vote");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const options = questionOptions || [];
 
   return (
     <AnimatePresence>
@@ -69,11 +153,16 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-4 text-white">
+            {/* Header with module color */}
+            <div 
+              className="p-4 text-white shrink-0"
+              style={{
+                background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+              }}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -84,7 +173,7 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
                       Vote de la communauté
                     </h3>
                     <p className="text-sm text-white/80">
-                      {stats.totalVotes} votes
+                      {stats.totalVoters} votes
                     </p>
                   </div>
                 </div>
@@ -97,124 +186,144 @@ const CommunityModal = ({ isOpen, onClose, questionId, questionOptions, correctA
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 overflow-y-auto flex-1">
               {/* Level requirement warning */}
               {!canVote && (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
-                  <Lock className="h-5 w-5 text-amber-500 shrink-0" />
-                  <p className="text-sm text-amber-700">
-                    Vous devez atteindre <strong>{requiredLevel}%</strong> de progression dans ce module pour voter.
-                    Niveau actuel: <strong>{userLevel}%</strong>
-                  </p>
-                </div>
-              )}
-
-              {/* Options with vote stats */}
-              <div className="space-y-3">
-                {options.map((option, index) => {
-                  const percentage = getPercentage(option);
-                  const isCorrect = questionOptions[index]?.isCorrect;
-                  const isUserVote = userVote === option;
-
-                  return (
-                    <button
-                      key={option}
-                      onClick={() => handleVote(option)}
-                      disabled={!canVote}
-                      className={`relative w-full overflow-hidden rounded-xl border-2 transition-all ${isCorrect
-                          ? "border-emerald-500 bg-emerald-50"
-                          : isUserVote
-                            ? "border-teal-500 bg-teal-50"
-                            : "border-gray-200 bg-white hover:border-gray-300"
-                        } ${!canVote ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
-                    >
-                      {/* Progress bar background */}
-                      <div
-                        className={`absolute inset-0 transition-all duration-500 ${isCorrect
-                            ? "bg-emerald-200/50"
-                            : "bg-teal-200/30"
-                          }`}
-                        style={{ width: `${percentage}%` }}
-                      />
-
-                      <div className="relative flex items-center justify-between p-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${isCorrect
-                                ? "bg-emerald-500 text-white"
-                                : isUserVote
-                                  ? "bg-teal-500 text-white"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
-                          >
-                            {isCorrect ? <Check className="h-4 w-4" /> : option}
-                          </div>
-                          <div className="text-left">
-                            <p className="font-medium text-gray-800 text-sm">
-                              Option {option}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {stats.optionVotes[option] || 0} votes
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-gray-700">
-                            {percentage}%
-                          </span>
-                          {isCorrect && (
-                            <div className="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-semibold">
-                              Correct
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Summary */}
-              <div className="mt-5 p-4 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl border border-teal-100">
-                <p className="text-sm text-gray-700 text-center">
-                  💡 <strong>{correctPercentage()}%</strong> de la communauté a choisi la bonne réponse
-                </p>
-              </div>
-
-              {/* User vote info */}
-              {userVote && (
-                <div className="mt-3 p-3 bg-teal-50 border border-teal-200 rounded-lg text-center">
-                  <p className="text-sm text-teal-700">
-                    Tu as voté pour <strong className="text-teal-800">{userVote}</strong> comme réponse juste
-                  </p>
-                </div>
-              )}
-
-              {/* Vote multiplier info */}
-              <div className="mt-4 space-y-2">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    💎 Si tu veux ajouter à votre vote une forte valeur (comme si 20 personnes a voté votre choix),
-                    <strong> ajouté un explication</strong>.
-                  </p>
-                </div>
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-700">
-                    🎯 En plus tu vas <strong>gagner un point bleu</strong> si ton explication est approuvée!
-                  </p>
-                </div>
-              </div>
-
-              {/* Explanation button */}
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                <div 
+                  className="mb-4 p-3 rounded-lg flex items-start gap-3"
+                  style={{
+                    backgroundColor: `${moduleColor}10`,
+                    border: `1px solid ${moduleColor}30`
+                  }}
                 >
-                  explication
-                </button>
-              </div>
+                  <Lock className="h-5 w-5 shrink-0 mt-0.5" style={{ color: moduleColor }} />
+                  <p className="text-sm" style={{ color: adjustColor(moduleColor, -60) }}>
+                    Tu dois atteindre <strong>{requiredLevel}%</strong> de niveau dans un module pour que tu peux voter dans les questions de ce module.
+                    <br />
+                    <span className="text-gray-500">Niveau actuel: <strong>{userLevel}%</strong></span>
+                  </p>
+                </div>
+              )}
+
+              {/* Question text */}
+              {questionText && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-800 font-medium">
+                    {questionText}
+                  </p>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: moduleColor }} />
+                </div>
+              ) : (
+                <>
+                  {/* Options with checkboxes */}
+                  <div className="space-y-2">
+                    {options.map((option, index) => {
+                      const isSelected = selectedOptions.includes(index);
+                      const letter = String.fromCharCode(65 + index);
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => toggleOption(index)}
+                          disabled={!canVote || hasVoted}
+                          className={`w-full overflow-hidden rounded-lg border-2 transition-all text-left ${
+                            !canVote || hasVoted ? "cursor-default" : "cursor-pointer hover:border-gray-300"
+                          }`}
+                          style={{
+                            borderColor: isSelected ? moduleColor : '#E5E7EB',
+                            backgroundColor: isSelected ? `${moduleColor}08` : 'white'
+                          }}
+                        >
+                          <div className="flex items-center gap-3 p-3">
+                            {/* Checkbox */}
+                            <div 
+                              className="w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-all"
+                              style={{
+                                borderColor: isSelected ? moduleColor : '#D1D5DB',
+                                backgroundColor: isSelected ? moduleColor : 'white'
+                              }}
+                            >
+                              {isSelected && (
+                                <Check className="h-4 w-4 text-white" />
+                              )}
+                            </div>
+
+                            {/* Option letter */}
+                            <span className="font-semibold text-gray-700">
+                              {letter}-
+                            </span>
+
+                            {/* Option text */}
+                            <span className="text-sm text-gray-700 flex-1">
+                              {option.text}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Confirm button */}
+                  {canVote && !hasVoted && (
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        onClick={handleConfirmVote}
+                        disabled={selectedOptions.length === 0 || submitting}
+                        className="px-6 py-2 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        confirmer
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Vote confirmed message */}
+                  {hasVoted && (
+                    <div 
+                      className="mt-4 p-3 rounded-lg text-center"
+                      style={{
+                        backgroundColor: `${moduleColor}10`,
+                        border: `1px solid ${moduleColor}30`
+                      }}
+                    >
+                      <p className="text-sm" style={{ color: adjustColor(moduleColor, -40) }}>
+                        ✓ Tu as voté pour <strong>{selectedOptions.map(i => String.fromCharCode(65 + i)).join(', ')}</strong> comme réponse juste
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Explanation info */}
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Si tu veux ajouter à votre vote une forte valeur (comme si 20 personnes a voté votre choix), 
+                      <strong> ajouté un explication</strong>.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Et en plus tu vas <span style={{ color: moduleColor }}>gagner un point bleu</span>.
+                    </p>
+                  </div>
+
+                  {/* Explanation button */}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onOpenExplanation) {
+                          onOpenExplanation();
+                        }
+                      }}
+                      className="px-6 py-2 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      explication
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </motion.div>

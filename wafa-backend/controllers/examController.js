@@ -63,8 +63,8 @@ export const examController = {
         });
     }),
     getAll: asyncHandler(async (req, res) => {
-        // Get all exams and populate related module name
-        const exams = await examModel.find().populate('moduleId', 'name').lean();
+        // Get all exams and populate related module name and color
+        const exams = await examModel.find().populate('moduleId', 'name color').lean();
         // For each exam, get its related questions
         const examIds = exams.map(e => e._id);
         // Assuming QuestionModel has a field 'examId' referencing exam
@@ -82,6 +82,7 @@ export const examController = {
         const examsWithQuestions = exams.map(exam => ({
             ...exam,
             moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
+            moduleColor: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.color : '#6366f1',
             questions: questionsByExam[exam._id.toString()] || []
         }));
 
@@ -94,7 +95,7 @@ export const examController = {
         const { id } = req.params;
 
         // Find exam
-        const exam = await examModel.findById(id).populate('moduleId', 'name').lean();
+        const exam = await examModel.findById(id).populate('moduleId', 'name color').lean();
         if (!exam) {
             return res.status(404).json({
                 success: false,
@@ -121,6 +122,10 @@ export const examController = {
                     typeof exam.moduleId === 'object' && exam.moduleId !== null
                         ? exam.moduleId.name
                         : undefined,
+                moduleColor:
+                    typeof exam.moduleId === 'object' && exam.moduleId !== null
+                        ? exam.moduleId.color
+                        : '#6366f1',
                 totalQuestions: questions.length,
                 questions: groupedQuestions,
             }

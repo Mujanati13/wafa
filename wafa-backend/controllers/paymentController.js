@@ -58,14 +58,31 @@ const PRICING = {
 const createOrder = asyncHandler(async (req, res) => {
   const { duration, semesters, planId } = req.body;
 
-  // Check if PayPal is configured
+  // Force refresh settings from database (clear cache)
+  clearPaypalSettingsCache();
   const settings = await getPaypalSettings();
+  
   const clientId = settings?.clientId || process.env.PAYPAL_CLIENT_ID;
   const clientSecret = settings?.clientSecret || process.env.PAYPAL_CLIENT_SECRET;
+  const mode = settings?.mode || process.env.PAYPAL_MODE || "sandbox";
 
-  if (!clientId || !clientSecret) {
+  console.log("PayPal Configuration:", {
+    hasSettings: !!settings,
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+    mode,
+    clientIdLength: clientId?.length,
+    isActive: settings?.isActive
+  });
+
+  // Check if credentials are placeholder values
+  if (!clientId || !clientSecret || 
+      clientId === 'your_paypal_client_id' || 
+      clientSecret === 'your_paypal_client_secret' ||
+      clientId.trim() === '' || 
+      clientSecret.trim() === '') {
     res.status(400);
-    throw new Error("PayPal n'est pas configuré. Veuillez contacter l'administrateur.");
+    throw new Error("PayPal n'est pas configuré correctement. L'administrateur doit configurer les identifiants PayPal dans les paramètres.");
   }
 
   if (settings && !settings.isActive) {
@@ -146,12 +163,25 @@ const createOrder = asyncHandler(async (req, res) => {
       transactionId: transaction._id,
     });
   } catch (error) {
+    console.error("PayPal Order Creation Error:", {
+      message: error.message,
+      details: error.response?.body || error.response || error
+    });
+
     transaction.status = "failed";
     transaction.errorMessage = error.message;
     await transaction.save();
 
+    // Provide more helpful error messages
+    let errorMessage = error.message;
+    if (error.message.includes('invalid_client') || error.message.includes('Client Authentication failed')) {
+      errorMessage = "Les identifiants PayPal sont invalides. Vérifiez que vous avez copié correctement le Client ID et Client Secret depuis le tableau de bord PayPal Developer, et que vous utilisez le bon mode (Sandbox/Production).";
+    } else if (error.message.includes('AUTHENTICATION_FAILURE')) {
+      errorMessage = "Échec de l'authentification PayPal. Assurez-vous que vos identifiants correspondent au mode sélectionné (Sandbox ou Production).";
+    }
+
     res.status(500);
-    throw new Error("Error creating PayPal order: " + error.message);
+    throw new Error(errorMessage);
   }
 });
 

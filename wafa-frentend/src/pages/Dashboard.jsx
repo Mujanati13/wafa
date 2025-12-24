@@ -75,13 +75,26 @@ const Dashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch modules
-        const { data: modulesData } = await moduleService.getAllmodules();
-        localStorage.setItem("modules", JSON.stringify(modulesData.data));
+        // Try to show cached data immediately for instant display
+        const cachedModules = localStorage.getItem("modules");
+        const cachedUser = localStorage.getItem("userProfile");
+        
+        if (cachedModules) {
+          setCoursesData(JSON.parse(cachedModules));
+        }
+        if (cachedUser) {
+          setUser(JSON.parse(cachedUser));
+        }
+
+        // Fetch modules and user profile in parallel
+        const [modulesResponse, profileData] = await Promise.all([
+          moduleService.getAllmodules(),
+          dashboardService.getUserProfile()
+        ]);
+
+        const modulesData = modulesResponse.data;
         setCoursesData(modulesData.data);
 
-        // Fetch user profile
-        const profileData = await dashboardService.getUserProfile();
         const userData = profileData.data?.user || profileData.data;
         setUser(userData);
 
@@ -102,11 +115,13 @@ const Dashboard = () => {
       if (!semester) return;
 
       try {
-        // Fetch user stats filtered by semester
-        const statsData = await dashboardService.getUserStats(semester);
+        // Fetch stats and leaderboard in parallel for faster loading
+        const [statsData, leaderboardData] = await Promise.all([
+          dashboardService.getUserStats(semester),
+          dashboardService.getLeaderboardRank(semester)
+        ]);
 
-        // Fetch user's rank (grouped by year - 2 semesters share same ranking)
-        const { rank } = await dashboardService.getLeaderboardRank(semester);
+        const { rank } = leaderboardData;
 
         // Transform module progress data from backend
         if (statsData.data.moduleProgress && statsData.data.moduleProgress.length > 0) {
@@ -452,20 +467,20 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {[...Array(8)].map((_, i) => (
                 <Card key={i} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <Skeleton className="h-32 w-full mb-4 rounded-lg" />
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full" />
+                  <CardContent className="p-4 sm:p-6">
+                    <Skeleton className="h-28 xs:h-32 sm:h-36 md:h-40 w-full mb-4 rounded-lg" />
+                    <Skeleton className="h-5 sm:h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-3 sm:h-4 w-full" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}

@@ -27,11 +27,15 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Initialize from localStorage for instant display
+    const cached = localStorage.getItem('userProfile');
+    return cached ? JSON.parse(cached) : null;
+  });
   const searchRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch user profile on mount
+  // Fetch user profile on mount (will use cache if available)
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -41,7 +45,13 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
         console.error('Failed to fetch user in TopBar:', error);
       }
     };
-    fetchUser();
+    // Only fetch if we don't have cached data
+    if (!user) {
+      fetchUser();
+    } else {
+      // Still refresh in background but don't block UI
+      fetchUser();
+    }
   }, []);
 
   const getUserInitials = () => {
