@@ -5,7 +5,12 @@ const questionSchema = new mongoose.Schema(
         examId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "ExamParYear",
-            required: true
+            required: false // Changed to false to support QCM Banque questions
+        },
+        qcmBanqueId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "QCMBanque",
+            required: false
         },
         text: {
             type: String,
@@ -33,7 +38,7 @@ const questionSchema = new mongoose.Schema(
         ],
         sessionLabel: {
             type: String,
-            required: true
+            required: false // Changed to false as it may not always be needed
         },
         // Community voting system
         communityVotes: [

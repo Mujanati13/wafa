@@ -1,11 +1,14 @@
-import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText } from "lucide-react";
-import React, { useState, useMemo, useRef } from "react";
+import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText, Loader2 } from "lucide-react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { api } from "@/lib/utils";
 
 const MAX_EXPLANATIONS = 3;
+const MAX_IMAGES = 5;
+const MAX_PDF = 1;
 
 const ExplicationModel = ({ question, setShowExplanation }) => {
   const [activeTab, setActiveTab] = useState("ai"); // 'ai' or 'user'
@@ -13,14 +16,59 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [submissionText, setSubmissionText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const fileInputRef = useRef(null);
+  const [uploadedImages, setUploadedImages] = useState([]); // Max 5 images
+  const [uploadedPdf, setUploadedPdf] = useState(null); // Max 1 PDF
+  const imageInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
+  
+  // State for fetched user explanations
+  const [fetchedExplanations, setFetchedExplanations] = useState([]);
+  const [loadingExplanations, setLoadingExplanations] = useState(false);
 
-  // Get user explanations (limit to 3)
+  // Fetch user explanations from API
+  useEffect(() => {
+    const fetchUserExplanations = async () => {
+      if (!question?._id) return;
+      
+      setLoadingExplanations(true);
+      try {
+        const response = await api.get(`/explanations/question/${question._id}`);
+        const explanations = response.data?.data || [];
+        // Filter to only approved explanations and map to proper format
+        const approvedExplanations = explanations
+          .filter(e => e.status === 'approved')
+          .map(e => ({
+            id: e._id,
+            text: e.contentText || "",
+            author: e.userId?.name || e.userId?.email || "Étudiant anonyme",
+            verified: true,
+            images: e.imageUrls || (e.imageUrl ? [e.imageUrl] : []),
+            pdfUrl: e.pdfUrl,
+            title: e.title
+          }));
+        setFetchedExplanations(approvedExplanations);
+      } catch (error) {
+        console.error("Error fetching explanations:", error);
+      } finally {
+        setLoadingExplanations(false);
+      }
+    };
+    
+    fetchUserExplanations();
+  }, [question?._id]);
+
+  // Combine fetched explanations with any from question prop
   const userExplanations = useMemo(() => {
-    const explanations = question?.userExplanations || [];
-    return explanations.slice(0, MAX_EXPLANATIONS);
-  }, [question]);
+    const propExplanations = question?.userExplanations || [];
+    // Merge and deduplicate
+    const allExplanations = [...fetchedExplanations];
+    propExplanations.forEach(e => {
+      if (!allExplanations.find(fe => fe.id === e.id)) {
+        allExplanations.push(e);
+      }
+    });
+    return allExplanations.slice(0, MAX_EXPLANATIONS);
+  }, [question?.userExplanations, fetchedExplanations]);
 
   // Check if user can add more explanations
   const canAddExplanation = userExplanations.length < MAX_EXPLANATIONS;
@@ -51,40 +99,90 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
     setIsSubmitting(true);
     try {
-      // TODO: API call to submit explanation with file
-      // const formData = new FormData();
-      // formData.append('text', submissionText);
-      // if (uploadedFile) formData.append('file', uploadedFile);
-      // await api.post(`/explanations/${question._id}`, formData);
+      const formData = new FormData();
+      formData.append('contentText', submissionText);
+      formData.append('questionId', question._id);
+
+      // Add images (max 5)
+      uploadedImages.forEach((img, idx) => {
+        formData.append('images', img);
+      });
+
+      // Add PDF (max 1)
+      if (uploadedPdf) {
+        formData.append('pdf', uploadedPdf);
+      }
+
+      await api.post('/explanations/create', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       toast.success("Votre explication a été soumise pour révision !", {
         description: "Elle sera publiée après validation par notre équipe. Vous gagnerez 1 point bleu si approuvée!"
       });
       setSubmissionText("");
-      setUploadedFile(null);
+      setUploadedImages([]);
+      setUploadedPdf(null);
       setShowSubmitForm(false);
     } catch (error) {
-      toast.error("Erreur lors de la soumission");
+      console.error("Error submitting explanation:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la soumission");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Check file type (image or PDF)
-      if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-        toast.error("Seuls les images et PDF sont acceptés");
-        return;
-      }
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Le fichier ne doit pas dépasser 5 Mo");
-        return;
-      }
-      setUploadedFile(file);
-      toast.success(`Fichier ajouté: ${file.name}`);
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validImages = files.filter(file => file.type.startsWith('image/'));
+
+    if (validImages.length === 0) {
+      toast.error("Seuls les fichiers image sont acceptés");
+      return;
     }
+
+    const remainingSlots = MAX_IMAGES - uploadedImages.length;
+    if (remainingSlots <= 0) {
+      toast.error(`Maximum ${MAX_IMAGES} images autorisées`);
+      return;
+    }
+
+    const toAdd = validImages.slice(0, remainingSlots);
+
+    // Check file sizes (max 5MB each)
+    for (const file of toAdd) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} dépasse 5 Mo`);
+        return;
+      }
+    }
+
+    setUploadedImages(prev => [...prev, ...toAdd]);
+    toast.success(`${toAdd.length} image(s) ajoutée(s)`);
+    e.target.value = ''; // Reset input
+  };
+
+  const handlePdfUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error("Seuls les fichiers PDF sont acceptés");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Le PDF ne doit pas dépasser 10 Mo");
+      return;
+    }
+
+    setUploadedPdf(file);
+    toast.success(`PDF ajouté: ${file.name}`);
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = (index) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const currentUserExplanation = userExplanations[activeExplanationIndex];
@@ -116,8 +214,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
           <button
             onClick={() => setActiveTab("ai")}
             className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "ai"
-                ? "border-b-2 border-blue-600 text-blue-700 bg-blue-50/50"
-                : "text-gray-600 hover:bg-gray-50"
+              ? "border-b-2 border-blue-600 text-blue-700 bg-blue-50/50"
+              : "text-gray-600 hover:bg-gray-50"
               }`}
           >
             <Bot className="h-4 w-4" />
@@ -129,8 +227,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
           <button
             onClick={() => setActiveTab("user")}
             className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "user"
-                ? "border-b-2 border-purple-600 text-purple-700 bg-purple-50/50"
-                : "text-gray-600 hover:bg-gray-50"
+              ? "border-b-2 border-purple-600 text-purple-700 bg-purple-50/50"
+              : "text-gray-600 hover:bg-gray-50"
               }`}
           >
             <Users className="h-4 w-4" />
@@ -211,8 +309,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                       key={idx}
                       onClick={() => setActiveExplanationIndex(idx)}
                       className={`px-4 py-1.5 rounded-full font-medium transition-all ${activeExplanationIndex === idx
-                          ? "bg-purple-100 text-purple-700 border-2 border-purple-300"
-                          : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                        ? "bg-purple-100 text-purple-700 border-2 border-purple-300"
+                        : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
                         }`}
                     >
                       <User className="inline h-3 w-3 mr-1" />
@@ -233,10 +331,18 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                 </div>
               )}
 
+              {/* Loading state */}
+              {loadingExplanations && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  <span className="ml-2 text-gray-600">Chargement des explications...</span>
+                </div>
+              )}
+
               {/* Current User Explanation */}
-              {currentUserExplanation ? (
-                <div className="border border-gray-200 rounded-lg bg-gradient-to-br from-purple-50/50 to-white p-4">
-                  <div className="flex items-center gap-2 mb-3">
+              {!loadingExplanations && currentUserExplanation ? (
+                <div className="border border-gray-200 rounded-lg bg-gradient-to-br from-purple-50/50 to-white p-4 space-y-3">
+                  <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-purple-600" />
                     <span className="text-sm font-medium text-purple-700">
                       {currentUserExplanation.author || "Étudiant anonyme"}
@@ -248,8 +354,48 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   <p className="text-gray-800 text-base whitespace-pre-line leading-relaxed">
                     {currentUserExplanation.text}
                   </p>
+                  
+                  {/* Display images if any */}
+                  {currentUserExplanation.images?.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
+                      {currentUserExplanation.images.map((imgUrl, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+                          onClick={() => window.open(
+                            imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`,
+                            "_blank", "noopener,noreferrer"
+                          )}
+                          title="Ouvrir l'image"
+                        >
+                          <img
+                            src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                            alt={`Image ${idx + 1}`}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Display PDF if any */}
+                  {currentUserExplanation.pdfUrl && (
+                    <a
+                      href={currentUserExplanation.pdfUrl.startsWith('http') 
+                        ? currentUserExplanation.pdfUrl 
+                        : `${import.meta.env.VITE_API_URL || ''}${currentUserExplanation.pdfUrl}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Voir le PDF
+                    </a>
+                  )}
                 </div>
-              ) : userExplanations.length === 0 ? (
+              ) : !loadingExplanations && userExplanations.length === 0 ? (
                 // Empty state - encourage submission
                 <div className="text-center py-8">
                   <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-4">
@@ -288,43 +434,97 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   />
 
                   {/* File Upload Section */}
-                  <div className="mb-3">
+                  <div className="mb-3 space-y-3">
+                    {/* Hidden file inputs */}
                     <input
                       type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      accept="image/*,.pdf"
+                      ref={imageInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                    />
+                    <input
+                      type="file"
+                      ref={pdfInputRef}
+                      onChange={handlePdfUpload}
+                      accept=".pdf"
                       className="hidden"
                     />
 
-                    {uploadedFile ? (
-                      <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-purple-200">
-                        {uploadedFile.type.startsWith('image/') ? (
-                          <FileImage className="h-5 w-5 text-purple-600" />
-                        ) : (
-                          <FileText className="h-5 w-5 text-purple-600" />
+                    {/* Images Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-600">
+                          Images ({uploadedImages.length}/{MAX_IMAGES})
+                        </span>
+                        {uploadedImages.length < MAX_IMAGES && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => imageInputRef.current?.click()}
+                            className="gap-1 h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+                          >
+                            <FileImage className="h-3 w-3" />
+                            Ajouter
+                          </Button>
                         )}
-                        <span className="flex-1 text-sm text-gray-700 truncate">{uploadedFile.name}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setUploadedFile(null)}
-                          className="text-red-500 hover:text-red-600 h-7 w-7 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Image ou PDF
-                      </Button>
-                    )}
+                      {uploadedImages.length > 0 && (
+                        <div className="grid grid-cols-5 gap-2">
+                          {uploadedImages.map((img, idx) => (
+                            <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-purple-200 bg-white">
+                              <img
+                                src={URL.createObjectURL(img)}
+                                alt={`Upload ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* PDF Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-600">
+                          PDF ({uploadedPdf ? 1 : 0}/{MAX_PDF})
+                        </span>
+                        {!uploadedPdf && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => pdfInputRef.current?.click()}
+                            className="gap-1 h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
+                          >
+                            <FileText className="h-3 w-3" />
+                            Ajouter PDF
+                          </Button>
+                        )}
+                      </div>
+                      {uploadedPdf && (
+                        <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-purple-200">
+                          <FileText className="h-5 w-5 text-purple-600" />
+                          <span className="flex-1 text-sm text-gray-700 truncate">{uploadedPdf.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setUploadedPdf(null)}
+                            className="text-red-500 hover:text-red-600 h-7 w-7 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -332,7 +532,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                       variant="ghost"
                       onClick={() => {
                         setShowSubmitForm(false);
-                        setUploadedFile(null);
+                        setUploadedImages([]);
+                        setUploadedPdf(null);
                       }}
                     >
                       Annuler

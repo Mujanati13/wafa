@@ -1,10 +1,64 @@
 import { Router } from "express";
 import { examCourseController } from "../controllers/examCourseController.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "..", "uploads", "courses");
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for local disk storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, "course-" + uniqueSuffix + ext);
+    }
+});
+
+const uploadCourseImage = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith("image/")) {
+            cb(null, true);
+        } else {
+            cb(new Error("Veuillez télécharger une image valide"), false);
+        }
+    }
+}).single("courseImage");
+
 // Admin seed endpoint
 router.post("/admin/createCategoriesForCourses", examCourseController.createCategoriesForCourses);
+
+// Create with image upload
+router.post("/create-with-image", uploadCourseImage, async (req, res) => {
+    try {
+        let imageUrl = "";
+
+        if (req.file) {
+            imageUrl = `/uploads/courses/${req.file.filename}`;
+        }
+
+        req.body.imageUrl = imageUrl;
+        return examCourseController.create(req, res);
+    } catch (error) {
+        console.error("Error uploading course image:", error);
+        res.status(500).json({ success: false, message: error.message || "Erreur lors de l'upload de l'image" });
+    }
+});
 
 // CRUD operations
 router.get("/", examCourseController.getAll);

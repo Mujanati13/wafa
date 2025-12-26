@@ -14,44 +14,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Upload, FileText, Database, FolderOpen } from "lucide-react";
-import { moduleService } from "@/services/moduleService";
+import { Plus, Trash2, Upload, FileText, Database, FolderOpen, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/utils";
 
 const ImportQCMBanque = () => {
   const { t } = useTranslation(['admin', 'common']);
 
   const [modules, setModules] = useState([]);
+  const [qcmBanques, setQcmBanques] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedQCMBanque, setSelectedQCMBanque] = useState("");
   const [excelFile, setExcelFile] = useState(null);
-  const [importing, setImporting] = useState(false);
-
-  // Categories for QCM Banque
-  const categories = useMemo(() => [
-    "Cardiologie",
-    "Pneumologie",
-    "Gastro-entérologie",
-    "Neurologie",
-    "Néphrologie",
-    "Endocrinologie",
-    "Hématologie",
-    "Rhumatologie",
-    "Dermatologie",
-    "Infectiologie",
-    "Autre"
-  ], []);
+  const [importingExcel, setImportingExcel] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch modules on mount
   useEffect(() => {
     const fetchModules = async () => {
       try {
         setLoading(true);
-        const response = await moduleService.getAllmodules();
-        // Filter to only show QCM Banque type modules
-        const qcmModules = response.data?.data?.filter(m => m.type === 'QCM banque') || [];
-        setModules(qcmModules);
+        const response = await api.get("/modules");
+        setModules(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching modules:', error);
         toast.error('Erreur lors du chargement des modules');
@@ -62,12 +47,35 @@ const ImportQCMBanque = () => {
     fetchModules();
   }, []);
 
+  // Fetch QCM Banques when module changes
+  useEffect(() => {
+    const fetchQCMBanques = async () => {
+      if (!selectedModule) {
+        setQcmBanques([]);
+        return;
+      }
+      try {
+        const response = await api.get("/qcm-banque/all");
+        const allQCM = response.data?.data || [];
+        // Filter by module
+        const filtered = allQCM.filter(q => 
+          (q.moduleId?._id || q.moduleId) === selectedModule
+        );
+        setQcmBanques(filtered);
+      } catch (error) {
+        console.error('Error fetching QCM Banques:', error);
+      }
+    };
+    fetchQCMBanques();
+    setSelectedQCMBanque("");
+  }, [selectedModule]);
+
   // Image mappings
   const [imageMappings, setImageMappings] = useState([
     { id: crypto.randomUUID(), file: null, questionNumbers: "" },
   ]);
 
-  // Category mappings for questions
+  // Category mappings for questions (sessions)
   const [categoryMappings, setCategoryMappings] = useState([
     { id: crypto.randomUUID(), category: "", questionNumbers: "" },
   ]);
@@ -90,58 +98,118 @@ const ImportQCMBanque = () => {
   const handleRemoveCategoryRow = (id) =>
     setCategoryMappings((prev) => prev.filter((r) => r.id !== id));
 
-  const canImport = selectedModule && excelFile;
+  const canImportExcel = selectedModule && selectedQCMBanque && excelFile;
 
-  const handleImport = async () => {
-    if (!canImport) return;
+  // Handle Excel import
+  const handleImportExcel = async () => {
+    if (!selectedQCMBanque || !excelFile) {
+      toast.error("Veuillez sélectionner une QCM Banque et un fichier Excel");
+      return;
+    }
 
-    setImporting(true);
     try {
-      // Prepare form data
+      setImportingExcel(true);
+      
       const formData = new FormData();
-      formData.append('moduleId', selectedModule);
+      formData.append('qcmBanqueId', selectedQCMBanque);
       formData.append('file', excelFile);
       formData.append('type', 'qcm-banque');
 
-      if (selectedCategory) {
-        formData.append('defaultCategory', selectedCategory);
+      await api.post('/questions/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success("Questions importées avec succès");
+      setExcelFile(null);
+    } catch (error) {
+      console.error("Error importing Excel:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'import");
+    } finally {
+      setImportingExcel(false);
+    }
+  };
+
+  // Handle images upload
+  const handleUploadImages = async () => {
+    if (!selectedQCMBanque) {
+      toast.error("Veuillez sélectionner une QCM Banque");
+      return;
+    }
+
+    const validImageMappings = imageMappings.filter(
+      (m) => m.file && m.questionNumbers.trim()
+    );
+
+    if (validImageMappings.length === 0) {
+      toast.info("Veuillez ajouter au moins une image avec des numéros de questions");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      for (const mapping of validImageMappings) {
+        const imgFormData = new FormData();
+        imgFormData.append('images', mapping.file);
+
+        const uploadRes = await api.post('/questions/upload-images', imgFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (uploadRes.data.success) {
+          const imageUrls = uploadRes.data.data.map(img => img.url);
+          await api.post('/questions/attach-images', {
+            qcmBanqueId: selectedQCMBanque,
+            imageUrls,
+            questionNumbers: mapping.questionNumbers
+          });
+        }
       }
 
-      // Add image mappings
-      imageMappings.forEach((mapping, index) => {
-        if (mapping.file && mapping.questionNumbers) {
-          formData.append(`images[${index}][file]`, mapping.file);
-          formData.append(`images[${index}][questions]`, mapping.questionNumbers);
-        }
-      });
-
-      // Add category mappings
-      categoryMappings.forEach((mapping, index) => {
-        if (mapping.category && mapping.questionNumbers) {
-          formData.append(`categories[${index}][name]`, mapping.category);
-          formData.append(`categories[${index}][questions]`, mapping.questionNumbers);
-        }
-      });
-
-      // TODO: Wire to actual API endpoint
-      // await questionService.importQCMBanque(formData);
-
-      toast.success('Import réussi', {
-        description: `Questions importées dans ${modules.find(m => m._id === selectedModule)?.name || 'le module'}`
-      });
-
-      // Reset form
-      setExcelFile(null);
+      toast.success(`${validImageMappings.length} image(s) téléchargée(s) et attachée(s)`);
       setImageMappings([{ id: crypto.randomUUID(), file: null, questionNumbers: "" }]);
-      setCategoryMappings([{ id: crypto.randomUUID(), category: "", questionNumbers: "" }]);
-
     } catch (error) {
-      console.error('Import error:', error);
-      toast.error('Erreur lors de l\'import', {
-        description: error.message || 'Une erreur est survenue'
-      });
+      console.error('Upload error:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors du téléchargement');
     } finally {
-      setImporting(false);
+      setUploading(false);
+    }
+  };
+
+  // Handle category (session) assignment
+  const handleAssignCategories = async () => {
+    if (!selectedQCMBanque) {
+      toast.error("Veuillez sélectionner une QCM Banque");
+      return;
+    }
+
+    const validCategoryMappings = categoryMappings.filter(
+      (m) => m.category.trim() && m.questionNumbers.trim()
+    );
+
+    if (validCategoryMappings.length === 0) {
+      toast.info("Veuillez ajouter au moins une catégorie avec des numéros de questions");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      await api.post("/questions/assign-submodules", {
+        qcmBanqueId: selectedQCMBanque,
+        subModules: validCategoryMappings.map(m => ({
+          name: m.category,
+          questionNumbers: m.questionNumbers
+        }))
+      });
+
+      toast.success(`${validCategoryMappings.length} catégorie(s) assignée(s)`);
+      setCategoryMappings([{ id: crypto.randomUUID(), category: "", questionNumbers: "" }]);
+    } catch (error) {
+      console.error('Assignment error:', error);
+      toast.error(error.response?.data?.message || 'Erreur lors de l\'assignation');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -170,18 +238,19 @@ const ImportQCMBanque = () => {
                 Source d'Importation
               </CardTitle>
               <CardDescription>
-                Sélectionnez le module QCM Banque, la catégorie par défaut, puis téléchargez le fichier Excel
+                Sélectionnez le module, puis la QCM Banque, et enfin téléchargez le fichier Excel
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Module Selection */}
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: 0.15 }}
                   className="space-y-2"
                 >
-                  <Label className="font-semibold text-gray-700">Module QCM Banque</Label>
+                  <Label className="font-semibold text-gray-700">Module</Label>
                   <Select
                     value={selectedModule}
                     onValueChange={setSelectedModule}
@@ -193,7 +262,7 @@ const ImportQCMBanque = () => {
                     <SelectContent>
                       {modules.length === 0 ? (
                         <SelectItem value="none" disabled>
-                          Aucun module QCM Banque trouvé
+                          Aucun module trouvé
                         </SelectItem>
                       ) : (
                         modules.map((m) => (
@@ -206,30 +275,39 @@ const ImportQCMBanque = () => {
                   </Select>
                 </motion.div>
 
+                {/* QCM Banque Selection */}
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
                   className="space-y-2"
                 >
-                  <Label className="font-semibold text-gray-700">Catégorie par Défaut (optionnel)</Label>
+                  <Label className="font-semibold text-gray-700">QCM Banque</Label>
                   <Select
-                    value={selectedCategory}
-                    onValueChange={setSelectedCategory}
+                    value={selectedQCMBanque}
+                    onValueChange={setSelectedQCMBanque}
+                    disabled={!selectedModule || qcmBanques.length === 0}
                   >
                     <SelectTrigger className="border-emerald-200">
-                      <SelectValue placeholder="Choisir une catégorie" />
+                      <SelectValue placeholder={!selectedModule ? "Sélectionnez un module d'abord" : "Choisir une QCM Banque"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {qcmBanques.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          Aucune QCM Banque pour ce module
                         </SelectItem>
-                      ))}
+                      ) : (
+                        qcmBanques.map((q) => (
+                          <SelectItem key={q._id} value={q._id}>
+                            {q.name || q.title}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </motion.div>
 
+                {/* Excel File */}
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -257,11 +335,15 @@ const ImportQCMBanque = () => {
             <CardFooter className="bg-gray-50 border-t flex justify-end">
               <Button
                 className="bg-emerald-600 hover:bg-emerald-700 gap-2"
-                disabled={!canImport || importing}
-                onClick={handleImport}
+                disabled={!canImportExcel || importingExcel}
+                onClick={handleImportExcel}
               >
-                <Upload className="w-4 h-4" />
-                {importing ? 'Import en cours...' : 'Importer'}
+                {importingExcel ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                {importingExcel ? 'Import en cours...' : 'Importer Excel'}
               </Button>
             </CardFooter>
           </Card>
@@ -277,7 +359,7 @@ const ImportQCMBanque = () => {
             <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b">
               <CardTitle className="flex items-center gap-2 text-teal-900">
                 <FileText className="w-5 h-5" />
-                Mappages Optionnels
+                Actions Supplémentaires
               </CardTitle>
               <CardDescription>
                 Associez les images aux questions ou organisez les questions par catégorie
@@ -375,27 +457,18 @@ const ImportQCMBanque = () => {
                       >
                         <div className="sm:col-span-2 space-y-1">
                           <Label className="text-xs font-semibold">Catégorie</Label>
-                          <Select
+                          <Input
+                            placeholder="Nom de la catégorie"
                             value={row.category}
-                            onValueChange={(value) =>
+                            onChange={(e) =>
                               setCategoryMappings((prev) =>
                                 prev.map((r) =>
-                                  r.id === row.id ? { ...r, category: value } : r
+                                  r.id === row.id ? { ...r, category: e.target.value } : r
                                 )
                               )
                             }
-                          >
-                            <SelectTrigger className="text-xs">
-                              <SelectValue placeholder="Choisir" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.map((cat) => (
-                                <SelectItem key={cat} value={cat}>
-                                  {cat}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            className="text-xs"
+                          />
                         </div>
                         <div className="sm:col-span-2 space-y-1">
                           <Label className="text-xs font-semibold">Numéros de Questions</Label>
@@ -438,6 +511,33 @@ const ImportQCMBanque = () => {
                 </div>
               </div>
             </CardContent>
+            <CardFooter className="bg-gray-50 border-t flex justify-end gap-3">
+              <Button
+                variant="outline"
+                className="gap-2 border-teal-200 text-teal-600 hover:bg-teal-50"
+                disabled={uploading || !selectedQCMBanque}
+                onClick={handleUploadImages}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                Télécharger Images
+              </Button>
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700 gap-2"
+                disabled={uploading || !selectedQCMBanque}
+                onClick={handleAssignCategories}
+              >
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FolderOpen className="w-4 h-4" />
+                )}
+                Assigner Catégories
+              </Button>
+            </CardFooter>
           </Card>
         </motion.div>
       </div>

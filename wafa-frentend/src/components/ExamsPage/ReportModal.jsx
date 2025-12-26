@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes, FaFlag } from "react-icons/fa";
-import axios from "axios";
+import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ReportModal = ({ isOpen, onClose, questionId }) => {
   const [reason, setReason] = useState("");
@@ -23,16 +24,17 @@ const ReportModal = ({ isOpen, onClose, questionId }) => {
     setLoading(true);
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/report-questions`,
-        {
-          questionId,
-          reason,
-          description,
-        },
-        { withCredentials: true }
-      );
+      // Build details string combining reason and description
+      const details = description 
+        ? `${reason}: ${description}` 
+        : reason;
+      
+      await api.post("/report-questions/create", {
+        questionId,
+        details, // Backend expects 'details' field
+      });
       setSuccess(true);
+      toast.success("Signalement envoyé avec succès!");
       setTimeout(() => {
         onClose();
         setSuccess(false);
@@ -41,7 +43,7 @@ const ReportModal = ({ isOpen, onClose, questionId }) => {
       }, 2000);
     } catch (error) {
       console.error("Error reporting question:", error);
-      alert("Échec du signalement. Veuillez réessayer.");
+      toast.error(error.response?.data?.message || "Échec du signalement. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -104,11 +106,10 @@ const ReportModal = ({ isOpen, onClose, questionId }) => {
                           key={r}
                           type="button"
                           onClick={() => setReason(r)}
-                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                            reason === r
-                              ? "bg-red-500 text-white shadow-md"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${reason === r
+                            ? "bg-red-500 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
                         >
                           {r}
                         </button>

@@ -119,16 +119,6 @@ const UsersWithTabs = () => {
     }
   };
 
-  // Test API connection
-  const testConnection = async () => {
-    try {
-      const result = await userService.testConnection();
-      console.log("API connection test:", result);
-    } catch (error) {
-      console.error("API connection test failed:", error);
-    }
-  };
-
   // Fetch user statistics
   const fetchStats = async () => {
     try {
@@ -495,9 +485,6 @@ const UsersWithTabs = () => {
             </p>
           </div>
           <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" size="sm" onClick={testConnection}>
-              Test API
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" disabled={exporting}>

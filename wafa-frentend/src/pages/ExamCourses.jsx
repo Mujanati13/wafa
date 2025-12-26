@@ -144,7 +144,10 @@ const ExamCourses = () => {
 
   const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName))).filter(Boolean);
   const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category))).filter(Boolean);
-  const CATEGORIES = ["Théorique", "Pratique", "Clinique", "Laboratoire", "Recherche", "Évaluation"];
+  // Default categories for exam courses
+  const DEFAULT_CATEGORIES = ["Exam par years", "Exam par courses", "QCM banque"];
+  // Combine unique categories with defaults
+  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...uniqueCategories])].filter(Boolean);
 
   const handleAddCourse = async () => {
     if (!formData.courseName || !formData.moduleName || !formData.category) {
@@ -451,9 +454,9 @@ const ExamCourses = () => {
                         <SelectValue placeholder="Sélectionner un module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {uniqueModules.map((module) => (
-                          <SelectItem key={module} value={module} className="text-black">
-                            {module}
+                        {modules.map((mod) => (
+                          <SelectItem key={mod._id} value={mod.name} className="text-black">
+                            {mod.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -469,7 +472,7 @@ const ExamCourses = () => {
                         <SelectValue placeholder="Sélectionner une catégorie" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {uniqueCategories.map((category) => (
+                        {allCategories.map((category) => (
                           <SelectItem key={category} value={category} className="text-black">
                             {category}
                           </SelectItem>

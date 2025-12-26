@@ -81,22 +81,20 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
         {/* Animated background gradient */}
         <div className={`absolute inset-0 bg-gradient-to-br ${colorScheme.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
 
-        {/* Help Button - Top Left */}
-        {(course.helpContent || course.infoText) && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-white transition-all"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowHelpModal(true);
-            }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <HelpCircle className="w-4 h-4" />
-          </motion.button>
-        )}
+        {/* Help Button - Top Left - Always visible */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-white transition-all"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowHelpModal(true);
+          }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <HelpCircle className="w-4 h-4" />
+        </motion.button>
 
         {/* Course Image with gradient overlay */}
         <div className="relative mb-3 sm:mb-4 overflow-hidden rounded-xl h-32 sm:h-36 md:h-40 lg:h-44">

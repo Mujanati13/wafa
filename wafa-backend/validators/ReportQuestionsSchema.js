@@ -1,9 +1,6 @@
 import joi from 'joi';
 
 const createReportSchema = joi.object({
-    userId: joi.string().required().messages({
-        'any.required': 'userId is required'
-    }),
     questionId: joi.string().required().messages({
         'any.required': 'questionId is required'
     }),

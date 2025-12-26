@@ -58,7 +58,11 @@ const Explications = () => {
         date: item?.createdAt
           ? new Date(item.createdAt).toISOString().slice(0, 10)
           : "—",
-        images: item?.imageUrl ? [item.imageUrl] : [],
+        // Support both legacy imageUrl and new imageUrls array
+        images: item?.imageUrls?.length > 0
+          ? item.imageUrls
+          : (item?.imageUrl ? [item.imageUrl] : []),
+        pdfUrl: item?.pdfUrl || null,
         text: item?.contentText || "",
         status: item?.status || "pending",
         // New module and exam fields
@@ -396,6 +400,11 @@ const Explications = () => {
                                 {report.images.length}
                               </Badge>
                             )}
+                            {report.pdfUrl && (
+                              <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+                                PDF
+                              </Badge>
+                            )}
                             {report.text && (
                               <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
                                 Text
@@ -545,6 +554,46 @@ const Explications = () => {
                 <div>
                   <p className="text-sm text-gray-500">Contenu</p>
                   <p className="mt-1 whitespace-pre-wrap">{selectedExplanation.text}</p>
+                </div>
+              )}
+              {/* Display Images */}
+              {selectedExplanation.images?.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Images ({selectedExplanation.images.length})</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {selectedExplanation.images.map((imgUrl, idx) => (
+                      <a
+                        key={idx}
+                        href={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block aspect-video overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors"
+                      >
+                        <img
+                          src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                          alt={`Image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Display PDF */}
+              {selectedExplanation.pdfUrl && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Document PDF</p>
+                  <a
+                    href={selectedExplanation.pdfUrl.startsWith('http') ? selectedExplanation.pdfUrl : `${import.meta.env.VITE_API_URL || ''}${selectedExplanation.pdfUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                    </svg>
+                    Voir le PDF
+                  </a>
                 </div>
               )}
             </div>

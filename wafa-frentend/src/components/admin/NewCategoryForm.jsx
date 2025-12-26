@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FolderPlus, Image as ImageIcon, Layers } from "lucide-react";
+import { X, FolderPlus, BookOpen, GraduationCap } from "lucide-react";
 
 import {
   Form,
@@ -17,48 +17,62 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
+import { api } from "@/lib/utils";
 
-const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
+const SEMESTERS = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+
+const NewCategoryForm = ({ setShowNewCategoryForm, onModuleCreated }) => {
   const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const newCategorySchema = z.object({
-    name: z.string().min(2, t("admin:category_name_required")),
-    moduleId: z.string().min(1, t("admin:module_required")),
-    imageUrl: z
-      .string()
-      .url(t("admin:image_url_invalid"))
-      .or(z.string().length(0))
-      .transform((v) => v || ""),
+  const newModuleSchema = z.object({
+    name: z.string().min(2, "Le nom du module est requis"),
+    semester: z.string().min(1, "Le semestre est requis"),
   });
 
   const form = useForm({
-    resolver: zodResolver(newCategorySchema),
+    resolver: zodResolver(newModuleSchema),
     defaultValues: {
       name: "",
-      moduleId: "",
-      imageUrl: "",
+      semester: "",
     },
   });
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // TODO: Replace with API integration
-      console.log("New category:", data);
-      await new Promise((r) => setTimeout(r, 800));
+      // First create the module
+      const moduleResponse = await api.post("/modules/create", {
+        name: data.name,
+        semester: data.semester,
+      });
+
+      const newModule = moduleResponse.data?.data;
+      
+      // Then auto-create the 3 default categories (exam-courses) for this module
+      if (newModule?._id) {
+        const categories = ["Exam par years", "Exam par courses", "QCM banque"];
+        
+        for (const category of categories) {
+          try {
+            await api.post("/exam-courses", {
+              name: `${data.name} - ${category}`,
+              moduleId: newModule._id,
+              category: category,
+            });
+          } catch (catError) {
+            console.error(`Error creating category ${category}:`, catError);
+          }
+        }
+      }
+
       form.reset();
       setShowNewCategoryForm(false);
-      toast.success("Succès", {
-        description: t("admin:category_created_success"),
-        duration: 3000
-      });
+      toast.success("Module créé avec les 3 catégories par défaut !");
+      if (onModuleCreated) onModuleCreated();
     } catch (e) {
       console.error(e);
-      toast.error("Erreur", {
-        description: t("admin:failed_create_category"),
-        duration: 3000
-      });
+      toast.error(e.response?.data?.message || "Erreur lors de la création du module");
     } finally {
       setIsSubmitting(false);
     }
@@ -96,11 +110,11 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                 <FolderPlus className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {t("admin:add_category")}
+                Ajouter un Module
               </h1>
             </div>
             <p className="text-sm text-gray-600 ml-1">
-              {t("admin:create_category_subtitle")}
+              Le module aura automatiquement les 3 catégories par défaut : Exam par years, Exam par courses, QCM banque
             </p>
           </div>
 
@@ -112,12 +126,12 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-blue-600" />
-                      {t("admin:category_name")}
+                      <BookOpen className="w-4 h-4 text-blue-600" />
+                      Nom du Module
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t("admin:category_name_placeholder")}
+                        placeholder="Ex: Anatomie, Physiologie..."
                         className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-11 rounded-lg transition-all"
                         {...field}
                       />
@@ -129,12 +143,12 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
 
               <FormField
                 control={form.control}
-                name="moduleId"
+                name="semester"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                      <FolderPlus className="w-4 h-4 text-indigo-600" />
-                      {t("admin:select_module")}
+                      <GraduationCap className="w-4 h-4 text-indigo-600" />
+                      Semestre
                     </FormLabel>
                     <FormControl>
                       <select
@@ -142,36 +156,14 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all bg-white text-gray-900 font-medium appearance-none cursor-pointer"
                       >
                         <option value="" disabled hidden>
-                          {t("admin:choose_module")}
+                          Choisir un semestre
                         </option>
-                        {modules.map((module) => (
-                          <option key={module._id} value={module._id}>
-                            {module.name}
+                        {SEMESTERS.map((sem) => (
+                          <option key={sem} value={sem}>
+                            {sem}
                           </option>
                         ))}
                       </select>
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="imageUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-purple-600" />
-                      {t("admin:image_url_optional")}
-                      <span className="text-xs font-normal text-gray-500">(Optionnel)</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("admin:image_url_placeholder")}
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-11 rounded-lg transition-all"
-                        {...field}
-                      />
                     </FormControl>
                     <FormMessage className="text-xs" />
                   </FormItem>
@@ -188,7 +180,7 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                     setShowNewCategoryForm(false);
                   }}
                 >
-                  {t("admin:cancel")}
+                  Annuler
                 </Button>
                 <Button
                   type="submit"
@@ -201,12 +193,12 @@ const NewCategoryForm = ({ setShowNewCategoryForm, modules }) => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      {t("admin:saving")}
+                      Création...
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <FolderPlus className="w-4 h-4" />
-                      {t("admin:create")}
+                      Créer le Module
                     </span>
                   )}
                 </Button>

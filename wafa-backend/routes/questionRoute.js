@@ -3,7 +3,7 @@ import { questionController } from "../controllers/questionController.js";
 import validate from "../middleware/validateSchema.js";
 import QuestionSchema from "../validators/QuestionSchema.js";
 import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
-import { uploadQuestionImages } from "../middleware/uploadMiddleware.js";
+import { uploadQuestionImages, uploadExcelFile } from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -22,6 +22,12 @@ router.get("/export", isAuthenticated, isAdmin, questionController.exportToExcel
 // Image upload endpoints
 router.post("/upload-images", isAuthenticated, isAdmin, uploadQuestionImages, questionController.uploadImages);
 router.post("/attach-images", isAuthenticated, isAdmin, questionController.attachImagesToQuestions);
+
+// Import from Excel
+router.post("/import", isAuthenticated, isAdmin, uploadExcelFile, questionController.importFromExcel);
+
+// Sub-module assignment
+router.post("/assign-submodules", isAuthenticated, isAdmin, questionController.assignSubModules);
 
 // Community voting endpoints
 router.post("/community-vote/:questionId", isAuthenticated, questionController.submitCommunityVote);

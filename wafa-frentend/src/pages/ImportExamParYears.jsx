@@ -82,10 +82,43 @@ const ImportExamParYears = () => {
     setSubModuleMappings((prev) => prev.filter((r) => r.id !== id));
 
   const [uploading, setUploading] = useState(false);
+  const [importingExcel, setImportingExcel] = useState(false);
 
-  const canImport = selectedModule && selectedExam && excelFile;
+  // Allow import with just exam selected (images don't require Excel file)
+  const canImportExcel = selectedModule && selectedExam && excelFile;
+  const canImportImages = selectedModule && selectedExam;
 
-  const handleImport = async () => {
+  // Handle Excel import
+  const handleImportExcel = async () => {
+    if (!selectedExam || !excelFile) {
+      toast.error("Veuillez sélectionner un examen et un fichier Excel");
+      return;
+    }
+
+    try {
+      setImportingExcel(true);
+      
+      const formData = new FormData();
+      formData.append('examId', selectedExam);
+      formData.append('file', excelFile);
+      formData.append('type', 'exam-par-year');
+
+      await api.post('/questions/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success("Questions importées avec succès");
+      setExcelFile(null);
+    } catch (error) {
+      console.error("Error importing Excel:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'import");
+    } finally {
+      setImportingExcel(false);
+    }
+  };
+
+  // Handle images upload separately
+  const handleUploadImages = async () => {
     if (!selectedExam) {
       toast.error("Veuillez sélectionner un examen");
       return;
@@ -97,7 +130,7 @@ const ImportExamParYears = () => {
     );
 
     if (validImageMappings.length === 0) {
-      toast.info("Aucune image à télécharger");
+      toast.info("Veuillez ajouter au moins une image avec des numéros de questions");
       return;
     }
 
@@ -137,6 +170,47 @@ const ImportExamParYears = () => {
     } catch (error) {
       console.error("Error uploading images:", error);
       toast.error(error.response?.data?.message || "Erreur lors du téléchargement");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Handle sub-module assignment
+  const handleAssignSubModules = async () => {
+    if (!selectedExam) {
+      toast.error("Veuillez sélectionner un examen");
+      return;
+    }
+
+    const validSubModuleMappings = subModuleMappings.filter(
+      (m) => m.name.trim() && m.questionNumbers.trim()
+    );
+
+    if (validSubModuleMappings.length === 0) {
+      toast.info("Veuillez ajouter au moins un sous-module avec des numéros de questions");
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      await api.post("/questions/assign-submodules", {
+        examId: selectedExam,
+        subModules: validSubModuleMappings.map(m => ({
+          name: m.name,
+          questionNumbers: m.questionNumbers
+        }))
+      });
+
+      toast.success(`${validSubModuleMappings.length} sous-module(s) assigné(s)`);
+
+      // Reset sub-module mappings
+      setSubModuleMappings([
+        { id: crypto.randomUUID(), name: "", questionNumbers: "" },
+      ]);
+    } catch (error) {
+      console.error("Error assigning sub-modules:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'assignation");
     } finally {
       setUploading(false);
     }
@@ -256,11 +330,15 @@ const ImportExamParYears = () => {
             <CardFooter className="bg-gray-50 border-t flex justify-end">
               <Button
                 className="bg-indigo-600 hover:bg-indigo-700 gap-2"
-                disabled={!canImport}
-                onClick={handleImport}
+                disabled={!canImportExcel || importingExcel}
+                onClick={handleImportExcel}
               >
-                <Upload className="w-4 h-4" />
-                Importer
+                {importingExcel ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                {importingExcel ? "Import en cours..." : "Importer Excel"}
               </Button>
             </CardFooter>
           </Card>
@@ -372,7 +450,7 @@ const ImportExamParYears = () => {
                       Ajouter
                     </Button>
                     <Button
-                      onClick={handleImport}
+                      onClick={handleUploadImages}
                       disabled={uploading || !selectedExam || !imageMappings.some(m => m.file && m.questionNumbers.trim())}
                       className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700 text-white"
                     >
@@ -456,6 +534,18 @@ const ImportExamParYears = () => {
                   >
                     <Plus className="w-4 h-4" />
                     Ajouter un Sous-module
+                  </Button>
+                  <Button
+                    onClick={handleAssignSubModules}
+                    disabled={uploading || !selectedExam || !subModuleMappings.some(m => m.name.trim() && m.questionNumbers.trim())}
+                    className="w-full gap-2 bg-pink-600 hover:bg-pink-700 text-white"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    Assigner Sous-modules
                   </Button>
                 </div>
               </div>

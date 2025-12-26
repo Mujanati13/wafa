@@ -67,7 +67,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#6366f1");
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [contentType, setContentType] = useState("url"); // "url" or "text"
+  const [contentType, setContentType] = useState("image"); // "image" or "text"
   const [difficulty, setDifficulty] = useState("QE");
   const [difficultyColors, setDifficultyColors] = useState({
     QE: "#f97316",
@@ -76,15 +76,12 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
     hard: "#ef4444"
   });
   const [showDifficultyColorPicker, setShowDifficultyColorPicker] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const newModuleSchema = z.object({
     name: z.string().min(2, t("admin:module_name_required")),
     semester: z.string().min(1, t("admin:semester_required")),
-    imageUrl: z
-      .string()
-      .url(t("admin:image_url_invalid"))
-      .or(z.string().length(0))
-      .transform((v) => v || ""),
     textContent: z
       .string()
       .optional()
@@ -96,25 +93,47 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
     defaultValues: {
       name: "",
       semester: "",
-      imageUrl: "",
       textContent: "",
     },
   });
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const res = await api.post("/modules/create", {
-        name: data.name,
-        semester: data.semester,
-        imageUrl: contentType === "url" ? data.imageUrl : "",
-        textContent: contentType === "text" ? data.textContent : "",
-        contentType: contentType,
-        difficulty: difficulty,
-        color: selectedColor,
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("semester", data.semester);
+      // Backend expects "url" or "text", not "image"
+      formData.append("contentType", contentType === "image" ? "url" : "text");
+      formData.append("difficulty", difficulty);
+      formData.append("color", selectedColor);
+
+      if (contentType === "image" && imageFile) {
+        formData.append("moduleImage", imageFile);
+      }
+      if (contentType === "text") {
+        formData.append("textContent", data.textContent);
+      }
+
+      await api.post("/modules/create-with-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
       form.reset();
+      setImageFile(null);
+      setImagePreview(null);
       setShowNewModuleForm(false);
       toast.success(t("admin:module_created_success"));
     } catch (e) {
@@ -371,7 +390,7 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                     </div>
                   </div>
 
-                  {/* Image URL */}
+                  {/* Image Upload */}
                   <div className="space-y-3">
                     {/* Content Type Toggle */}
                     <Label className="text-sm font-semibold text-gray-900">
@@ -380,14 +399,14 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                     <div className="flex gap-2 mb-3">
                       <button
                         type="button"
-                        onClick={() => setContentType("url")}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "url"
+                        onClick={() => setContentType("image")}
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${contentType === "image"
                           ? "bg-blue-50 border-blue-300 text-blue-700"
                           : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                       >
                         <Image className="h-4 w-4" />
-                        Image/PDF URL
+                        Uploader Image
                       </button>
                       <button
                         type="button"
@@ -402,27 +421,49 @@ const NewModuleForm = ({ setShowNewModuleForm }) => {
                       </button>
                     </div>
 
-                    {contentType === "url" ? (
-                      <FormField
-                        control={form.control}
-                        name="imageUrl"
-                        render={({ field }) => (
-                          <FormItem className="h-full flex flex-col">
-                            <FormLabel className="text-sm font-semibold text-gray-900">
-                              {t("admin:image_url_optional")}
-                            </FormLabel>
-                            <FormControl className="flex-1">
-                              <Textarea
-                                placeholder={t("admin:image_url_placeholder")}
-                                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 resize-none flex-1"
-                                rows={4}
-                                {...field}
+                    {contentType === "image" ? (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-gray-900">
+                          Image du Module (Optionnel)
+                        </Label>
+                        <div className="flex flex-col gap-3">
+                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                            {imagePreview ? (
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                className="h-full w-full object-contain rounded-lg"
                               />
-                            </FormControl>
-                            <FormMessage className="text-red-500 text-xs mt-1" />
-                          </FormItem>
-                        )}
-                      />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Image className="w-8 h-8 mb-3 text-gray-400" />
+                                <p className="mb-2 text-sm text-gray-500">
+                                  <span className="font-semibold">Cliquez pour uploader</span> ou glissez-déposez
+                                </p>
+                                <p className="text-xs text-gray-500">PNG, JPG, GIF (max 5MB)</p>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                            />
+                          </label>
+                          {imageFile && (
+                            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                              <span className="text-sm text-blue-700 truncate">{imageFile.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => { setImageFile(null); setImagePreview(null); }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ) : (
                       <FormField
                         control={form.control}

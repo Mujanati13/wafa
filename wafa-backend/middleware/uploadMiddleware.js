@@ -30,6 +30,20 @@ const pdfFilter = (req, file, cb) => {
   }
 };
 
+// File filter for Excel files
+const excelFilter = (req, file, cb) => {
+  const allowedMimes = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+    "application/vnd.ms-excel", // .xls
+    "text/csv" // .csv
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Veuillez télécharger un fichier Excel valide (.xlsx, .xls, .csv)"), false);
+  }
+};
+
 // Upload middleware for profile pictures
 export const uploadProfilePicture = multer({
   storage: storage,
@@ -88,6 +102,15 @@ export const uploadQuestionImages = multer({
   fileFilter: imageFilter,
 }).array("images", 10); // Max 10 images
 
+// Upload middleware for Excel files
+export const uploadExcelFile = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  },
+  fileFilter: excelFilter,
+}).single("file");
+
 // Upload multiple images to Cloudinary
 export const uploadImagesToCloudinary = async (files, folder = "wafa-questions") => {
   const uploadPromises = files.map((file) => {
@@ -142,5 +165,6 @@ export default {
   uploadToCloudinary,
   deleteFromCloudinary,
   uploadQuestionImages,
-  uploadImagesToCloudinary
+  uploadImagesToCloudinary,
+  uploadExcelFile
 };

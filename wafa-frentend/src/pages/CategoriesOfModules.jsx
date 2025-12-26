@@ -35,7 +35,7 @@ const CategoriesOfModules = () => {
   // Edit state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState(null);
-  const [editForm, setEditForm] = useState({ name: "", semester: "", category: "", difficulty: "" });
+  const [editForm, setEditForm] = useState({ name: "", semester: "", category: "" });
   const [saving, setSaving] = useState(false);
 
   // Delete state
@@ -61,17 +61,33 @@ const CategoriesOfModules = () => {
     }
   };
 
+  // Transform modules to show each module with all 3 default categories
+  const modulesWithCategories = useMemo(() => {
+    const result = [];
+    modules.forEach((m) => {
+      DEFAULT_CATEGORIES.forEach((cat) => {
+        result.push({
+          ...m,
+          displayCategory: cat.value,
+          categoryColor: cat.color,
+          uniqueKey: `${m._id}-${cat.value}`
+        });
+      });
+    });
+    return result;
+  }, [modules]);
+
   const filteredModules = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    return modules.filter((m) => {
-      const passesCategory = filterCategory === "all" || m.category === filterCategory;
+    return modulesWithCategories.filter((m) => {
+      const passesCategory = filterCategory === "all" || m.displayCategory === filterCategory;
       const passesModule = filterModule === "all" || m._id === filterModule;
       const passesSearch =
         m.name?.toLowerCase().includes(term) ||
         m.semester?.toLowerCase().includes(term);
       return passesCategory && passesModule && passesSearch;
     });
-  }, [searchTerm, filterCategory, filterModule, modules]);
+  }, [searchTerm, filterCategory, filterModule, modulesWithCategories]);
 
   const totalPages = Math.ceil(filteredModules.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -111,8 +127,7 @@ const CategoriesOfModules = () => {
     setEditForm({
       name: module.name || "",
       semester: module.semester || "",
-      category: module.category || "Exam par years",
-      difficulty: module.difficulty || "medium"
+      category: module.category || "Exam par years"
     });
     setEditDialogOpen(true);
   };
@@ -309,20 +324,19 @@ const CategoriesOfModules = () => {
                     <TableHead>Module</TableHead>
                     <TableHead>Semestre</TableHead>
                     <TableHead>Catégorie</TableHead>
-                    <TableHead>Difficulté</TableHead>
                     <TableHead className="text-right">{t('common:actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                         Aucun module trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
                     currentModules.map((m) => (
-                      <TableRow key={m._id}>
+                      <TableRow key={m.uniqueKey}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div
@@ -338,21 +352,8 @@ const CategoriesOfModules = () => {
                           <Badge variant="outline">{m.semester}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={
-                            DEFAULT_CATEGORIES.find(c => c.value === m.category)?.color || "bg-gray-100 text-gray-700"
-                          }>
-                            {m.category || "Exam par years"}
-                          </Badge>
-                        </TableCell>
-
-                        <TableCell>
-                          <Badge className={
-                            m.difficulty === "easy" ? "bg-green-100 text-green-700" :
-                              m.difficulty === "hard" ? "bg-red-100 text-red-700" :
-                                "bg-amber-100 text-amber-700"
-                          }>
-                            {m.difficulty === "easy" ? "Facile" :
-                              m.difficulty === "hard" ? "Difficile" : "Moyen"}
+                          <Badge className={m.categoryColor || "bg-gray-100 text-gray-700"}>
+                            {m.displayCategory}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -392,7 +393,10 @@ const CategoriesOfModules = () => {
       </div>
 
       {showNewCategoryForm && (
-        <NewCategoryForm setShowNewCategoryForm={setShowNewCategoryForm} modules={modules} />
+        <NewCategoryForm
+          setShowNewCategoryForm={setShowNewCategoryForm}
+          onModuleCreated={fetchModules}
+        />
       )}
 
       {/* Edit Dialog */}
@@ -450,22 +454,6 @@ const CategoriesOfModules = () => {
                       {cat.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-difficulty">Difficulté</Label>
-              <Select
-                value={editForm.difficulty}
-                onValueChange={(value) => setEditForm({ ...editForm, difficulty: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez une difficulté" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Facile</SelectItem>
-                  <SelectItem value="medium">Moyen</SelectItem>
-                  <SelectItem value="hard">Difficile</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -8,7 +8,7 @@ export const examCourseController = {
     // Create a new exam course
     create: asyncHandler(async (req, res) => {
         const { name, moduleId, category, subCategory, description, imageUrl, status } = req.body;
-        
+
         const newCourse = await ExamCourse.create({
             name,
             moduleId,
@@ -29,7 +29,7 @@ export const examCourseController = {
     // Get all exam courses with optional filters
     getAll: asyncHandler(async (req, res) => {
         const { moduleId, category, status, search } = req.query;
-        
+
         const filter = {};
         if (moduleId) filter.moduleId = moduleId;
         if (category) filter.category = category;
@@ -55,9 +55,9 @@ export const examCourseController = {
     // Get a single exam course with questions
     getById: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        
+
         const course = await ExamCourse.getWithQuestions(id);
-        
+
         if (!course) {
             return res.status(404).json({
                 success: false,
@@ -74,11 +74,11 @@ export const examCourseController = {
     // Update an exam course
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { name, category, subCategory, description, imageUrl, status } = req.body;
+        const { name, moduleId, category, subCategory, description, imageUrl, status, helpText } = req.body;
 
         const updated = await ExamCourse.findByIdAndUpdate(
             id,
-            { name, category, subCategory, description, imageUrl, status },
+            { name, moduleId, category, subCategory, description, imageUrl, status, helpText },
             { new: true, runValidators: true }
         ).populate("moduleId", "name");
 
@@ -99,9 +99,9 @@ export const examCourseController = {
     // Delete an exam course
     delete: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        
+
         const deleted = await ExamCourse.findByIdAndDelete(id);
-        
+
         if (!deleted) {
             return res.status(404).json({
                 success: false,
@@ -134,13 +134,13 @@ export const examCourseController = {
 
         for (const link of questionLinks) {
             const { examParYearId, questionNumbers, yearName } = link;
-            
+
             // Parse question numbers (e.g., "1-5,7,10-12" -> [1,2,3,4,5,7,10,11,12])
             const parsedNumbers = parseQuestionNumbers(questionNumbers);
-            
+
             // Get all questions from this exam
             const questions = await Question.find({ examId: examParYearId });
-            
+
             for (const num of parsedNumbers) {
                 // Find question by index (assuming questions are ordered)
                 const question = questions[num - 1];
@@ -199,7 +199,7 @@ export const examCourseController = {
         const { moduleId, examParYearId } = req.query;
 
         let filter = {};
-        
+
         if (examParYearId) {
             filter.examId = examParYearId;
         } else if (moduleId) {
@@ -250,7 +250,7 @@ export const examCourseController = {
     // Get exam years for a module (for dropdown)
     getExamYearsForModule: asyncHandler(async (req, res) => {
         const { moduleId } = req.params;
-        
+
         const examYears = await ExamParYear.find({ moduleId })
             .select("name year")
             .sort({ year: -1 });
@@ -264,7 +264,7 @@ export const examCourseController = {
     // Get categories for a module (distinct values)
     getCategoriesForModule: asyncHandler(async (req, res) => {
         const { moduleId } = req.params;
-        
+
         const categories = await ExamCourse.distinct("category", { moduleId });
 
         res.status(200).json({
@@ -312,7 +312,7 @@ export const examCourseController = {
 
         // Get all modules to create sample exam courses with different categories
         const modules = await Module.find().limit(5);
-        
+
         if (modules.length === 0) {
             return res.status(400).json({
                 success: false,
@@ -325,11 +325,11 @@ export const examCourseController = {
 
         // Create sample exam courses for each category
         const examCourses = [];
-        
+
         for (let i = 0; i < categories.length; i++) {
             const categoryData = categories[i];
             const module = modules[i % modules.length]; // Cycle through modules
-            
+
             examCourses.push({
                 name: `Cours ${categoryData.name}`,
                 moduleId: module._id,
@@ -347,7 +347,7 @@ export const examCourseController = {
         }
 
         const createdCourses = await ExamCourse.insertMany(examCourses);
-        
+
         // Get unique categories with their colors and difficulties
         const uniqueCategories = categories.map(c => ({
             name: c.name,
@@ -372,7 +372,7 @@ function parseQuestionNumbers(str) {
     if (!str) return [];
     const result = [];
     const parts = str.split(",");
-    
+
     for (const part of parts) {
         const trimmed = part.trim();
         if (trimmed.includes("-")) {
@@ -389,6 +389,6 @@ function parseQuestionNumbers(str) {
             }
         }
     }
-    
+
     return [...new Set(result)].sort((a, b) => a - b);
 }

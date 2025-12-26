@@ -1,8 +1,10 @@
 import asyncHandler from "../handlers/asyncHandler.js";
 import QuestionModel from "../models/questionModule.js";
 import ExamParYear from "../models/examParYearModel.js";
+import QCMBanque from "../models/qcmBanqueModel.js";
 import UserModel from "../models/userModel.js";
 import PointModel from "../models/pointModel.js";
+import xlsx from "xlsx";
 
 export const questionController = {
     create: asyncHandler(async (req, res) => {
@@ -216,12 +218,12 @@ export const questionController = {
 
     // Attach images to questions by question numbers
     attachImagesToQuestions: asyncHandler(async (req, res) => {
-        const { examId, imageUrls, questionNumbers } = req.body;
+        const { examId, qcmBanqueId, imageUrls, questionNumbers } = req.body;
 
-        if (!examId || !imageUrls || !questionNumbers) {
+        if ((!examId && !qcmBanqueId) || !imageUrls || !questionNumbers) {
             return res.status(400).json({
                 success: false,
-                message: "examId, imageUrls et questionNumbers sont requis"
+                message: "examId ou qcmBanqueId, imageUrls et questionNumbers sont requis"
             });
         }
 
@@ -244,13 +246,14 @@ export const questionController = {
 
         const numbers = parseNumbers(questionNumbers);
 
-        // Get questions for this exam
-        const questions = await QuestionModel.find({ examId }).sort({ createdAt: 1 });
+        // Get questions for this exam or qcm banque
+        const filter = examId ? { examId } : { qcmBanqueId };
+        const questions = await QuestionModel.find(filter).sort({ createdAt: 1 });
 
         if (questions.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Aucune question trouvée pour cet examen"
+                message: "Aucune question trouvée"
             });
         }
 
@@ -475,5 +478,174 @@ export const questionController = {
             return true;
         }
         return false;
+    }),
+
+    // Import questions from Excel file
+    importFromExcel: asyncHandler(async (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Veuillez fournir un fichier Excel"
+            });
+        }
+
+        const { examId, moduleId, qcmBanqueId, type } = req.body;
+
+        // Determine target ID based on type
+        let targetId = examId || qcmBanqueId;
+        if (!targetId && !moduleId) {
+            return res.status(400).json({
+                success: false,
+                message: "Veuillez spécifier examId, qcmBanqueId ou moduleId"
+            });
+        }
+
+        try {
+            // Parse Excel file from buffer
+            const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
+
+            if (jsonData.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Le fichier Excel est vide"
+                });
+            }
+
+            const questionsToCreate = [];
+
+            for (const row of jsonData) {
+                // Map Excel columns to question fields
+                // Expected columns: Question, Option A, Option B, Option C, Option D, Option E, Correct (A,B,C,D,E format), Session, Note
+                const questionText = row['Question'] || row['question'] || row['Texte'] || row['texte'] || '';
+                
+                if (!questionText.trim()) continue;
+
+                // Parse options
+                const options = [];
+                const correctAnswers = (row['Correct'] || row['correct'] || row['Réponse'] || row['reponse'] || '').toUpperCase().split(',').map(s => s.trim());
+                
+                ['A', 'B', 'C', 'D', 'E'].forEach(letter => {
+                    const optionText = row[`Option ${letter}`] || row[`option ${letter}`] || row[letter] || '';
+                    if (optionText.trim()) {
+                        options.push({
+                            text: optionText.trim(),
+                            isCorrect: correctAnswers.includes(letter)
+                        });
+                    }
+                });
+
+                if (options.length < 2) continue; // Skip questions with less than 2 options
+
+                const questionData = {
+                    text: questionText.trim(),
+                    options,
+                    sessionLabel: row['Session'] || row['session'] || '',
+                    note: row['Note'] || row['note'] || '',
+                    images: []
+                };
+
+                // Set the appropriate reference based on type
+                if (type === 'qcm-banque' && qcmBanqueId) {
+                    questionData.qcmBanqueId = qcmBanqueId;
+                } else if (examId) {
+                    questionData.examId = examId;
+                }
+
+                questionsToCreate.push(questionData);
+            }
+
+            if (questionsToCreate.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Aucune question valide trouvée dans le fichier"
+                });
+            }
+
+            // Create all questions
+            const createdQuestions = await QuestionModel.insertMany(questionsToCreate);
+
+            res.status(201).json({
+                success: true,
+                message: `${createdQuestions.length} question(s) importée(s) avec succès`,
+                data: {
+                    count: createdQuestions.length,
+                    questions: createdQuestions
+                }
+            });
+        } catch (error) {
+            console.error("Error parsing Excel:", error);
+            return res.status(400).json({
+                success: false,
+                message: "Erreur lors de la lecture du fichier Excel: " + error.message
+            });
+        }
+    }),
+
+    // Assign questions to sub-modules (sessions/categories)
+    assignSubModules: asyncHandler(async (req, res) => {
+        const { examId, qcmBanqueId, subModules } = req.body;
+
+        if ((!examId && !qcmBanqueId) || !subModules || !Array.isArray(subModules)) {
+            return res.status(400).json({
+                success: false,
+                message: "examId ou qcmBanqueId et subModules sont requis"
+            });
+        }
+
+        // Parse question numbers helper
+        const parseNumbers = (str) => {
+            const result = [];
+            const parts = str.split(',').map(s => s.trim());
+            for (const part of parts) {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(Number);
+                    for (let i = start; i <= end; i++) {
+                        result.push(i);
+                    }
+                } else {
+                    result.push(Number(part));
+                }
+            }
+            return [...new Set(result)].sort((a, b) => a - b);
+        };
+
+        // Get questions for this exam or qcm banque
+        const filter = examId ? { examId } : { qcmBanqueId };
+        const questions = await QuestionModel.find(filter).sort({ createdAt: 1 });
+
+        if (questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucune question trouvée"
+            });
+        }
+
+        let updatedCount = 0;
+
+        for (const subModule of subModules) {
+            const { name, questionNumbers } = subModule;
+            if (!name || !questionNumbers) continue;
+
+            const numbers = parseNumbers(questionNumbers);
+
+            for (const num of numbers) {
+                const index = num - 1; // Convert to 0-indexed
+                if (index >= 0 && index < questions.length) {
+                    await QuestionModel.findByIdAndUpdate(questions[index]._id, {
+                        sessionLabel: name
+                    });
+                    updatedCount++;
+                }
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `${updatedCount} question(s) assignée(s) aux sous-modules/catégories`,
+            updatedCount
+        });
     })
 };

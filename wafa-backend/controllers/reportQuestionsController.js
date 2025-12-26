@@ -3,7 +3,14 @@ import ReportQuestions from "../models/reportQuestions.js";
 
 export const reportQuestionsController = {
     create: asyncHandler(async (req, res) => {
-        const { userId, questionId, details, status } = req.body;
+        const { questionId, details, status } = req.body;
+        // Get userId from authenticated user
+        const userId = req.user?._id || req.body.userId;
+        
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+        
         const report = await ReportQuestions.create({ userId, questionId, details, status });
         res.status(201).json({ success: true, data: report });
     }),

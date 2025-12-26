@@ -458,9 +458,9 @@ const ExamParYears = () => {
                         <SelectValue placeholder="Sélectionner un module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {uniqueModules.map((module) => (
-                          <SelectItem key={module} value={module} className="text-black">
-                            {module}
+                        {modules.map((mod) => (
+                          <SelectItem key={mod._id} value={mod.name} className="text-black">
+                            {mod.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

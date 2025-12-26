@@ -39,17 +39,31 @@ const Module = () => {
 
       const placeholderImage =
         "http://www.univ-mosta.dz/medecine/wp-content/uploads/sites/4/2021/12/telechargement-1-1.jpg";
+
+      // Helper to get full image URL
+      const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return placeholderImage;
+        // If it's a relative path (local upload), prepend backend URL
+        if (imageUrl.startsWith('/uploads')) {
+          const backendUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5010';
+          return `${backendUrl}${imageUrl}`;
+        }
+        // Otherwise return as-is (external URL)
+        return imageUrl;
+      };
+
       const list = (data?.data || []).map((m) => ({
         id: m?._id,
         semester: m?.semester || "",
         name: m?.name || "",
-        imageUrl: m?.imageUrl || placeholderImage,
+        imageUrl: getImageUrl(m?.imageUrl),
         totalQuestions: m.totalQuestions,
         helpText: m?.infoText || "",
         color: m?.color || "#6366f1",
         contentType: m?.contentType || "url",
         textContent: m?.textContent || "",
-        helpContent: m?.helpContent || ""
+        helpContent: m?.helpContent || "",
+        difficulty: m?.difficulty || "QE"
       }));
       setModules(list);
     } catch (e) {
@@ -239,6 +253,7 @@ const Module = () => {
                     <TableHead>{t('admin:module')}</TableHead>
                     <TableHead>{t('admin:image')}</TableHead>
                     <TableHead className="w-[100px]">color</TableHead>
+                    <TableHead>Difficulté</TableHead>
                     <TableHead>{t('admin:questions')}</TableHead>
                     <TableHead>Texte d'aide</TableHead>
                     <TableHead className="text-right">{t('common:actions')}</TableHead>
@@ -274,6 +289,18 @@ const Module = () => {
                             style={{ backgroundColor: m.color }}
                             title={m.color}
                           />
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            m.difficulty === "easy" ? "bg-green-100 text-green-700" :
+                              m.difficulty === "hard" ? "bg-red-100 text-red-700" :
+                                m.difficulty === "QE" ? "bg-orange-100 text-orange-700" :
+                                  "bg-amber-100 text-amber-700"
+                          }>
+                            {m.difficulty === "easy" ? "Facile" :
+                              m.difficulty === "hard" ? "Difficile" :
+                                m.difficulty === "QE" ? "QE" : "Moyen"}
+                          </Badge>
                         </TableCell>
                         <TableCell className="pl-6">{m.totalQuestions}</TableCell>
                         <TableCell>

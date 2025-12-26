@@ -3,10 +3,53 @@ import { explanationController } from "../controllers/explanationController.js";
 import validate from "../middleware/validateSchema.js";
 import explanationSchema from "../validators/ExplanationSchema.js";
 import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 
-router.post("/create", isAuthenticated, validate(explanationSchema), explanationController.create);
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "..", "uploads", "explanations");
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for local disk storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, "explanation-" + uniqueSuffix + ext);
+    }
+});
+
+const uploadExplanationFiles = multer({
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max per file
+    fileFilter: (req, file, cb) => {
+        if (file.fieldname === 'images' && file.mimetype.startsWith("image/")) {
+            cb(null, true);
+        } else if (file.fieldname === 'pdf' && file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error("Type de fichier non autorisé"), false);
+        }
+    }
+}).fields([
+    { name: 'images', maxCount: 5 },
+    { name: 'pdf', maxCount: 1 }
+]);
+
+// Create with file upload support
+router.post("/create", isAuthenticated, uploadExplanationFiles, explanationController.create);
 router.get("/", explanationController.getAll);
 router.get("/:id", explanationController.getById);
 router.put("/:id", isAuthenticated, validate(explanationSchema), explanationController.update);

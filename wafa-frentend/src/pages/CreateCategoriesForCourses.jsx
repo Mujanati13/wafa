@@ -30,6 +30,8 @@ const CreateCategoriesForCourses = () => {
   const [categoriesForCourses, setCategoriesForCourses] = useState([]);
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const placeholderImage = "https://via.placeholder.com/150x100/111827/FFFFFF?text=Image";
 
   useEffect(() => {
@@ -50,12 +52,23 @@ const CreateCategoriesForCourses = () => {
     try {
       setLoading(true);
       const { data } = await api.get("/exam-courses");
+
+      // Helper to get full image URL
+      const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return placeholderImage;
+        if (imageUrl.startsWith('/uploads')) {
+          const backendUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5010';
+          return `${backendUrl}${imageUrl}`;
+        }
+        return imageUrl;
+      };
+
       const list = (data?.data || []).map((c) => ({
         id: c._id,
         moduleId: c.moduleId?._id || c.moduleId || "",
         moduleName: c.moduleName || c.moduleId?.name || "",
         categoryCourseName: c.name || "",
-        imageUrl: c.imageUrl || placeholderImage,
+        imageUrl: getImageUrl(c.imageUrl),
         totalQuestions: c.totalQuestions || 0,
       }));
       setCategoriesForCourses(list);
@@ -72,25 +85,44 @@ const CreateCategoriesForCourses = () => {
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.moduleId || !formData.category) {
+    if (!formData.moduleId || !formData.category) {
       toast.error("Veuillez remplir les champs obligatoires");
       return;
     }
 
+    // Get module name for the course name
+    const selectedModule = modules.find(m => m._id === formData.moduleId);
+    const courseName = selectedModule ? `${selectedModule.name} - ${formData.category}` : formData.category;
+
     try {
-      await api.post("/exam-courses", {
-        name: formData.name,
-        moduleId: formData.moduleId,
-        category: formData.category,
-        imageUrl: formData.imageUrl || "",
-      });
+      if (imageFile) {
+        // Use FormData for file upload
+        const data = new FormData();
+        data.append("name", courseName);
+        data.append("moduleId", formData.moduleId);
+        data.append("category", formData.category);
+        data.append("courseImage", imageFile);
+
+        await api.post("/exam-courses/create-with-image", data, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      } else {
+        await api.post("/exam-courses", {
+          name: courseName,
+          moduleId: formData.moduleId,
+          category: formData.category,
+          imageUrl: formData.imageUrl || "",
+        });
+      }
       toast.success("Catégorie créée avec succès");
       setShowCreateForm(false);
       setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      setImageFile(null);
+      setImagePreview(null);
       fetchCourses();
     } catch (err) {
       console.error("Error creating category:", err);
-      toast.error("Erreur lors de la création");
+      toast.error(err.response?.data?.message || "Erreur lors de la création");
     }
   };
 
@@ -106,14 +138,18 @@ const CreateCategoriesForCourses = () => {
   };
 
   const handleUpdate = async () => {
-    if (!formData.name || !formData.moduleId || !formData.category) {
+    if (!formData.moduleId || !formData.category) {
       toast.error("Veuillez remplir les champs obligatoires");
       return;
     }
 
+    // Get module name for the course name
+    const selectedModule = modules.find(m => m._id === formData.moduleId);
+    const courseName = selectedModule ? `${selectedModule.name} - ${formData.category}` : formData.category;
+
     try {
       await api.put(`/exam-courses/${editingCategory.id}`, {
-        name: formData.name,
+        name: courseName,
         moduleId: formData.moduleId,
         category: formData.category,
         imageUrl: formData.imageUrl || "",
@@ -282,14 +318,11 @@ const CreateCategoriesForCourses = () => {
                   </SelectTrigger>
                   <SelectContent className="bg-white border-gray-200">
                     <SelectItem value="all" className="text-black">All Modules</SelectItem>
-                    {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId).filter(id => id && id !== ""))).map((moduleId) => {
-                      const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
-                      return (
-                        <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
-                          {module?.moduleName}
-                        </SelectItem>
-                      );
-                    })}
+                    {modules.map((mod) => (
+                      <SelectItem key={mod._id} value={mod._id} className="text-black">
+                        {mod.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -445,40 +478,17 @@ const CreateCategoriesForCourses = () => {
 
                 <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingCategory ? handleUpdate() : handleCreate(); }}>
                   <div className="space-y-2">
-                    <Label className="text-black">Category Name</Label>
-                    <Input
-                      placeholder="Enter category name"
-                      value={formData.name}
-                      onChange={(e) => handleFormChange("name", e.target.value)}
-                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-black">Image URL</Label>
-                    <Input
-                      placeholder="https://..."
-                      value={formData.imageUrl}
-                      onChange={(e) => handleFormChange("imageUrl", e.target.value)}
-                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-black">Select Module</Label>
+                    <Label className="text-black">Select Module *</Label>
                     <Select value={formData.moduleId} onValueChange={(value) => handleFormChange("moduleId", value)}>
                       <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
                         <SelectValue placeholder="Choose module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {Array.from(new Set(categoriesForCourses.map((c) => c.moduleId).filter(id => id && id !== ""))).map((moduleId) => {
-                          const module = categoriesForCourses.find((c) => c.moduleId === moduleId);
-                          return (
-                            <SelectItem key={moduleId} value={String(moduleId)} className="text-black">
-                              {module?.moduleName}
-                            </SelectItem>
-                          );
-                        })}
+                        {modules.map((mod) => (
+                          <SelectItem key={mod._id} value={mod._id} className="text-black">
+                            {mod.name} ({mod.semester})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -498,12 +508,37 @@ const CreateCategoriesForCourses = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-black">Categories of courses names</Label>
-                    <Input
-                      placeholder="Enter category course name"
-                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
-                    />
+                    <Label className="text-black">Image</Label>
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setImageFile(file);
+                            const reader = new FileReader();
+                            reader.onloadend = () => setImagePreview(reader.result);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer hover:file:bg-blue-700"
+                      />
+                      {imagePreview && (
+                        <div className="relative w-32 h-24 rounded-lg overflow-hidden border border-gray-300">
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => { setImageFile(null); setImagePreview(null); }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
 
                   <DialogFooter className="gap-2 pt-4">
                     <Button

@@ -10,7 +10,23 @@ const APPROVED_EXPLANATION_VOTE_WEIGHT_MULTIPLIER = 20;
 
 export const explanationController = {
     create: asyncHandler(async (req, res) => {
-        const { userId, questionId, title, contentText, imageUrl } = req.body;
+        const { questionId, title, contentText } = req.body;
+        const userId = req.user._id; // Get from authenticated user
+
+        // Process uploaded files
+        let imageUrls = [];
+        let pdfUrl = null;
+
+        if (req.files) {
+            // Handle images (max 5)
+            if (req.files.images) {
+                imageUrls = req.files.images.map(file => `/uploads/explanations/${file.filename}`);
+            }
+            // Handle PDF (max 1)
+            if (req.files.pdf && req.files.pdf.length > 0) {
+                pdfUrl = `/uploads/explanations/${req.files.pdf[0].filename}`;
+            }
+        }
 
         // Check if max explanations limit reached for this question
         const existingCount = await explanationModel.countDocuments({
@@ -38,9 +54,10 @@ export const explanationController = {
         const newExplanation = await explanationModel.create({
             userId,
             questionId,
-            title,
+            title: title || "Explication utilisateur",
             contentText,
-            imageUrl,
+            imageUrls, // Array of image URLs
+            pdfUrl,    // Single PDF URL
             status: "pending",
             isAiGenerated: false
         });

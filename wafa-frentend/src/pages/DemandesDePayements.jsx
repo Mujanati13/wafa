@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
-import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign, Search, Calendar, X, MessageCircle, Filter } from "lucide-react";
+import { Trash2, Check, CreditCard, ChevronLeft, ChevronRight, CheckCircle2, Clock, DollarSign, Search, Calendar, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,16 +30,21 @@ const DemandesDePayements = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("pending"); // Default to pending
   const [actionLoading, setActionLoading] = useState(null); // Track loading state per transaction ID
 
   useEffect(() => {
     fetchTransactions(1);
-  }, []);
+  }, [statusFilter]);
 
   const fetchTransactions = async (page) => {
     try {
       setLoading(true);
-      const response = await paymentService.getAllTransactions({ page, limit: pagination.limit });
+      const params = { page, limit: pagination.limit };
+      if (statusFilter && statusFilter !== 'all') {
+        params.status = statusFilter;
+      }
+      const response = await paymentService.getAllTransactions(params);
       setTransactions(response.transactions);
       setPagination(response.pagination);
       setStats(response.stats);
@@ -321,6 +326,17 @@ const DemandesDePayements = () => {
                   )}
                 </div>
 
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="h-10 px-3 border border-slate-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-white"
+                >
+                  <option value="pending">En attente</option>
+                  <option value="completed">Approuvés</option>
+                  <option value="all">Tous</option>
+                </select>
+
                 {/* Date of demandes Filter */}
                 <div className="flex items-center gap-2">
                   <div className="relative">
@@ -345,14 +361,8 @@ const DemandesDePayements = () => {
                   )}
                 </div>
 
-                {/* Filters Button */}
-                <Button variant="outline" className="h-10 gap-2 border-slate-200">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </Button>
-
                 {/* Clear Filters */}
-                {(searchTerm || dateFrom || dateTo) && (
+                {(searchTerm || dateFrom || dateTo || statusFilter !== 'pending') && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -360,11 +370,12 @@ const DemandesDePayements = () => {
                       setSearchTerm("");
                       setDateFrom("");
                       setDateTo("");
+                      setStatusFilter("pending");
                     }}
                     className="text-slate-500 hover:text-slate-700"
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Clear
+                    Reset
                   </Button>
                 )}
               </div>

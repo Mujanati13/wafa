@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
+import { api } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +79,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             {/* Icon */}
-            <div 
+            <div
               className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${!moduleColor ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : ''}`}
               style={moduleColor ? {
                 background: `linear-gradient(to bottom right, ${moduleColor}, ${adjustColorLocal(moduleColor, -30)})`
@@ -89,7 +90,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <h3 
+              <h3
                 className="font-semibold text-gray-900 line-clamp-1 transition-colors"
                 style={{ color: moduleColor ? undefined : undefined }}
               >
@@ -197,45 +198,115 @@ const SubjectsPage = () => {
           color: moduleData.color,
         });
 
-        // Build question count map
-        const examIdToQuestionCount = (moduleData.questions || []).reduce(
-          (acc, q) => {
-            const key = q.examId;
-            acc[key] = (acc[key] || 0) + 1;
-            return acc;
-          },
-          {}
-        );
+        // Fetch exam-courses for this module from API
+        try {
+          // Fetch from all 3 sources: exam-courses, exams (par années), and qcm-banque
+          const [examCoursesResponse, examsResponse, qcmResponse] = await Promise.all([
+            api.get(`/exam-courses?moduleId=${id}`),
+            api.get(`/exams/all`).catch(() => ({ data: { data: [] } })),
+            api.get(`/qcm-banque/all`).catch(() => ({ data: { data: [] } }))
+          ]);
 
-        // Process exams and categorize by type
-        // For now, we'll use the existing exams structure and simulate the 3 types
-        // In production, you'd fetch from separate endpoints
-        const allExams = (moduleData.exams || []).map((e) => ({
-          id: e._id,
-          name: e.name,
-          questions: examIdToQuestionCount[e._id] || 0,
-          progress: 0,
-          category: e.category || "Général",
-          year: e.year,
-          type: e.type || "year", // Default to year type
-        }));
+          const examCourses = examCoursesResponse.data?.data || [];
+          const allExams = examsResponse.data?.data || [];
+          const allQcmBanque = qcmResponse.data?.data || [];
 
-        // Separate exams by type (simulated - in production use real type field)
-        // For demo: first 1/3 = year, middle 1/3 = course, last 1/3 = qcm
-        const yearExams = allExams.filter((_, i) => i % 3 === 0 || allExams.length <= 3);
-        const courseExams = allExams.filter((_, i) => i % 3 === 1);
-        const qcmExams = allExams.filter((_, i) => i % 3 === 2);
+          // Filter exams by module
+          const moduleExams = allExams.filter(e => 
+            (e.moduleId?._id || e.moduleId) === id || 
+            e.moduleName === moduleData.name
+          );
 
-        setExamsParYear(yearExams);
-        setExamsParCours(courseExams);
-        setQcmBanque(qcmExams);
+          // Filter QCM Banque by module
+          const moduleQcm = allQcmBanque.filter(q => 
+            (q.moduleId?._id || q.moduleId) === id ||
+            q.moduleName === moduleData.name
+          );
 
-        // Extract unique categories from course exams
-        const uniqueCategories = [...new Set(courseExams.map(e => e.category))];
-        setCategories([
-          { id: "all", name: t('common:all', 'Tous') },
-          ...uniqueCategories.map(cat => ({ id: cat, name: cat }))
-        ]);
+          // Map exam par années from /exams endpoint
+          const yearExamsFromApi = moduleExams.map(e => ({
+            id: e._id,
+            name: e.name,
+            questions: Array.isArray(e.questions) ? e.questions.length : (e.totalQuestions || 0),
+            progress: 0,
+            category: "Exam par years",
+            imageUrl: e.imageUrl,
+            year: e.year
+          }));
+
+          // Map QCM banque from /qcm-banque endpoint
+          const qcmFromApi = moduleQcm.map(q => ({
+            id: q._id,
+            name: q.name,
+            questions: q.totalQuestions || 0,
+            progress: 0,
+            category: "QCM banque",
+            imageUrl: q.imageUrl
+          }));
+
+          // Also get exam-courses with category "Exam par years" as fallback
+          const yearExamsFromCourses = examCourses
+            .filter(c => c.category === "Exam par years")
+            .map(c => ({
+              id: c._id,
+              name: c.name,
+              questions: c.totalQuestions || 0,
+              progress: 0,
+              category: c.category,
+              imageUrl: c.imageUrl
+            }));
+
+          const courseExams = examCourses
+            .filter(c => c.category === "Exam par courses")
+            .map(c => ({
+              id: c._id,
+              name: c.name,
+              questions: c.totalQuestions || 0,
+              progress: 0,
+              category: c.name, // Use name as category
+              imageUrl: c.imageUrl
+            }));
+
+          // QCM from exam-courses as fallback
+          const qcmFromCourses = examCourses
+            .filter(c => c.category === "QCM banque")
+            .map(c => ({
+              id: c._id,
+              name: c.name,
+              questions: c.totalQuestions || 0,
+              progress: 0,
+              category: c.category,
+              imageUrl: c.imageUrl
+            }));
+
+          // Combine sources - prioritize direct API sources
+          const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
+          const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
+
+          setExamsParYear(yearExams);
+          setExamsParCours(courseExams);
+          setQcmBanque(qcmExams);
+
+          // Extract unique categories from course exams
+          const uniqueCategories = [...new Set(courseExams.map(e => e.category))];
+          setCategories([
+            { id: "all", name: t('common:all', 'Tous') },
+            ...uniqueCategories.map(cat => ({ id: cat, name: cat }))
+          ]);
+        } catch (examError) {
+          console.error("Error fetching exam-courses:", examError);
+          // Fallback to module.exams if exam-courses API fails
+          const allExams = (moduleData.exams || []).map((e) => ({
+            id: e._id,
+            name: e.name,
+            questions: 0,
+            progress: 0,
+            category: e.category || "Général",
+          }));
+          setExamsParYear(allExams);
+          setExamsParCours([]);
+          setQcmBanque([]);
+        }
 
       } catch (error) {
         console.error(error);
@@ -369,7 +440,7 @@ const SubjectsPage = () => {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{module.name}</h1>
-            <div 
+            <div
               className={`h-1 w-24 mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
               style={module.color ? {
                 background: `linear-gradient(to right, ${module.color}, ${adjustColor(module.color, -30)})`
@@ -466,13 +537,13 @@ const SubjectsPage = () => {
             <Card className="overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div 
+                  <div
                     className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
                     style={module.color ? {
                       backgroundColor: `${module.color}20`
                     } : undefined}
                   >
-                    <FileQuestion 
+                    <FileQuestion
                       className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
                       style={module.color ? { color: module.color } : undefined}
                     />
@@ -489,13 +560,13 @@ const SubjectsPage = () => {
             <Card className="overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div 
+                  <div
                     className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
                     style={module.color ? {
                       backgroundColor: `${module.color}15`
                     } : undefined}
                   >
-                    <GraduationCap 
+                    <GraduationCap
                       className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
                       style={module.color ? { color: module.color } : undefined}
                     />
