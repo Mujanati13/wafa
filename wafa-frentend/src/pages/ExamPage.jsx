@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,12 @@ import {
   Users,
   LayoutGrid,
   ListMusic,
-  Image
+  Image,
+  Menu,
+  Grid3X3,
+  MoreVertical,
+  Send,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -158,6 +163,16 @@ const ExamPage = () => {
   // Animation states
   const [answerAnimation, setAnswerAnimation] = useState(null);
   const [questionTransition, setQuestionTransition] = useState('next');
+
+  // Mobile-specific states
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMobileQuestionNav, setShowMobileQuestionNav] = useState(false);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const questionCardRef = useRef(null);
+
+  // Swipe detection threshold
+  const minSwipeDistance = 50;
 
   // Sound effects placeholder
   const playSound = useCallback((type) => {
@@ -372,7 +387,32 @@ const ExamPage = () => {
     setCurrentQuestion(index);
     setVisitedQuestions(prev => new Set([...prev, index]));
     setShowSidebar(false);
+    setShowMobileQuestionNav(false);
   }, [currentQuestion]);
+
+  // Touch/Swipe handlers for mobile navigation
+  const onTouchStart = useCallback((e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentQuestion < questions.length - 1) {
+      goToNext();
+    }
+    if (isRightSwipe && currentQuestion > 0) {
+      goToPrevious();
+    }
+  }, [touchStart, touchEnd, currentQuestion, questions.length, goToNext, goToPrevious]);
 
   // Calculate score
   const calculateScore = useCallback(() => {
@@ -616,10 +656,128 @@ const ExamPage = () => {
   const answeredCount = Object.keys(selectedAnswers).length;
   const flaggedCount = flaggedQuestions.size;
 
+  // Calculate verified stats for mobile header
+  const verifiedCount = Object.keys(verifiedQuestions).length;
+  const correctCount = questions.filter((_, i) => {
+    if (!verifiedQuestions[i]) return false;
+    const selected = selectedAnswers[i] || [];
+    const correctIndices = questions[i].options
+      .map((opt, idx) => opt.isCorrect ? idx : null)
+      .filter(idx => idx !== null);
+    return selected.length === correctIndices.length &&
+      selected.every(s => correctIndices.includes(s));
+  }).length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
-      {/* Enhanced Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 pb-20 lg:pb-0">
+      {/* ============== MOBILE RESULTS BANNER ============== */}
+      {showResults && (
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 text-white safe-area-pt">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Trophy className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-white/70">Examen terminé</p>
+                  <p className="text-2xl font-bold">
+                    {Math.round((score.correct / score.total) * 100)}%
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium">{score.correct}/{score.total}</p>
+                <p className="text-xs text-white/70">réponses correctes</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={handleRetry}
+                className="flex-1 py-2 px-3 rounded-lg bg-white/20 text-white text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Recommencer
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/home')}
+                className="flex-1 py-2 px-3 rounded-lg bg-white text-indigo-600 text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <Home className="h-4 w-4" />
+                Accueil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============== MOBILE HEADER ============== */}
+      <header className={cn(
+        "lg:hidden bg-white/95 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40 shadow-sm",
+        showResults && "mt-32" // Add margin when results banner is showing
+      )}>
+        {/* Top row */}
+        <div className="flex items-center justify-between px-3 py-2">
+          {/* Back button + Title */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <button
+              onClick={() => navigate('/dashboard/home')}
+              className="p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-semibold text-sm truncate text-gray-900">
+                {examData?.title || 'Examen'}
+              </h1>
+            </div>
+          </div>
+          
+          {/* Timer + Menu */}
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-mono font-medium",
+              getTimeColor()
+            )}>
+              <Timer className="h-3.5 w-3.5" />
+              {formatTime(timeElapsed)}
+            </div>
+            <button
+              onClick={() => setShowMobileMenu(true)}
+              className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200"
+            >
+              <MoreVertical className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress bar with question indicator */}
+        <div className="px-3 pb-2">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+            <span className="font-medium" style={{ color: moduleColor }}>
+              Question {currentQuestion + 1} / {questions.length}
+            </span>
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+              {verifiedCount} vérifiées
+            </span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{
+                background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
+              }}
+              initial={{ width: 0 }}
+              animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* ============== DESKTOP HEADER ============== */}
+      <header className="hidden lg:block bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-12 sm:h-14 md:h-16">
             {/* Left Section */}
@@ -888,16 +1046,28 @@ const ExamPage = () => {
           {/* Main Question Area */}
           <div className="lg:col-span-3 space-y-4 sm:space-y-6">
 
-            {/* Question Card */}
+            {/* Question Card - with swipe support on mobile */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentQuestion}
+                ref={questionCardRef}
                 initial={{ opacity: 0, x: questionTransition === 'next' ? 50 : -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: questionTransition === 'next' ? -50 : 50 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                className="touch-pan-y"
               >
                 <Card className="shadow-xl border-0 overflow-hidden">
+                  {/* Mobile Swipe Hint */}
+                  <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100/50 text-xs text-gray-400">
+                    <ChevronLeft className="h-3 w-3" />
+                    <span>Glissez pour naviguer</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </div>
+
                   {/* Question Header */}
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4">
                     <div className="flex items-start justify-between gap-2">
@@ -936,7 +1106,8 @@ const ExamPage = () => {
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-0.5 sm:gap-1">
+                      {/* Desktop action buttons - hidden on mobile since we have bottom bar */}
+                      <div className="hidden lg:flex items-center gap-0.5 sm:gap-1">
                         {/* Image Gallery Button */}
                         <Button
                           variant="ghost"
@@ -1138,10 +1309,10 @@ const ExamPage = () => {
                     </div>
                   </CardContent>
 
-                  {/* Bottom Action Toolbar - Responsive Grid */}
-                  <div className="bg-white border-t">
-                    {/* Mobile: 2 rows of 3 buttons */}
-                    <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-gray-100">
+                  {/* Bottom Action Toolbar - Desktop Only (Mobile uses fixed bottom nav) */}
+                  <div className="hidden lg:block bg-white border-t">
+                    {/* Desktop: 6 buttons in a row */}
+                    <div className="grid grid-cols-6 divide-x divide-gray-100">
                       {/* Correct/Verifier Button */}
                       <button
                         onClick={handleVerifyQuestion}
@@ -1322,8 +1493,8 @@ const ExamPage = () => {
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between gap-4">
+            {/* Navigation - Desktop Only */}
+            <div className="hidden lg:flex items-center justify-between gap-4">
               <Button
                 variant="outline"
                 onClick={goToPrevious}
@@ -1370,8 +1541,8 @@ const ExamPage = () => {
               </Button>
             </div>
 
-            {/* Progress Summary Bar */}
-            <div className="mt-4 p-3 bg-white rounded-lg border shadow-sm">
+            {/* Progress Summary Bar - Desktop Only */}
+            <div className="hidden lg:block mt-4 p-3 bg-white rounded-lg border shadow-sm">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="font-medium text-gray-700">Progression</span>
                 <span className="text-gray-500">
@@ -1429,8 +1600,439 @@ const ExamPage = () => {
         </div>
       </div>
 
+      {/* ============== MOBILE BOTTOM NAVIGATION BAR ============== */}
+      {!showResults ? (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg safe-area-pb">
+          {/* Quick action buttons row */}
+          <div className="flex items-center justify-between px-2 py-1 border-b border-gray-100">
+            <button
+              onClick={() => toggleFlag(currentQuestion)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                flaggedQuestions.has(currentQuestion)
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-gray-100 text-gray-600"
+              )}
+            >
+            <Flag className={cn("h-3.5 w-3.5", flaggedQuestions.has(currentQuestion) && "fill-current")} />
+            Marquer
+          </button>
+          
+          <button
+            onClick={() => setShowNoteModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium"
+          >
+            <NotebookPen className="h-3.5 w-3.5" />
+            Note
+          </button>
+          
+          <button
+            onClick={() => setShowReportModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium"
+          >
+            <TriangleAlert className="h-3.5 w-3.5" />
+            Signaler
+          </button>
+          
+          <button
+            onClick={() => setShowMobileQuestionNav(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style={{ backgroundColor: `${moduleColor}15`, color: moduleColor }}
+          >
+            <Grid3X3 className="h-3.5 w-3.5" />
+            {currentQuestion + 1}/{questions.length}
+          </button>
+        </div>
+
+        {/* Main navigation row */}
+        <div className="flex items-center gap-2 px-3 py-2">
+          {/* Previous button */}
+          <button
+            onClick={goToPrevious}
+            disabled={currentQuestion === 0}
+            className={cn(
+              "p-3 rounded-xl transition-all active:scale-95",
+              currentQuestion === 0
+                ? "bg-gray-100 text-gray-300"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            )}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          {/* Verify / Check button - Main CTA */}
+          {!isQuestionVerified && !showResults ? (
+            <button
+              onClick={handleVerifyQuestion}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-white transition-all active:scale-98"
+              style={{
+                background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`,
+                boxShadow: `0 4px 15px ${moduleColor}40`
+              }}
+            >
+              <Check className="h-5 w-5" />
+              Vérifier
+            </button>
+          ) : (
+            <div className="flex-1 flex items-center gap-2">
+              {/* Explanation button */}
+              <button
+                onClick={() => setShowExplanation(true)}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl font-medium text-amber-700 bg-amber-100 transition-all active:scale-98"
+              >
+                <Lightbulb className="h-5 w-5" />
+                Explication
+              </button>
+              
+              {/* Reset button */}
+              <button
+                onClick={handleResetQuestion}
+                className="p-3 rounded-xl bg-gray-100 text-gray-600 transition-all active:scale-95"
+              >
+                <RefreshCcw className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+
+          {/* Next button */}
+          <button
+            onClick={goToNext}
+            disabled={currentQuestion === questions.length - 1}
+            className={cn(
+              "p-3 rounded-xl transition-all active:scale-95",
+              currentQuestion === questions.length - 1
+                ? "bg-gray-100 text-gray-300"
+                : "text-white"
+            )}
+            style={
+              currentQuestion !== questions.length - 1
+                ? {
+                    background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                  }
+                : {}
+            }
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      ) : (
+        /* Mobile Results Bottom Bar */
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg safe-area-pb">
+          <div className="flex items-center gap-3 px-4 py-3">
+            {/* Previous */}
+            <button
+              onClick={goToPrevious}
+              disabled={currentQuestion === 0}
+              className={cn(
+                "p-3 rounded-xl transition-all active:scale-95",
+                currentQuestion === 0 ? "bg-gray-100 text-gray-300" : "bg-gray-100 text-gray-700"
+              )}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            {/* Question Nav Button */}
+            <button
+              onClick={() => setShowMobileQuestionNav(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-white transition-all active:scale-98"
+              style={{
+                background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+              }}
+            >
+              <Grid3X3 className="h-5 w-5" />
+              Voir toutes les questions
+            </button>
+
+            {/* Next */}
+            <button
+              onClick={goToNext}
+              disabled={currentQuestion === questions.length - 1}
+              className={cn(
+                "p-3 rounded-xl transition-all active:scale-95",
+                currentQuestion === questions.length - 1 ? "bg-gray-100 text-gray-300" : "bg-gray-100 text-gray-700"
+              )}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============== MOBILE QUESTION NAVIGATION DRAWER ============== */}
+      <AnimatePresence>
+        {showMobileQuestionNav && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            onClick={() => setShowMobileQuestionNav(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              </div>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 pb-3 border-b">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Questions</h3>
+                  <p className="text-sm text-gray-500">
+                    {verifiedCount} vérifiées • {correctCount} correctes
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowMobileQuestionNav(false)}
+                  className="p-2 rounded-full bg-gray-100"
+                >
+                  <X className="h-5 w-5 text-gray-600" />
+                </button>
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-3 py-2 px-4 bg-gray-50 text-[10px]">
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300" />
+                  Non visité
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-blue-200 border border-blue-400" />
+                  Répondu
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-emerald-200 border border-emerald-400" />
+                  Correct
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" />
+                  Incorrect
+                </span>
+              </div>
+
+              {/* Questions grid */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="grid grid-cols-6 gap-2">
+                  {questions.map((q, index) => {
+                    const { status, isFlagged } = getQuestionStatus(index);
+                    const isCurrent = index === currentQuestion;
+
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          goToQuestion(index);
+                          setShowMobileQuestionNav(false);
+                        }}
+                        className={cn(
+                          "relative aspect-square rounded-xl text-sm font-semibold transition-all active:scale-95 border-2",
+                          isCurrent && "ring-2 ring-offset-2",
+                          status === 'correct' && "bg-emerald-100 border-emerald-400 text-emerald-700",
+                          status === 'incorrect' && "bg-red-100 border-red-400 text-red-700",
+                          status === 'answered' && "bg-blue-100 border-blue-300 text-blue-700",
+                          status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
+                          status === 'flagged' && "bg-purple-100 border-purple-400 text-purple-700",
+                          status === 'unanswered' && "bg-gray-50 border-gray-200 text-gray-500"
+                        )}
+                        style={
+                          isCurrent
+                            ? { '--tw-ring-color': moduleColor }
+                            : {}
+                        }
+                      >
+                        {index + 1}
+                        {isFlagged && (
+                          <Flag className="absolute -top-1 -right-1 h-3 w-3 text-purple-500 fill-purple-500" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+
+              {/* Submit button */}
+              {!showResults && (
+                <div className="p-4 border-t bg-white">
+                  <button
+                    onClick={() => {
+                      setShowMobileQuestionNav(false);
+                      setShowConfirmSubmit(true);
+                    }}
+                    className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-98"
+                    style={{
+                      background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                    }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <Send className="h-5 w-5" />
+                      Terminer l'examen
+                    </span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ============== MOBILE MENU DRAWER ============== */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            onClick={() => setShowMobileMenu(false)}
+          >
+            <motion.div
+              initial={{ y: '-100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute top-0 left-0 right-0 bg-white rounded-b-3xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="font-bold text-lg">Options</h3>
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="p-2 rounded-full bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Menu items */}
+              <div className="p-4 space-y-2">
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowResumesModal(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Résumés & Cours</p>
+                    <p className="text-xs text-gray-500">Consultez les ressources</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowCommunityModal(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Communauté</p>
+                    <p className="text-xs text-gray-500">Discussions et aide</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowImageGallery(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                    <Image className="h-5 w-5 text-pink-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Galerie d'images</p>
+                    <p className="text-xs text-gray-500">Toutes les images de l'examen</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowVueEnsemble(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <LayoutGrid className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Vue d'ensemble</p>
+                    <p className="text-xs text-gray-500">Toutes les questions et réponses</p>
+                  </div>
+                </button>
+
+                {/* Font size control */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-600 font-bold text-sm">Aa</span>
+                    </div>
+                    <span className="font-medium text-gray-900">Taille du texte</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white rounded-lg border p-1">
+                    <button
+                      onClick={() => adjustFontSize(-2)}
+                      disabled={fontSize <= 12}
+                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="px-2 text-sm font-medium">{fontSize}</span>
+                    <button
+                      onClick={() => adjustFontSize(2)}
+                      disabled={fontSize >= 24}
+                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit button */}
+              {!showResults && (
+                <div className="p-4 border-t">
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      setShowConfirmSubmit(true);
+                    }}
+                    className="w-full py-3 rounded-xl font-semibold text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                    }}
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Terminer l'examen
+                    </span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile FAB - positioned higher to avoid overlapping with bottom toolbar */}
-      <div className="lg:hidden fixed bottom-24 left-4 z-30">
+      <div className="hidden fixed bottom-24 left-4 z-30">
         <Button
           size="lg"
           className="h-12 w-12 rounded-full shadow-xl bg-gradient-to-br from-blue-600 to-indigo-600"
