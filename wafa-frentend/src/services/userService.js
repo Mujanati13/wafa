@@ -13,6 +13,18 @@ export const userService = {
         }
     },
 
+    // Create user from admin panel (with Firebase support)
+    createAdminUser: async (userData) => {
+        try {
+            console.log('Creating admin user:', userData);
+            const response = await api.post('/users/admin/create', userData);
+            return response.data;
+        } catch (error) {
+            console.error('Error creating admin user:', error);
+            throw error;
+        }
+    },
+
     // Get free users
     getFreeUsers: async (page = 1, limit = 10) => {
         try {

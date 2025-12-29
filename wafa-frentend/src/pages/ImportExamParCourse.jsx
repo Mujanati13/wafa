@@ -207,12 +207,17 @@ const ImportExamParCourse = () => {
   const fetchExamYearsForModule = async (moduleId) => {
     try {
       setLoadingExamYears(true);
-      const response = await axios.get(`${API_URL}/exams`, {
-        params: { moduleId },
+      const response = await axios.get(`${API_URL}/exams/all`, {
         withCredentials: true,
       });
       if (response.data.success) {
-        setExamYears(response.data.data || []);
+        // Filter exams by moduleId on the client side
+        const allExams = response.data.data || [];
+        const filtered = allExams.filter(exam => {
+          const examModuleId = exam.moduleId?._id || exam.moduleId;
+          return examModuleId === moduleId;
+        });
+        setExamYears(filtered);
       }
     } catch (error) {
       console.error("Error fetching exam years:", error);

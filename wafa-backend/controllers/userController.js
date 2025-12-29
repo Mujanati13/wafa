@@ -3,8 +3,177 @@ import UserStats from "../models/userStatsModel.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 import { NotificationController } from "./notificationController.js";
+import admin from "../config/firebase.js";
+import bcrypt from "bcrypt";
 
 export const UserController = {
+    // Admin create user - creates user with Firebase and MongoDB
+    createAdminUser: async (req, res) => {
+        try {
+            const { 
+                firstName, 
+                lastName, 
+                email, 
+                password, 
+                phone,
+                plan = "Free",
+                currentYear,
+                semesters = [],
+                paymentMode,
+                isPaid = false,
+                sendPasswordEmail = true
+            } = req.body;
+
+            // Validate required fields
+            if (!firstName || !lastName || !email || !password) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'First name, last name, email and password are required'
+                });
+            }
+
+            // Check if user already exists in MongoDB
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'A user with this email already exists'
+                });
+            }
+
+            // Generate username
+            const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}_${Math.random().toString(36).substring(7)}`;
+            const name = `${firstName} ${lastName}`;
+
+            // Create Firebase user if Firebase is initialized
+            let firebaseUid = null;
+            let firebaseCreated = false;
+            let firebaseErrorDetail = null;
+            try {
+                // Check if Firebase Admin SDK is properly initialized
+                const firebaseInitialized = admin && admin.apps && admin.apps.length > 0;
+                console.log('Firebase initialized:', firebaseInitialized);
+                
+                if (firebaseInitialized) {
+                    const firebaseUser = await admin.auth().createUser({
+                        email: email,
+                        password: password,
+                        displayName: name,
+                        emailVerified: true, // Admin-created users are pre-verified
+                    });
+                    firebaseUid = firebaseUser.uid;
+                    firebaseCreated = true;
+                    console.log('✅ Firebase user created:', firebaseUid);
+                } else {
+                    console.log('⚠️ Firebase not initialized - user will only be created in MongoDB');
+                    firebaseErrorDetail = 'Firebase not initialized';
+                }
+            } catch (firebaseError) {
+                console.error('Firebase user creation error:', firebaseError.code, firebaseError.message);
+                firebaseErrorDetail = firebaseError.message;
+                
+                // If Firebase user exists, try to get their UID and update password
+                if (firebaseError.code === 'auth/email-already-exists') {
+                    try {
+                        const existingFirebaseUser = await admin.auth().getUserByEmail(email);
+                        firebaseUid = existingFirebaseUser.uid;
+                        // Update the existing Firebase user's password and mark as verified
+                        await admin.auth().updateUser(firebaseUid, {
+                            password: password,
+                            emailVerified: true,
+                            displayName: name,
+                        });
+                        firebaseCreated = true;
+                        firebaseErrorDetail = null;
+                        console.log('✅ Existing Firebase user updated:', firebaseUid);
+                    } catch (e) {
+                        console.error('Could not update existing Firebase user:', e.message);
+                        firebaseErrorDetail = e.message;
+                    }
+                }
+            }
+
+            // If Firebase was not created successfully, return error
+            if (!firebaseCreated) {
+                return res.status(500).json({
+                    success: false,
+                    message: `Firebase authentication could not be set up. Error: ${firebaseErrorDetail || 'Unknown error'}. Please regenerate the Firebase service account key.`,
+                    firebaseError: true,
+                    detail: firebaseErrorDetail
+                });
+            }
+
+            // Hash password for MongoDB
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Prepare user data
+            const userData = {
+                username,
+                name,
+                email,
+                password: hashedPassword,
+                phone: phone || null,
+                plan,
+                currentYear: currentYear || null,
+                semesters: semesters || [],
+                emailVerified: true, // Admin-created users are pre-verified
+                isAactive: true,
+                firebaseUid,
+            };
+
+            // Add payment-related fields if user is paid
+            if (isPaid && plan !== "Free") {
+                userData.paymentMode = paymentMode || "Manual";
+                userData.paymentDate = new Date();
+                userData.approvalDate = new Date();
+                
+                // Set plan expiry based on plan type
+                const now = new Date();
+                if (plan === "Premium") {
+                    // 6 months for semester plan
+                    userData.planExpiry = new Date(now.setMonth(now.getMonth() + 6));
+                } else if (plan === "Premium Annuel") {
+                    // 12 months for annual plan
+                    userData.planExpiry = new Date(now.setMonth(now.getMonth() + 12));
+                }
+            }
+
+            // Create user in MongoDB
+            const newUser = await User.create(userData);
+
+            res.status(201).json({
+                success: true,
+                message: 'User created successfully' + (firebaseCreated ? ' (Firebase + MongoDB)' : ' (MongoDB only - login may not work)'),
+                data: {
+                    user: {
+                        _id: newUser._id,
+                        username: newUser.username,
+                        name: newUser.name,
+                        email: newUser.email,
+                        plan: newUser.plan,
+                        currentYear: newUser.currentYear,
+                        semesters: newUser.semesters,
+                        paymentMode: newUser.paymentMode,
+                        paymentDate: newUser.paymentDate,
+                        approvalDate: newUser.approvalDate,
+                        planExpiry: newUser.planExpiry,
+                        isAactive: newUser.isAactive,
+                        emailVerified: newUser.emailVerified,
+                        firebaseCreated: firebaseCreated,
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error creating admin user:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to create user',
+                error: error.message
+            });
+        }
+    },
+
     // Get all users with pagination
     getAllUsers: async (req, res) => {
         try {
@@ -96,10 +265,19 @@ export const UserController = {
                 .skip(skip)
                 .limit(limit);
 
-            // Get payment method for each user from their latest completed transaction
+            // Get payment method for each user - first from user document, then from transactions
             const Transaction = (await import('../models/transactionModel.js')).default;
 
             const usersWithPayment = await Promise.all(users.map(async (user) => {
+                // First check if user has paymentMode directly set
+                if (user.paymentMode) {
+                    return {
+                        ...user.toObject(),
+                        paymentMethod: user.paymentMode
+                    };
+                }
+                
+                // Fall back to getting from latest transaction
                 const latestTransaction = await Transaction.findOne({
                     user: user._id,
                     status: 'completed'
@@ -263,8 +441,13 @@ export const UserController = {
             const { userId } = req.params;
             const updateData = req.body;
 
-            // Allowed fields for update
-            const allowedFields = ['isAdmin', 'adminRole', 'permissions', 'plan', 'isAactive'];
+            // Allowed fields for update - expanded to include all user fields
+            const allowedFields = [
+                'isAdmin', 'adminRole', 'permissions', 'plan', 'isAactive',
+                'name', 'email', 'currentYear', 'semesters',
+                'paymentDate', 'approvalDate', 'planExpiry', 'paymentMode',
+                'phone', 'university', 'faculty'
+            ];
             const updates = {};
 
             allowedFields.forEach(field => {
@@ -273,7 +456,21 @@ export const UserController = {
                 }
             });
 
-            const user = await User.findByIdAndUpdate(userId, updates, { new: true })
+            // If email is being updated, check if it's already taken
+            if (updates.email) {
+                const existingUser = await User.findOne({ 
+                    email: updates.email, 
+                    _id: { $ne: userId } 
+                });
+                if (existingUser) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Email is already in use by another user'
+                    });
+                }
+            }
+
+            const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true })
                 .select('-password -resetCode');
 
             if (!user) {

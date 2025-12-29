@@ -244,24 +244,24 @@ const AnalyticsPage = () => {
   ];
 
   return (
-    <div className="p-5 space-y-6 flex flex-col">
+    <div className="p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-6 flex flex-col">
       {/* Header with Filters and Export */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             {t('admin:analytics_dashboard')}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {t('admin:monitor_platform_performance')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-white border border-gray-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="text-sm border-none outline-none bg-transparent"
+              className="text-xs sm:text-sm border-none outline-none bg-transparent"
             >
               <option value="7d">{t('admin:last_7_days')}</option>
               <option value="30d">{t('admin:last_30_days')}</option>
@@ -272,88 +272,92 @@ const AnalyticsPage = () => {
           <Button
             onClick={handleExport}
             variant="outline"
-            className="flex items-center gap-2"
+            size="sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
           >
-            <Download className="w-4 h-4" />
-            {t('common:export')}
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">{t('common:export')}</span>
           </Button>
           <Button
             onClick={() => handleRefresh(false)}
             variant="outline"
-            className="flex items-center gap-2"
+            size="sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
             disabled={refreshing}
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Actualisation...' : 'Actualiser'}
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden xs:inline">{refreshing ? 'Actualisation...' : 'Actualiser'}</span>
           </Button>
         </div>
       </div>
 
       {/* Last Refresh Indicator */}
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <Clock className="w-3 h-3" />
-        <span>Dernière mise à jour: {lastRefresh.toLocaleTimeString('fr-FR')}</span>
-        <span className="text-green-500">• Actualisation auto toutes les 60s</span>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-500">
+        <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+        <span>Mise à jour: {lastRefresh.toLocaleTimeString('fr-FR')}</span>
+        <span className="text-green-500 hidden sm:inline">• Auto-refresh 60s</span>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-xl p-6 shadow-sm min-h-[140px] animate-pulse"
+              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm min-h-[100px] sm:min-h-[120px] md:min-h-[140px] animate-pulse"
             >
-              <div className="flex flex-col gap-2 flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              <div className="flex flex-col gap-1.5 sm:gap-2 flex-1">
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-6 sm:h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-2.5 sm:h-3 bg-gray-200 rounded w-2/3"></div>
               </div>
-              <div className="w-12 h-12 bg-gray-200 rounded"></div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gray-200 rounded"></div>
             </div>
           ))
         ) : (
           stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[140px]"
+              className="flex flex-row justify-between items-center bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow duration-200 min-h-[100px] sm:min-h-[120px] md:min-h-[140px]"
             >
-              <div className="flex flex-col gap-2">
-                <span className="text-gray-700 font-medium">{stat.label}</span>
-                <span className="text-3xl font-bold text-black">
+              <div className="flex flex-col gap-1 sm:gap-2">
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">{stat.label}</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-bold text-black">
                   {stat.value}
                 </span>
-              <span className="text-sm text-green-600 font-semibold">
+              <span className="text-[10px] sm:text-xs md:text-sm text-green-600 font-semibold">
                 {stat.change}{" "}
-                <span className="text-gray-400 font-normal">
+                <span className="text-gray-400 font-normal hidden sm:inline">
                   {stat.changeText}
                 </span>
               </span>
             </div>
-            <div className="flex items-center justify-center ml-4">
-              {stat.icon}
+            <div className="flex items-center justify-center ml-2 sm:ml-4">
+              <div className="[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5 md:[&>svg]:w-6 md:[&>svg]:h-6">
+                {stat.icon}
+              </div>
             </div>
           </div>
         )))}
       </div>
 
       {/* Performance Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
         {performanceMetrics.map((metric) => (
           <Card
             key={metric.label}
             className="hover:shadow-md transition-shadow"
           >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{metric.label}</p>
-                  <p className="text-2xl font-bold">{metric.value}</p>
-                  <p className="text-xs text-green-600 font-medium">
+            <CardContent className="p-2.5 sm:p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 truncate">{metric.label}</p>
+                  <p className="text-base sm:text-xl md:text-2xl font-bold">{metric.value}</p>
+                  <p className="text-[10px] sm:text-xs text-green-600 font-medium">
                     {metric.change}
                   </p>
                 </div>
-                <div className="p-2 bg-gray-50 rounded-lg">{metric.icon}</div>
+                <div className="p-1.5 sm:p-2 bg-gray-50 rounded-lg shrink-0 [&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{metric.icon}</div>
               </div>
             </CardContent>
           </Card>
@@ -361,13 +365,13 @@ const AnalyticsPage = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <UserGrowChart />
         <SubscrptionChart />
       </div>
 
       {/* Additional Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <SubjectPerformanceChart />
         <ExamAttemptsChart />
       </div>
@@ -466,54 +470,54 @@ const AnalyticsPage = () => {
           <CardDescription>{t('admin:common_admin_tasks')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-blue-50 hover:border-blue-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-blue-50 hover:border-blue-300"
               onClick={() => navigate('/admin/users')}
             >
-              <Users className="w-6 h-6 text-blue-600" />
-              <span className="text-sm">{t('admin:manage_users')}</span>
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">{t('admin:manage_users')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-green-50 hover:border-green-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-green-50 hover:border-green-300"
               onClick={() => navigate('/admin/addQuestions')}
             >
-              <GraduationCap className="w-6 h-6 text-green-600" />
-              <span className="text-sm">{t('admin:add_exam')}</span>
+              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">{t('admin:add_exam')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-purple-50 hover:border-purple-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-purple-50 hover:border-purple-300"
               onClick={() => navigate('/admin/subscription')}
             >
-              <CreditCard className="w-6 h-6 text-purple-600" />
-              <span className="text-sm">{t('admin:view_subscriptions')}</span>
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">{t('admin:view_subscriptions')}</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-orange-50 hover:border-orange-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-orange-50 hover:border-orange-300"
               onClick={() => navigate('/admin/report-questions')}
             >
-              <AlertCircle className="w-6 h-6 text-orange-600" />
-              <span className="text-sm">Reports</span>
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-orange-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">Reports</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-pink-50 hover:border-pink-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-pink-50 hover:border-pink-300"
               onClick={() => navigate('/admin/notifications')}
             >
-              <Bell className="w-6 h-6 text-pink-600" />
-              <span className="text-sm">Notifications</span>
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-pink-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">Notifications</span>
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2 h-auto p-4 flex-col hover:bg-teal-50 hover:border-teal-300"
+              className="flex items-center gap-1 sm:gap-2 h-auto p-2 sm:p-3 md:p-4 flex-col hover:bg-teal-50 hover:border-teal-300"
               onClick={() => navigate('/admin/leaderboard')}
             >
-              <BarChart3 className="w-6 h-6 text-teal-600" />
-              <span className="text-sm">Leaderboard</span>
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-teal-600" />
+              <span className="text-[10px] sm:text-xs md:text-sm text-center">Leaderboard</span>
             </Button>
           </div>
         </CardContent>

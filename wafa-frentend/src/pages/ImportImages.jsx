@@ -77,16 +77,23 @@ const ImportImages = () => {
   // common
   const [questionNumbers, setQuestionNumbers] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
-  // Derived lists
-  const categoryOptions = selectedModule
-    ? Object.keys(catalog[selectedModule]?.categories || {})
+  // Derived lists from actual API data
+  const examsForModule = selectedModule ? getExamsForModule(selectedModule) : [];
+  
+  // Get categories for Exam par Courses
+  const categoryOptions = examType === "courses"
+    ? [...new Set(examsForModule.filter(e => e.category).map(e => e.category))]
     : [];
+  
+  // Get courses for selected category  
   const courseOptions = selectedCategory
-    ? Object.keys(
-      catalog[selectedModule]?.categories[selectedCategory]?.courses || {}
-    )
+    ? [...new Set(examsForModule.filter(e => e.category === selectedCategory && e.courseName).map(e => e.courseName))]
     : [];
+    
+  // Year options for courses
+  const yearNames = ["2020", "2021", "2022", "2023", "2024", "2025"];
 
   const hasContextSelected = (() => {
     if (!selectedModule || !examType) return false;
@@ -103,25 +110,56 @@ const ImportImages = () => {
     questionNumbers.trim().length > 0 &&
     imageFiles.length > 0;
 
-  const handleSubmit = () => {
-    const context = {
-      module: selectedModule,
-      examType,
-      yearsExamName: examType === "years" ? selectedExamNameYears : undefined,
-      coursesCategory: examType === "courses" ? selectedCategory : undefined,
-      courseName: examType === "courses" ? selectedCourse : undefined,
-      yearName: examType === "courses" ? selectedYearName : undefined,
-      tpName: examType === "tp" ? selectedTPName : undefined,
-      qcmName: examType === "qcm" ? selectedQCMName : undefined,
-    };
-
-    const payload = {
-      context,
-      questionNumbers,
-      images: Array.from(imageFiles || []).map((f) => f.name),
-    };
-
-    alert("Import images (demo)\n" + JSON.stringify(payload, null, 2));
+  const handleSubmit = async () => {
+    // Determine examId based on exam type
+    let examId = null;
+    if (examType === "years") examId = selectedExamNameYears;
+    else if (examType === "tp") examId = selectedTPName;
+    else if (examType === "qcm") examId = selectedQCMName;
+    // For courses, we need to find the exam course ID
+    
+    if (!examId && examType !== "courses") {
+      toast.error("Veuillez sélectionner un examen");
+      return;
+    }
+    
+    try {
+      setUploading(true);
+      
+      // 1. Upload images to Cloudinary
+      const formData = new FormData();
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      
+      const uploadRes = await api.post('/questions/upload-images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (!uploadRes.data.success) {
+        throw new Error("Échec du téléchargement des images");
+      }
+      
+      const imageUrls = uploadRes.data.data.map(img => img.url);
+      
+      // 2. Attach images to questions
+      await api.post('/questions/attach-images', {
+        examId,
+        imageUrls,
+        questionNumbers
+      });
+      
+      toast.success(`${imageFiles.length} image(s) téléchargée(s) et attachée(s) avec succès`);
+      
+      // Reset form
+      setImageFiles([]);
+      setQuestionNumbers("");
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error(error.response?.data?.message || "Erreur lors du téléchargement");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDragOver = (e) => {
@@ -133,9 +171,9 @@ const ImportImages = () => {
     e.preventDefault();
     e.stopPropagation();
     const files = e.dataTransfer.files;
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    if (imageFiles.length > 0) {
-      setImageFiles(prev => [...prev, ...imageFiles]);
+    const droppedImages = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (droppedImages.length > 0) {
+      setImageFiles(prev => [...prev, ...droppedImages]);
     }
   };
 
@@ -232,9 +270,13 @@ const ImportImages = () => {
                         <SelectValue placeholder="Choose an exam name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? examNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => !e.examType || e.examType === "years")
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name} {exam.year ? `(${exam.year})` : ''}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -299,9 +341,13 @@ const ImportImages = () => {
                         <SelectValue placeholder="Choose a TP name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? tpNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => e.examType === "tp" || e.contentType === "tp")
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -315,9 +361,13 @@ const ImportImages = () => {
                         <SelectValue placeholder="Choose a QCM name" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(selectedModule ? qcmNamesByModule[selectedModule] || [] : []).map((name) => (
-                          <SelectItem key={name} value={name}>{name}</SelectItem>
-                        ))}
+                        {examsForModule
+                          .filter(e => e.examType === "qcm" || e.contentType === "qcm")
+                          .map((exam) => (
+                            <SelectItem key={exam._id} value={exam._id}>
+                              {exam.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -370,7 +420,13 @@ const ImportImages = () => {
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+                        onChange={(e) => {
+                          const newFiles = Array.from(e.target.files || []);
+                          if (newFiles.length > 0) {
+                            setImageFiles(prev => [...prev, ...newFiles]);
+                          }
+                          e.target.value = '';
+                        }}
                         className="hidden"
                         id="images"
                       />
@@ -397,8 +453,12 @@ const ImportImages = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="group relative"
                           >
-                            <div className="bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg overflow-hidden aspect-square flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
-                              <ImageIcon className="w-10 h-10 text-gray-400" />
+                            <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square shadow-md hover:shadow-lg transition-shadow">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             <p className="text-xs text-gray-600 mt-2 truncate font-medium" title={file.name}>
                               {file.name}
@@ -445,11 +505,15 @@ const ImportImages = () => {
               </Button>
               <Button
                 className="bg-gradient-to-r from-cyan-600 to-teal-500 text-white hover:from-cyan-700 hover:to-teal-600 shadow-md"
-                disabled={!canSubmit}
+                disabled={!canSubmit || uploading}
                 onClick={handleSubmit}
               >
-                <Save className="w-4 h-4 mr-2" />
-                Submit Images
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {uploading ? "Uploading..." : "Submit Images"}
               </Button>
             </CardFooter>
           </Card>

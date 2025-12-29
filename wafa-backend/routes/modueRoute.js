@@ -32,32 +32,69 @@ const storage = multer.diskStorage({
 
 const uploadModuleImage = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
     fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith("image/")) {
+        // Accept images and PDFs
+        if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
             cb(null, true)
         } else {
-            cb(new Error("Veuillez télécharger une image valide"), false)
+            cb(new Error("Veuillez télécharger une image ou un PDF valide"), false)
         }
     }
-}).single("moduleImage")
+}).fields([
+    { name: "moduleImage", maxCount: 1 },
+    { name: "helpImage", maxCount: 1 },
+    { name: "helpPdf", maxCount: 1 }
+])
 
 // Create a new module with image upload
 router.post("/create-with-image", uploadModuleImage, async (req, res) => {
     try {
-        let imageUrl = ""
-
-        if (req.file) {
-            // Create URL path for the uploaded image
-            imageUrl = `/uploads/modules/${req.file.filename}`
+        // Handle main module image
+        if (req.files && req.files.moduleImage && req.files.moduleImage[0]) {
+            req.body.imageUrl = `/uploads/modules/${req.files.moduleImage[0].filename}`
+        }
+        
+        // Handle help image
+        if (req.files && req.files.helpImage && req.files.helpImage[0]) {
+            req.body.helpImage = `/uploads/modules/${req.files.helpImage[0].filename}`
+        }
+        
+        // Handle help PDF
+        if (req.files && req.files.helpPdf && req.files.helpPdf[0]) {
+            req.body.helpPdf = `/uploads/modules/${req.files.helpPdf[0].filename}`
         }
 
-        // Call the regular create but with the uploaded image URL
-        req.body.imageUrl = imageUrl
         return moduleController.create(req, res)
     } catch (error) {
-        console.error("Error uploading module image:", error)
-        res.status(500).json({ success: false, message: error.message || "Erreur lors de l'upload de l'image" })
+        console.error("Error uploading module files:", error)
+        res.status(500).json({ success: false, message: error.message || "Erreur lors de l'upload des fichiers" })
+    }
+})
+
+// Update module with image upload
+router.put("/update-with-image/:id", uploadModuleImage, async (req, res) => {
+    try {
+        // Handle main module image
+        if (req.files && req.files.moduleImage && req.files.moduleImage[0]) {
+            req.body.imageUrl = `/uploads/modules/${req.files.moduleImage[0].filename}`
+        }
+        
+        // Handle help image
+        if (req.files && req.files.helpImage && req.files.helpImage[0]) {
+            req.body.helpImage = `/uploads/modules/${req.files.helpImage[0].filename}`
+        }
+        
+        // Handle help PDF
+        if (req.files && req.files.helpPdf && req.files.helpPdf[0]) {
+            req.body.helpPdf = `/uploads/modules/${req.files.helpPdf[0].filename}`
+        }
+
+        req.params.id = req.params.id
+        return moduleController.update(req, res)
+    } catch (error) {
+        console.error("Error uploading module files:", error)
+        res.status(500).json({ success: false, message: error.message || "Erreur lors de l'upload des fichiers" })
     }
 })
 

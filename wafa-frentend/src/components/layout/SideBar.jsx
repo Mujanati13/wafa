@@ -46,9 +46,32 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
   // Use shared semester context - only show modules for the selected semester
   const { selectedSemester, userSemesters } = useSemester();
+
+  // Minimum swipe distance for gesture detection
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    if (isLeftSwipe && isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
 
   // Collapsible section open states (all collapsed by default)
   const [openGroups, setOpenGroups] = useState({
@@ -201,28 +224,38 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const navigate = useNavigate();
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          style={{ top: "4rem" }}
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* Mobile Overlay - with fade animation */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            style={{ top: "4rem" }}
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          />
+        )}
+      </AnimatePresence>
 
       <motion.div
         initial={{
-          x: isMobile ? -300 : 0,
-          width: isMobile ? 256 : 256,
+          x: isMobile ? -280 : 0,
+          width: isMobile ? 280 : 256,
         }}
         animate={{
-          x: isMobile && !sidebarOpen ? -300 : 0,
-          width: isMobile ? 256 : sidebarOpen ? 256 : 80,
+          x: isMobile && !sidebarOpen ? -280 : 0,
+          width: isMobile ? 280 : sidebarOpen ? 256 : 80,
         }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         className={`${isMobile ? "fixed" : "relative"} z-50 ${isMobile ? "h-[calc(100vh-4rem)]" : "h-full"
           } flex flex-col bg-white border-r border-gray-200 shadow-xl left-0 ${isMobile ? "top-16" : "top-0"
-          } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden`}
+          } ${isMobile ? "lg:relative lg:top-0" : ""} overflow-hidden touch-pan-y`}
       >
         {/* Navigation */}
         <ScrollArea className="flex-1 h-0 min-h-0">
@@ -387,11 +420,11 @@ const SidebarItem = ({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        "w-full flex items-center py-2.5 rounded-lg transition-all duration-200 group relative",
-        sidebarOpen ? "space-x-3 justify-start px-3.5" : "justify-center px-2",
+        "w-full flex items-center min-h-[44px] py-3 rounded-lg transition-all duration-200 group relative",
+        sidebarOpen ? "space-x-3 justify-start px-4" : "justify-center px-2",
         isActive
           ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/70 hover:shadow-sm",
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/70 hover:shadow-sm active:bg-accent",
         extraClassName
       )}
     >

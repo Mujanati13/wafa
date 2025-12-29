@@ -50,6 +50,26 @@ const uploadExplanationFiles = multer({
 
 // Create with file upload support
 router.post("/create", isAuthenticated, uploadExplanationFiles, explanationController.create);
+// Admin bulk create with file upload support
+router.post("/admin-create", isAuthenticated, isAdmin, uploadExplanationFiles, explanationController.adminCreate);
+// Upload PDF endpoint - returns URL
+router.post("/upload-pdf", isAuthenticated, isAdmin, multer({
+    storage: storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error("Seuls les fichiers PDF sont acceptés"), false);
+        }
+    }
+}).single('pdf'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Aucun fichier PDF fourni" });
+    }
+    const pdfUrl = `/uploads/explanations/${req.file.filename}`;
+    res.json({ success: true, data: { url: pdfUrl, filename: req.file.filename } });
+});
 router.get("/", explanationController.getAll);
 router.get("/:id", explanationController.getById);
 router.put("/:id", isAuthenticated, validate(explanationSchema), explanationController.update);

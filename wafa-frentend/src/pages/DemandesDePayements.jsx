@@ -210,7 +210,7 @@ const DemandesDePayements = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-100 p-3 sm:p-4 md:p-6">
       <div className="w-full space-y-6">
         {/* Header with gradient background */}
         <motion.div

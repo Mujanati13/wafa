@@ -292,17 +292,17 @@ const StatisticsPage = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
           >
             <motion.div variants={itemVariants}>
               <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-white">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-600 mb-1">Total Questions</p>
-                      <p className="text-3xl font-bold text-blue-600">{overallStats.totalQuestions}</p>
+                      <p className="text-xs md:text-sm text-slate-600 mb-1">Total Questions</p>
+                      <p className="text-xl md:text-3xl font-bold text-blue-600">{overallStats.totalQuestions}</p>
                     </div>
-                    <BookOpen className="h-12 w-12 text-blue-200" />
+                    <BookOpen className="h-8 w-8 md:h-12 md:w-12 text-blue-200" />
                   </div>
                 </CardContent>
               </Card>
@@ -310,13 +310,13 @@ const StatisticsPage = () => {
 
             <motion.div variants={itemVariants}>
               <Card className="border-green-100 bg-gradient-to-br from-green-50 to-white">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-600 mb-1">Réponses Correctes</p>
-                      <p className="text-3xl font-bold text-green-600">{overallStats.totalCorrect}</p>
+                      <p className="text-xs md:text-sm text-slate-600 mb-1">Correctes</p>
+                      <p className="text-xl md:text-3xl font-bold text-green-600">{overallStats.totalCorrect}</p>
                     </div>
-                    <Award className="h-12 w-12 text-green-200" />
+                    <Award className="h-8 w-8 md:h-12 md:w-12 text-green-200" />
                   </div>
                 </CardContent>
               </Card>
@@ -324,13 +324,13 @@ const StatisticsPage = () => {
 
             <motion.div variants={itemVariants}>
               <Card className="border-red-100 bg-gradient-to-br from-red-50 to-white">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-600 mb-1">Réponses Incorrectes</p>
-                      <p className="text-3xl font-bold text-red-600">{overallStats.totalIncorrect}</p>
+                      <p className="text-xs md:text-sm text-slate-600 mb-1">Incorrectes</p>
+                      <p className="text-xl md:text-3xl font-bold text-red-600">{overallStats.totalIncorrect}</p>
                     </div>
-                    <TrendingUp className="h-12 w-12 text-red-200" />
+                    <TrendingUp className="h-8 w-8 md:h-12 md:w-12 text-red-200" />
                   </div>
                 </CardContent>
               </Card>
@@ -338,13 +338,13 @@ const StatisticsPage = () => {
 
             <motion.div variants={itemVariants}>
               <Card className="border-purple-100 bg-gradient-to-br from-purple-50 to-white">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-slate-600 mb-1">Taux de Réussite</p>
-                      <p className="text-3xl font-bold text-purple-600">{overallStats.avgSuccess}%</p>
+                      <p className="text-xs md:text-sm text-slate-600 mb-1">Taux Réussite</p>
+                      <p className="text-xl md:text-3xl font-bold text-purple-600">{overallStats.avgSuccess}%</p>
                     </div>
-                    <Award className="h-12 w-12 text-purple-200" />
+                    <Award className="h-8 w-8 md:h-12 md:w-12 text-purple-200" />
                   </div>
                 </CardContent>
               </Card>
@@ -353,11 +353,13 @@ const StatisticsPage = () => {
         )}
 
         {/* Filter and Semester Selection */}
-        <motion.div variants={itemVariants} className="flex items-center gap-4">
-          <Filter className="h-5 w-5 text-slate-600" />
-          <span className="text-sm font-medium text-slate-700">Filtrer par semestre:</span>
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-slate-700 whitespace-nowrap">Filtrer:</span>
+          </div>
           <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Tous les semestres" />
             </SelectTrigger>
             <SelectContent>
@@ -372,33 +374,36 @@ const StatisticsPage = () => {
         </motion.div>
         <motion.div variants={itemVariants}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex bg-white border shadow-sm">
-              <TabsTrigger 
-                value="modules" 
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                <BookOpen className="h-4 w-4 mr-2 hidden sm:block" />
-                MODULES
-              </TabsTrigger>
-              <TabsTrigger 
-                value="exam-years"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                Exam years
-              </TabsTrigger>
-              <TabsTrigger 
-                value="par-cours"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                par cours
-              </TabsTrigger>
-              <TabsTrigger 
-                value="qcm-banque"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-              >
-                qcm banque
-              </TabsTrigger>
-            </TabsList>
+            {/* Scrollable tabs container for mobile */}
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0">
+              <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 sm:w-auto lg:inline-flex bg-white border shadow-sm">
+                <TabsTrigger 
+                  value="modules" 
+                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                >
+                  <BookOpen className="h-4 w-4 mr-1 sm:mr-2 hidden xs:block" />
+                  MODULES
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="exam-years"
+                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                >
+                  Exam years
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="par-cours"
+                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                >
+                  Par cours
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="qcm-banque"
+                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                >
+                  QCM banque
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             {/* Modules Tab Content */}
             <TabsContent value="modules" className="mt-6">
@@ -422,7 +427,7 @@ const StatisticsPage = () => {
 
                       {/* Modules Grid */}
                       <motion.div 
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
@@ -500,7 +505,7 @@ const StatisticsPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {/* Report Problem Points */}
                 <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg">

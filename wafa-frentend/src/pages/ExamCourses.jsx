@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { GraduationCap, Search, Filter, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2, Upload, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,9 @@ import NewExamCourseForm from "@/components/admin/NewExamCourseForm";
 import { api } from "@/lib/utils";
 import { toast } from "sonner";
 
+const API_URL = import.meta.env.VITE_API_URL;
+const DEFAULT_COURSE_IMAGE = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMC9M_cEyx3SqKeJVj_RbrtTxkDXhVP1k_2A&s";
+
 const ExamCourses = () => {
   const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,10 +30,16 @@ const ExamCourses = () => {
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [formSemesterFilter, setFormSemesterFilter] = useState("all"); // Semester filter for module selection
+  const [useCustomCategory, setUseCustomCategory] = useState(false); // Toggle for custom category input
+  const [imageFile, setImageFile] = useState(null); // File upload state
+  const [imagePreview, setImagePreview] = useState(""); // Image preview URL
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     courseName: "",
     moduleName: "",
     category: "",
+    customCategory: "",
     imageUrl: "",
     helpText: "",
   });
@@ -39,7 +48,7 @@ const ExamCourses = () => {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const placeholderImage = "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Course";
+  const placeholderImage = DEFAULT_COURSE_IMAGE;
 
   useEffect(() => {
     fetchCourses();
@@ -60,17 +69,25 @@ const ExamCourses = () => {
       setLoading(true);
       setError(null);
       const { data } = await api.get("/exam-courses");
-      const list = (data?.data || []).map((c) => ({
-        id: c._id,
-        moduleName: c.moduleName || c.moduleId?.name || "",
-        moduleId: c.moduleId?._id || c.moduleId || "",
-        category: c.category || "",
-        courseName: c.name || "",
-        imageUrl: c.imageUrl || placeholderImage,
-        helpText: c.helpText || "",
-        totalQuestions: c.totalQuestions || 0,
-        status: c.status || "active",
-      }));
+      const list = (data?.data || []).map((c) => {
+        // Handle image URL - prepend API_URL if it's a relative path
+        let imageUrl = c.imageUrl || placeholderImage;
+        if (imageUrl && !imageUrl.startsWith("http") && imageUrl !== placeholderImage) {
+          imageUrl = `${API_URL}${imageUrl}`;
+        }
+        
+        return {
+          id: c._id,
+          moduleName: c.moduleName || c.moduleId?.name || "",
+          moduleId: c.moduleId?._id || c.moduleId || "",
+          category: c.category || "",
+          courseName: c.name || "",
+          imageUrl: imageUrl,
+          helpText: c.helpText || c.description || "",
+          totalQuestions: c.totalQuestions || c.linkedQuestions?.length || 0,
+          status: c.status || "active",
+        };
+      });
       setExamCourses(list);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -144,13 +161,39 @@ const ExamCourses = () => {
 
   const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName))).filter(Boolean);
   const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category))).filter(Boolean);
-  // Default categories for exam courses
-  const DEFAULT_CATEGORIES = ["Exam par years", "Exam par courses", "QCM banque"];
-  // Combine unique categories with defaults
-  const allCategories = [...new Set([...DEFAULT_CATEGORIES, ...uniqueCategories])].filter(Boolean);
+  // Get all unique categories from exam courses (not default predefined ones)
+  const allCategories = uniqueCategories.filter(Boolean);
+
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Veuillez sélectionner une image valide");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("L'image ne doit pas dépasser 5MB");
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Clear image selection
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleAddCourse = async () => {
-    if (!formData.courseName || !formData.moduleName || !formData.category) {
+    const categoryToUse = useCustomCategory ? formData.customCategory : formData.category;
+    
+    if (!formData.courseName || !formData.moduleName || !categoryToUse) {
       toast.error(t('admin:fill_required_fields'));
       return;
     }
@@ -163,28 +206,44 @@ const ExamCourses = () => {
         return;
       }
 
-      await api.post("/exam-courses", {
-        name: formData.courseName,
-        moduleId: selectedModule._id,
-        category: formData.category,
-        imageUrl: formData.imageUrl || "",
-        helpText: formData.helpText || "",
+      // Use FormData for file upload
+      const submitData = new FormData();
+      submitData.append("name", formData.courseName);
+      submitData.append("moduleId", selectedModule._id);
+      submitData.append("category", categoryToUse);
+      submitData.append("description", formData.helpText || "");
+      
+      if (imageFile) {
+        submitData.append("courseImage", imageFile);
+      }
+
+      await api.post("/exam-courses/create-with-image", submitData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      setShowAddCourseForm(false);
-      setFormData({
-        courseName: "",
-        moduleName: "",
-        category: "",
-        imageUrl: "",
-        helpText: "",
-      });
+      resetForm();
       toast.success(t('admin:course_added_success'));
       fetchCourses();
     } catch (err) {
       console.error("Error creating course:", err);
       toast.error("Erreur lors de la création du cours");
     }
+  };
+
+  const resetForm = () => {
+    setShowAddCourseForm(false);
+    setEditingCourse(null);
+    setFormSemesterFilter("all");
+    setUseCustomCategory(false);
+    clearImage();
+    setFormData({
+      courseName: "",
+      moduleName: "",
+      category: "",
+      customCategory: "",
+      imageUrl: "",
+      helpText: "",
+    });
   };
 
   const handleDeleteCourse = async (courseId) => {
@@ -205,19 +264,38 @@ const ExamCourses = () => {
   };
 
   const handleEditCourse = (course) => {
+    // Find the module to get its semester for the form filter
+    const module = modules.find(m => m.name === course.moduleName);
+    if (module && module.semester) {
+      setFormSemesterFilter(module.semester);
+    }
+    
+    // Check if category is in the existing list
+    const categoryExists = allCategories.includes(course.category);
+    setUseCustomCategory(!categoryExists);
+    
     setFormData({
       courseName: course.courseName,
       moduleName: course.moduleName,
-      category: course.category,
+      category: categoryExists ? course.category : "",
+      customCategory: !categoryExists ? course.category : "",
       imageUrl: course.imageUrl === placeholderImage ? "" : course.imageUrl,
       helpText: course.helpText || "",
     });
+    
+    // Set preview for existing image
+    if (course.imageUrl && course.imageUrl !== placeholderImage) {
+      setImagePreview(course.imageUrl);
+    }
+    
     setEditingCourse(course);
     setShowAddCourseForm(true);
   };
 
   const handleUpdateCourse = async () => {
-    if (!formData.courseName || !formData.moduleName || !formData.category) {
+    const categoryToUse = useCustomCategory ? formData.customCategory : formData.category;
+    
+    if (!formData.courseName || !formData.moduleName || !categoryToUse) {
       toast.error(t('admin:fill_required_fields'));
       return;
     }
@@ -229,23 +307,22 @@ const ExamCourses = () => {
         return;
       }
 
-      await api.put(`/exam-courses/${editingCourse.id}`, {
-        name: formData.courseName,
-        moduleId: selectedModule._id,
-        category: formData.category,
-        imageUrl: formData.imageUrl || "",
-        helpText: formData.helpText || "",
+      // Use FormData for file upload
+      const submitData = new FormData();
+      submitData.append("name", formData.courseName);
+      submitData.append("moduleId", selectedModule._id);
+      submitData.append("category", categoryToUse);
+      submitData.append("description", formData.helpText || "");
+      
+      if (imageFile) {
+        submitData.append("courseImage", imageFile);
+      }
+
+      await api.put(`/exam-courses/update-with-image/${editingCourse.id}`, submitData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
-      setShowAddCourseForm(false);
-      setEditingCourse(null);
-      setFormData({
-        courseName: "",
-        moduleName: "",
-        category: "",
-        imageUrl: "",
-        helpText: "",
-      });
+      resetForm();
       toast.success("Cours mis à jour avec succès");
       fetchCourses();
     } catch (err) {
@@ -419,8 +496,8 @@ const ExamCourses = () => {
       {/* Add/Edit Course Dialog */}
       <AnimatePresence>
         {showAddCourseForm && (
-          <Dialog open={showAddCourseForm} onOpenChange={setShowAddCourseForm}>
-            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md max-h-[80vh] overflow-y-auto">
+          <Dialog open={showAddCourseForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
+            <DialogContent className="bg-white border-gray-200 text-black sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -447,6 +524,34 @@ const ExamCourses = () => {
                     />
                   </div>
 
+                  {/* Semester filter for module selection */}
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Filtrer par semestre</Label>
+                    <Select value={formSemesterFilter} onValueChange={(value) => {
+                      setFormSemesterFilter(value);
+                      // Reset module selection when semester changes
+                      if (formData.moduleName) {
+                        const currentModule = modules.find(m => m.name === formData.moduleName);
+                        if (currentModule && value !== "all" && currentModule.semester !== value) {
+                          handleFormChange("moduleName", "");
+                        }
+                      }
+                    }}>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Tous les semestres" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="all" className="text-black">Tous les semestres</SelectItem>
+                        <SelectItem value="S1" className="text-black">Semestre 1</SelectItem>
+                        <SelectItem value="S2" className="text-black">Semestre 2</SelectItem>
+                        <SelectItem value="S3" className="text-black">Semestre 3</SelectItem>
+                        <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
+                        <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
+                        <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="text-black font-medium">Module *</Label>
                     <Select value={formData.moduleName} onValueChange={(value) => handleFormChange("moduleName", value)}>
@@ -454,41 +559,111 @@ const ExamCourses = () => {
                         <SelectValue placeholder="Sélectionner un module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {modules.map((mod) => (
-                          <SelectItem key={mod._id} value={mod.name} className="text-black">
-                            {mod.name}
-                          </SelectItem>
-                        ))}
+                        {modules
+                          .filter(mod => formSemesterFilter === "all" || mod.semester === formSemesterFilter)
+                          .map((mod) => (
+                            <SelectItem key={mod._id} value={mod.name} className="text-black">
+                              {mod.name} {mod.semester ? `(${mod.semester})` : ""}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
+                    {formSemesterFilter !== "all" && (
+                      <p className="text-xs text-gray-500">
+                        {modules.filter(m => m.semester === formSemesterFilter).length} module(s) dans {formSemesterFilter}
+                      </p>
+                    )}
                   </div>
 
-
-
+                  {/* Category selection with toggle for custom */}
                   <div className="space-y-2">
-                    <Label className="text-black font-medium">Catégorie *</Label>
-                    <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
-                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
-                        <SelectValue placeholder="Sélectionner une catégorie" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200">
-                        {allCategories.map((category) => (
-                          <SelectItem key={category} value={category} className="text-black">
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-black font-medium">Catégorie {allCategories.length === 0 ? "*" : "(optionnel si existante)"}</Label>
+                      {allCategories.length > 0 && (
+                        <button
+                          type="button"
+                          className="text-xs text-purple-600 hover:text-purple-700 underline"
+                          onClick={() => setUseCustomCategory(!useCustomCategory)}
+                        >
+                          {useCustomCategory ? "Choisir une existante" : "Créer une nouvelle"}
+                        </button>
+                      )}
+                    </div>
+                    
+                    {!useCustomCategory && allCategories.length > 0 ? (
+                      <>
+                        <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
+                          <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                            <SelectValue placeholder="Sélectionner une catégorie" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200">
+                            {allCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat} className="text-black">
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          {allCategories.length} catégorie(s) existante(s)
+                        </p>
+                      </>
+                    ) : (
+                      <Input
+                        placeholder="Entrez le nom de la nouvelle catégorie..."
+                        value={formData.customCategory}
+                        onChange={(e) => handleFormChange("customCategory", e.target.value)}
+                        className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                      />
+                    )}
                   </div>
 
+                  {/* Image upload section */}
                   <div className="space-y-2">
-                    <Label className="text-black font-medium">URL de l'image</Label>
-                    <Input
-                      placeholder="https://..."
-                      value={formData.imageUrl}
-                      onChange={(e) => handleFormChange("imageUrl", e.target.value)}
-                      className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
-                    />
+                    <Label className="text-black font-medium">Image du cours</Label>
+                    <div className="space-y-3">
+                      {/* Image preview */}
+                      {imagePreview && (
+                        <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
+                          <img 
+                            src={imagePreview} 
+                            alt="Aperçu" 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={clearImage}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Upload button */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          {imagePreview ? "Changer l'image" : "Télécharger une image"}
+                        </Button>
+                        {imageFile && (
+                          <span className="text-xs text-gray-500">{imageFile.name}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">Formats acceptés: JPG, PNG, GIF. Max 5MB.</p>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -506,11 +681,7 @@ const ExamCourses = () => {
                       type="button"
                       variant="outline"
                       className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                      onClick={() => {
-                        setShowAddCourseForm(false);
-                        setEditingCourse(null);
-                        setFormData({ courseName: "", moduleName: "", category: "", imageUrl: "", helpText: "" });
-                      }}
+                      onClick={resetForm}
                     >
                       Annuler
                     </Button>
@@ -551,9 +722,9 @@ const ExamCourses = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-gray-700">Catégorie</Label>
-                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.categoryName}</p>
+                  <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingCourse.category}</p>
                 </div>
-                {viewingCourse.imageUrl && (
+                {viewingCourse.imageUrl && viewingCourse.imageUrl !== placeholderImage && (
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold text-gray-700">Image</Label>
                     <img src={viewingCourse.imageUrl} alt={viewingCourse.courseName} className="w-full h-32 object-cover rounded border" />

@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2, HelpCircle } from "lucide-react";
+import { BookOpen, Search, Plus, Edit, Trash2, Eye, ChevronLeft, ChevronRight, Loader2, HelpCircle, Upload, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
+const API_URL = import.meta.env.VITE_API_URL;
+const DEFAULT_QCM_IMAGE = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMC9M_cEyx3SqKeJVj_RbrtTxkDXhVP1k_2A&s";
+
 const QCMBanque = () => {
     const { t } = useTranslation(['admin', 'common']);
     const [searchTerm, setSearchTerm] = useState("");
@@ -24,6 +27,10 @@ const QCMBanque = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const [moduleFilter, setModuleFilter] = useState("all");
+    const [formSemesterFilter, setFormSemesterFilter] = useState("all");
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState("");
+    const fileInputRef = useRef(null);
     const [qcmList, setQcmList] = useState([]);
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -35,7 +42,7 @@ const QCMBanque = () => {
         infoText: "",
     });
 
-    const placeholderImage = "https://via.placeholder.com/150x100/10B981/FFFFFF?text=QCM";
+    const placeholderImage = DEFAULT_QCM_IMAGE;
 
     useEffect(() => {
         fetchQCMList();
@@ -56,15 +63,23 @@ const QCMBanque = () => {
             setLoading(true);
             setError(null);
             const { data } = await api.get("/qcm-banque/all");
-            const list = (data?.data || []).map((q) => ({
-                id: q?._id,
-                moduleName: q?.moduleName || q?.moduleId?.name || "",
-                moduleId: q?.moduleId?._id || q?.moduleId || "",
-                name: q?.name || "",
-                imageUrl: q?.imageUrl || placeholderImage,
-                totalQuestions: q?.totalQuestions || 0,
-                infoText: q?.infoText || "",
-            }));
+            const list = (data?.data || []).map((q) => {
+                // Handle image URL - prepend API_URL if it's a relative path
+                let imageUrl = q?.imageUrl || placeholderImage;
+                if (imageUrl && !imageUrl.startsWith("http") && imageUrl !== placeholderImage) {
+                    imageUrl = `${API_URL}${imageUrl}`;
+                }
+                
+                return {
+                    id: q?._id,
+                    moduleName: q?.moduleName || q?.moduleId?.name || "",
+                    moduleId: q?.moduleId?._id || q?.moduleId || "",
+                    name: q?.name || "",
+                    imageUrl: imageUrl,
+                    totalQuestions: q?.totalQuestions || 0,
+                    infoText: q?.infoText || "",
+                };
+            });
             setQcmList(list);
         } catch (err) {
             console.error("Error fetching QCM Banque:", err);
@@ -79,6 +94,41 @@ const QCMBanque = () => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
+    // Handle file selection
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (!file.type.startsWith("image/")) {
+                toast.error("Veuillez sélectionner une image valide");
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("L'image ne doit pas dépasser 5MB");
+                return;
+            }
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    // Clear image selection
+    const clearImage = () => {
+        setImageFile(null);
+        setImagePreview("");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    // Reset form
+    const resetForm = () => {
+        setShowAddQCMForm(false);
+        setEditingQCM(null);
+        setFormSemesterFilter("all");
+        clearImage();
+        setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
+    };
+
     const handleSubmit = async () => {
         if (!formData.name || !formData.moduleId) {
             toast.error("Veuillez remplir les champs obligatoires");
@@ -86,10 +136,22 @@ const QCMBanque = () => {
         }
 
         try {
-            await api.post("/qcm-banque", formData);
+            // Use FormData for file upload
+            const submitData = new FormData();
+            submitData.append("name", formData.name);
+            submitData.append("moduleId", formData.moduleId);
+            submitData.append("infoText", formData.infoText || "");
+            
+            if (imageFile) {
+                submitData.append("qcmImage", imageFile);
+            }
+
+            await api.post("/qcm-banque/create-with-image", submitData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            
             toast.success("QCM Banque créé avec succès");
-            setShowAddQCMForm(false);
-            setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
+            resetForm();
             fetchQCMList();
         } catch (err) {
             console.error("Error creating QCM Banque:", err);
@@ -111,12 +173,24 @@ const QCMBanque = () => {
     };
 
     const handleEdit = (qcm) => {
+        // Find the module to get its semester for the form filter
+        const module = modules.find(m => m._id === qcm.moduleId);
+        if (module && module.semester) {
+            setFormSemesterFilter(module.semester);
+        }
+        
         setFormData({
             name: qcm.name,
             moduleId: qcm.moduleId,
             imageUrl: qcm.imageUrl === placeholderImage ? "" : qcm.imageUrl,
             infoText: qcm.infoText || "",
         });
+        
+        // Set preview for existing image
+        if (qcm.imageUrl && qcm.imageUrl !== placeholderImage) {
+            setImagePreview(qcm.imageUrl);
+        }
+        
         setEditingQCM(qcm);
         setShowAddQCMForm(true);
     };
@@ -128,11 +202,22 @@ const QCMBanque = () => {
         }
 
         try {
-            await api.put(`/qcm-banque/${editingQCM.id}`, formData);
+            // Use FormData for file upload
+            const submitData = new FormData();
+            submitData.append("name", formData.name);
+            submitData.append("moduleId", formData.moduleId);
+            submitData.append("infoText", formData.infoText || "");
+            
+            if (imageFile) {
+                submitData.append("qcmImage", imageFile);
+            }
+
+            await api.put(`/qcm-banque/update-with-image/${editingQCM.id}`, submitData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            
             toast.success("QCM Banque mis à jour avec succès");
-            setShowAddQCMForm(false);
-            setEditingQCM(null);
-            setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
+            resetForm();
             fetchQCMList();
         } catch (err) {
             console.error("Error updating QCM Banque:", err);
@@ -357,8 +442,8 @@ const QCMBanque = () => {
             {/* Add QCM Banque Dialog */}
             <AnimatePresence>
                 {showAddQCMForm && (
-                    <Dialog open={showAddQCMForm} onOpenChange={setShowAddQCMForm}>
-                        <DialogContent className="bg-white border-gray-200 text-black sm:max-w-md max-h-[80vh] overflow-y-auto">
+                    <Dialog open={showAddQCMForm} onOpenChange={(open) => { if (!open) resetForm(); }}>
+                        <DialogContent className="bg-white border-gray-200 text-black sm:max-w-lg max-h-[90vh] overflow-y-auto">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -385,6 +470,34 @@ const QCMBanque = () => {
                                         />
                                     </div>
 
+                                    {/* Semester filter for module selection */}
+                                    <div className="space-y-2">
+                                        <Label className="text-black font-medium">Filtrer par semestre</Label>
+                                        <Select value={formSemesterFilter} onValueChange={(value) => {
+                                            setFormSemesterFilter(value);
+                                            // Reset module selection when semester changes
+                                            if (formData.moduleId) {
+                                                const currentModule = modules.find(m => m._id === formData.moduleId);
+                                                if (currentModule && value !== "all" && currentModule.semester !== value) {
+                                                    handleFormChange("moduleId", "");
+                                                }
+                                            }
+                                        }}>
+                                            <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                                                <SelectValue placeholder="Tous les semestres" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-white border-gray-200">
+                                                <SelectItem value="all" className="text-black">Tous les semestres</SelectItem>
+                                                <SelectItem value="S1" className="text-black">Semestre 1</SelectItem>
+                                                <SelectItem value="S2" className="text-black">Semestre 2</SelectItem>
+                                                <SelectItem value="S3" className="text-black">Semestre 3</SelectItem>
+                                                <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
+                                                <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
+                                                <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <Label className="text-black font-medium">Module *</Label>
                                         <Select value={formData.moduleId} onValueChange={(value) => handleFormChange("moduleId", value)}>
@@ -392,23 +505,68 @@ const QCMBanque = () => {
                                                 <SelectValue placeholder="Sélectionner un module" />
                                             </SelectTrigger>
                                             <SelectContent className="bg-white border-gray-200">
-                                                {modules.map((m) => (
-                                                    <SelectItem key={m._id} value={m._id} className="text-black">
-                                                        {m.name}
-                                                    </SelectItem>
-                                                ))}
+                                                {modules
+                                                    .filter(m => formSemesterFilter === "all" || m.semester === formSemesterFilter)
+                                                    .map((m) => (
+                                                        <SelectItem key={m._id} value={m._id} className="text-black">
+                                                            {m.name} {m.semester ? `(${m.semester})` : ""}
+                                                        </SelectItem>
+                                                    ))}
                                             </SelectContent>
                                         </Select>
+                                        {formSemesterFilter !== "all" && (
+                                            <p className="text-xs text-gray-500">
+                                                {modules.filter(m => m.semester === formSemesterFilter).length} module(s) dans {formSemesterFilter}
+                                            </p>
+                                        )}
                                     </div>
 
+                                    {/* Image upload section */}
                                     <div className="space-y-2">
-                                        <Label className="text-black font-medium">URL de l'image</Label>
-                                        <Input
-                                            placeholder="https://..."
-                                            value={formData.imageUrl}
-                                            onChange={(e) => handleFormChange("imageUrl", e.target.value)}
-                                            className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-green-500 focus:ring-green-500"
-                                        />
+                                        <Label className="text-black font-medium">Image du QCM</Label>
+                                        <div className="space-y-3">
+                                            {/* Image preview */}
+                                            {imagePreview && (
+                                                <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
+                                                    <img 
+                                                        src={imagePreview} 
+                                                        alt="Aperçu" 
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={clearImage}
+                                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Upload button */}
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    ref={fileInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileSelect}
+                                                    className="hidden"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Upload className="h-4 w-4" />
+                                                    {imagePreview ? "Changer l'image" : "Télécharger une image"}
+                                                </Button>
+                                                {imageFile && (
+                                                    <span className="text-xs text-gray-500">{imageFile.name}</span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-gray-500">Formats acceptés: JPG, PNG, GIF. Max 5MB.</p>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
@@ -426,11 +584,7 @@ const QCMBanque = () => {
                                             type="button"
                                             variant="outline"
                                             className="border-gray-300 text-black hover:bg-gray-100 hover:text-black"
-                                            onClick={() => {
-                                                setShowAddQCMForm(false);
-                                                setEditingQCM(null);
-                                                setFormData({ name: "", moduleId: "", imageUrl: "", infoText: "" });
-                                            }}
+                                            onClick={resetForm}
                                         >
                                             Annuler
                                         </Button>

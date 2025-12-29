@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, HelpCircle, X, BookOpen, Info, CheckCircle, Image as ImageIcon } from "lucide-react";
+import { Lock, HelpCircle, X, BookOpen, Info, CheckCircle, Image as ImageIcon, FileText, File } from "lucide-react";
 
 import { api } from "@/lib/utils";
 import { moduleService } from "@/services/moduleService";
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 // Color schemes for modules (based on https://e-qe.online/dashboard)
 const moduleColors = [
@@ -247,46 +249,90 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
                 {progress}% Complété
               </Badge>
 
-              {/* Content type toggle buttons */}
-              {course.imageUrl && (
+              {/* Help Image badge */}
+              {(course.helpImage || course.imageUrl) && (
                 <Badge
                   className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white cursor-pointer hover:from-pink-600 hover:to-rose-600 transition-all"
-                  onClick={() => window.open(course.imageUrl, '_blank')}
+                  onClick={() => {
+                    const imageUrl = course.helpImage || course.imageUrl;
+                    const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
+                    window.open(fullUrl, '_blank');
+                  }}
                 >
                   <ImageIcon className="w-3 h-3" />
-                  image ou pdf
+                  Image
                 </Badge>
               )}
 
-              {(course.helpContent || course.infoText || course.textContent) && (
+              {/* Help PDF badge */}
+              {course.helpPdf && (
                 <Badge
-                  className="gap-1 bg-gradient-to-r from-cyan-500 to-teal-500 text-white"
+                  className="gap-1 bg-gradient-to-r from-purple-500 to-violet-500 text-white cursor-pointer hover:from-purple-600 hover:to-violet-600 transition-all"
+                  onClick={() => {
+                    const fullUrl = course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL}${course.helpPdf}`;
+                    window.open(fullUrl, '_blank');
+                  }}
                 >
-                  Text
+                  <File className="w-3 h-3" />
+                  PDF
+                </Badge>
+              )}
+
+              {/* Text content badge */}
+              {(course.helpContent || course.infoText || course.textContent) && (
+                <Badge className="gap-1 bg-gradient-to-r from-cyan-500 to-teal-500 text-white">
+                  <FileText className="w-3 h-3" />
+                  Texte
                 </Badge>
               )}
             </div>
 
-            {/* Guide Image/PDF Preview Area */}
-            {course.imageUrl && (
+            {/* Help Image Preview - prioritize helpImage over imageUrl */}
+            {(course.helpImage || course.imageUrl) && (
               <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 min-h-[120px] flex items-center justify-center overflow-hidden">
                 <img
-                  src={course.imageUrl}
+                  src={(() => {
+                    const imageUrl = course.helpImage || course.imageUrl;
+                    return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
+                  })()}
                   alt="Guide du module"
                   className="max-w-full max-h-48 object-contain cursor-pointer"
-                  onClick={() => window.open(course.imageUrl, '_blank')}
+                  onClick={() => {
+                    const imageUrl = course.helpImage || course.imageUrl;
+                    const fullUrl = imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
+                    window.open(fullUrl, '_blank');
+                  }}
                 />
+              </div>
+            )}
+
+            {/* Help PDF Download/View Link */}
+            {course.helpPdf && (
+              <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl">
+                <h4 className="font-medium text-purple-800 mb-2 flex items-center gap-2">
+                  <File className="w-4 h-4" />
+                  Document PDF
+                </h4>
+                <a
+                  href={course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL}${course.helpPdf}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                >
+                  <File className="w-4 h-4" />
+                  Ouvrir le PDF
+                </a>
               </div>
             )}
 
             {/* Text Content from textContent field */}
             {course.textContent && (
-              <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl">
-                <h4 className="font-medium text-purple-800 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                <h4 className="font-medium text-indigo-800 mb-2 flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   Contenu du module
                 </h4>
-                <div className="text-sm text-purple-700 whitespace-pre-wrap">{course.textContent}</div>
+                <div className="text-sm text-indigo-700 whitespace-pre-wrap">{course.textContent}</div>
               </div>
             )}
 
@@ -301,7 +347,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
               </div>
             )}
 
-            {/* Detailed Help Content */}
+            {/* Detailed Help Content (helpContent text) */}
             {course.helpContent && (
               <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
@@ -315,7 +361,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
             )}
 
             {/* No content fallback */}
-            {!course.infoText && !course.helpContent && !course.imageUrl && !course.textContent && (
+            {!course.infoText && !course.helpContent && !course.imageUrl && !course.textContent && !course.helpImage && !course.helpPdf && (
               <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 min-h-[120px] flex items-center justify-center">
                 <div className="text-center p-4 text-gray-500">
                   <HelpCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />

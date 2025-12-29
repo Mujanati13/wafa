@@ -326,19 +326,19 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
+      <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b border-slate-200 flex-shrink-0">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2 sm:gap-3"
         >
-          <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-            <Menu className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+            <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           {sidebarOpen && (
             <div>
-              <h2 className="text-lg font-bold text-slate-900">WAFA</h2>
-              <p className="text-xs text-slate-500">{t('admin:admin_panel')}</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">WAFA</h2>
+              <p className="text-[10px] sm:text-xs text-slate-500">{t('admin:admin_panel')}</p>
             </div>
           )}
         </motion.div>
@@ -357,8 +357,8 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <nav className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-3 sm:py-4">
+        <nav className="space-y-1 sm:space-y-2">
           {filteredCategories.map((category, idx) => {
             const CategoryIcon = category.icon;
             const isOpen = openCategories[category.id];
@@ -451,10 +451,10 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
 
       {/* Footer */}
       {sidebarOpen && (
-        <div className="p-4 border-t border-slate-200 flex-shrink-0">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
-            <p className="text-xs font-medium text-blue-900 mb-1">Need help?</p>
-            <p className="text-xs text-blue-700">Contact support</p>
+        <div className="p-3 sm:p-4 border-t border-slate-200 flex-shrink-0">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2 sm:p-3 border border-blue-200">
+            <p className="text-[10px] sm:text-xs font-medium text-blue-900 mb-0.5 sm:mb-1">Need help?</p>
+            <p className="text-[10px] sm:text-xs text-blue-700">Contact support</p>
           </div>
         </div>
       )}

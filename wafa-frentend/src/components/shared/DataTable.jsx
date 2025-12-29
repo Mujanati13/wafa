@@ -73,95 +73,105 @@ export function DataTable({
 
   return (
     <div className={`w-full space-y-4 ${className}`}>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={column.sortable ? 'cursor-pointer select-none' : ''}
-                  onClick={() => handleSort(column)}
-                >
-                  <div className="flex items-center gap-2">
-                    {column.label}
-                    {column.sortable && sortColumn === column.key && (
-                      <span className="text-xs">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.length === 0 ? (
+      {/* Responsive table wrapper with horizontal scroll on mobile */}
+      <div className="rounded-md border overflow-hidden">
+        <div className="overflow-x-auto -mx-0.5 px-0.5">
+          <Table className="min-w-[600px] md:min-w-0">
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  {emptyMessage}
-                </TableCell>
+                {columns.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    className={`${column.sortable ? 'cursor-pointer select-none' : ''} ${column.hideOnMobile ? 'hidden md:table-cell' : ''} whitespace-nowrap`}
+                    onClick={() => handleSort(column)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {column.label}
+                      {column.sortable && sortColumn === column.key && (
+                        <span className="text-xs">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
               </TableRow>
-            ) : (
-              data.map((row, index) => (
-                <TableRow key={row.id || index}>
-                  {columns.map((column) => (
-                    <TableCell key={column.key}>
-                      {column.render ? column.render(row) : row[column.key]}
-                    </TableCell>
-                  ))}
+            </TableHeader>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    {emptyMessage}
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                data.map((row, index) => (
+                  <TableRow key={row.id || index}>
+                    {columns.map((column) => (
+                      <TableCell 
+                        key={column.key}
+                        className={column.hideOnMobile ? 'hidden md:table-cell' : ''}
+                      >
+                        {column.render ? column.render(row) : row[column.key]}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
             {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
             {pagination.total} results
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => pagination.onPageChange(1)}
               disabled={pagination.page === 1}
             >
-              <ChevronsLeft className="h-4 w-4" />
+              <ChevronsLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => pagination.onPageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
-            <span className="text-sm">
-              Page {pagination.page} of {totalPages}
+            <span className="text-xs sm:text-sm px-2 whitespace-nowrap">
+              {pagination.page} / {totalPages}
             </span>
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => pagination.onPageChange(pagination.page + 1)}
               disabled={pagination.page === totalPages}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => pagination.onPageChange(totalPages)}
               disabled={pagination.page === totalPages}
             >
-              <ChevronsRight className="h-4 w-4" />
+              <ChevronsRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

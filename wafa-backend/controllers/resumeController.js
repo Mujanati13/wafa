@@ -1,5 +1,35 @@
 import resumeModel from "../models/resumeModel.js";
 import asyncHandler from '../handlers/asyncHandler.js';
+import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
+
+// Helper function to upload PDF to Cloudinary
+const uploadPdfToCloudinary = (buffer, originalName) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: "wafa-resumes",
+                resource_type: "raw", // For non-image files like PDFs
+                public_id: `resume-${Date.now()}-${originalName.replace(/\.[^/.]+$/, "")}`,
+            },
+            (error, result) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve({
+                        url: result.secure_url,
+                        publicId: result.public_id,
+                    });
+                }
+            }
+        );
+
+        const readable = new Readable();
+        readable.push(buffer);
+        readable.push(null);
+        readable.pipe(uploadStream);
+    });
+};
 
 export const resumeController = {
     create: asyncHandler(async (req, res) => {
@@ -159,14 +189,32 @@ export const resumeController = {
     // Admin upload - create resume with module and course
     adminUpload: asyncHandler(async (req, res) => {
         const { moduleId, courseName, title } = req.body;
-        
-        // The PDF URL would come from file upload middleware
-        const pdfUrl = req.file?.path || req.body.pdfUrl;
 
-        if (!moduleId || !courseName || !title || !pdfUrl) {
+        if (!moduleId || !courseName || !title) {
             return res.status(400).json({
                 success: false,
-                message: "Module, course name, title, and PDF are required"
+                message: "Module, course name, and title are required"
+            });
+        }
+
+        // Check for file upload
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "PDF file is required"
+            });
+        }
+
+        // Upload PDF to Cloudinary
+        let pdfUrl;
+        try {
+            const uploadResult = await uploadPdfToCloudinary(req.file.buffer, req.file.originalname);
+            pdfUrl = uploadResult.url;
+        } catch (error) {
+            console.error("Error uploading PDF to Cloudinary:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to upload PDF"
             });
         }
 

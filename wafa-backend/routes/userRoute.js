@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { UserController } from "../controllers/userController.js";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
+import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 import { uploadProfilePicture } from "../middleware/uploadMiddleware.js";
 
 const router = Router();
@@ -18,6 +18,9 @@ router.get("/paying", UserController.getPayingUsers);
 
 // Get user statistics
 router.get("/stats", UserController.getUserStats);
+
+// Admin create user endpoint
+router.post("/admin/create", UserController.createAdminUser);
 
 // User profile routes (authenticated)
 router.get("/profile", isAuthenticated, UserController.getProfile);

@@ -85,7 +85,7 @@ const AdminLayout = () => {
           }}
           className="flex-1 overflow-y-auto"
         >
-          <div className="container mx-auto p-6 max-w-7xl">
+          <div className="container mx-auto p-2 sm:p-4 md:p-6 max-w-7xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

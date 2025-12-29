@@ -55,6 +55,8 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
 
 // Exam Card Component
 const ExamCard = ({ exam, onStart, index, moduleColor }) => {
+  const API_URL = import.meta.env.VITE_API_URL;
+  
   // Helper function to adjust color
   const adjustColorLocal = (color, amount) => {
     if (!color) return null;
@@ -66,6 +68,15 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
     return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
   };
 
+  // Get the proper image URL
+  const getImageUrl = () => {
+    if (!exam.imageUrl) return null;
+    if (exam.imageUrl.startsWith("http")) return exam.imageUrl;
+    return `${API_URL}${exam.imageUrl}`;
+  };
+
+  const imageUrl = getImageUrl();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -73,20 +84,35 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
       transition={{ delay: index * 0.05 }}
     >
       <Card
-        className="hover:shadow-lg transition-all cursor-pointer group"
+        className="hover:shadow-lg transition-all cursor-pointer group active:scale-[0.98]"
         onClick={() => onStart(exam.id)}
       >
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            {/* Icon */}
-            <div
-              className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${!moduleColor ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : ''}`}
-              style={moduleColor ? {
-                background: `linear-gradient(to bottom right, ${moduleColor}, ${adjustColorLocal(moduleColor, -30)})`
-              } : undefined}
-            >
-              <FileQuestion className="h-6 w-6 text-white" />
-            </div>
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Icon or Image */}
+            {imageUrl ? (
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform">
+                <img 
+                  src={imageUrl} 
+                  alt={exam.name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><circle cx="10" cy="13" r="2"/><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/></svg></div>`;
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${!moduleColor ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : ''}`}
+                style={moduleColor ? {
+                  background: `linear-gradient(to bottom right, ${moduleColor}, ${adjustColorLocal(moduleColor, -30)})`
+                } : undefined}
+              >
+                <FileQuestion className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+            )}
 
             {/* Info */}
             <div className="flex-1 min-w-0">
@@ -256,14 +282,16 @@ const SubjectsPage = () => {
               imageUrl: c.imageUrl
             }));
 
+          // Get all exam courses that are NOT "Exam par years" and NOT "QCM banque"
+          // This includes "Exam par courses" and any custom categories
           const courseExams = examCourses
-            .filter(c => c.category === "Exam par courses")
+            .filter(c => c.category !== "Exam par years" && c.category !== "QCM banque")
             .map(c => ({
               id: c._id,
               name: c.name,
               questions: c.totalQuestions || 0,
               progress: 0,
-              category: c.name, // Use name as category
+              category: c.category, // Use the actual category for filtering
               imageUrl: c.imageUrl
             }));
 
@@ -451,60 +479,62 @@ const SubjectsPage = () => {
 
         {/* Exam Type Tabs */}
         <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-white border shadow-sm">
-            <TabsTrigger
-              value="year"
-              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
-              style={module.color ? {
-                '--tw-bg-opacity': '1',
-                backgroundColor: selectedExamType === 'year' ? module.color : undefined
-              } : undefined}
-              data-state={selectedExamType === 'year' ? 'active' : 'inactive'}
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Exam par Year</span>
-              <span className="sm:hidden">Par Year</span>
-              {examsParYear.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-                  {examsParYear.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="course"
-              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
-              style={module.color ? {
-                backgroundColor: selectedExamType === 'course' ? module.color : undefined
-              } : undefined}
-              data-state={selectedExamType === 'course' ? 'active' : 'inactive'}
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Par Cours</span>
-              <span className="sm:hidden">Cours</span>
-              {examsParCours.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 data-[state=active]:bg-orange-400 data-[state=active]:text-white">
-                  {examsParCours.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="qcm"
-              className="flex items-center gap-2 py-3 data-[state=active]:text-white"
-              style={module.color ? {
-                backgroundColor: selectedExamType === 'qcm' ? module.color : undefined
-              } : undefined}
-              data-state={selectedExamType === 'qcm' ? 'active' : 'inactive'}
-            >
-              <Library className="h-4 w-4" />
-              <span className="hidden sm:inline">QCM Banque</span>
-              <span className="sm:hidden">Banque</span>
-              {qcmBanque.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                  {qcmBanque.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-3 h-auto p-1 bg-white border shadow-sm">
+              <TabsTrigger
+                value="year"
+                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                style={module.color ? {
+                  '--tw-bg-opacity': '1',
+                  backgroundColor: selectedExamType === 'year' ? module.color : undefined
+                } : undefined}
+                data-state={selectedExamType === 'year' ? 'active' : 'inactive'}
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden xs:inline">Par Year</span>
+                <span className="xs:hidden">Year</span>
+                {examsParYear.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white text-[10px] sm:text-xs">
+                    {examsParYear.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="course"
+                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                style={module.color ? {
+                  backgroundColor: selectedExamType === 'course' ? module.color : undefined
+                } : undefined}
+                data-state={selectedExamType === 'course' ? 'active' : 'inactive'}
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden xs:inline">Par Cours</span>
+                <span className="xs:hidden">Cours</span>
+                {examsParCours.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 data-[state=active]:bg-orange-400 data-[state=active]:text-white text-[10px] sm:text-xs">
+                    {examsParCours.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="qcm"
+                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                style={module.color ? {
+                  backgroundColor: selectedExamType === 'qcm' ? module.color : undefined
+                } : undefined}
+                data-state={selectedExamType === 'qcm' ? 'active' : 'inactive'}
+              >
+                <Library className="h-4 w-4" />
+                <span className="hidden xs:inline">QCM Banque</span>
+                <span className="xs:hidden">Banque</span>
+                {qcmBanque.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white text-[10px] sm:text-xs">
+                    {qcmBanque.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Category Filter - Only for "Par Cours" */}
           {selectedExamType === "course" && categories.length > 1 && (
@@ -583,7 +613,7 @@ const SubjectsPage = () => {
           {/* Exam Lists */}
           <div className="mt-4">
             <TabsContent value="year" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {examsParYear.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -609,7 +639,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="course" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {filteredCourseExams.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -640,7 +670,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="qcm" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {qcmBanque.map((exam, index) => (
                   <ExamCard
                     key={exam.id}

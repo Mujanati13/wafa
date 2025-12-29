@@ -27,12 +27,14 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [user, setUser] = useState(() => {
     // Initialize from localStorage for instant display
     const cached = localStorage.getItem('userProfile');
     return cached ? JSON.parse(cached) : null;
   });
   const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const navigate = useNavigate();
 
   // Fetch user profile on mount (will use cache if available)
@@ -137,6 +139,10 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearchResults(false);
+      }
+      if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target) && !event.target.closest('[data-mobile-search-trigger]')) {
+        setMobileSearchOpen(false);
+        setSearchQuery("");
       }
     };
 
@@ -293,7 +299,18 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Mobile Search Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden flex-shrink-0"
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            data-mobile-search-trigger
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
           {/* Language Switcher */}
           <LanguageSwitcher />
 
@@ -303,6 +320,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
             size="icon"
             onClick={() => setDarkMode(!darkMode)}
             title="Toggle theme"
+            className="hidden sm:flex"
           >
             {darkMode ? (
               <Sun className="h-5 w-5 text-yellow-500" />
@@ -353,6 +371,85 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Mobile Search Overlay */}
+      {mobileSearchOpen && (
+        <div 
+          ref={mobileSearchRef}
+          className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg p-3 md:hidden z-50"
+        >
+          <form onSubmit={handleSearch} className="relative">
+            <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all">
+              <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <Input
+                type="text"
+                placeholder={t('common:search')}
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto text-sm flex-1"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchResults(false);
+                  }}
+                  className="flex-shrink-0 hover:bg-slate-200 rounded p-0.5 transition-colors"
+                >
+                  <X className="h-4 w-4 text-slate-500" />
+                </button>
+              )}
+            </div>
+          </form>
+
+          {/* Mobile Search Results */}
+          {showSearchResults && filteredResults.length > 0 && (
+            <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-slate-200 bg-white">
+              {filteredResults.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      handleResultClick(item.path);
+                      setMobileSearchOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-100 last:border-b-0"
+                  >
+                    <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center">
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {item.title}
+                      </p>
+                      {item.description && (
+                        <p className="text-xs text-slate-500 truncate">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      {item.type === 'module' ? t('dashboard:module') : t('dashboard:page')}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {showSearchResults && filteredResults.length === 0 && searchQuery.trim() && (
+            <div className="mt-2 p-6 text-center rounded-lg border border-slate-200 bg-white">
+              <Search className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm font-medium text-slate-900">{t('common:no_results')}</p>
+              <p className="text-xs text-slate-500">{t('common:try_different_keywords')}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

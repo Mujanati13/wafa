@@ -60,6 +60,21 @@ router.post("/create-with-image", uploadCourseImage, async (req, res) => {
     }
 });
 
+// Update with image upload
+router.put("/update-with-image/:id", uploadCourseImage, async (req, res) => {
+    try {
+        if (req.file) {
+            req.body.imageUrl = `/uploads/courses/${req.file.filename}`;
+        }
+        
+        // Forward to the update controller
+        return examCourseController.update(req, res);
+    } catch (error) {
+        console.error("Error updating course with image:", error);
+        res.status(500).json({ success: false, message: error.message || "Erreur lors de la mise à jour" });
+    }
+});
+
 // CRUD operations
 router.get("/", examCourseController.getAll);
 router.get("/:id", examCourseController.getById);

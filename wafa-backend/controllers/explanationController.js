@@ -393,5 +393,150 @@ export const explanationController = {
             success: true,
             data: aiExplanation
         });
+    }),
+
+    // Admin bulk create explanations (with file upload)
+    adminCreate: asyncHandler(async (req, res) => {
+        const { 
+            moduleId, 
+            examId, 
+            questionNumbers, 
+            title, 
+            contentText,
+            imageUrls: bodyImageUrls,
+            pdfUrl: bodyPdfUrl
+        } = req.body;
+        const userId = req.user._id;
+
+        // Helper function to parse question number ranges like "1-5,7,10"
+        const parseQuestionNumbers = (input) => {
+            if (Array.isArray(input)) return input.map(n => parseInt(n));
+            if (typeof input !== 'string') return [];
+            
+            const numbers = [];
+            const parts = input.split(',').map(p => p.trim());
+            
+            for (const part of parts) {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+                    if (!isNaN(start) && !isNaN(end)) {
+                        for (let i = start; i <= end; i++) {
+                            numbers.push(i);
+                        }
+                    }
+                } else {
+                    const num = parseInt(part);
+                    if (!isNaN(num)) numbers.push(num);
+                }
+            }
+            
+            return [...new Set(numbers)]; // Remove duplicates
+        };
+
+        const parsedQuestionNumbers = parseQuestionNumbers(questionNumbers);
+
+        if (parsedQuestionNumbers.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Veuillez spécifier au moins un numéro de question valide."
+            });
+        }
+
+        // Process uploaded files or use URLs from body
+        let imageUrls = bodyImageUrls ? (Array.isArray(bodyImageUrls) ? bodyImageUrls : [bodyImageUrls]) : [];
+        let pdfUrl = bodyPdfUrl || null;
+
+        if (req.files) {
+            // Handle images (max 5)
+            if (req.files.images) {
+                imageUrls = req.files.images.map(file => `/uploads/explanations/${file.filename}`);
+            }
+            // Handle PDF (max 1)
+            if (req.files.pdf && req.files.pdf.length > 0) {
+                pdfUrl = `/uploads/explanations/${req.files.pdf[0].filename}`;
+            }
+        }
+
+        // Import Question model to find questions by position (1-indexed)
+        const Question = (await import('../models/questionModule.js')).default;
+
+        // Get all questions for this exam sorted by creation order
+        const allQuestions = await Question.find({ examId }).sort({ createdAt: 1 }).lean();
+
+        if (allQuestions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucune question trouvée pour cet examen."
+            });
+        }
+
+        // Get questions by their position (1-indexed numbers from user input)
+        const questions = parsedQuestionNumbers
+            .filter(num => num > 0 && num <= allQuestions.length)
+            .map(num => allQuestions[num - 1]); // Convert to 0-indexed
+
+        if (questions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `Aucune question trouvée pour les numéros spécifiés. L'examen contient ${allQuestions.length} question(s).`
+            });
+        }
+
+        // Create explanations for each question
+        const createdExplanations = [];
+        const errors = [];
+
+        for (let i = 0; i < questions.length; i++) {
+            const question = questions[i];
+            const questionNum = parsedQuestionNumbers[i]; // Keep track of original question number
+            
+            try {
+                // Check if explanation already exists for this question by this admin
+                const existing = await explanationModel.findOne({ 
+                    questionId: question._id,
+                    userId
+                });
+
+                if (existing) {
+                    errors.push({
+                        questionNumber: questionNum,
+                        error: "Une explication existe déjà pour cette question."
+                    });
+                    continue;
+                }
+
+                const explanation = await explanationModel.create({
+                    userId,
+                    questionId: question._id,
+                    title: title || `Explication Q${questionNum}`,
+                    contentText,
+                    imageUrls,
+                    pdfUrl,
+                    status: 'approved', // Admin explanations are auto-approved
+                    isAiGenerated: false
+                });
+
+                createdExplanations.push(explanation);
+            } catch (error) {
+                errors.push({
+                    questionNumber: questionNum,
+                    error: error.message
+                });
+            }
+        }
+
+        // Find which question numbers were out of range
+        const notFoundNumbers = parsedQuestionNumbers.filter(
+            num => num < 1 || num > allQuestions.length
+        );
+
+        res.status(201).json({
+            success: true,
+            message: `${createdExplanations.length} explication(s) créée(s) avec succès.`,
+            data: createdExplanations,
+            errors: errors.length > 0 ? errors : undefined,
+            notFound: notFoundNumbers.length > 0 ? notFoundNumbers : undefined,
+            totalQuestionsInExam: allQuestions.length
+        });
     })
 };

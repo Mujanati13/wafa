@@ -210,13 +210,13 @@ const ImportResumes = () => {
                     Drop your file here or click to browse
                   </p>
                   <p className="text-sm text-gray-600">
-                    Supports Excel (.xlsx, .xls) and CSV files
+                    Supports PDF files only
                   </p>
                 </div>
                 <Input
                   id="file-upload"
                   type="file"
-                  accept=".xlsx,.xls,.csv,.pdf"
+                  accept=".pdf"
                   onChange={handleFileChange}
                   className="hidden"
                 />

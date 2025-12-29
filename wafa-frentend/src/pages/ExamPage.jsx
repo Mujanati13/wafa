@@ -620,48 +620,47 @@ const ExamPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Enhanced Header */}
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-12 sm:h-14 md:h-16">
             {/* Left Section */}
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/dashboard/home')}
-                className="shrink-0 hover:bg-gray-100"
+                className="shrink-0 hover:bg-gray-100 h-8 w-8 sm:h-9 sm:w-9"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <div className="min-w-0">
-                <h1 className="font-semibold text-sm sm:text-lg truncate text-gray-900">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-semibold text-xs sm:text-sm md:text-lg truncate text-gray-900">
                   {examData?.title || t('dashboard:exam')}
                 </h1>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="hidden sm:inline">{t('dashboard:question') || 'Question'}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-500">
+                  <span className="hidden xs:inline">{t('dashboard:question') || 'Question'}</span>
                   <span className="font-medium text-gray-700">
-                    {currentQuestion + 1} / {questions.length}
+                    {currentQuestion + 1}/{questions.length}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {/* Timer Badge */}
               <Badge
                 variant="outline"
                 className={cn(
-                  "gap-1.5 font-mono text-xs sm:text-sm px-2 sm:px-3 py-1 transition-colors",
+                  "gap-1 font-mono text-[10px] sm:text-xs md:text-sm px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 transition-colors",
                   getTimeColor()
                 )}
               >
-                <Timer className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{formatTime(timeElapsed)}</span>
-                <span className="sm:hidden">{formatTime(timeElapsed).split(':').slice(-2).join(':')}</span>
+                <Timer className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span>{formatTime(timeElapsed).split(':').slice(-2).join(':')}</span>
               </Badge>
 
-              {/* Font Size Controls - Desktop */}
-              <div className="hidden lg:flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
+              {/* Font Size Controls - Desktop only */}
+              <div className="hidden xl:flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -685,22 +684,22 @@ const ExamPage = () => {
                 </Button>
               </div>
 
-              {/* Overview Button - Desktop */}
+              {/* Overview Button - Desktop only */}
               <Button
                 variant="outline"
                 size="sm"
-                className="hidden lg:flex gap-2"
+                className="hidden xl:flex gap-2"
                 onClick={() => setShowSidebar(!showSidebar)}
               >
                 <ListChecks className="h-4 w-4" />
                 {t('dashboard:overview') || 'Overview'}
               </Button>
 
-              {/* Keyboard Shortcuts */}
+              {/* Keyboard Shortcuts - Desktop only */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex"
+                className="hidden lg:flex h-8 w-8"
                 onClick={() => setShowKeyboardShortcuts(true)}
                 title="Keyboard shortcuts"
               >
@@ -711,15 +710,14 @@ const ExamPage = () => {
               {!showResults && (
                 <Button
                   onClick={() => setShowConfirmSubmit(true)}
-                  className="text-white"
+                  className="text-white text-xs sm:text-sm px-2 sm:px-3 md:px-4 h-8 sm:h-9"
                   style={{
                     background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`,
                     boxShadow: `0 10px 25px -5px ${moduleColor}25`
                   }}
                 >
-                  <CheckCircle className="mr-1.5 h-4 w-4" />
+                  <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-1.5" />
                   <span className="hidden sm:inline">{t('dashboard:finish_exam') || 'Finish'}</span>
-                  <span className="sm:hidden">Done</span>
                 </Button>
               )}
             </div>
@@ -740,8 +738,8 @@ const ExamPage = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
+        <div className="grid lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {/* Sidebar - Desktop */}
           <div className="hidden lg:block lg:col-span-1">
             <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
@@ -901,11 +899,11 @@ const ExamPage = () => {
               >
                 <Card className="shadow-xl border-0 overflow-hidden">
                   {/* Question Header */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-4 sm:px-6 py-3 sm:py-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex flex-wrap items-center gap-2">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <Badge 
-                          className="font-semibold"
+                          className="font-semibold text-[10px] sm:text-xs"
                           style={{
                             backgroundColor: `${moduleColor}20`,
                             color: adjustColor(moduleColor, -60)
@@ -914,36 +912,37 @@ const ExamPage = () => {
                           Q{currentQuestion + 1}
                         </Badge>
                         {currentQuestionData.sessionLabel && (
-                          <Badge variant="outline" className="text-gray-600">
+                          <Badge variant="outline" className="text-gray-600 text-[10px] sm:text-xs hidden xs:inline-flex">
                             {currentQuestionData.sessionLabel}
                           </Badge>
                         )}
                         {isMultipleChoice && (
                           <Badge 
-                            className="gap-1"
+                            className="gap-1 text-[10px] sm:text-xs"
                             style={{
                               backgroundColor: `${moduleColor}15`,
                               color: adjustColor(moduleColor, -40)
                             }}
                           >
-                            <CheckCircle2 className="h-3 w-3" />
-                            {t('dashboard:multiple_choice') || 'Multiple'}
+                            <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            <span className="hidden xs:inline">{t('dashboard:multiple_choice') || 'Multiple'}</span>
+                            <span className="xs:hidden">Multi</span>
                           </Badge>
                         )}
                         {flaggedQuestions.has(currentQuestion) && (
-                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 gap-1">
-                            <Flag className="h-3 w-3 fill-current" />
-                            {t('dashboard:flagged') || 'Flagged'}
+                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 gap-1 text-[10px] sm:text-xs">
+                            <Flag className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-current" />
+                            <span className="hidden sm:inline">{t('dashboard:flagged') || 'Flagged'}</span>
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1">
                         {/* Image Gallery Button */}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowImageGallery(true)}
-                          className="shrink-0 text-gray-400 h-8 w-8"
+                          className="shrink-0 text-gray-400 h-7 w-7 sm:h-8 sm:w-8"
                           style={{
                             '--hover-color': moduleColor,
                             '--hover-bg': `${moduleColor}10`
@@ -958,13 +957,13 @@ const ExamPage = () => {
                           }}
                           title="Images"
                         >
-                          <Image className="h-4 w-4" />
+                          <Image className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowNoteModal(true)}
-                          className="shrink-0 text-gray-400 h-8 w-8"
+                          className="shrink-0 text-gray-400 h-7 w-7 sm:h-8 sm:w-8"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = moduleColor;
                             e.currentTarget.style.backgroundColor = `${moduleColor}10`;
@@ -975,23 +974,23 @@ const ExamPage = () => {
                           }}
                           title="Note"
                         >
-                          <NotebookPen className="h-4 w-4" />
+                          <NotebookPen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowReportModal(true)}
-                          className="shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 h-8 w-8"
+                          className="shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8"
                           title="Signaler"
                         >
-                          <TriangleAlert className="h-4 w-4" />
+                          <TriangleAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => toggleFlag(currentQuestion)}
                           className={cn(
-                            "shrink-0 transition-all h-8 w-8",
+                            "shrink-0 transition-all h-7 w-7 sm:h-8 sm:w-8",
                             flaggedQuestions.has(currentQuestion)
                               ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                               : "text-gray-400 hover:text-gray-600"
@@ -999,7 +998,7 @@ const ExamPage = () => {
                           title="Surligner"
                         >
                           <Flag className={cn(
-                            "h-4 w-4 transition-transform",
+                            "h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform",
                             flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
                           )} />
                         </Button>
@@ -1007,39 +1006,39 @@ const ExamPage = () => {
                     </div>
                   </div>
 
-                  <CardContent className="p-4 sm:p-6 space-y-6">
+                  <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
                     {/* Question Reference */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      <span>
+                    <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 bg-gray-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                      <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                      <span className="truncate">
                         {examData?.year && `Examen ${examData.year}`}
                         {examData?.moduleName && ` - ${examData.moduleName}`}
                         {currentQuestionData?.sessionLabel && ` - ${currentQuestionData.sessionLabel}`}
-                        {` - Question ${currentQuestion + 1}`}
+                        {` - Q${currentQuestion + 1}`}
                       </span>
                     </div>
 
                     {/* Question Text */}
                     <div
-                      className="text-gray-800 leading-relaxed font-medium"
-                      style={{ fontSize: `${fontSize}px`, lineHeight: '1.7' }}
+                      className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
+                      style={{ fontSize: `${Math.max(14, fontSize - 2)}px`, lineHeight: '1.6' }}
                     >
                       {currentQuestionData.question}
                     </div>
 
                     {/* Question Image */}
                     {currentQuestionData.image && (
-                      <div className="relative rounded-xl overflow-hidden border bg-gray-50">
+                      <div className="relative rounded-lg sm:rounded-xl overflow-hidden border bg-gray-50">
                         <img
                           src={currentQuestionData.image}
                           alt="Question illustration"
-                          className="w-full max-h-80 object-contain"
+                          className="w-full max-h-48 sm:max-h-64 md:max-h-80 object-contain"
                         />
                       </div>
                     )}
 
                     {/* Answer Options */}
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {currentQuestionData.options.map((option, index) => {
                         const isSelected = (selectedAnswers[currentQuestion] || []).includes(index);
                         const isCorrect = option.isCorrect;
@@ -1054,9 +1053,9 @@ const ExamPage = () => {
                             whileTap={{ scale: showCorrectness ? 1 : 0.99 }}
                             animate={isAnimating ? { scale: [1, 1.02, 1] } : {}}
                             className={cn(
-                              "w-full text-left rounded-xl border-2 transition-all duration-200",
+                              "w-full text-left rounded-lg sm:rounded-xl border-2 transition-all duration-200",
                               "focus:outline-none focus:ring-2 focus:ring-offset-2",
-                              !showCorrectness && "hover:shadow-md cursor-pointer",
+                              !showCorrectness && "hover:shadow-md cursor-pointer active:scale-[0.98]",
                               showCorrectness && "cursor-default",
                               // Default state
                               !isSelected && !showCorrectness && "border-gray-200 bg-white hover:border-gray-300",
@@ -1078,11 +1077,11 @@ const ExamPage = () => {
                             onClick={() => !showCorrectness && handleAnswerSelect(currentQuestion, index)}
                             disabled={showCorrectness}
                           >
-                            <div className="p-3 sm:p-4 flex items-start gap-3 sm:gap-4">
+                            <div className="p-2.5 sm:p-3 md:p-4 flex items-start gap-2 sm:gap-3 md:gap-4">
                               {/* Option Letter/Icon */}
                               <div 
                                 className={cn(
-                                  "shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base transition-all",
+                                  "shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm md:text-base transition-all",
                                   !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
                                   showCorrectness && isCorrect && "bg-emerald-500 text-white",
                                   showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white"
@@ -1095,18 +1094,18 @@ const ExamPage = () => {
                               >
                                 {showCorrectness ? (
                                   isCorrect ? (
-                                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                                   ) : isSelected ? (
-                                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                                   ) : (
                                     String.fromCharCode(65 + index)
                                   )
                                 ) : (
                                   isSelected ? (
                                     isMultipleChoice ? (
-                                      <Check className="h-4 w-4 sm:h-5 sm:w-5" />
+                                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                                     ) : (
-                                      <CircleDot className="h-4 w-4 sm:h-5 sm:w-5" />
+                                      <CircleDot className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                                     )
                                   ) : (
                                     String.fromCharCode(65 + index)
@@ -1116,8 +1115,8 @@ const ExamPage = () => {
 
                               {/* Option Text */}
                               <span
-                                className="flex-1 pt-1"
-                                style={{ fontSize: `${fontSize - 1}px` }}
+                                className="flex-1 pt-0.5 sm:pt-1 text-sm sm:text-base"
+                                style={{ fontSize: `${Math.max(13, fontSize - 2)}px` }}
                               >
                                 {option.text}
                               </span>
@@ -1126,9 +1125,9 @@ const ExamPage = () => {
                               {showCorrectness && (
                                 <div className="shrink-0">
                                   {isCorrect ? (
-                                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
+                                    <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-emerald-500" />
                                   ) : isSelected ? (
-                                    <XCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                                    <XCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-red-500" />
                                   ) : null}
                                 </div>
                               )}
@@ -1139,14 +1138,15 @@ const ExamPage = () => {
                     </div>
                   </CardContent>
 
-                  {/* Bottom Action Toolbar */}
+                  {/* Bottom Action Toolbar - Responsive Grid */}
                   <div className="bg-white border-t">
-                    <div className="flex items-center justify-center">
+                    {/* Mobile: 2 rows of 3 buttons */}
+                    <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-gray-100">
                       {/* Correct/Verifier Button */}
                       <button
                         onClick={handleVerifyQuestion}
                         disabled={isQuestionVerified || showResults}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all"
                         style={{
                           backgroundColor: isQuestionVerified || showResults ? `${moduleColor}10` : 'transparent',
                           color: moduleColor
@@ -1163,27 +1163,27 @@ const ExamPage = () => {
                         }}
                       >
                         <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-0.5 sm:mb-1"
                           style={{
                             backgroundColor: isQuestionVerified || showResults ? moduleColor : `${moduleColor}20`
                           }}
                         >
                           <Check 
-                            className="h-5 w-5" 
+                            className="h-4 w-4 sm:h-5 sm:w-5" 
                             style={{ 
                               color: isQuestionVerified || showResults ? 'white' : moduleColor 
                             }} 
                           />
                         </div>
-                        <span className="text-xs font-medium">
-                          {isQuestionVerified || showResults ? 'Correct' : 'Verifier'}
+                        <span className="text-[10px] sm:text-xs font-medium">
+                          {isQuestionVerified || showResults ? 'Correct' : 'Vérifier'}
                         </span>
                       </button>
 
                       {/* Community Button */}
                       <button
                         onClick={() => setShowCommunityModal(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100 text-gray-600"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all text-gray-600"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = `${moduleColor}08`;
                           e.currentTarget.style.color = moduleColor;
@@ -1193,16 +1193,16 @@ const ExamPage = () => {
                           e.currentTarget.style.color = '#4B5563';
                         }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-                          <Users className="h-5 w-5 text-gray-500" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center mb-0.5 sm:mb-1">
+                          <Users className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                         </div>
-                        <span className="text-xs font-medium">A Community</span>
+                        <span className="text-[10px] sm:text-xs font-medium">Communauté</span>
                       </button>
 
                       {/* Resumes/Cours Button */}
                       <button
                         onClick={() => setShowResumesModal(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100 text-gray-600"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all text-gray-600"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = `${moduleColor}08`;
                           e.currentTarget.style.color = moduleColor;
@@ -1212,17 +1212,17 @@ const ExamPage = () => {
                           e.currentTarget.style.color = '#4B5563';
                         }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-                          <BookOpen className="h-5 w-5 text-gray-500" />
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center mb-0.5 sm:mb-1">
+                          <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                         </div>
-                        <span className="text-xs font-medium">Résumés</span>
+                        <span className="text-[10px] sm:text-xs font-medium">Résumés</span>
                       </button>
 
                       {/* Ressayer Button */}
                       <button
                         onClick={handleResetQuestion}
                         disabled={!isQuestionVerified && !showResults}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all"
                         style={{
                           opacity: (!isQuestionVerified && !showResults) ? 0.5 : 1,
                           cursor: (!isQuestionVerified && !showResults) ? 'not-allowed' : 'pointer',
@@ -1242,26 +1242,26 @@ const ExamPage = () => {
                         }}
                       >
                         <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-0.5 sm:mb-1"
                           style={{
                             backgroundColor: (!isQuestionVerified && !showResults) ? '#F3F4F6' : '#E5E7EB'
                           }}
                         >
                           <RefreshCcw 
-                            className="h-5 w-5" 
+                            className="h-4 w-4 sm:h-5 sm:w-5" 
                             style={{ 
                               color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280' 
                             }} 
                           />
                         </div>
-                        <span className="text-xs font-medium">Ressayer</span>
+                        <span className="text-[10px] sm:text-xs font-medium">Ressayer</span>
                       </button>
 
                       {/* Explication Button */}
                       <button
                         onClick={() => setShowExplanation(true)}
                         disabled={!isQuestionVerified && !showResults}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all border-r border-gray-100"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all"
                         style={{
                           opacity: (!isQuestionVerified && !showResults) ? 0.5 : 1,
                           cursor: (!isQuestionVerified && !showResults) ? 'not-allowed' : 'pointer',
@@ -1281,25 +1281,25 @@ const ExamPage = () => {
                         }}
                       >
                         <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-0.5 sm:mb-1"
                           style={{
                             backgroundColor: (!isQuestionVerified && !showResults) ? '#F3F4F6' : '#E5E7EB'
                           }}
                         >
                           <Lightbulb 
-                            className="h-5 w-5" 
+                            className="h-4 w-4 sm:h-5 sm:w-5" 
                             style={{ 
                               color: (!isQuestionVerified && !showResults) ? '#9CA3AF' : '#6B7280' 
                             }} 
                           />
                         </div>
-                        <span className="text-xs font-medium">Explication</span>
+                        <span className="text-[10px] sm:text-xs font-medium">Explication</span>
                       </button>
 
                       {/* Vue d'ensemble Button */}
                       <button
                         onClick={() => setShowVueEnsemble(true)}
-                        className="flex-1 flex flex-col items-center justify-center py-3 px-2 transition-all"
+                        className="flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 sm:px-2 transition-all"
                         style={{ color: moduleColor }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = `${moduleColor}10`;
@@ -1309,12 +1309,12 @@ const ExamPage = () => {
                         }}
                       >
                         <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mb-0.5 sm:mb-1"
                           style={{ backgroundColor: `${moduleColor}20` }}
                         >
-                          <LayoutGrid className="h-5 w-5" style={{ color: moduleColor }} />
+                          <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: moduleColor }} />
                         </div>
-                        <span className="text-xs font-medium">Vue d'ensemble</span>
+                        <span className="text-[10px] sm:text-xs font-medium">Vue ensemble</span>
                       </button>
                     </div>
                   </div>
@@ -1739,17 +1739,17 @@ const ExamPage = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-xl shrink-0">
-                <div className="flex items-center gap-3">
-                  <LayoutGrid className="h-6 w-6" />
-                  <h2 className="text-xl font-bold">Vue d'ensemble</h2>
-                  <Badge className="bg-white/20 text-white">{questions.length} questions</Badge>
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-xl shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <LayoutGrid className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <h2 className="text-base sm:text-xl font-bold">Vue d'ensemble</h2>
+                  <Badge className="bg-white/20 text-white text-[10px] sm:text-xs">{questions.length} questions</Badge>
                 </div>
                 <button
                   onClick={() => setShowVueEnsemble(false)}
-                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
 
@@ -1845,9 +1845,9 @@ const ExamPage = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t bg-gray-50 rounded-b-xl shrink-0">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="p-3 sm:p-4 border-t bg-gray-50 rounded-b-xl shrink-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       <div className="w-4 h-4 rounded bg-emerald-100 border-2 border-emerald-400 flex items-center justify-center">
                         <Check className="h-2.5 w-2.5 text-emerald-600" />
@@ -1868,6 +1868,7 @@ const ExamPage = () => {
                   <Button
                     variant="outline"
                     onClick={() => setShowVueEnsemble(false)}
+                    className="w-full sm:w-auto"
                   >
                     Fermer
                   </Button>
@@ -1885,32 +1886,32 @@ const ExamPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4"
             onClick={() => setShowImageGallery(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-xl">
-                <div className="flex items-center gap-3">
-                  <Image className="h-6 w-6" />
-                  <h2 className="text-xl font-bold">Images de l'examen</h2>
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-xl">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Image className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <h2 className="text-base sm:text-xl font-bold">Images de l'examen</h2>
                 </div>
                 <button
                   onClick={() => setShowImageGallery(false)}
-                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-white/20 transition-colors"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
 
               {/* Images Grid */}
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="flex-1 p-3 sm:p-4">
                 {(() => {
                   const allImages = questions.reduce((acc, q, idx) => {
                     if (q.image) {
@@ -1925,14 +1926,14 @@ const ExamPage = () => {
 
                   if (allImages.length === 0) {
                     return (
-                      <div className="text-center py-12">
-                        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                          <Image className="h-10 w-10 text-gray-400" />
+                      <div className="text-center py-8 sm:py-12">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                          <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
                         </div>
-                        <h4 className="text-lg font-medium text-gray-700 mb-2">
+                        <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
                           Aucune image dans cet examen
                         </h4>
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 text-xs sm:text-sm">
                           Cet examen ne contient pas d'images.
                         </p>
                       </div>
@@ -1940,7 +1941,7 @@ const ExamPage = () => {
                   }
 
                   return (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                       {allImages.map((img, idx) => (
                         <div
                           key={idx}
@@ -1953,14 +1954,14 @@ const ExamPage = () => {
                           <img
                             src={img.src}
                             alt={`Question ${img.questionIndex + 1}`}
-                            className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
+                            className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                             <span className="text-white text-xs font-medium">
                               Q{img.questionIndex + 1}
                             </span>
                           </div>
-                          <Badge className="absolute top-2 left-2 bg-purple-600">
+                          <Badge className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-purple-600 text-[10px] sm:text-xs">
                             Q{img.questionIndex + 1}
                           </Badge>
                         </div>
@@ -1971,11 +1972,12 @@ const ExamPage = () => {
               </ScrollArea>
 
               {/* Footer */}
-              <div className="p-4 border-t bg-gray-50 rounded-b-xl">
+              <div className="p-3 sm:p-4 border-t bg-gray-50 rounded-b-xl">
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
                     onClick={() => setShowImageGallery(false)}
+                    className="w-full sm:w-auto"
                   >
                     Fermer
                   </Button>

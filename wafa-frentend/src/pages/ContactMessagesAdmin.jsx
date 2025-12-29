@@ -84,55 +84,55 @@ const ContactMessagesAdmin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-3 sm:p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                                <MessageCircle className="h-6 w-6 text-white" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                             </div>
-                            <h1 className="text-3xl font-bold text-slate-900">Messages de Contact</h1>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">Messages de Contact</h1>
                         </div>
-                        <p className="text-slate-500">Gérez les messages reçus depuis le formulaire de contact</p>
+                        <p className="text-xs sm:text-sm text-slate-500">Gérez les messages reçus depuis le formulaire de contact</p>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                     <Card>
-                        <CardContent className="pt-6">
+                        <CardContent className="p-3 sm:p-4 md:pt-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-600">Total Messages</p>
-                                    <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+                                    <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600">Total</p>
+                                    <p className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900">{stats.total}</p>
                                 </div>
-                                <MessageCircle className="h-10 w-10 text-blue-500" />
+                                <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-blue-500" />
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardContent className="pt-6">
+                        <CardContent className="p-3 sm:p-4 md:pt-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-600">En Attente</p>
-                                    <p className="text-3xl font-bold text-orange-600">{stats.pending}</p>
+                                    <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600">En Attente</p>
+                                    <p className="text-lg sm:text-2xl md:text-3xl font-bold text-orange-600">{stats.pending}</p>
                                 </div>
-                                <XCircle className="h-10 w-10 text-orange-500" />
+                                <XCircle className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-orange-500" />
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardContent className="pt-6">
+                        <CardContent className="p-3 sm:p-4 md:pt-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-slate-600">Répondus</p>
-                                    <p className="text-3xl font-bold text-green-600">{stats.answered}</p>
+                                    <p className="text-[10px] sm:text-xs md:text-sm font-medium text-slate-600">Répondus</p>
+                                    <p className="text-lg sm:text-2xl md:text-3xl font-bold text-green-600">{stats.answered}</p>
                                 </div>
-                                <CheckCircle2 className="h-10 w-10 text-green-500" />
+                                <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-green-500" />
                             </div>
                         </CardContent>
                     </Card>
@@ -140,15 +140,15 @@ const ContactMessagesAdmin = () => {
 
                 {/* Search */}
                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle>Liste des Messages</CardTitle>
+                    <CardHeader className="p-3 sm:p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <CardTitle className="text-base sm:text-lg">Liste des Messages</CardTitle>
                             <Input
                                 type="text"
                                 placeholder="Rechercher..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="max-w-sm"
+                                className="w-full sm:max-w-sm text-sm"
                             />
                         </div>
                     </CardHeader>

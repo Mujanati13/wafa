@@ -92,8 +92,13 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   const hasAIExplanation = aiExplanation.text || aiExplanation.images.length > 0;
 
   const handleSubmitExplanation = async () => {
-    if (!submissionText.trim()) {
-      toast.warning("Veuillez entrer une explication");
+    // At least one content type required: text, images, or PDF
+    const hasText = submissionText.trim().length > 0;
+    const hasImages = uploadedImages.length > 0;
+    const hasPdf = uploadedPdf !== null;
+    
+    if (!hasText && !hasImages && !hasPdf) {
+      toast.warning("Veuillez ajouter du texte, des images ou un PDF");
       return;
     }
 
@@ -423,13 +428,13 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   <div className="flex items-center gap-2 mb-3">
                     <AlertCircle className="h-4 w-4 text-purple-600" />
                     <span className="text-sm font-medium text-purple-700">
-                      Proposer une explication (sera revue avant publication)
+                      Proposer une explication (texte, images ou PDF - au moins un requis)
                     </span>
                   </div>
                   <Textarea
                     value={submissionText}
                     onChange={(e) => setSubmissionText(e.target.value)}
-                    placeholder="Votre explication doit contenir les explications de tous les choix: pourquoi il est faux et pourquoi il est vrais, à partir des cours magistraux."
+                    placeholder="Votre explication (optionnel). Vous pouvez aussi ajouter des images ou un PDF."
                     className="min-h-[120px] mb-3"
                   />
 
@@ -540,7 +545,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                     </Button>
                     <Button
                       onClick={handleSubmitExplanation}
-                      disabled={isSubmitting || !submissionText.trim()}
+                      disabled={isSubmitting || (!submissionText.trim() && uploadedImages.length === 0 && !uploadedPdf)}
                       className="gap-2 bg-purple-600 hover:bg-purple-700"
                     >
                       <Send className="h-4 w-4" />

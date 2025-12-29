@@ -70,6 +70,26 @@ const studentYears = [
   { value: "6", label: "6ème année" },
 ];
 
+const semesterOptions = [
+  { value: "S1", label: "S1" },
+  { value: "S2", label: "S2" },
+  { value: "S3", label: "S3" },
+  { value: "S4", label: "S4" },
+  { value: "S5", label: "S5" },
+  { value: "S6", label: "S6" },
+  { value: "S7", label: "S7" },
+  { value: "S8", label: "S8" },
+  { value: "S9", label: "S9" },
+  { value: "S10", label: "S10" },
+];
+
+const paymentModeOptions = [
+  { value: "PayPal", label: "PayPal" },
+  { value: "Bank Transfer", label: "Virement bancaire" },
+  { value: "Contact", label: "Contact" },
+  { value: "Manual", label: "Manuel" },
+];
+
 const UsersWithTabs = () => {
   const [activeTab, setActiveTab] = useState("free"); // "free" or "paying"
   const [searchTerm, setSearchTerm] = useState("");
@@ -355,8 +375,12 @@ const UsersWithTabs = () => {
       email: user.email || "",
       username: user.username || "",
       currentYear: user.currentYear || "",
+      semesters: user.semesters || [],
       plan: user.plan || "Free",
       isAactive: user.isAactive ?? true,
+      paymentMode: user.paymentMode || "",
+      paymentDate: user.paymentDate ? new Date(user.paymentDate).toISOString().split('T')[0] : "",
+      approvalDate: user.approvalDate ? new Date(user.approvalDate).toISOString().split('T')[0] : "",
     });
     setShowEditDialog(true);
   };
@@ -431,10 +455,10 @@ const UsersWithTabs = () => {
         size="sm"
         onClick={() => handlePageChange(pagination.currentPage - 1)}
         disabled={!pagination.hasPrevPage}
-        className="flex items-center gap-1"
+        className="flex items-center gap-0.5 sm:gap-1 h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
       >
-        <ChevronLeft className="w-4 h-4" />
-        Previous
+        <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Previous</span>
       </Button>
     );
 
@@ -446,7 +470,7 @@ const UsersWithTabs = () => {
           variant={pagination.currentPage === i ? "default" : "outline"}
           size="sm"
           onClick={() => handlePageChange(i)}
-          className="min-w-[40px]"
+          className="min-w-[28px] sm:min-w-[36px] h-7 sm:h-8 text-xs sm:text-sm"
         >
           {i}
         </Button>
@@ -461,10 +485,10 @@ const UsersWithTabs = () => {
         size="sm"
         onClick={() => handlePageChange(pagination.currentPage + 1)}
         disabled={!pagination.hasNextPage}
-        className="flex items-center gap-1"
+        className="flex items-center gap-0.5 sm:gap-1 h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
       >
-        Next
-        <ChevronRight className="w-4 h-4" />
+        <span className="hidden sm:inline">Next</span>
+        <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
       </Button>
     );
 
@@ -472,24 +496,24 @@ const UsersWithTabs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      <div className="w-full space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               User Management
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
               Manage user accounts, subscriptions, and access
             </p>
           </div>
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={exporting}>
-                  <Download className="w-4 h-4" />
-                  {exporting ? "Exportation..." : "Export"}
+                <Button variant="outline" size="sm" disabled={exporting} className="h-8 sm:h-9 text-xs sm:text-sm">
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline ml-1.5">{exporting ? "Exportation..." : "Export"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -506,31 +530,31 @@ const UsersWithTabs = () => {
             </DropdownMenu>
             <Button
               size="sm"
-              className="bg-black text-white hover:bg-gray-800"
+              className="bg-black text-white hover:bg-gray-800 h-8 sm:h-9 text-xs sm:text-sm"
               onClick={() => setShowNewUserForm(!showNewUserForm)}
             >
-              <UserPlus className="w-4 h-4" />
-              Add
+              <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="ml-1.5">Add</span>
             </Button>
           </div>
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {/* Total Users Card */}
           <Card className="shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Total Users
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     {stats.totalUsers || 0}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -538,24 +562,24 @@ const UsersWithTabs = () => {
 
           {/* Free Users Card */}
           <Card className="shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Free Users
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     {stats.freeUsers || 0}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 mt-0.5 sm:mt-1">
                     {stats.totalUsers
                       ? ((stats.freeUsers / stats.totalUsers) * 100).toFixed(1)
                       : 0}
                     % of total
                   </p>
                 </div>
-                <div className="p-3 bg-gray-100 rounded-lg">
-                  <Gift className="w-6 h-6 text-gray-600" />
+                <div className="p-2 sm:p-3 bg-gray-100 rounded-lg">
+                  <Gift className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-600" />
                 </div>
               </div>
             </CardContent>
@@ -563,16 +587,16 @@ const UsersWithTabs = () => {
 
           {/* Paying Users Card */}
           <Card className="shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Paying Users
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     {stats.payingUsers || 0}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 mt-0.5 sm:mt-1">
                     {stats.totalUsers
                       ? ((stats.payingUsers / stats.totalUsers) * 100).toFixed(
                         1
@@ -581,8 +605,8 @@ const UsersWithTabs = () => {
                     % of total
                   </p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -590,16 +614,16 @@ const UsersWithTabs = () => {
 
           {/* Active Users Card */}
           <Card className="shadow-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Active Users
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                     {stats.activeUsers || 0}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 mt-0.5 sm:mt-1">
                     {stats.totalUsers
                       ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(
                         1
@@ -608,8 +632,8 @@ const UsersWithTabs = () => {
                     % of total
                   </p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <UserCheck className="w-6 h-6 text-green-600" />
+                <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -618,23 +642,25 @@ const UsersWithTabs = () => {
 
         {/* Tab Navigation */}
         <Card className="shadow-sm">
-          <CardHeader>
-            <div className="flex space-x-1">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <div className="flex space-x-1 overflow-x-auto pb-1 -mx-1 px-1">
               <Button
                 variant={activeTab === "free" ? "default" : "outline"}
                 onClick={() => handleTabChange("free")}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
+                size="sm"
               >
-                <Gift className="w-4 h-4" />
-                Free Users ({stats.freeUsers || 0})
+                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Free ({stats.freeUsers || 0})
               </Button>
               <Button
                 variant={activeTab === "paying" ? "default" : "outline"}
                 onClick={() => handleTabChange("paying")}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap"
+                size="sm"
               >
-                <DollarSign className="w-4 h-4" />
-                Paying Users ({stats.payingUsers || 0})
+                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Paying ({stats.payingUsers || 0})
               </Button>
             </div>
           </CardHeader>
@@ -642,7 +668,7 @@ const UsersWithTabs = () => {
 
         {/* Search and Filter */}
         <Card className="shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 md:p-6">
             <TableFilters
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
@@ -687,18 +713,18 @@ const UsersWithTabs = () => {
 
         {/* Users Table */}
         <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg md:text-xl font-bold">
               {activeTab === "free" ? "Free Users" : "Paying Users"} (
               {filteredUsers.length})
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               {activeTab === "free"
                 ? "Users with free plan access"
                 : "Users with premium subscriptions"}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-2 md:p-4">
             {loading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -937,16 +963,16 @@ const UsersWithTabs = () => {
 
           {/* Pagination Footer */}
           {pagination.totalPages > 1 && (
-            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t bg-gray-50/50">
-              <div className="text-sm text-gray-600">
+            <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 border-t bg-gray-50/50 p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                 Showing {(pagination.currentPage - 1) * itemsPerPage + 1} to{" "}
                 {Math.min(
                   pagination.currentPage * itemsPerPage,
                   pagination.totalUsers
                 )}{" "}
-                of {pagination.totalUsers} results
+                of {pagination.totalUsers}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
                 {renderPaginationButtons()}
               </div>
             </CardFooter>
@@ -955,7 +981,13 @@ const UsersWithTabs = () => {
       </div>
 
       {showNewUserForm && (
-        <NewUserForm setShowNewUserForm={setShowNewUserForm} />
+        <NewUserForm 
+          setShowNewUserForm={setShowNewUserForm} 
+          onUserCreated={() => {
+            fetchUsers();
+            fetchStats();
+          }}
+        />
       )}
 
       {/* View User Dialog */}
@@ -1017,55 +1049,159 @@ const UsersWithTabs = () => {
 
       {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5" />
               Modifier l'utilisateur
             </DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de l'utilisateur. Les champs marqués avec * sont obligatoires.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Nom</Label>
-              <Input
-                id="edit-name"
-                value={editFormData.name || ""}
-                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-              />
+            {/* Name and Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-name">Nom *</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Nom complet"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editFormData.email || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editFormData.email || ""}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-              />
+
+            {/* Year and Plan */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-year">Année d'étude</Label>
+                <select
+                  id="edit-year"
+                  className="w-full p-2 border rounded-md bg-white"
+                  value={editFormData.currentYear || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, currentYear: e.target.value })}
+                >
+                  <option value="">Sélectionner...</option>
+                  {studentYears.map((year) => (
+                    <option key={year.value} value={year.value}>{year.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="edit-plan">Plan</Label>
+                <select
+                  id="edit-plan"
+                  className="w-full p-2 border rounded-md bg-white"
+                  value={editFormData.plan || "Free"}
+                  onChange={(e) => setEditFormData({ ...editFormData, plan: e.target.value })}
+                >
+                  <option value="Free">Gratuit</option>
+                  <option value="Premium">Premium (Semestre)</option>
+                  <option value="Premium Annuel">Premium Annuel</option>
+                </select>
+              </div>
             </div>
+
+            {/* Semesters Multi-select */}
             <div>
-              <Label htmlFor="edit-plan">Plan</Label>
-              <select
-                id="edit-plan"
-                className="w-full p-2 border rounded-md"
-                value={editFormData.plan || "Free"}
-                onChange={(e) => setEditFormData({ ...editFormData, plan: e.target.value })}
-              >
-                <option value="Free">Free</option>
-                <option value="Premium">Premium</option>
-                <option value="Enterprise">Enterprise</option>
-              </select>
+              <Label>Semestres</Label>
+              <div className="grid grid-cols-5 gap-2 mt-2 p-3 border rounded-md bg-gray-50">
+                {semesterOptions.map((sem) => (
+                  <label key={sem.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.semesters?.includes(sem.value) || false}
+                      onChange={(e) => {
+                        const currentSemesters = editFormData.semesters || [];
+                        if (e.target.checked) {
+                          setEditFormData({ 
+                            ...editFormData, 
+                            semesters: [...currentSemesters, sem.value].sort() 
+                          });
+                        } else {
+                          setEditFormData({ 
+                            ...editFormData, 
+                            semesters: currentSemesters.filter(s => s !== sem.value) 
+                          });
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{sem.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Payment Info - Only show for non-Free plans */}
+            {editFormData.plan !== "Free" && (
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Informations de paiement
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="edit-payment-mode">Mode de paiement</Label>
+                    <select
+                      id="edit-payment-mode"
+                      className="w-full p-2 border rounded-md bg-white"
+                      value={editFormData.paymentMode || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, paymentMode: e.target.value })}
+                    >
+                      <option value="">Sélectionner...</option>
+                      {paymentModeOptions.map((mode) => (
+                        <option key={mode.value} value={mode.value}>{mode.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-payment-date">Date de paiement</Label>
+                    <Input
+                      id="edit-payment-date"
+                      type="date"
+                      value={editFormData.paymentDate || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-approval-date">Date d'approbation</Label>
+                    <Input
+                      id="edit-approval-date"
+                      type="date"
+                      value={editFormData.approvalDate || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, approvalDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Active Status */}
+            <div className="flex items-center gap-2 pt-2">
               <input
                 type="checkbox"
                 id="edit-active"
                 checked={editFormData.isAactive ?? true}
                 onChange={(e) => setEditFormData({ ...editFormData, isAactive: e.target.checked })}
+                className="rounded"
               />
-              <Label htmlFor="edit-active">Actif</Label>
+              <Label htmlFor="edit-active" className="cursor-pointer">Compte actif</Label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
             <Button onClick={handleUpdateUser} disabled={actionLoading}>
               {actionLoading ? "Mise à jour..." : "Enregistrer"}

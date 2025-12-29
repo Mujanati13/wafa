@@ -160,15 +160,15 @@ const pieOptions = {
 
 export function SubscrptionChart() {
   return (
-    <Card className="h-[500px] flex flex-col">
-      <CardHeader>
-        <CardTitle>Plan Distribution</CardTitle>
-        <CardDescription>
+    <Card className="h-auto sm:h-[400px] md:h-[450px] lg:h-[500px] flex flex-col">
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-sm sm:text-base md:text-lg">Plan Distribution</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           User subscriptions across different plans
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 items-center justify-center">
-        <div className="w-full max-w-xs h-full flex items-center justify-center">
+      <CardContent className="flex flex-1 items-center justify-center p-2 sm:p-4 md:p-6">
+        <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
           <Doughnut data={doughnutData} options={doughnutOptions} />
         </div>
       </CardContent>
@@ -179,11 +179,11 @@ export function SubscrptionChart() {
 export function UserGrowChart() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>User Growth Trend</CardTitle>
-        <CardDescription>Total users over time</CardDescription>
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-sm sm:text-base md:text-lg">User Growth Trend</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Total users over time</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-4 md:p-6">
         <Line
           key={JSON.stringify(userGrowthChartData)}
           data={userGrowthChartData}
@@ -197,11 +197,11 @@ export function UserGrowChart() {
 export function SubjectPerformanceChart() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Subject Performance</CardTitle>
-        <CardDescription>Average scores by subject</CardDescription>
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-sm sm:text-base md:text-lg">Subject Performance</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Average scores by subject</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-4 md:p-6">
         <Bar data={subjectPerformanceData} options={barOptions} />
       </CardContent>
     </Card>
@@ -211,11 +211,11 @@ export function SubjectPerformanceChart() {
 export function ExamAttemptsChart() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Weekly Exam Activity</CardTitle>
-        <CardDescription>Exam attempts throughout the week</CardDescription>
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-sm sm:text-base md:text-lg">Weekly Exam Activity</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Exam attempts throughout the week</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-4 md:p-6">
         <Line data={examAttemptsData} options={options} />
       </CardContent>
     </Card>
@@ -224,13 +224,13 @@ export function ExamAttemptsChart() {
 
 export function UserDemographicsChart() {
   return (
-    <Card className="h-[500px] flex flex-col">
-      <CardHeader>
-        <CardTitle>User Demographics</CardTitle>
-        <CardDescription>User distribution by education level</CardDescription>
+    <Card className="h-auto sm:h-[400px] md:h-[450px] lg:h-[500px] flex flex-col">
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-sm sm:text-base md:text-lg">User Demographics</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">User distribution by education level</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 items-center justify-center">
-        <div className="w-full max-w-xs h-full flex items-center justify-center">
+      <CardContent className="flex flex-1 items-center justify-center p-2 sm:p-4 md:p-6">
+        <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
           <Pie data={userDemographicsData} options={pieOptions} />
         </div>
       </CardContent>

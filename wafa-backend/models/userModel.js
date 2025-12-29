@@ -140,6 +140,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Payment mode tracking
+    paymentMode: {
+      type: String,
+      enum: ["PayPal", "Bank Transfer", "Contact", "Manual", null],
+      default: null,
+    },
   },
   {
     timestamps: true,

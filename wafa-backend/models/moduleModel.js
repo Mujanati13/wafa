@@ -34,8 +34,18 @@ const moduleSchema = new mongoose.Schema(
                 type: String,
                 default: "#6366f1", // Default indigo color
         },
-        // Help content for the help modal
+        // Help content for the help modal (text)
         helpContent: {
+                type: String,
+                default: "",
+        },
+        // Help image URL (separate from module main image)
+        helpImage: {
+                type: String,
+                default: "",
+        },
+        // Help PDF URL
+        helpPdf: {
                 type: String,
                 default: "",
         },

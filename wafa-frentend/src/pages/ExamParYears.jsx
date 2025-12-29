@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import NewExamForm from "@/components/admin/NewExamForm";
 import { api } from "@/lib/utils";
 
+const DEFAULT_EXAM_IMAGE = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSMC9M_cEyx3SqKeJVj_RbrtTxkDXhVP1k_2A&s";
+
 const ExamParYears = () => {
   const { t } = useTranslation(['admin', 'common']);
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,6 +29,8 @@ const ExamParYears = () => {
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [semesterFilter, setSemesterFilter] = useState("all"); // New: semester filter for form
+  const [formSemesterFilter, setFormSemesterFilter] = useState("all"); // New: semester filter for module selection in form
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,11 +38,11 @@ const ExamParYears = () => {
     examName: "",
     moduleName: "",
     year: "",
-    imageUrl: "",
+    imageUrl: DEFAULT_EXAM_IMAGE,
     helpText: "",
   });
 
-  const placeholderImage = "https://via.placeholder.com/150x100/4F46E5/FFFFFF?text=Exam";
+  const placeholderImage = DEFAULT_EXAM_IMAGE;
 
   useEffect(() => {
     fetchExams();
@@ -73,17 +77,18 @@ const ExamParYears = () => {
       await api.post("/exams/create", {
         name: formData.examName,
         moduleId: selectedModule._id,
-        year: formData.year,
-        imageUrl: formData.imageUrl || "",
+        year: parseInt(formData.year),
+        imageUrl: formData.imageUrl || DEFAULT_EXAM_IMAGE,
         infoText: formData.helpText || "",
       });
 
       setShowAddExamForm(false);
+      setFormSemesterFilter("all");
       setFormData({
         examName: "",
         moduleName: "",
         year: "",
-        imageUrl: "",
+        imageUrl: DEFAULT_EXAM_IMAGE,
         helpText: "",
       });
       toast.success(t('admin:exam_added_success'));
@@ -108,11 +113,17 @@ const ExamParYears = () => {
   };
 
   const handleEditExam = (exam) => {
+    // Find the module to get its semester for the form filter
+    const module = modules.find(m => m.name === exam.moduleName);
+    if (module && module.semester) {
+      setFormSemesterFilter(module.semester);
+    }
+    
     setFormData({
       examName: exam.examName,
       moduleName: exam.moduleName,
       year: exam.year,
-      imageUrl: exam.imageUrl === placeholderImage ? "" : exam.imageUrl,
+      imageUrl: exam.imageUrl === placeholderImage ? DEFAULT_EXAM_IMAGE : exam.imageUrl,
       helpText: exam.helpText || "",
     });
     setEditingExam(exam);
@@ -132,28 +143,33 @@ const ExamParYears = () => {
         return;
       }
 
-      await api.patch(`/exams/update/${editingExam.id}`, {
+      const response = await api.patch(`/exams/update/${editingExam.id}`, {
         name: formData.examName,
         moduleId: selectedModule._id,
-        year: formData.year,
-        imageUrl: formData.imageUrl || "",
+        year: parseInt(formData.year),
+        imageUrl: formData.imageUrl || DEFAULT_EXAM_IMAGE,
         infoText: formData.helpText || "",
       });
 
-      setShowAddExamForm(false);
-      setEditingExam(null);
-      setFormData({
-        examName: "",
-        moduleName: "",
-        year: "",
-        imageUrl: "",
-        helpText: "",
-      });
-      toast.success("Examen mis à jour avec succès");
-      fetchExams();
+      if (response.data?.success) {
+        setShowAddExamForm(false);
+        setEditingExam(null);
+        setFormSemesterFilter("all");
+        setFormData({
+          examName: "",
+          moduleName: "",
+          year: "",
+          imageUrl: DEFAULT_EXAM_IMAGE,
+          helpText: "",
+        });
+        toast.success("Examen mis à jour avec succès");
+        fetchExams();
+      } else {
+        toast.error(response.data?.message || "Erreur lors de la mise à jour");
+      }
     } catch (err) {
       console.error("Error updating exam:", err);
-      toast.error("Erreur lors de la mise à jour");
+      toast.error(err.response?.data?.message || "Erreur lors de la mise à jour");
     }
   };
 
@@ -451,6 +467,34 @@ const ExamParYears = () => {
                     />
                   </div>
 
+                  {/* Semester filter for module selection */}
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Filtrer par semestre</Label>
+                    <Select value={formSemesterFilter} onValueChange={(value) => {
+                      setFormSemesterFilter(value);
+                      // Reset module selection when semester changes
+                      if (formData.moduleName) {
+                        const currentModule = modules.find(m => m.name === formData.moduleName);
+                        if (currentModule && value !== "all" && currentModule.semester !== value) {
+                          handleFormChange("moduleName", "");
+                        }
+                      }
+                    }}>
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Tous les semestres" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="all" className="text-black">Tous les semestres</SelectItem>
+                        <SelectItem value="S1" className="text-black">Semestre 1</SelectItem>
+                        <SelectItem value="S2" className="text-black">Semestre 2</SelectItem>
+                        <SelectItem value="S3" className="text-black">Semestre 3</SelectItem>
+                        <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
+                        <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
+                        <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="text-black font-medium">Module *</Label>
                     <Select value={formData.moduleName} onValueChange={(value) => handleFormChange("moduleName", value)}>
@@ -458,13 +502,20 @@ const ExamParYears = () => {
                         <SelectValue placeholder="Sélectionner un module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {modules.map((mod) => (
-                          <SelectItem key={mod._id} value={mod.name} className="text-black">
-                            {mod.name}
-                          </SelectItem>
-                        ))}
+                        {modules
+                          .filter(mod => formSemesterFilter === "all" || mod.semester === formSemesterFilter)
+                          .map((mod) => (
+                            <SelectItem key={mod._id} value={mod.name} className="text-black">
+                              {mod.name} {mod.semester ? `(${mod.semester})` : ""}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
+                    {formSemesterFilter !== "all" && (
+                      <p className="text-xs text-gray-500">
+                        {modules.filter(m => m.semester === formSemesterFilter).length} module(s) dans {formSemesterFilter}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -511,7 +562,8 @@ const ExamParYears = () => {
                       onClick={() => {
                         setShowAddExamForm(false);
                         setEditingExam(null);
-                        setFormData({ examName: "", moduleName: "", year: "", imageUrl: "", helpText: "" });
+                        setFormSemesterFilter("all");
+                        setFormData({ examName: "", moduleName: "", year: "", imageUrl: DEFAULT_EXAM_IMAGE, helpText: "" });
                       }}
                     >
                       Annuler

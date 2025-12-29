@@ -1,6 +1,25 @@
 import SubscriptionPlan from "../models/subscriptionPlanModel.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 
+// Helper function to normalize features array
+// Accepts both string arrays ["Feature1", "Feature2"] 
+// and object arrays [{text: "Feature1", included: true}]
+const normalizeFeatures = (features) => {
+  if (!features || !Array.isArray(features)) return [];
+  
+  return features.filter(Boolean).map(f => {
+    if (typeof f === 'string') {
+      return { text: f.trim(), included: true };
+    } else if (typeof f === 'object' && f.text) {
+      return { 
+        text: String(f.text).trim(), 
+        included: f.included !== false
+      };
+    }
+    return null;
+  }).filter(Boolean);
+};
+
 // Get all subscription plans
 const getAllPlans = asyncHandler(async (req, res) => {
   const plans = await SubscriptionPlan.find()
@@ -56,7 +75,7 @@ const createPlan = asyncHandler(async (req, res) => {
     description,
     price,
     oldPrice: oldPrice || null,
-    features: features || [],
+    features: normalizeFeatures(features),
     status: status || "Active",
     order: order !== undefined ? order : 0,
   });
@@ -96,10 +115,10 @@ const updatePlan = asyncHandler(async (req, res) => {
   }
 
   if (name) plan.name = name;
-  if (description) plan.description = description;
+  if (description !== undefined) plan.description = description;
   if (price !== undefined) plan.price = price;
   if (oldPrice !== undefined) plan.oldPrice = oldPrice;
-  if (features) plan.features = features;
+  if (features !== undefined) plan.features = normalizeFeatures(features);
   if (status) plan.status = status;
   if (order !== undefined) plan.order = order;
 

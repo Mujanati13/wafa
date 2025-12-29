@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
@@ -20,9 +20,12 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Save, Upload, FileText, ImageIcon, Type, Loader2 } from "lucide-react";
+import { Save, Upload, FileText, ImageIcon, Type, Loader2, X } from "lucide-react";
 import { api } from "@/lib/utils";
 import { toast } from "sonner";
+
+const MAX_IMAGES = 5;
+const MAX_PDF = 1;
 
 const ImportExplications = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -78,7 +81,11 @@ const ImportExplications = () => {
   const [questionNumbers, setQuestionNumbers] = useState("");
   const [explicationText, setExplicationText] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
+  const [pdfFile, setPdfFile] = useState(null);
   const [explicationName, setExplicationName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const pdfInputRef = useRef(null);
 
   // Derived lists
   const examsForModule = selectedModule ? getExamsForModule(selectedModule) : [];
@@ -91,6 +98,9 @@ const ImportExplications = () => {
         .map(e => e.courseName)
         .filter(Boolean)
     : [];
+  
+  // Year options for courses
+  const yearNames = ["2020", "2021", "2022", "2023", "2024", "2025"];
 
   const hasContextSelected = (() => {
     if (!selectedModule || !examType) return false;
@@ -102,8 +112,9 @@ const ImportExplications = () => {
     return false;
   })();
 
+  // Content is optional - at least one of text, images, or PDF required
   const hasAnyContent =
-    explicationText.trim().length > 0 || (imageFiles?.length || 0) > 0;
+    explicationText.trim().length > 0 || (imageFiles?.length || 0) > 0 || pdfFile !== null;
 
   const canSubmit =
     hasContextSelected &&
@@ -111,27 +122,99 @@ const ImportExplications = () => {
     explicationName.trim().length > 0 &&
     hasAnyContent;
 
-  const handleSubmit = () => {
-    const context = {
-      module: selectedModule,
-      examType,
-      yearsExamName: examType === "years" ? selectedExamNameYears : undefined,
-      coursesCategory: examType === "courses" ? selectedCategory : undefined,
-      courseName: examType === "courses" ? selectedCourse : undefined,
-      yearName: examType === "courses" ? selectedYearName : undefined,
-      tpName: examType === "tp" ? selectedTPName : undefined,
-      qcmName: examType === "qcm" ? selectedQCMName : undefined,
-    };
+  const handleSubmit = async () => {
+    // Determine examId based on exam type
+    let examId = null;
+    if (examType === "years") examId = selectedExamNameYears;
+    else if (examType === "tp") examId = selectedTPName;
+    else if (examType === "qcm") examId = selectedQCMName;
+    
+    if (!examId && examType !== "courses") {
+      toast.error("Veuillez sélectionner un examen");
+      return;
+    }
+    
+    try {
+      setUploading(true);
+      
+      // For bulk explanation import, we'll use a different approach
+      // First, upload images to get URLs if any
+      let uploadedImageUrls = [];
+      let uploadedPdfUrl = null;
+      
+      if (imageFiles.length > 0) {
+        const imgFormData = new FormData();
+        imageFiles.forEach(file => {
+          imgFormData.append('images', file);
+        });
+        
+        const uploadRes = await api.post('/questions/upload-images', imgFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (uploadRes.data.success) {
+          uploadedImageUrls = uploadRes.data.data.map(img => img.url);
+        }
+      }
+      
+      // Upload PDF if any
+      if (pdfFile) {
+        const pdfFormData = new FormData();
+        pdfFormData.append('pdf', pdfFile);
+        
+        const pdfRes = await api.post('/explanations/upload-pdf', pdfFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (pdfRes.data.success) {
+          uploadedPdfUrl = pdfRes.data.data.url;
+        }
+      }
+      
+      // Create explanation with bulk data
+      const payload = {
+        title: explicationName,
+        contentText: explicationText.trim() || '',
+        examId,
+        questionNumbers,
+        imageUrls: uploadedImageUrls,
+        pdfUrl: uploadedPdfUrl,
+        moduleId: selectedModule,
+        examType
+      };
+      
+      await api.post('/explanations/admin-create', payload);
+      
+      toast.success("Explication importée avec succès!");
+      
+      // Reset form
+      setExplicationName("");
+      setExplicationText("");
+      setImageFiles([]);
+      setPdfFile(null);
+      setQuestionNumbers("");
+    } catch (error) {
+      console.error("Error submitting explanation:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'import");
+    } finally {
+      setUploading(false);
+    }
+  };
 
-    const payload = {
-      name: explicationName,
-      context,
-      questionNumbers,
-      text: explicationText.trim() || undefined,
-      images: Array.from(imageFiles || []).map((f) => f.name),
-    };
-
-    alert("Import explications (demo)\n" + JSON.stringify(payload, null, 2));
+  const handlePdfUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      toast.error("Seuls les fichiers PDF sont acceptés");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Le PDF ne doit pas dépasser 10 Mo");
+      return;
+    }
+    setPdfFile(file);
+    toast.success(`PDF ajouté: ${file.name}`);
+    e.target.value = '';
   };
 
   const handleDragOver = (e) => {
@@ -143,14 +226,27 @@ const ImportExplications = () => {
     e.preventDefault();
     e.stopPropagation();
     const files = e.dataTransfer.files;
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    if (imageFiles.length > 0) {
-      setImageFiles(prev => [...prev, ...imageFiles]);
+    const validImages = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (validImages.length > 0) {
+      const remainingSlots = MAX_IMAGES - imageFiles.length;
+      if (remainingSlots <= 0) {
+        toast.error(`Maximum ${MAX_IMAGES} images autorisées`);
+        return;
+      }
+      const toAdd = validImages.slice(0, remainingSlots);
+      setImageFiles(prev => [...prev, ...toAdd]);
+      if (validImages.length > remainingSlots) {
+        toast.warning(`Seulement ${remainingSlots} image(s) ajoutée(s) (limite: ${MAX_IMAGES})`);
+      }
     }
   };
 
   const removeImage = (index) => {
     setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removePdf = () => {
+    setPdfFile(null);
   };
 
   return (
@@ -355,7 +451,7 @@ const ImportExplications = () => {
                 Content Details
               </CardTitle>
               <CardDescription>
-                Add question numbers, text and/or upload images
+                Add question numbers and at least one of: text, images (max {MAX_IMAGES}), or PDF
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
@@ -379,12 +475,12 @@ const ImportExplications = () => {
                 <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Explanation Text
+                    Explanation Text (optionnel)
                   </Label>
                   <textarea
                     className="w-full rounded-md border border-gray-300 bg-white p-3 text-sm font-mono"
                     rows={5}
-                    placeholder="Enter explanation text..."
+                    placeholder="Enter explanation text (optionnel si vous ajoutez des images ou un PDF)..."
                     value={explicationText}
                     onChange={(e) => setExplicationText(e.target.value)}
                   />
@@ -394,7 +490,7 @@ const ImportExplications = () => {
                 <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" />
-                    Upload Images
+                    Upload Images (optionnel, max {MAX_IMAGES})
                   </Label>
                   <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
                     onDragOver={handleDragOver}
@@ -404,18 +500,37 @@ const ImportExplications = () => {
                       <Upload className="w-8 h-8 text-purple-600" />
                       <div className="text-center">
                         <p className="font-semibold text-gray-800">Drop images here or click to browse</p>
-                        <p className="text-sm text-gray-600">Supports JPG, PNG, GIF, WebP</p>
+                        <p className="text-sm text-gray-600">Supports JPG, PNG, GIF, WebP (max {MAX_IMAGES} images)</p>
                       </div>
                       <Input
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          const remainingSlots = MAX_IMAGES - imageFiles.length;
+                          if (remainingSlots <= 0) {
+                            toast.error(`Maximum ${MAX_IMAGES} images autorisées`);
+                            return;
+                          }
+                          const toAdd = files.slice(0, remainingSlots);
+                          setImageFiles(prev => [...prev, ...toAdd]);
+                          if (files.length > remainingSlots) {
+                            toast.warning(`Seulement ${remainingSlots} image(s) ajoutée(s)`);
+                          }
+                          e.target.value = '';
+                        }}
                         className="hidden"
                         id="images"
+                        disabled={imageFiles.length >= MAX_IMAGES}
                       />
                       <label htmlFor="images">
-                        <Button variant="outline" className="bg-white hover:bg-purple-50" type="button">
+                        <Button 
+                          variant="outline" 
+                          className="bg-white hover:bg-purple-50" 
+                          type="button"
+                          disabled={imageFiles.length >= MAX_IMAGES}
+                        >
                           Browse Files
                         </Button>
                       </label>
@@ -427,7 +542,7 @@ const ImportExplications = () => {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3"
+                      className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-3"
                     >
                       {imageFiles.map((file, index) => (
                         <motion.div
@@ -436,8 +551,12 @@ const ImportExplications = () => {
                           animate={{ opacity: 1, scale: 1 }}
                           className="relative group"
                         >
-                          <div className="bg-gray-200 rounded-lg overflow-hidden aspect-square flex items-center justify-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
+                          <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <p className="text-xs text-gray-600 mt-1 truncate">{file.name}</p>
                           <Button
@@ -446,7 +565,7 @@ const ImportExplications = () => {
                             onClick={() => removeImage(index)}
                             className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            ×
+                            <X className="w-3 h-3" />
                           </Button>
                         </motion.div>
                       ))}
@@ -455,8 +574,50 @@ const ImportExplications = () => {
 
                   {imageFiles.length > 0 && (
                     <Badge className="mt-2 bg-purple-100 text-purple-800">
-                      {imageFiles.length} image{imageFiles.length !== 1 ? 's' : ''} selected
+                      {imageFiles.length}/{MAX_IMAGES} image{imageFiles.length !== 1 ? 's' : ''} selected
                     </Badge>
+                  )}
+                </div>
+
+                {/* PDF Upload */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Upload PDF (optionnel, max {MAX_PDF})
+                  </Label>
+                  <input
+                    type="file"
+                    ref={pdfInputRef}
+                    onChange={handlePdfUpload}
+                    accept=".pdf"
+                    className="hidden"
+                  />
+                  {!pdfFile ? (
+                    <div 
+                      className="border-2 border-dashed border-red-200 rounded-lg p-4 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+                      onClick={() => pdfInputRef.current?.click()}
+                    >
+                      <div className="flex items-center justify-center gap-3">
+                        <FileText className="w-6 h-6 text-red-500" />
+                        <div>
+                          <p className="font-medium text-gray-700">Click to upload PDF</p>
+                          <p className="text-sm text-gray-500">Max 10 MB</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <FileText className="w-6 h-6 text-red-600" />
+                      <span className="flex-1 text-sm font-medium text-gray-700 truncate">{pdfFile.name}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={removePdf}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-100"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -480,11 +641,15 @@ const ImportExplications = () => {
               </Button>
               <Button
                 className="bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:from-purple-700 hover:to-pink-600 shadow-md"
-                disabled={!canSubmit}
+                disabled={!canSubmit || uploading}
                 onClick={handleSubmit}
               >
-                <Save className="w-4 h-4 mr-2" />
-                Submit Explication
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {uploading ? "Importing..." : "Submit Explication"}
               </Button>
             </CardFooter>
           </Card>

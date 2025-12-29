@@ -94,29 +94,29 @@ const CountdownTimer = ({ settings }) => {
   }
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-6 px-4 text-white">
+    <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-4 sm:py-6 px-3 sm:px-4 text-white">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
+        <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 md:gap-8">
           <div className="flex items-center gap-2">
-            <Timer className="h-5 w-5 animate-pulse" />
-            <span className="font-semibold text-lg">{settings.timerTitle || "Offre se termine dans"}</span>
+            <Timer className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+            <span className="font-semibold text-sm sm:text-base md:text-lg text-center">{settings.timerTitle || "Offre se termine dans"}</span>
           </div>
-          <div className="flex gap-3 md:gap-4">
-            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 min-w-[70px]">
-              <span className="text-2xl md:text-3xl font-bold text-gray-900">{String(timeLeft.days).padStart(2, '0')}</span>
-              <span className="text-xs uppercase text-gray-600 font-medium">Jours</span>
+          <div className="flex gap-2 sm:gap-3 md:gap-4">
+            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 min-w-[50px] sm:min-w-[60px] md:min-w-[70px]">
+              <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{String(timeLeft.days).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs uppercase text-gray-600 font-medium">Jours</span>
             </div>
-            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 min-w-[70px]">
-              <span className="text-2xl md:text-3xl font-bold text-gray-900">{String(timeLeft.hours).padStart(2, '0')}</span>
-              <span className="text-xs uppercase text-gray-600 font-medium">Heures</span>
+            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 min-w-[50px] sm:min-w-[60px] md:min-w-[70px]">
+              <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{String(timeLeft.hours).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs uppercase text-gray-600 font-medium">Heures</span>
             </div>
-            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 min-w-[70px]">
-              <span className="text-2xl md:text-3xl font-bold text-gray-900">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="text-xs uppercase text-gray-600 font-medium">Min</span>
+            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 min-w-[50px] sm:min-w-[60px] md:min-w-[70px]">
+              <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs uppercase text-gray-600 font-medium">Min</span>
             </div>
-            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 min-w-[70px]">
-              <span className="text-2xl md:text-3xl font-bold text-gray-900">{String(timeLeft.seconds).padStart(2, '0')}</span>
-              <span className="text-xs uppercase text-gray-600 font-medium">Sec</span>
+            <div className="flex flex-col items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 sm:px-3 md:px-4 py-2 sm:py-3 min-w-[50px] sm:min-w-[60px] md:min-w-[70px]">
+              <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{String(timeLeft.seconds).padStart(2, '0')}</span>
+              <span className="text-[10px] sm:text-xs uppercase text-gray-600 font-medium">Sec</span>
             </div>
           </div>
         </div>
@@ -264,13 +264,13 @@ const HeroSection = ({ settings }) => {
               {settings?.heroDescription || t("hero_description")}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
+            <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 md:gap-4 pt-2">
               {isLoggedIn ? (
                 <>
                   <Button
                     size="lg"
                     onClick={handleGetStarted}
-                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-blue-600 hover:bg-blue-700"
+                    className="gap-2 text-sm xs:text-base md:text-lg px-4 xs:px-6 md:px-8 py-4 xs:py-5 md:py-6 bg-blue-600 hover:bg-blue-700 w-full xs:w-auto"
                   >
                     <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
                     Dashboard
@@ -278,7 +278,7 @@ const HeroSection = ({ settings }) => {
                   <Button
                     size="lg"
                     onClick={handleStartMembership}
-                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0"
+                    className="gap-2 text-sm xs:text-base md:text-lg px-4 xs:px-6 md:px-8 py-4 xs:py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0 w-full xs:w-auto"
                   >
                     <Award className="h-4 w-4 md:h-5 md:w-5" />
                     Gérer l'Abonnement
@@ -289,7 +289,7 @@ const HeroSection = ({ settings }) => {
                   <Button
                     size="lg"
                     onClick={handleGetStarted}
-                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-blue-600 hover:bg-blue-700"
+                    className="gap-2 text-sm xs:text-base md:text-lg px-4 xs:px-6 md:px-8 py-4 xs:py-5 md:py-6 bg-blue-600 hover:bg-blue-700 w-full xs:w-auto"
                   >
                     <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
                     Commencer maintenant
@@ -297,7 +297,7 @@ const HeroSection = ({ settings }) => {
                   <Button
                     size="lg"
                     onClick={handleStartMembership}
-                    className="gap-2 text-base md:text-lg px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0"
+                    className="gap-2 text-sm xs:text-base md:text-lg px-4 xs:px-6 md:px-8 py-4 xs:py-5 md:py-6 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white border-0 w-full xs:w-auto"
                   >
                     <Award className="h-4 w-4 md:h-5 md:w-5" />
                     Commencer l'abonnement
@@ -515,7 +515,7 @@ const FeaturesSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -719,36 +719,36 @@ const PricingSection = ({ settings }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                className="flex justify-center mb-12"
+                className="flex justify-center mb-8 sm:mb-12 px-2"
               >
-                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl px-6 md:px-8 py-4 md:py-6 shadow-lg">
-                  <p className="text-center text-sm md:text-base font-semibold mb-3 text-white">⏰ {settings?.timerTitle || "Offre limitée - Ne manquez pas cette opportunité !"}</p>
-                  <div className="flex gap-3 md:gap-4 justify-center items-center">
-                    <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
-                      <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.days).padStart(2, '0')}</div>
-                      <div className="text-xs md:text-sm mt-1 text-black font-semibold">Jours</div>
+                <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl sm:rounded-2xl px-3 sm:px-6 md:px-8 py-3 sm:py-4 md:py-6 shadow-lg w-full max-w-xl">
+                  <p className="text-center text-xs sm:text-sm md:text-base font-semibold mb-2 sm:mb-3 text-white">⏰ {settings?.timerTitle || "Offre limitée - Ne manquez pas cette opportunité !"}</p>
+                  <div className="flex gap-1.5 xs:gap-2 sm:gap-3 md:gap-4 justify-center items-center">
+                    <div className="text-center bg-white bg-opacity-95 rounded-md sm:rounded-lg px-2 xs:px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 flex-1 max-w-[60px] xs:max-w-[70px] sm:max-w-none">
+                      <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-black">{String(timeLeft.days).padStart(2, '0')}</div>
+                      <div className="text-[9px] xs:text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-black font-semibold">Jours</div>
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold text-white">:</div>
-                    <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
-                      <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.hours).padStart(2, '0')}</div>
-                      <div className="text-xs md:text-sm mt-1 text-black font-semibold">Heures</div>
+                    <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-white">:</div>
+                    <div className="text-center bg-white bg-opacity-95 rounded-md sm:rounded-lg px-2 xs:px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 flex-1 max-w-[60px] xs:max-w-[70px] sm:max-w-none">
+                      <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-black">{String(timeLeft.hours).padStart(2, '0')}</div>
+                      <div className="text-[9px] xs:text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-black font-semibold">Heures</div>
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold text-white">:</div>
-                    <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
-                      <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.minutes).padStart(2, '0')}</div>
-                      <div className="text-xs md:text-sm mt-1 text-black font-semibold">Minutes</div>
+                    <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-white">:</div>
+                    <div className="text-center bg-white bg-opacity-95 rounded-md sm:rounded-lg px-2 xs:px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 flex-1 max-w-[60px] xs:max-w-[70px] sm:max-w-none">
+                      <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-black">{String(timeLeft.minutes).padStart(2, '0')}</div>
+                      <div className="text-[9px] xs:text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-black font-semibold">Min</div>
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold text-white">:</div>
-                    <div className="text-center bg-white bg-opacity-95 rounded-lg px-3 md:px-4 py-2">
-                      <div className="text-2xl md:text-3xl font-bold text-black">{String(timeLeft.seconds).padStart(2, '0')}</div>
-                      <div className="text-xs md:text-sm mt-1 text-black font-semibold">Secondes</div>
+                    <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-white">:</div>
+                    <div className="text-center bg-white bg-opacity-95 rounded-md sm:rounded-lg px-2 xs:px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 flex-1 max-w-[60px] xs:max-w-[70px] sm:max-w-none">
+                      <div className="text-base xs:text-lg sm:text-2xl md:text-3xl font-bold text-black">{String(timeLeft.seconds).padStart(2, '0')}</div>
+                      <div className="text-[9px] xs:text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-black font-semibold">Sec</div>
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
               {plans.map((plan, index) => {
                 const isPopular = plan.isPopular;
                 return (
@@ -780,14 +780,14 @@ const PricingSection = ({ settings }) => {
                           </div>
                         </div>
                         <CardTitle className="text-xl md:text-2xl font-bold">{plan.name}</CardTitle>
-                        <div className="pt-4">
-                          <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-5xl md:text-6xl font-bold text-blue-600">{plan.price} dh</span>
+                        <div className="pt-3 sm:pt-4">
+                          <div className="flex items-baseline justify-center gap-1 flex-wrap">
+                            <span className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold text-blue-600">{plan.price} dh</span>
                             {plan.oldPrice && (
-                              <span className="text-xl text-muted-foreground line-through ml-2">{plan.oldPrice} dh</span>
+                              <span className="text-base sm:text-lg md:text-xl text-muted-foreground line-through ml-1 sm:ml-2">{plan.oldPrice} dh</span>
                             )}
                           </div>
-                          <p className="text-muted-foreground text-base mt-2 font-medium">par {plan.period}</p>
+                          <p className="text-muted-foreground text-sm sm:text-base mt-1 sm:mt-2 font-medium">par {plan.period}</p>
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow pt-4">
@@ -1009,15 +1009,15 @@ const FAQSection = ({ settings }) => {
               const colorScheme = iconColors[index % iconColors.length];
               return (
                 <AccordionItem key={index} value={`item-${index}`} className="border-b border-blue-100 last:border-0">
-                  <AccordionTrigger className="hover:no-underline py-6 px-6 md:px-8 group">
-                    <div className="flex items-center gap-4 text-left flex-1">
-                      <div className={`p-2 ${colorScheme.bg} rounded-lg group-hover:${colorScheme.hover} transition-colors flex-shrink-0`}>
-                        <HelpCircle className={`h-5 w-5 ${colorScheme.icon}`} />
+                  <AccordionTrigger className="hover:no-underline py-4 sm:py-6 px-4 sm:px-6 md:px-8 group">
+                    <div className="flex items-center gap-2 sm:gap-4 text-left flex-1">
+                      <div className={`p-1.5 sm:p-2 ${colorScheme.bg} rounded-lg group-hover:${colorScheme.hover} transition-colors flex-shrink-0`}>
+                        <HelpCircle className={`h-4 w-4 sm:h-5 sm:w-5 ${colorScheme.icon}`} />
                       </div>
-                      <span className="font-semibold text-slate-900">{item.question}</span>
+                      <span className="font-semibold text-slate-900 text-sm sm:text-base">{item.question}</span>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className="text-slate-600 pb-6 px-6 md:px-8 pl-16">
+                  <AccordionContent className="text-slate-600 pb-4 sm:pb-6 px-4 sm:px-6 md:px-8 pl-10 sm:pl-16 text-sm sm:text-base">
                     {item.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -1186,7 +1186,7 @@ const FeedbackSection = ({ settings }) => {
           transition={{ delay: 0.2 }}
         >
           <Card className="border-2 border-blue-200 shadow-xl overflow-hidden">
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-4 sm:p-6 md:p-8">
               {feedbackSubmitted ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -1200,8 +1200,8 @@ const FeedbackSection = ({ settings }) => {
                   <p className="text-slate-600">Votre message a été envoyé avec succès.</p>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmitFeedback} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmitFeedback} className="space-y-4 sm:space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700">Nom complet</label>
                       <Input
@@ -1264,17 +1264,17 @@ const FeedbackSection = ({ settings }) => {
           transition={{ delay: 0.4 }}
           className="mt-8 text-center"
         >
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-600">
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-blue-600" />
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-600">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               <span>Réponse sous 24h</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               <span>Confidentiel et sécurisé</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               <span>Communauté de 500+ étudiants</span>
             </div>
           </div>
@@ -1297,9 +1297,9 @@ const Footer = ({ settings }) => {
   const youtubeUrl = settings?.youtubeUrl || "#";
 
   return (
-    <footer className="bg-slate-900 text-white py-12 md:py-16 px-4 sm:px-6 lg:px-8" role="contentinfo">
+    <footer className="bg-slate-900 text-white py-10 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8" role="contentinfo">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
           <div className="col-span-2 sm:col-span-1">
             <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
               <GraduationCap className="h-5 w-5 md:h-6 md:w-6" />
