@@ -647,5 +647,235 @@ export const questionController = {
             message: `${updatedCount} question(s) assignée(s) aux sous-modules/catégories`,
             updatedCount
         });
+    }),
+
+    // Verify question answer and award points
+    verifyAnswer: asyncHandler(async (req, res) => {
+        const { questionId, selectedAnswers, examId, moduleId, isRetry = false } = req.body;
+        const userId = req.user._id;
+
+        if (!questionId || !selectedAnswers || !Array.isArray(selectedAnswers)) {
+            return res.status(400).json({
+                success: false,
+                message: "questionId et selectedAnswers sont requis"
+            });
+        }
+
+        // Get the question
+        const question = await QuestionModel.findById(questionId);
+        if (!question) {
+            return res.status(404).json({
+                success: false,
+                message: "Question non trouvée"
+            });
+        }
+
+        // Get correct answer indices
+        const correctIndices = question.options
+            .map((opt, idx) => opt.isCorrect ? idx : null)
+            .filter(idx => idx !== null);
+
+        // Check if answer is correct
+        const isCorrect = selectedAnswers.length === correctIndices.length &&
+            selectedAnswers.every(ans => correctIndices.includes(ans));
+
+        // Calculate points
+        let pointsAwarded = 0;
+        let pointType = "normal";
+
+        if (isRetry) {
+            // -1 point for retry
+            pointsAwarded = -1;
+            pointType = "normal";
+        } else if (isCorrect) {
+            // +1 point for correct answer
+            pointsAwarded = 1;
+            pointType = "normal";
+        }
+        // 0 points for wrong answer (no point record needed)
+
+        // Only create point record if points != 0
+        if (pointsAwarded !== 0) {
+            await PointModel.create({
+                userId,
+                type: pointType,
+                amount: pointsAwarded,
+                questionId,
+                moduleId: moduleId || null,
+                examId: examId || null,
+                description: isRetry 
+                    ? "Retry question penalty" 
+                    : (isCorrect ? "Correct answer" : ""),
+                metadata: {
+                    selectedAnswers,
+                    correctAnswers: correctIndices,
+                    isCorrect,
+                    isRetry
+                }
+            });
+
+            // Update user's total points
+            await UserModel.findByIdAndUpdate(
+                userId,
+                { $inc: { points: pointsAwarded } },
+                { new: true }
+            );
+        }
+
+        // Get updated user points
+        const user = await UserModel.findById(userId).select('points');
+
+        res.status(200).json({
+            success: true,
+            data: {
+                isCorrect,
+                correctAnswers: correctIndices,
+                pointsAwarded,
+                totalPoints: user?.points || 0
+            }
+        });
+    }),
+
+    // Save user's answer for persistence (without verifying again)
+    saveAnswer: asyncHandler(async (req, res) => {
+        const { questionId, selectedAnswers, isVerified, isCorrect, examId, moduleId } = req.body;
+        const userId = req.user._id;
+
+        if (!questionId) {
+            return res.status(400).json({
+                success: false,
+                message: "questionId est requis"
+            });
+        }
+
+        // Store or update user's answer in a separate collection or user stats
+        // For now, we'll use the UserStatsModel or create answer records
+        const UserStatsModel = (await import("../models/userStatsModel.js")).default;
+        
+        // Find or create user stats
+        let userStats = await UserStatsModel.findOne({ userId });
+        if (!userStats) {
+            userStats = await UserStatsModel.create({
+                userId,
+                questionsAnswered: 0,
+                correctAnswers: 0,
+                answeredQuestions: {},
+                moduleProgress: []
+            });
+        }
+
+        // Store the answer
+        if (!userStats.answeredQuestions) {
+            userStats.answeredQuestions = new Map();
+        }
+        
+        // Check if this question was already answered
+        const existingAnswer = userStats.answeredQuestions.get(questionId.toString());
+        const isNewAnswer = !existingAnswer || !existingAnswer.isVerified;
+        
+        userStats.answeredQuestions.set(questionId.toString(), {
+            selectedAnswers,
+            isVerified: isVerified || false,
+            isCorrect: isCorrect || false,
+            answeredAt: new Date(),
+            examId,
+            moduleId
+        });
+
+        // Update stats only for NEW verified answers (not re-attempts)
+        if (isVerified && isNewAnswer) {
+            userStats.questionsAnswered = (userStats.questionsAnswered || 0) + 1;
+            userStats.totalQuestionsAttempted = (userStats.totalQuestionsAttempted || 0) + 1;
+            
+            if (isCorrect) {
+                userStats.correctAnswers = (userStats.correctAnswers || 0) + 1;
+                userStats.totalCorrectAnswers = (userStats.totalCorrectAnswers || 0) + 1;
+                // Add 1 point for correct answer
+                userStats.totalPoints = (userStats.totalPoints || 0) + 1;
+            } else {
+                userStats.totalIncorrectAnswers = (userStats.totalIncorrectAnswers || 0) + 1;
+            }
+
+            // Update module-specific progress
+            if (moduleId) {
+                const Module = (await import("../models/moduleModel.js")).default;
+                const module = await Module.findById(moduleId).select("name");
+                const moduleName = module?.name || "Unknown";
+
+                const moduleIndex = userStats.moduleProgress.findIndex(
+                    (m) => m.moduleId?.toString() === moduleId.toString()
+                );
+
+                if (moduleIndex === -1) {
+                    // Add new module progress
+                    userStats.moduleProgress.push({
+                        moduleId,
+                        moduleName,
+                        questionsAttempted: 1,
+                        correctAnswers: isCorrect ? 1 : 0,
+                        incorrectAnswers: isCorrect ? 0 : 1,
+                        lastAttempted: new Date()
+                    });
+                } else {
+                    // Update existing module progress
+                    userStats.moduleProgress[moduleIndex].questionsAttempted += 1;
+                    if (isCorrect) {
+                        userStats.moduleProgress[moduleIndex].correctAnswers += 1;
+                    } else {
+                        userStats.moduleProgress[moduleIndex].incorrectAnswers += 1;
+                    }
+                    userStats.moduleProgress[moduleIndex].lastAttempted = new Date();
+                }
+            }
+
+            // Update average score
+            if (userStats.totalQuestionsAttempted > 0) {
+                userStats.averageScore = (userStats.totalCorrectAnswers / userStats.totalQuestionsAttempted) * 100;
+            }
+            
+            userStats.lastActivityDate = new Date();
+        }
+
+        await userStats.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Réponse sauvegardée",
+            data: {
+                questionId,
+                selectedAnswers,
+                isVerified,
+                isCorrect
+            }
+        });
+    }),
+
+    // Get user's saved answers for an exam
+    getUserAnswers: asyncHandler(async (req, res) => {
+        const { examId } = req.params;
+        const userId = req.user._id;
+
+        const UserStatsModel = (await import("../models/userStatsModel.js")).default;
+        const userStats = await UserStatsModel.findOne({ userId });
+
+        if (!userStats || !userStats.answeredQuestions) {
+            return res.status(200).json({
+                success: true,
+                data: {}
+            });
+        }
+
+        // Filter answers for this exam
+        const examAnswers = {};
+        for (const [qId, answer] of userStats.answeredQuestions.entries()) {
+            if (answer.examId?.toString() === examId) {
+                examAnswers[qId] = answer;
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: examAnswers
+        });
     })
 };

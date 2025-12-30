@@ -132,6 +132,36 @@ export const examController = {
         });
     }),
 
+    // Get exams by module ID
+    getByModuleId: asyncHandler(async (req, res) => {
+        const { moduleId } = req.params;
+
+        const exams = await examModel.find({ moduleId }).populate('moduleId', 'name color').lean();
+
+        // Get question counts for each exam
+        const examIds = exams.map(e => e._id);
+        const questions = await QuestionModel.find({ examId: { $in: examIds } }).lean();
+
+        const questionCountByExam = {};
+        questions.forEach(q => {
+            const key = q.examId?.toString();
+            if (!questionCountByExam[key]) questionCountByExam[key] = 0;
+            questionCountByExam[key]++;
+        });
+
+        const examsWithCounts = exams.map(exam => ({
+            ...exam,
+            moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
+            moduleColor: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.color : '#6366f1',
+            questionCount: questionCountByExam[exam._id.toString()] || 0
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: examsWithCounts
+        });
+    }),
+
     // Record exam completion and send notification
     completeExam: asyncHandler(async (req, res) => {
         const { examId, userId, score, totalQuestions } = req.body;

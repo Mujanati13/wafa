@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { debounce } from 'lodash';
 import { 
   User, Mail, Phone, MapPin, Calendar, GraduationCap, 
-  BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2, Check
+  BookOpen, Trophy, Medal, Star, Clock, Edit, Save, X, Camera, Loader2, Check,
+  ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,17 +17,35 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { PageHeader, StatCard } from '@/components/shared';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { userService } from '@/services/userService';
+import { api } from '@/lib/utils';
 
 const ProfilePage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingAcademic, setIsEditingAcademic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [user, setUser] = useState(null);
   const [userStats, setUserStats] = useState(null);
+  
+  // Email verification states
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState(null);
+  
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
@@ -43,6 +62,30 @@ const ProfilePage = () => {
 
   const [editData, setEditData] = useState({ ...profileData });
 
+  // Helper function to determine year from semesters
+  const getYearFromSemesters = (semesters) => {
+    if (!semesters || semesters.length === 0) return '';
+    
+    // Check each year's semesters
+    if (semesters.includes('S1') || semesters.includes('S2')) {
+      return '1ère année';
+    }
+    if (semesters.includes('S3') || semesters.includes('S4')) {
+      return '2ème année';
+    }
+    if (semesters.includes('S5') || semesters.includes('S6')) {
+      return '3ème année';
+    }
+    if (semesters.includes('S7') || semesters.includes('S8')) {
+      return '4ème année';
+    }
+    if (semesters.includes('S9') || semesters.includes('S10')) {
+      return '5ème année';
+    }
+    
+    return '';
+  };
+
   // Fetch user profile and stats on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -58,18 +101,21 @@ const ProfilePage = () => {
         setUser(userData);
         setUserStats(statsData);
         
+        // Determine year from semesters
+        const calculatedYear = getYearFromSemesters(userData.semesters);
+        
         // Map backend user data to profile form
         const mappedData = {
           firstName: userData.name?.split(' ')[0] || '',
           lastName: userData.name?.split(' ').slice(1).join(' ') || '',
           email: userData.email || '',
           phone: userData.phone || '',
-          birthDate: userData.birthDate || '',
-          university: userData.university || '',
-          faculty: userData.faculty || '',
-          year: userData.year || '',
+          birthDate: userData.birthDate || userData.dateOfBirth?.split('T')[0] || '',
+          university: userData.university || 'Université Mohammed V',
+          faculty: userData.faculty || 'Médecine',
+          year: calculatedYear || userData.currentYear || '',
           specialization: userData.specialization || '',
-          location: userData.location || '',
+          location: userData.location || userData.address || '',
           bio: userData.bio || ''
         };
         
@@ -86,54 +132,94 @@ const ProfilePage = () => {
     fetchData();
   }, []);
 
-  // Auto-save profile function
-  const autoSaveProfile = useCallback(
+  // Auto-save profile function (only for academic data - no verification needed)
+  const autoSaveAcademic = useCallback(
     debounce(async (data) => {
-      if (!data.firstName && !data.lastName) return;
+      if (!isEditingAcademic) return;
       
       setAutoSaving(true);
       try {
         const updateData = {
-          name: `${data.firstName} ${data.lastName}`.trim(),
-          phone: data.phone,
-          birthDate: data.birthDate,
           university: data.university,
           faculty: data.faculty,
-          year: data.year,
-          specialization: data.specialization,
-          location: data.location,
-          bio: data.bio
         };
         
         const updatedUser = await userService.updateUserProfile(updateData);
         setUser(updatedUser);
-        setProfileData({ ...data });
         setLastSaved(new Date());
       } catch (error) {
         console.error('Auto-save failed:', error);
-        toast.error(t('dashboard:auto_save_failed', 'Échec de la sauvegarde automatique'));
       } finally {
         setTimeout(() => setAutoSaving(false), 500);
       }
     }, 2000),
-    []
+    [isEditingAcademic]
   );
 
-  // Trigger auto-save when editData changes (only in edit mode)
+  // Trigger auto-save when academic data changes
   useEffect(() => {
-    if (isEditing && editData.firstName !== profileData.firstName ||
-        isEditing && editData.lastName !== profileData.lastName ||
-        isEditing && editData.phone !== profileData.phone ||
-        isEditing && editData.birthDate !== profileData.birthDate ||
-        isEditing && editData.university !== profileData.university ||
-        isEditing && editData.faculty !== profileData.faculty ||
-        isEditing && editData.year !== profileData.year ||
-        isEditing && editData.specialization !== profileData.specialization ||
-        isEditing && editData.location !== profileData.location ||
-        isEditing && editData.bio !== profileData.bio) {
-      autoSaveProfile(editData);
+    if (isEditingAcademic && (
+        editData.university !== profileData.university ||
+        editData.faculty !== profileData.faculty)) {
+      autoSaveAcademic(editData);
     }
-  }, [editData, isEditing]);
+  }, [editData.university, editData.faculty, isEditingAcademic]);
+
+  // Send verification code for personal info changes
+  const sendVerificationCode = async () => {
+    setIsSendingCode(true);
+    try {
+      await api.post('/auth/send-profile-verification');
+      toast.success('Code de vérification envoyé à votre email');
+      setShowVerificationModal(true);
+    } catch (error) {
+      console.error('Failed to send verification:', error);
+      toast.error(error.response?.data?.message || 'Échec de l\'envoi du code');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  // Verify code and save personal info
+  const verifyAndSavePersonal = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error('Veuillez entrer le code à 6 chiffres');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      // Verify the code
+      await api.post('/auth/verify-profile-code', { code: verificationCode });
+      
+      // If verified, save the personal info
+      const updateData = {
+        name: `${pendingChanges.firstName} ${pendingChanges.lastName}`.trim(),
+        phone: pendingChanges.phone,
+        dateOfBirth: pendingChanges.birthDate,
+        address: pendingChanges.location,
+        bio: pendingChanges.bio
+      };
+      
+      const updatedUser = await userService.updateUserProfile(updateData);
+      setUser(updatedUser);
+      setProfileData({ ...profileData, ...pendingChanges });
+      setEditData({ ...profileData, ...pendingChanges });
+      
+      setShowVerificationModal(false);
+      setVerificationCode('');
+      setPendingChanges(null);
+      setIsEditing(false);
+      setLastSaved(new Date());
+      
+      toast.success('Profil mis à jour avec succès');
+    } catch (error) {
+      console.error('Verification failed:', error);
+      toast.error(error.response?.data?.message || 'Code de vérification invalide');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   // Map achievement types to icons
   const getAchievementIcon = (achievementId) => {
@@ -181,31 +267,50 @@ const ProfilePage = () => {
   ];
 
   const handleSave = async () => {
+    // Check if personal info has changed
+    const personalChanged = 
+      editData.firstName !== profileData.firstName ||
+      editData.lastName !== profileData.lastName ||
+      editData.phone !== profileData.phone ||
+      editData.birthDate !== profileData.birthDate ||
+      editData.location !== profileData.location ||
+      editData.bio !== profileData.bio;
+    
+    if (personalChanged) {
+      // Store pending changes and request verification
+      setPendingChanges({
+        firstName: editData.firstName,
+        lastName: editData.lastName,
+        phone: editData.phone,
+        birthDate: editData.birthDate,
+        location: editData.location,
+        bio: editData.bio
+      });
+      await sendVerificationCode();
+    } else {
+      setIsEditing(false);
+      toast.info('Aucune modification détectée');
+    }
+  };
+
+  const handleSaveAcademic = async () => {
     try {
       setLoading(true);
       
-      // Combine firstName and lastName back into name field for backend
       const updateData = {
-        name: `${editData.firstName} ${editData.lastName}`.trim(),
-        phone: editData.phone,
-        birthDate: editData.birthDate,
         university: editData.university,
         faculty: editData.faculty,
-        year: editData.year,
-        specialization: editData.specialization,
-        location: editData.location,
-        bio: editData.bio
       };
       
       const updatedUser = await userService.updateUserProfile(updateData);
       setUser(updatedUser);
-      setProfileData({ ...editData });
-      setIsEditing(false);
+      setProfileData({ ...profileData, university: editData.university, faculty: editData.faculty });
+      setIsEditingAcademic(false);
       setLastSaved(new Date());
-      toast.success(t('dashboard:profile_updated_success'));
+      toast.success('Informations académiques mises à jour');
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      toast.error(t('dashboard:failed_to_update_profile'));
+      console.error('Failed to update academic info:', error);
+      toast.error('Échec de la mise à jour');
     } finally {
       setLoading(false);
     }
@@ -214,6 +319,11 @@ const ProfilePage = () => {
   const handleCancel = () => {
     setEditData({ ...profileData });
     setIsEditing(false);
+  };
+
+  const handleCancelAcademic = () => {
+    setEditData({ ...profileData });
+    setIsEditingAcademic(false);
   };
 
   const getInitials = () => {
@@ -300,6 +410,12 @@ const ProfilePage = () => {
                   </TabsList>
                   
                   <TabsContent value="personal" className="space-y-4 mt-4">
+                    {/* Info banner for email verification */}
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                      <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+                      <span>Les modifications de vos informations personnelles nécessitent une vérification par email.</span>
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">{t('dashboard:first_name')}</Label>
@@ -326,10 +442,11 @@ const ProfilePage = () => {
                       <Input
                         id="email"
                         type="email"
-                        value={isEditing ? editData.email : profileData.email}
-                        onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                        disabled={!isEditing}
+                        value={profileData.email}
+                        disabled={true}
+                        className="bg-slate-100"
                       />
+                      <p className="text-xs text-muted-foreground">L'email ne peut pas être modifié</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
@@ -377,13 +494,40 @@ const ProfilePage = () => {
                   </TabsContent>
 
                   <TabsContent value="academic" className="space-y-4 mt-4">
+                    {/* Academic edit controls */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        Vos informations académiques
+                      </p>
+                      {!isEditingAcademic ? (
+                        <Button onClick={() => setIsEditingAcademic(true)} variant="outline" size="sm" className="gap-2">
+                          <Edit className="h-3.5 w-3.5" />
+                          Modifier
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button onClick={handleSaveAcademic} size="sm" className="gap-1">
+                            <Save className="h-3.5 w-3.5" />
+                            Sauvegarder
+                          </Button>
+                          <Button onClick={handleCancelAcademic} variant="outline" size="sm" className="gap-1">
+                            <X className="h-3.5 w-3.5" />
+                            Annuler
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
                     <div className="space-y-2">
                       <Label htmlFor="university">{t('dashboard:university')}</Label>
                       <Input
                         id="university"
-                        value={isEditing ? editData.university : profileData.university}
+                        value={isEditingAcademic ? editData.university : profileData.university}
                         onChange={(e) => setEditData({ ...editData, university: e.target.value })}
-                        disabled={!isEditing}
+                        disabled={!isEditingAcademic}
+                        placeholder="Université Mohammed V"
                       />
                     </div>
 
@@ -391,31 +535,29 @@ const ProfilePage = () => {
                       <Label htmlFor="faculty">{t('dashboard:faculty')}</Label>
                       <Input
                         id="faculty"
-                        value={isEditing ? editData.faculty : profileData.faculty}
+                        value={isEditingAcademic ? editData.faculty : profileData.faculty}
                         onChange={(e) => setEditData({ ...editData, faculty: e.target.value })}
-                        disabled={!isEditing}
+                        disabled={!isEditingAcademic}
+                        placeholder="Médecine"
                       />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="year">{t('dashboard:year')}</Label>
-                        <Input
-                          id="year"
-                          value={isEditing ? editData.year : profileData.year}
-                          onChange={(e) => setEditData({ ...editData, year: e.target.value })}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="specialization">{t('dashboard:specialization')}</Label>
-                        <Input
-                          id="specialization"
-                          value={isEditing ? editData.specialization : profileData.specialization}
-                          onChange={(e) => setEditData({ ...editData, specialization: e.target.value })}
-                          disabled={!isEditing}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="year">{t('dashboard:year')}</Label>
+                      <Input
+                        id="year"
+                        value={profileData.year}
+                        disabled={true}
+                        className="bg-slate-100"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        L'année est déterminée automatiquement selon votre abonnement
+                        {user?.semesters?.length > 0 && (
+                          <span className="ml-1">
+                            (Semestres: {user.semesters.join(', ')})
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -517,6 +659,71 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-600" />
+              Vérification requise
+            </DialogTitle>
+            <DialogDescription>
+              Un code de vérification a été envoyé à votre email <strong>{profileData.email}</strong>. 
+              Veuillez entrer le code pour confirmer vos modifications.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center">
+              <Input
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                className="text-center text-2xl font-bold tracking-[0.5em] w-48"
+                maxLength={6}
+              />
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Vous n'avez pas reçu le code?{' '}
+              <button 
+                onClick={sendVerificationCode}
+                disabled={isSendingCode}
+                className="text-blue-600 hover:underline disabled:opacity-50"
+              >
+                {isSendingCode ? 'Envoi...' : 'Renvoyer'}
+              </button>
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowVerificationModal(false);
+                setVerificationCode('');
+                setPendingChanges(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={verifyAndSavePersonal}
+              disabled={isVerifying || verificationCode.length !== 6}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Vérification...
+                </>
+              ) : (
+                'Vérifier et sauvegarder'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

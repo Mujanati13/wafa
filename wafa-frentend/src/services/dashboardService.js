@@ -27,9 +27,17 @@ const getSemestersForYear = (year) => {
 
 export const dashboardService = {
   // Get user profile - use cached version from userService
-  getUserProfile: async () => {
+  getUserProfile: async (forceRefresh = false) => {
     try {
+      // If force refresh, clear any cached data first
+      if (forceRefresh) {
+        userService.clearProfileCache();
+      }
       const { data } = await api.get('/users/profile');
+      // Update cache
+      if (data?.data?.user) {
+        localStorage.setItem('userProfile', JSON.stringify(data.data.user));
+      }
       return data;
     } catch (error) {
       console.error("Error fetching user profile:", error);

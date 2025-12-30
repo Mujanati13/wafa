@@ -71,6 +71,26 @@ export const examCourseController = {
         });
     }),
 
+    // Get all exam courses for a specific module
+    getByModuleId: asyncHandler(async (req, res) => {
+        const { moduleId } = req.params;
+
+        const courses = await ExamCourse.find({ moduleId })
+            .populate("moduleId", "name")
+            .sort({ createdAt: -1 });
+
+        // Add question count for each course
+        const coursesWithCount = courses.map(course => ({
+            ...course.toObject(),
+            questionCount: course.linkedQuestions?.length || 0
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: coursesWithCount,
+        });
+    }),
+
     // Update an exam course
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;

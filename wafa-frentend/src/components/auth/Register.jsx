@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { Eye, EyeOff, ArrowLeft, Loader2, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, ArrowLeft, Loader2, Check, X, FileText, Shield } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
@@ -29,10 +29,13 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     acceptTerms: false,
+    acceptPrivacy: false,
     newsletter: false
   });
 
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const checkPasswordStrength = (password) => {
     let strength = 0;
@@ -68,7 +71,14 @@ const Register = () => {
 
     if (!formData.acceptTerms) {
       toast.error(t('common:error'), {
-        description: t('auth:terms_and_conditions'),
+        description: "Veuillez accepter les conditions d'utilisation",
+      });
+      return;
+    }
+
+    if (!formData.acceptPrivacy) {
+      toast.error(t('common:error'), {
+        description: "Veuillez accepter la politique de confidentialité",
       });
       return;
     }
@@ -227,27 +237,27 @@ const Register = () => {
               {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">{t('common:name')}</Label>
-                  <Input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    placeholder={t('common:name')}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">{t('common:name')}</Label>
+                  <Label htmlFor="lastName">Nom</Label>
                   <Input
                     type="text"
                     id="lastName"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    placeholder={t('common:name')}
+                    placeholder="Nom"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Prénom</Label>
+                  <Input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    placeholder="Prénom"
                     required
                     disabled={isLoading}
                   />
@@ -366,7 +376,7 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Terms & Newsletter */}
+              {/* Terms, Privacy & Newsletter */}
               <div className="space-y-3">
                 <div className="flex items-start space-x-2">
                   <Checkbox
@@ -382,7 +392,38 @@ const Register = () => {
                     htmlFor="acceptTerms"
                     className="text-sm font-normal cursor-pointer leading-tight"
                   >
-                    {t('auth:terms_and_conditions')}
+                    J'accepte les{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Conditions d'utilisation
+                    </button>
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="acceptPrivacy"
+                    checked={formData.acceptPrivacy}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, acceptPrivacy: checked }))
+                    }
+                    disabled={isLoading}
+                    className="mt-1"
+                  />
+                  <Label
+                    htmlFor="acceptPrivacy"
+                    className="text-sm font-normal cursor-pointer leading-tight"
+                  >
+                    J'accepte la{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Politique de confidentialité
+                    </button>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -458,6 +499,240 @@ const Register = () => {
           </CardFooter>
         </Card>
       </motion.div>
+
+      {/* Terms of Service Modal */}
+      <AnimatePresence>
+        {showTermsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowTermsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6" />
+                  <h2 className="text-xl font-bold">Conditions d'utilisation</h2>
+                </div>
+                <button
+                  onClick={() => setShowTermsModal(false)}
+                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="prose prose-sm max-w-none text-gray-700 space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">1. Acceptation des conditions</h3>
+                  <p>
+                    En accédant et en utilisant la plateforme WAFA, vous acceptez d'être lié par ces conditions d'utilisation. 
+                    Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre service.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">2. Description du service</h3>
+                  <p>
+                    WAFA est une plateforme éducative destinée aux étudiants en médecine, offrant des QCM, 
+                    des ressources pédagogiques et des outils de suivi de progression.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">3. Compte utilisateur</h3>
+                  <p>
+                    Vous êtes responsable de la confidentialité de votre compte et de votre mot de passe. 
+                    Vous acceptez de nous informer immédiatement de toute utilisation non autorisée de votre compte.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">4. Utilisation du contenu</h3>
+                  <p>
+                    Le contenu de WAFA est protégé par des droits d'auteur. Vous ne pouvez pas reproduire, 
+                    distribuer ou utiliser ce contenu à des fins commerciales sans notre autorisation écrite.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">5. Abonnements et paiements</h3>
+                  <p>
+                    Les abonnements sont facturés selon la période choisie. Les remboursements ne sont accordés 
+                    que dans des cas exceptionnels, sur décision de notre équipe.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">6. Comportement de l'utilisateur</h3>
+                  <p>
+                    Vous vous engagez à ne pas utiliser la plateforme de manière abusive, à ne pas partager 
+                    votre compte et à respecter les autres utilisateurs de la communauté.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">7. Modifications</h3>
+                  <p>
+                    Nous nous réservons le droit de modifier ces conditions à tout moment. Les utilisateurs 
+                    seront informés des changements significatifs par email ou notification sur la plateforme.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">8. Contact</h3>
+                  <p>
+                    Pour toute question concernant ces conditions, contactez-nous via WhatsApp ou par email.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t bg-gray-50 rounded-b-2xl">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowTermsModal(false)}
+                  >
+                    Fermer
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, acceptTerms: true }));
+                      setShowTermsModal(false);
+                    }}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Accepter
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Privacy Policy Modal */}
+      <AnimatePresence>
+        {showPrivacyModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowPrivacyModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-6 w-6" />
+                  <h2 className="text-xl font-bold">Politique de confidentialité</h2>
+                </div>
+                <button
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="prose prose-sm max-w-none text-gray-700 space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">1. Collecte des données</h3>
+                  <p>
+                    Nous collectons les informations que vous nous fournissez lors de votre inscription : 
+                    nom, prénom, adresse email. Nous collectons également des données d'utilisation pour 
+                    améliorer votre expérience.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">2. Utilisation des données</h3>
+                  <p>
+                    Vos données sont utilisées pour :
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Gérer votre compte et votre abonnement</li>
+                    <li>Personnaliser votre expérience d'apprentissage</li>
+                    <li>Vous envoyer des communications importantes</li>
+                    <li>Améliorer nos services</li>
+                  </ul>
+
+                  <h3 className="text-lg font-semibold text-gray-900">3. Protection des données</h3>
+                  <p>
+                    Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos données 
+                    personnelles contre tout accès non autorisé, modification, divulgation ou destruction.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">4. Partage des données</h3>
+                  <p>
+                    Nous ne vendons pas vos données personnelles. Nous pouvons partager vos informations 
+                    avec des prestataires de services tiers uniquement pour le fonctionnement de la plateforme 
+                    (ex: traitement des paiements via PayPal).
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">5. Cookies</h3>
+                  <p>
+                    Nous utilisons des cookies pour améliorer votre expérience de navigation et analyser 
+                    l'utilisation de notre plateforme. Vous pouvez gérer vos préférences de cookies dans 
+                    les paramètres de votre navigateur.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">6. Vos droits</h3>
+                  <p>
+                    Vous avez le droit de :
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Accéder à vos données personnelles</li>
+                    <li>Rectifier vos données</li>
+                    <li>Supprimer votre compte</li>
+                    <li>Retirer votre consentement à tout moment</li>
+                  </ul>
+
+                  <h3 className="text-lg font-semibold text-gray-900">7. Conservation des données</h3>
+                  <p>
+                    Vos données sont conservées aussi longtemps que votre compte est actif. En cas de 
+                    suppression de compte, vos données seront supprimées dans un délai de 30 jours.
+                  </p>
+
+                  <h3 className="text-lg font-semibold text-gray-900">8. Contact</h3>
+                  <p>
+                    Pour toute question concernant vos données personnelles, contactez-nous via WhatsApp 
+                    ou par email.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t bg-gray-50 rounded-b-2xl">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowPrivacyModal(false)}
+                  >
+                    Fermer
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, acceptPrivacy: true }));
+                      setShowPrivacyModal(false);
+                    }}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Accepter
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

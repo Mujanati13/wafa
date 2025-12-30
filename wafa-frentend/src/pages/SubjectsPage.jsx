@@ -76,6 +76,9 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
   };
 
   const imageUrl = getImageUrl();
+  
+  // Calculate answered questions (progress * total / 100)
+  const answeredQuestions = exam.answeredQuestions || Math.round((exam.progress || 0) * exam.questions / 100);
 
   return (
     <motion.div
@@ -84,49 +87,74 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
       transition={{ delay: index * 0.05 }}
     >
       <Card
-        className="hover:shadow-lg transition-all cursor-pointer group active:scale-[0.98]"
+        className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-0 shadow-md"
         onClick={() => onStart(exam.id)}
       >
-        <CardContent className="p-3 sm:p-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Icon or Image */}
-            {imageUrl ? (
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform">
-                <img 
-                  src={imageUrl} 
-                  alt={exam.name} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = `<div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><circle cx="10" cy="13" r="2"/><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/></svg></div>`;
+        <CardContent className="p-0 h-full">
+          <div className="flex items-center gap-4 p-4 sm:p-6">
+            {/* Left side - Icon/Image with rounded corners */}
+            <div className="flex-shrink-0">
+              {imageUrl ? (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md group-hover:shadow-lg transition-all">
+                  <img 
+                    src={imageUrl} 
+                    alt={exam.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
+                      const bgColor = moduleColor || '#3b82f6';
+                      const darkColor = adjustColorLocal(moduleColor, -30) || '#4f46e5';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl" style="background: linear-gradient(to bottom right, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
+                    }}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-105"
+                  style={{
+                    background: `linear-gradient(to bottom right, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`
                   }}
-                />
-              </div>
-            ) : (
-              <div
-                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform ${!moduleColor ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : ''}`}
-                style={moduleColor ? {
-                  background: `linear-gradient(to bottom right, ${moduleColor}, ${adjustColorLocal(moduleColor, -30)})`
-                } : undefined}
-              >
-                <FileQuestion className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-            )}
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h3
-                className="font-semibold text-gray-900 line-clamp-1 transition-colors"
-                style={{ color: moduleColor ? undefined : undefined }}
-              >
-                {exam.name}
-              </h3>
-              <p className="text-sm text-gray-500">{exam.questions} Questions</p>
+                >
+                  <FileQuestion className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                </div>
+              )}
             </div>
 
-            {/* Progress */}
-            <ProgressCircle progress={exam.progress || 0} size={48} color={moduleColor} />
+            {/* Right side - Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-gray-900 line-clamp-2 text-sm sm:text-base mb-2 leading-tight">
+                {exam.name}
+              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Questions counter with button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2.5 text-xs gap-1.5 hover:bg-gray-100 border-gray-300 font-medium"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStart(exam.id);
+                  }}
+                >
+                  <FileQuestion className="h-3.5 w-3.5" />
+                  <span className="font-semibold">{answeredQuestions}</span>
+                  <span className="text-gray-400">/</span>
+                  <span>{exam.questions}</span>
+                </Button>
+                
+                {/* Progress percentage with module color */}
+                <Badge 
+                  className="text-xs font-bold text-white h-8 flex items-center px-3 shadow-sm group-hover:shadow-md transition-shadow"
+                  style={{
+                    backgroundColor: moduleColor || '#3b82f6'
+                  }}
+                >
+                  {exam.progress || 0}%
+                </Badge>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -373,7 +401,6 @@ const SubjectsPage = () => {
   };
 
   const currentExams = getCurrentExams();
-  const totalQuestions = currentExams.reduce((sum, exam) => sum + exam.questions, 0);
 
   if (isLoading) {
     return (
@@ -560,55 +587,6 @@ const SubjectsPage = () => {
               </CardContent>
             </Card>
           )}
-
-          {/* Stats Summary */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Total Questions Card */}
-            <Card className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
-                    style={module.color ? {
-                      backgroundColor: `${module.color}20`
-                    } : undefined}
-                  >
-                    <FileQuestion
-                      className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
-                      style={module.color ? { color: module.color } : undefined}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 mb-1">Total Questions</p>
-                    <p className="text-3xl font-bold text-gray-900">{totalQuestions}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Examens Card */}
-            <Card className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${!module.color ? 'bg-blue-50' : ''}`}
-                    style={module.color ? {
-                      backgroundColor: `${module.color}15`
-                    } : undefined}
-                  >
-                    <GraduationCap
-                      className={`h-7 w-7 ${!module.color ? 'text-blue-600' : ''}`}
-                      style={module.color ? { color: module.color } : undefined}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 mb-1">Examens</p>
-                    <p className="text-3xl font-bold text-gray-900">{currentExams.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Exam Lists */}
           <div className="mt-4">

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   User, Lock, Bell, Shield, Download, Save, Camera, 
-  Mail, Phone, MapPin, GraduationCap, Eye, EyeOff, AlertTriangle
+  Mail, Phone, MapPin, GraduationCap, Eye, EyeOff, AlertTriangle,
+  ShieldCheck, Loader2, Edit, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,22 +14,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { PageHeader } from '@/components/shared';
 import { toast } from 'sonner';
 import { dashboardService } from '@/services/dashboardService';
+import { userService } from '@/services/userService';
+import { api } from '@/lib/utils';
 
 const SettingsPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [showPassword, setShowPassword] = useState(false);
-  const [userSemester, setUserSemester] = useState('S1');
+  const [userSemesters, setUserSemesters] = useState([]);
+  const [user, setUser] = useState(null);
+  
+  // Edit modes
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [isEditingAcademic, setIsEditingAcademic] = useState(false);
+  
+  // Email verification states
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState(null);
+  const [verificationPurpose, setVerificationPurpose] = useState('account'); // 'account' or 'security'
+  
+  // Password states
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  
   const [settings, setSettings] = useState({
-    firstName: 'Az-eddine',
-    lastName: 'Serhani',
-    email: 'azeddine.serhani@email.com',
-    phone: '+212 6 12 34 56 78',
-    university: 'Université Hassan II',
-    faculty: 'Faculté de Médecine et de Pharmacie',
-    currentYear: '1ère année',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    university: 'Université Mohammed V',
+    faculty: 'Médecine',
+    currentYear: '',
     emailNotifications: true,
     pushNotifications: false,
     profileVisibility: 'private',
@@ -36,15 +68,29 @@ const SettingsPage = () => {
     twoFactorAuth: false,
   });
 
-  // Calculate study year based on semester
-  const getYearFromSemester = (semester) => {
-    const semNum = parseInt(semester.replace('S', ''));
-    if (semNum <= 2) return '1ère année';
-    if (semNum <= 4) return '2ème année';
-    if (semNum <= 6) return '3ème année';
-    if (semNum <= 8) return '4ème année';
-    if (semNum <= 10) return '5ème année';
-    return '6ème année';
+  const [originalSettings, setOriginalSettings] = useState({ ...settings });
+
+  // Helper function to determine year from semesters
+  const getYearFromSemesters = (semesters) => {
+    if (!semesters || semesters.length === 0) return '';
+    
+    if (semesters.includes('S1') || semesters.includes('S2')) {
+      return '1ère année';
+    }
+    if (semesters.includes('S3') || semesters.includes('S4')) {
+      return '2ème année';
+    }
+    if (semesters.includes('S5') || semesters.includes('S6')) {
+      return '3ème année';
+    }
+    if (semesters.includes('S7') || semesters.includes('S8')) {
+      return '4ème année';
+    }
+    if (semesters.includes('S9') || semesters.includes('S10')) {
+      return '5ème année';
+    }
+    
+    return '';
   };
 
   // Fetch user profile and set semester
@@ -52,25 +98,25 @@ const SettingsPage = () => {
     const fetchUserProfile = async () => {
       try {
         const response = await dashboardService.getUserProfile();
-        const user = response.data?.user || response.data;
-        if (user) {
-          setSettings(prev => ({
-            ...prev,
-            firstName: user.firstName || user.name?.split(' ')[0] || prev.firstName,
-            lastName: user.lastName || user.name?.split(' ').slice(1).join(' ') || prev.lastName,
-            email: user.email || prev.email,
-            phone: user.phone || prev.phone,
-          }));
-          // Get user's semester and calculate year
-          const semesters = user.semesters || [];
-          if (semesters.length > 0) {
-            const latestSemester = semesters[semesters.length - 1];
-            setUserSemester(latestSemester);
-            setSettings(prev => ({
-              ...prev,
-              currentYear: getYearFromSemester(latestSemester)
-            }));
-          }
+        const userData = response.data?.user || response.data;
+        if (userData) {
+          setUser(userData);
+          const semesters = userData.semesters || [];
+          setUserSemesters(semesters);
+          const calculatedYear = getYearFromSemesters(semesters);
+          
+          const newSettings = {
+            ...settings,
+            firstName: userData.firstName || userData.name?.split(' ')[0] || '',
+            lastName: userData.lastName || userData.name?.split(' ').slice(1).join(' ') || '',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            university: userData.university || 'Université Mohammed V',
+            faculty: userData.faculty || 'Médecine',
+            currentYear: calculatedYear || userData.currentYear || '',
+          };
+          setSettings(newSettings);
+          setOriginalSettings(newSettings);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -78,6 +124,136 @@ const SettingsPage = () => {
     };
     fetchUserProfile();
   }, []);
+
+  // Send verification code
+  const sendVerificationCode = async (purpose) => {
+    setIsSendingCode(true);
+    try {
+      await api.post('/auth/send-profile-verification');
+      toast.success('Code de vérification envoyé à votre email');
+      setVerificationPurpose(purpose);
+      setShowVerificationModal(true);
+    } catch (error) {
+      console.error('Failed to send verification:', error);
+      toast.error(error.response?.data?.message || 'Échec de l\'envoi du code');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  // Verify code and save changes
+  const verifyAndSave = async () => {
+    if (verificationCode.length !== 6) {
+      toast.error('Veuillez entrer le code à 6 chiffres');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      // Verify the code
+      await api.post('/auth/verify-profile-code', { code: verificationCode });
+      
+      if (verificationPurpose === 'account') {
+        // Save account changes
+        const updateData = {
+          name: `${pendingChanges.firstName} ${pendingChanges.lastName}`.trim(),
+          phone: pendingChanges.phone,
+        };
+        
+        await userService.updateUserProfile(updateData);
+        setSettings({ ...settings, ...pendingChanges });
+        setOriginalSettings({ ...settings, ...pendingChanges });
+        setIsEditingAccount(false);
+        toast.success('Informations du compte mises à jour');
+      } else if (verificationPurpose === 'security') {
+        // Change password
+        await api.post('/auth/change-password', {
+          currentPassword: pendingChanges.currentPassword,
+          newPassword: pendingChanges.newPassword,
+        });
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        toast.success('Mot de passe mis à jour avec succès');
+      }
+      
+      setShowVerificationModal(false);
+      setVerificationCode('');
+      setPendingChanges(null);
+    } catch (error) {
+      console.error('Verification failed:', error);
+      toast.error(error.response?.data?.message || 'Code de vérification invalide');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleSaveAccount = async () => {
+    const accountChanged = 
+      settings.firstName !== originalSettings.firstName ||
+      settings.lastName !== originalSettings.lastName ||
+      settings.phone !== originalSettings.phone;
+    
+    if (accountChanged) {
+      setPendingChanges({
+        firstName: settings.firstName,
+        lastName: settings.lastName,
+        phone: settings.phone,
+      });
+      await sendVerificationCode('account');
+    } else {
+      setIsEditingAccount(false);
+      toast.info('Aucune modification détectée');
+    }
+  };
+
+  const handleSaveAcademic = async () => {
+    try {
+      const updateData = {
+        university: settings.university,
+        faculty: settings.faculty,
+      };
+      
+      await userService.updateUserProfile(updateData);
+      setOriginalSettings({ ...originalSettings, university: settings.university, faculty: settings.faculty });
+      setIsEditingAcademic(false);
+      toast.success('Informations académiques mises à jour');
+    } catch (error) {
+      console.error('Failed to update academic info:', error);
+      toast.error('Échec de la mise à jour');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+    
+    setPendingChanges({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
+    await sendVerificationCode('security');
+  };
+
+  const handleCancelAccount = () => {
+    setSettings({ ...settings, firstName: originalSettings.firstName, lastName: originalSettings.lastName, phone: originalSettings.phone });
+    setIsEditingAccount(false);
+  };
+
+  const handleCancelAcademic = () => {
+    setSettings({ ...settings, university: originalSettings.university, faculty: originalSettings.faculty });
+    setIsEditingAcademic(false);
+  };
 
   const handleSave = () => {
     toast.success(t('dashboard:settings_saved_success'));
@@ -107,10 +283,37 @@ const SettingsPage = () => {
           <TabsContent value="account" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t('dashboard:personal_information')}</CardTitle>
-                <CardDescription>{t('dashboard:update_profile_info')}</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{t('dashboard:personal_information')}</CardTitle>
+                    <CardDescription>{t('dashboard:update_profile_info')}</CardDescription>
+                  </div>
+                  {!isEditingAccount ? (
+                    <Button onClick={() => setIsEditingAccount(true)} variant="outline" className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      Modifier
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveAccount} className="gap-2" disabled={isSendingCode}>
+                        {isSendingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Sauvegarder
+                      </Button>
+                      <Button onClick={handleCancelAccount} variant="outline" className="gap-2">
+                        <X className="h-4 w-4" />
+                        Annuler
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Info banner for email verification */}
+                <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                  <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+                  <span>Les modifications de vos informations nécessitent une vérification par email.</span>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">{t('dashboard:first_name')}</Label>
@@ -118,6 +321,7 @@ const SettingsPage = () => {
                       id="firstName"
                       value={settings.firstName}
                       onChange={(e) => handleChange('firstName', e.target.value)}
+                      disabled={!isEditingAccount}
                     />
                   </div>
                   <div className="space-y-2">
@@ -126,6 +330,7 @@ const SettingsPage = () => {
                       id="lastName"
                       value={settings.lastName}
                       onChange={(e) => handleChange('lastName', e.target.value)}
+                      disabled={!isEditingAccount}
                     />
                   </div>
                 </div>
@@ -136,8 +341,10 @@ const SettingsPage = () => {
                     id="email"
                     type="email"
                     value={settings.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
+                    disabled={true}
+                    className="bg-slate-100"
                   />
+                  <p className="text-xs text-muted-foreground">L'email ne peut pas être modifié</p>
                 </div>
 
                 <div className="space-y-2">
@@ -146,13 +353,9 @@ const SettingsPage = () => {
                     id="phone"
                     value={settings.phone}
                     onChange={(e) => handleChange('phone', e.target.value)}
+                    disabled={!isEditingAccount}
                   />
                 </div>
-
-                <Button onClick={handleSave} className="gap-2">
-                  <Save className="h-4 w-4" />
-                  {t('dashboard:save_changes')}
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -161,8 +364,29 @@ const SettingsPage = () => {
           <TabsContent value="academic" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t('dashboard:academic_information')}</CardTitle>
-                <CardDescription>{t('dashboard:manage_study_info')}</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{t('dashboard:academic_information')}</CardTitle>
+                    <CardDescription>{t('dashboard:manage_study_info')}</CardDescription>
+                  </div>
+                  {!isEditingAcademic ? (
+                    <Button onClick={() => setIsEditingAcademic(true)} variant="outline" className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      Modifier
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveAcademic} className="gap-2">
+                        <Save className="h-4 w-4" />
+                        Sauvegarder
+                      </Button>
+                      <Button onClick={handleCancelAcademic} variant="outline" className="gap-2">
+                        <X className="h-4 w-4" />
+                        Annuler
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -170,10 +394,10 @@ const SettingsPage = () => {
                   <Input
                     id="university"
                     value={settings.university}
-                    disabled
-                    className="bg-slate-100 cursor-not-allowed"
+                    onChange={(e) => handleChange('university', e.target.value)}
+                    disabled={!isEditingAcademic}
+                    placeholder="Université Mohammed V"
                   />
-                  <p className="text-xs text-muted-foreground">Ce champ ne peut pas être modifié</p>
                 </div>
 
                 <div className="space-y-2">
@@ -181,10 +405,10 @@ const SettingsPage = () => {
                   <Input
                     id="faculty"
                     value={settings.faculty}
-                    disabled
-                    className="bg-slate-100 cursor-not-allowed"
+                    onChange={(e) => handleChange('faculty', e.target.value)}
+                    disabled={!isEditingAcademic}
+                    placeholder="Médecine"
                   />
-                  <p className="text-xs text-muted-foreground">Ce champ ne peut pas être modifié</p>
                 </div>
 
                 <div className="space-y-2">
@@ -195,7 +419,14 @@ const SettingsPage = () => {
                     disabled
                     className="bg-slate-100 cursor-not-allowed"
                   />
-                  <p className="text-xs text-muted-foreground">Calculé automatiquement selon votre semestre ({userSemester})</p>
+                  <p className="text-xs text-muted-foreground">
+                    L'année est déterminée automatiquement selon votre abonnement
+                    {userSemesters.length > 0 && (
+                      <span className="ml-1">
+                        (Semestres: {userSemesters.join(', ')})
+                      </span>
+                    )}
+                  </p>
                 </div>
 
                 <Alert variant="warning" className="bg-amber-50 border-amber-200">
@@ -205,11 +436,6 @@ const SettingsPage = () => {
                     Le non-respect de cette règle entraînera la suppression définitive de votre compte.
                   </AlertDescription>
                 </Alert>
-
-                <Button onClick={handleSave} className="gap-2">
-                  <Save className="h-4 w-4" />
-                  {t('dashboard:save_changes')}
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -222,6 +448,12 @@ const SettingsPage = () => {
                 <CardDescription>{t('dashboard:change_your_password')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Info banner for email verification */}
+                <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                  <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+                  <span>Le changement de mot de passe nécessite une vérification par email.</span>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">{t('dashboard:current_password')}</Label>
                   <div className="relative">
@@ -229,6 +461,8 @@ const SettingsPage = () => {
                       id="currentPassword"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                     />
                     <Button
                       type="button"
@@ -248,6 +482,8 @@ const SettingsPage = () => {
                     id="newPassword"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                   />
                 </div>
 
@@ -257,11 +493,13 @@ const SettingsPage = () => {
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                   />
                 </div>
 
-                <Button onClick={() => toast.success(t('dashboard:password_updated'))} className="gap-2">
-                  <Save className="h-4 w-4" />
+                <Button onClick={handleChangePassword} className="gap-2" disabled={isSendingCode}>
+                  {isSendingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   {t('dashboard:update_password')}
                 </Button>
               </CardContent>
@@ -369,6 +607,71 @@ const SettingsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Email Verification Modal */}
+      <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-600" />
+              Vérification requise
+            </DialogTitle>
+            <DialogDescription>
+              Un code de vérification a été envoyé à votre email <strong>{settings.email}</strong>. 
+              Veuillez entrer le code pour confirmer vos modifications.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center">
+              <Input
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                className="text-center text-2xl font-bold tracking-[0.5em] w-48"
+                maxLength={6}
+              />
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Vous n'avez pas reçu le code?{' '}
+              <button 
+                onClick={() => sendVerificationCode(verificationPurpose)}
+                disabled={isSendingCode}
+                className="text-blue-600 hover:underline disabled:opacity-50"
+              >
+                {isSendingCode ? 'Envoi...' : 'Renvoyer'}
+              </button>
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowVerificationModal(false);
+                setVerificationCode('');
+                setPendingChanges(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={verifyAndSave}
+              disabled={isVerifying || verificationCode.length !== 6}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Vérification...
+                </>
+              ) : (
+                'Vérifier et sauvegarder'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

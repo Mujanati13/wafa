@@ -103,5 +103,36 @@ export const qcmBanqueController = {
                 questions
             }
         });
+    }),
+
+    // Get all QCM banques for a specific module
+    getByModuleId: asyncHandler(async (req, res) => {
+        const { moduleId } = req.params;
+        
+        const qcmList = await QCMBanque.find({ moduleId }).populate('moduleId', 'name').lean();
+        const qcmIds = qcmList.map(q => q._id);
+
+        // Get questions related to these QCM banques
+        const questions = await QuestionModel.find({ qcmBanqueId: { $in: qcmIds } }).lean();
+
+        // Group questions by qcmBanqueId
+        const questionsByQCM = {};
+        questions.forEach(q => {
+            const key = q.qcmBanqueId?.toString();
+            if (!questionsByQCM[key]) questionsByQCM[key] = 0;
+            questionsByQCM[key]++;
+        });
+
+        // Attach question count to each QCM
+        const qcmWithCounts = qcmList.map(qcm => ({
+            ...qcm,
+            moduleName: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.name : undefined,
+            questionCount: questionsByQCM[qcm._id.toString()] || 0
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: qcmWithCounts
+        });
     })
 };

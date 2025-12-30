@@ -33,6 +33,11 @@ router.post("/assign-submodules", isAuthenticated, isAdmin, questionController.a
 router.post("/community-vote/:questionId", isAuthenticated, questionController.submitCommunityVote);
 router.get("/community-votes/:questionId", isAuthenticated, questionController.getCommunityVotes);
 
+// Answer verification and persistence endpoints
+router.post("/verify-answer", isAuthenticated, questionController.verifyAnswer);
+router.post("/save-answer", isAuthenticated, questionController.saveAnswer);
+router.get("/user-answers/:examId", isAuthenticated, questionController.getUserAnswers);
+
 export default router;
 
 

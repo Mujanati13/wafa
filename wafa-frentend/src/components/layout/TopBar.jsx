@@ -37,23 +37,18 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const mobileSearchRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch user profile on mount (will use cache if available)
+  // Fetch user profile on mount (force refresh to get latest data)
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await userService.getUserProfile();
+        // Force refresh on component mount to ensure we have latest data
+        const userData = await userService.getUserProfile(true);
         setUser(userData);
       } catch (error) {
         console.error('Failed to fetch user in TopBar:', error);
       }
     };
-    // Only fetch if we don't have cached data
-    if (!user) {
-      fetchUser();
-    } else {
-      // Still refresh in background but don't block UI
-      fetchUser();
-    }
+    fetchUser();
   }, []);
 
   const getUserInitials = () => {
@@ -344,27 +339,41 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 max-h-[400px] overflow-y-auto" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user?.name || t('common:user')}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
+            <DropdownMenuContent className="w-64 max-h-[400px] overflow-y-auto" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal p-4">
+                <div className="flex flex-col space-y-2">
+                  <p className="text-base font-semibold leading-none">{user?.name || t('common:user')}</p>
+                  <p className="text-sm leading-none text-muted-foreground">
                     {user?.email || ''}
                   </p>
+                  {/* User Stats Row */}
+                  <div className="flex items-center gap-3 pt-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500">⚡</span>
+                      <span className="font-medium">{user?.totalPoints || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500">⭐</span>
+                      <span className="font-medium">{user?.stars || 0}</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                      {user?.totalPoints || 0} pts
+                    </Badge>
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/dashboard/profile")}>
+              <DropdownMenuItem onClick={() => navigate("/dashboard/profile")} className="cursor-pointer">
                 {t('dashboard:profile')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
+              <DropdownMenuItem onClick={() => navigate("/dashboard/settings")} className="cursor-pointer">
                 {t('dashboard:settings')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/dashboard/subscription")}>
+              <DropdownMenuItem onClick={() => navigate("/dashboard/subscription")} className="cursor-pointer">
                 {t('dashboard:subscription')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
                 {t('common:logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>

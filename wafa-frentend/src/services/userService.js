@@ -217,9 +217,11 @@ export const userService = {
     },
 
     // Get leaderboard
-    getLeaderboard: async (limit = 20) => {
+    getLeaderboard: async (limit = 20, sortBy = 'totalPoints', userId = null) => {
         try {
-            const response = await api.get(`/users/leaderboard`, { params: { limit } });
+            const params = { limit, sortBy };
+            if (userId) params.userId = userId;
+            const response = await api.get(`/users/leaderboard`, { params });
             return response.data;
         } catch (error) {
             console.error('Error fetching leaderboard:', error);

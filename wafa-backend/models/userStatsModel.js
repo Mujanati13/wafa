@@ -48,6 +48,54 @@ const userStatsSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Answered questions persistence for exam page
+    answeredQuestions: {
+      type: Map,
+      of: {
+        selectedAnswers: [Number],
+        isVerified: Boolean,
+        isCorrect: Boolean,
+        answeredAt: Date,
+        examId: mongoose.Schema.Types.ObjectId,
+        moduleId: mongoose.Schema.Types.ObjectId
+      },
+      default: new Map()
+    },
+    // Questions answered count (for progress calculation)
+    questionsAnswered: {
+      type: Number,
+      default: 0
+    },
+    // Correct answers count
+    correctAnswers: {
+      type: Number,
+      default: 0
+    },
+    // Points system
+    totalPoints: {
+      type: Number,
+      default: 0
+    },
+    // Blue points (from approved explanations: +40 pts each)
+    bluePoints: {
+      type: Number,
+      default: 0
+    },
+    // Green points (from approved reports: +30 pts each)
+    greenPoints: {
+      type: Number,
+      default: 0
+    },
+    // Total questions in system (for percentage calculation)
+    totalQuestionsInSystem: {
+      type: Number,
+      default: 0
+    },
+    // Percentage: (questionsAnswered / totalQuestionsInSystem) * 100
+    percentageAnswered: {
+      type: Number,
+      default: 0
+    },
     // Module-specific progress
     moduleProgress: [
       {

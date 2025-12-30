@@ -1,4 +1,4 @@
-import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText, Loader2 } from "lucide-react";
+import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText, Loader2, TriangleAlert } from "lucide-react";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   // State for fetched user explanations
   const [fetchedExplanations, setFetchedExplanations] = useState([]);
   const [loadingExplanations, setLoadingExplanations] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   // Fetch user explanations from API
   useEffect(() => {
@@ -91,7 +92,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
   const hasAIExplanation = aiExplanation.text || aiExplanation.images.length > 0;
 
-  const handleSubmitExplanation = async () => {
+  const handleSubmitClick = () => {
     // At least one content type required: text, images, or PDF
     const hasText = submissionText.trim().length > 0;
     const hasImages = uploadedImages.length > 0;
@@ -102,6 +103,11 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
       return;
     }
 
+    setShowWarning(true);
+  };
+
+  const handleSubmitExplanation = async () => {
+    setShowWarning(false);
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -544,7 +550,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                       Annuler
                     </Button>
                     <Button
-                      onClick={handleSubmitExplanation}
+                      onClick={handleSubmitClick}
                       disabled={isSubmitting || (!submissionText.trim() && uploadedImages.length === 0 && !uploadedPdf)}
                       className="gap-2 bg-purple-600 hover:bg-purple-700"
                     >
@@ -571,6 +577,62 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                     </Badge>
                   )
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Warning Confirmation Dialog */}
+        {showWarning && (
+          <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
+            <div
+              className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Red Header */}
+              <div className="bg-red-500 px-6 py-6 relative">
+                <button
+                  onClick={() => setShowWarning(false)}
+                  className="absolute top-3 right-3 text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <div className="flex flex-col items-center text-white">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3">
+                    <TriangleAlert className="h-10 w-10 text-red-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold">WARNING!</h3>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-5 text-center">
+                <p className="text-gray-700 font-medium mb-3">
+                  Aucun contenu (text, image, pdf ...)
+                </p>
+                <p className="text-gray-600 text-sm mb-4">
+                  - illégal qui est n'est pas bien (pornographique ...) ou les chose qui est hors sujet, n'est autorisé.
+                </p>
+                <p className="text-red-600 font-semibold text-sm">
+                  Le non-respect de cette règle entraînera la suppression définitive de votre compte.
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="px-6 pb-6 flex gap-3">
+                <button
+                  onClick={handleSubmitExplanation}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 disabled:bg-gray-300 transition-colors"
+                >
+                  {isSubmitting ? "Envoi..." : "ok"}
+                </button>
+                <button
+                  onClick={() => setShowWarning(false)}
+                  className="flex-1 py-2.5 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition-colors"
+                >
+                  Annuler
+                </button>
               </div>
             </div>
           </div>

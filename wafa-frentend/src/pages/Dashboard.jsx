@@ -87,9 +87,10 @@ const Dashboard = () => {
         }
 
         // Fetch modules and user profile in parallel
+        // Force refresh user profile to get latest data from server
         const [modulesResponse, profileData] = await Promise.all([
           moduleService.getAllmodules(),
-          dashboardService.getUserProfile()
+          dashboardService.getUserProfile(true)  // Force refresh
         ]);
 
         const modulesData = modulesResponse.data;
@@ -97,6 +98,9 @@ const Dashboard = () => {
 
         const userData = profileData.data?.user || profileData.data;
         setUser(userData);
+        
+        // Update localStorage with fresh data
+        localStorage.setItem("userProfile", JSON.stringify(userData));
 
         // Note: userSemesters and semester are now managed by SemesterContext
       } catch (error) {
@@ -327,12 +331,12 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-4 md:p-6">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-blue-100 rounded-full opacity-20 blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-teal-100 rounded-full opacity-15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-blue-200 rounded-full opacity-20 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-100/30 rounded-full opacity-20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-purple-100/20 rounded-full opacity-15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-teal-100/15 rounded-full opacity-10 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-8">
@@ -342,78 +346,133 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="border-primary/20 bg-gradient-to-br from-white to-blue-50/50 shadow-xl">
-            <CardContent className="p-4 sm:p-6 md:p-8">
-              <div className="flex flex-col gap-4 sm:gap-6">
-                {/* Welcome Message */}
-                <div className="flex-1 space-y-2 sm:space-y-3">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="p-1.5 sm:p-2 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg shadow-md">
-                      <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                    </div>
-                    <div>
-                      <h1 className="text-xl sm:text-3xl md:text-4xl font-bold">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-teal-500 to-blue-600">
-                          {t('dashboard:welcome')}
-                        </span>
+          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 shadow-2xl">
+            {/* Animated Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4)_0%,transparent_50%)]" />
+              <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.3)_0%,transparent_50%)]" />
+            </div>
+
+            <CardContent className="relative z-10 p-3 xs:p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6">
+                {/* Welcome Section */}
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <motion.div
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                      className="p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0"
+                    >
+                      <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-yellow-300" />
+                    </motion.div>
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                        Bienvenue, {user?.name || user?.fullName || 'Étudiant'} !
                       </h1>
-                      <p className="text-lg sm:text-2xl font-semibold text-slate-700 mt-0.5 sm:mt-1">
-                        {user?.name || user?.fullName || 'Utilisateur'}
+                      <p className="text-blue-100 text-xs xs:text-sm sm:text-base mt-1">
+                        Prêt à exceller dans vos études ?
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm sm:text-base text-slate-600">
-                    {t('dashboard:welcome_message')}{" "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto text-blue-600 font-semibold hover:text-blue-700 text-sm sm:text-base"
-                      onClick={() => {
-                        navigate('/dashboard/support');
-                      }}
-                    >
-                      {t('common:contact')}
-                    </Button>
-                  </p>
-                </div>
 
-                {/* User Info & Semester Selector */}
-                <div className="flex flex-col gap-3 sm:gap-4 w-full lg:max-w-[320px] lg:ml-auto">
-                  <div className="flex items-center justify-between gap-3 p-3 sm:p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg">
-                    <div className="text-white">
-                      <p className="text-xs sm:text-sm opacity-90">Mon Abonnement</p>
-                      <p className="text-lg sm:text-xl font-bold">{user?.plan || 'Plan Gratuit'}</p>
+                  {/* Quick Stats Row */}
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
+                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
+                        <Award className="h-3 w-3 xs:h-4 xs:w-4 text-yellow-300" />
+                        <span className="text-[10px] xs:text-xs text-blue-100">Examens</span>
+                      </div>
+                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{stats.examsCompleted}</p>
                     </div>
-                    <Award className="h-8 w-8 sm:h-10 sm:w-10 text-white opacity-80" />
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
+                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
+                        <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 text-green-300" />
+                        <span className="text-[10px] xs:text-xs text-blue-100">Score</span>
+                      </div>
+                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{Math.round(stats.averageScore)}%</p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
+                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
+                        <Clock className="h-3 w-3 xs:h-4 xs:w-4 text-blue-300" />
+                        <span className="text-[10px] xs:text-xs text-blue-100">Heures</span>
+                      </div>
+                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{Math.round(stats.studyHours)}h</p>
+                    </div>
                   </div>
 
-                  <div className="bg-white rounded-xl p-3 sm:p-4 shadow-md border border-slate-200">
-                    <p className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 sm:mb-3">Mes Semestres</p>
-                    <div className="flex items-center gap-1 sm:gap-2">
+                  {/* Support Link */}
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                    <p className="text-blue-100">Besoin d'aide ?</p>
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-white font-semibold hover:text-yellow-300 underline underline-offset-4 text-xs sm:text-sm"
+                      onClick={() => navigate('/dashboard/support')}
+                    >
+                      Contactez-nous
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right Column - Plan & Semesters */}
+                <div className="flex flex-col gap-3 sm:gap-4 w-full lg:min-w-[320px] xl:min-w-[340px]">
+                  {/* Subscription Card */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="relative overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xl cursor-pointer group"
+                    onClick={() => navigate('/dashboard/subscription')}
+                  >
+                    <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16" />
+                    <div className="relative flex items-center justify-between gap-3">
+                      <div className="text-white min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium opacity-90">Mon Abonnement</p>
+                        <p className="text-xl sm:text-2xl font-bold mt-0.5 truncate">{user?.plan || 'Gratuit'}</p>
+                        <p className="text-[10px] xs:text-xs opacity-80 mt-1 group-hover:underline">Voir les détails →</p>
+                      </div>
+                      <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">
+                        <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Semester Selector Card */}
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg border border-white/50">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <p className="text-xs sm:text-sm font-bold text-slate-800">Mes Semestres</p>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] xs:text-xs">
+                        {userSemesters.length} actif{userSemesters.length > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
+                        className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 hover:bg-slate-100"
                         onClick={() => setSemesterPage(p => Math.max(0, p - 1))}
                         disabled={semesterPage === 0}
                       >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                       </Button>
-                      <div className="flex gap-1.5 sm:gap-2 flex-1 justify-center">
+                      
+                      <div className="flex gap-1 sm:gap-2 flex-1 justify-center">
                         {visibleSemesters.map((sem) => {
                           const isSubscribed = userSemesters.includes(sem);
+                          const isSelected = semester === sem;
                           return (
                             <Button
                               key={sem}
-                              variant={semester === sem ? "default" : "outline"}
+                              variant={isSelected ? "default" : "outline"}
                               size="sm"
                               disabled={!isSubscribed}
                               onClick={() => setSemester(sem)}
-                              className={`min-w-[48px] sm:min-w-[60px] text-xs sm:text-sm ${semester === sem
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                : isSubscribed
-                                  ? 'hover:bg-blue-50'
-                                  : 'opacity-40'
-                                }`}
+                              className={`min-w-[50px] xs:min-w-[58px] sm:min-w-[65px] text-xs sm:text-sm font-semibold transition-all ${
+                                isSelected
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md scale-105'
+                                  : isSubscribed
+                                    ? 'hover:bg-blue-50 hover:border-blue-300 text-slate-700'
+                                    : 'opacity-30 cursor-not-allowed'
+                              }`}
                             >
                               {sem}
                               {!isSubscribed && <Lock className="ml-0.5 sm:ml-1 h-2.5 w-2.5 sm:h-3 sm:w-3" />}
@@ -421,18 +480,20 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                           );
                         })}
                       </div>
+                      
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
+                        className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 hover:bg-slate-100"
                         onClick={() => setSemesterPage(p => Math.min(totalSemesterPages - 1, p + 1))}
                         disabled={semesterPage >= totalSemesterPages - 1}
                       >
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                       </Button>
                     </div>
-                    <p className="text-[10px] sm:text-xs text-center text-slate-400 mt-1.5 sm:mt-2">
-                      Page {semesterPage + 1} / {totalSemesterPages}
+                    
+                    <p className="text-[10px] xs:text-xs text-center text-slate-500">
+                      Page {semesterPage + 1} sur {totalSemesterPages}
                     </p>
                   </div>
                 </div>

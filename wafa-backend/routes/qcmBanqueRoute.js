@@ -44,6 +44,9 @@ const uploadQCMImage = multer({
 // Get all QCM Banques
 router.get("/all", isAuthenticated, qcmBanqueController.getAll);
 
+// Get QCM Banques by module
+router.get("/module/:moduleId", isAuthenticated, qcmBanqueController.getByModuleId);
+
 // Get single QCM Banque by ID
 router.get("/:id", isAuthenticated, qcmBanqueController.getById);
 

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import UserStats from "../models/userStatsModel.js";
 import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
@@ -734,9 +735,20 @@ export const UserController = {
 
     // Get leaderboard for public display
     getLeaderboard: asyncHandler(async (req, res) => {
-        const { limit = 20 } = req.query;
+        const { limit = 20, sortBy = 'totalPoints', userId } = req.query;
 
         try {
+            // Get total questions count for percentage calculation
+            const Question = mongoose.model('Question');
+            const totalQuestionsInSystem = await Question.countDocuments({});
+
+            // Define sort field based on filter
+            let sortField = '$totalPoints';
+            if (sortBy === 'bluePoints') sortField = '$bluePoints';
+            else if (sortBy === 'greenPoints') sortField = '$greenPoints';
+            else if (sortBy === 'level') sortField = '$totalPoints'; // Level is based on totalPoints
+            else if (sortBy === 'percentage') sortField = '$percentageAnswered';
+
             const leaderboard = await UserStats.aggregate([
                 {
                     $lookup: {
@@ -755,33 +767,90 @@ export const UserController = {
                     }
                 },
                 {
-                    $project: {
-                        userId: '$userId',
-                        username: '$user.username',
-                        name: '$user.name',
-                        email: '$user.email',
-                        points: { $ifNull: ['$totalPoints', 0] },
-                        bluePoints: { $ifNull: ['$bluePoints', 0] },
-                        totalExams: { $ifNull: ['$totalExams', 0] },
-                        averageScore: { $ifNull: ['$averageScore', 0] },
-                        studyHours: { $ifNull: ['$studyHours', 0] }
+                    $addFields: {
+                        // Calculate level: 1 level = 50 points
+                        level: { 
+                            $floor: { 
+                                $divide: [{ $ifNull: ['$totalPoints', 0] }, 50] 
+                            } 
+                        },
+                        // Calculate percentage: questionsAnswered / totalQuestionsInSystem * 100
+                        percentageCalculated: {
+                            $cond: {
+                                if: { $gt: [totalQuestionsInSystem, 0] },
+                                then: {
+                                    $multiply: [
+                                        { $divide: [{ $ifNull: ['$questionsAnswered', 0] }, totalQuestionsInSystem] },
+                                        100
+                                    ]
+                                },
+                                else: 0
+                            }
+                        }
                     }
                 },
                 {
-                    $sort: { points: -1 }
+                    $project: {
+                        odUserId: '$userId',
+                        odUserIdStr: { $toString: '$userId' },
+                        username: '$user.username',
+                        name: '$user.name',
+                        email: '$user.email',
+                        currentYear: '$user.currentYear',
+                        profilePicture: '$user.profilePicture',
+                        points: { $ifNull: ['$totalPoints', 0] },
+                        totalPoints: { $ifNull: ['$totalPoints', 0] },
+                        bluePoints: { $ifNull: ['$bluePoints', 0] },
+                        greenPoints: { $ifNull: ['$greenPoints', 0] },
+                        level: '$level',
+                        questionsAnswered: { $ifNull: ['$questionsAnswered', 0] },
+                        correctAnswers: { $ifNull: ['$correctAnswers', 0] },
+                        percentageAnswered: { $round: ['$percentageCalculated', 1] },
+                        totalExams: { $ifNull: ['$totalExamsCompleted', 0] },
+                        averageScore: { $ifNull: ['$averageScore', 0] },
+                        sortValue: sortField === '$totalPoints' ? { $ifNull: ['$totalPoints', 0] } :
+                                   sortField === '$bluePoints' ? { $ifNull: ['$bluePoints', 0] } :
+                                   sortField === '$greenPoints' ? { $ifNull: ['$greenPoints', 0] } :
+                                   sortField === '$percentageAnswered' ? '$percentageCalculated' :
+                                   { $ifNull: ['$totalPoints', 0] }
+                    }
                 },
                 {
-                    $limit: parseInt(limit)
+                    $sort: { sortValue: -1, totalPoints: -1 }
                 }
             ]);
+
+            // Add ranks
+            const rankedLeaderboard = leaderboard.map((entry, index) => ({
+                ...entry,
+                rank: index + 1
+            }));
+
+            // If userId provided, find user's position and get context
+            let userContext = null;
+            if (userId) {
+                const userIndex = rankedLeaderboard.findIndex(u => u.odUserIdStr === userId);
+                if (userIndex !== -1) {
+                    // Get 5 users before and after current user
+                    const startIndex = Math.max(0, userIndex - 5);
+                    const endIndex = Math.min(rankedLeaderboard.length, userIndex + 6);
+                    userContext = {
+                        userRank: userIndex + 1,
+                        nearbyUsers: rankedLeaderboard.slice(startIndex, endIndex)
+                    };
+                }
+            }
+
+            // Return top 20 + user context
+            const top20 = rankedLeaderboard.slice(0, parseInt(limit));
 
             res.status(200).json({
                 success: true,
                 data: {
-                    leaderboard: leaderboard.map((entry, index) => ({
-                        ...entry,
-                        rank: index + 1
-                    }))
+                    leaderboard: top20,
+                    userContext,
+                    totalUsers: rankedLeaderboard.length,
+                    totalQuestionsInSystem
                 }
             });
         } catch (error) {

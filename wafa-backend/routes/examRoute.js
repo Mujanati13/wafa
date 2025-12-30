@@ -10,6 +10,7 @@ router.patch("/update/:id", validate(ExamParYearSchema.updateExamParYearSchema),
 router.delete("/delete/:id", examController.delete);
 router.get("/all", examController.getAll);
 router.get("/all/:id", examController.getById);
+router.get("/module/:moduleId", examController.getByModuleId);
 
 // Route to record exam completion and send notification
 router.post("/complete", isAuthenticated, examController.completeExam);

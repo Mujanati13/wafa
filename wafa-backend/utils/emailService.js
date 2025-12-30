@@ -319,9 +319,78 @@ export const sendWelcomeEmail = async (email, username) => {
   }
 };
 
+/**
+ * Send profile verification code email
+ */
+export const sendProfileVerificationEmail = async (email, name, code) => {
+  if (!isEmailConfigured || !transporter) {
+    console.log(`⚠️  Skipping profile verification email to ${email} (email not configured)`);
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  const mailOptions = {
+    from: `"WAFA Medical" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'Code de vérification de profil - WAFA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">WAFA</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Plateforme d'apprentissage médical</p>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb;">
+          <h2 style="color: #333;">Bonjour ${name || 'Utilisateur'},</h2>
+          <p style="color: #555; line-height: 1.6;">
+            Vous avez demandé à modifier vos informations personnelles sur WAFA.
+            Voici votre code de vérification :
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background: #f0f0f0; 
+                        padding: 20px 40px; 
+                        border-radius: 10px; 
+                        display: inline-block;
+                        letter-spacing: 8px;
+                        font-size: 32px;
+                        font-weight: bold;
+                        color: #333;">
+              ${code}
+            </div>
+          </div>
+          
+          <p style="color: #555; line-height: 1.6;">
+            Ce code expire dans <strong>15 minutes</strong>.
+          </p>
+          
+          <p style="color: #999; font-size: 14px; margin-top: 30px;">
+            Si vous n'avez pas demandé cette modification, vous pouvez ignorer cet email.
+          </p>
+        </div>
+        
+        <div style="background-color: #333; padding: 20px; text-align: center;">
+          <p style="color: #999; margin: 0; font-size: 12px;">
+            © ${new Date().getFullYear()} WAFA. Tous droits réservés.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Profile verification email sent to:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending profile verification email:', error);
+    throw error;
+  }
+};
+
 export default {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendContactNotification,
   sendWelcomeEmail,
+  sendProfileVerificationEmail,
 };

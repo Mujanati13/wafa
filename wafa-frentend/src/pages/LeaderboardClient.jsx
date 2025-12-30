@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp } from "lucide-react";
+import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
 
 function getInitials(fullName) {
+  if (!fullName) return "?";
   return fullName
     .split(" ")
     .map((part) => part[0])
@@ -49,34 +51,54 @@ function getPodiumStyles(rank) {
   };
 }
 
-// Calculate user level based on total points
+// Calculate user level: 1 level = 50 points
 function getUserLevel(points) {
-  if (points >= 10000) return { level: 10, name: "Maître", color: "bg-purple-500" };
-  if (points >= 7500) return { level: 9, name: "Expert", color: "bg-indigo-500" };
-  if (points >= 5000) return { level: 8, name: "Avancé", color: "bg-blue-500" };
-  if (points >= 3500) return { level: 7, name: "Confirmé", color: "bg-cyan-500" };
-  if (points >= 2500) return { level: 6, name: "Intermédiaire+", color: "bg-teal-500" };
-  if (points >= 1500) return { level: 5, name: "Intermédiaire", color: "bg-green-500" };
-  if (points >= 1000) return { level: 4, name: "Apprenti+", color: "bg-lime-500" };
-  if (points >= 500) return { level: 3, name: "Apprenti", color: "bg-yellow-500" };
-  if (points >= 200) return { level: 2, name: "Débutant+", color: "bg-orange-500" };
-  return { level: 1, name: "Débutant", color: "bg-slate-400" };
+  const level = Math.floor(points / 50);
+  if (level >= 200) return { level, name: "Maître Suprême", color: "bg-purple-600" };
+  if (level >= 150) return { level, name: "Maître", color: "bg-purple-500" };
+  if (level >= 100) return { level, name: "Expert", color: "bg-indigo-500" };
+  if (level >= 75) return { level, name: "Avancé", color: "bg-blue-500" };
+  if (level >= 50) return { level, name: "Confirmé", color: "bg-cyan-500" };
+  if (level >= 30) return { level, name: "Intermédiaire", color: "bg-teal-500" };
+  if (level >= 20) return { level, name: "Apprenti", color: "bg-green-500" };
+  if (level >= 10) return { level, name: "Novice", color: "bg-lime-500" };
+  if (level >= 5) return { level, name: "Débutant", color: "bg-yellow-500" };
+  return { level, name: "Nouveau", color: "bg-slate-400" };
 }
 
 const LeaderboardClient = () => {
   const { t } = useTranslation();
+  const [user, setUser] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [userContext, setUserContext] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("totalPoints"); // totalPoints, bluePoints, greenPoints, level, percentage
+  const [totalQuestionsInSystem, setTotalQuestionsInSystem] = useState(0);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await userService.getUserProfile();
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     fetchLeaderboard();
-  }, []);
+  }, [sortBy, user]);
 
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await userService.getLeaderboard(20);
+      const response = await userService.getLeaderboard(20, sortBy, user?._id);
       setLeaderboardData(response.data.leaderboard || []);
+      setUserContext(response.data.userContext || null);
+      setTotalQuestionsInSystem(response.data.totalQuestionsInSystem || 0);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast.error('Erreur', {
@@ -97,8 +119,16 @@ const LeaderboardClient = () => {
 
   const sorted = leaderboardData;
   const topThree = sorted.slice(0, 3);
-  const topTen = sorted.slice(0, 10);
-  const maxScore = sorted[0]?.points || 1;
+  const maxScore = sorted[0]?.totalPoints || 1;
+
+  // Filter buttons config
+  const filterButtons = [
+    { key: "totalPoints", label: "Points", icon: <Star className="h-4 w-4" />, color: "yellow" },
+    { key: "bluePoints", label: "Points Bleus", icon: <Zap className="h-4 w-4" />, color: "blue" },
+    { key: "greenPoints", label: "Points Verts", icon: <Star className="h-4 w-4" />, color: "green" },
+    { key: "level", label: "Niveau", icon: <TrendingUp className="h-4 w-4" />, color: "purple" },
+    { key: "percentage", label: "Pourcentage", icon: <Percent className="h-4 w-4" />, color: "cyan" },
+  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
@@ -111,15 +141,40 @@ const LeaderboardClient = () => {
         </p>
       </div>
 
+      {/* Filter Buttons */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {filterButtons.map(({ key, label, icon, color }) => (
+          <Button
+            key={key}
+            variant={sortBy === key ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSortBy(key)}
+            className={`flex items-center gap-2 ${
+              sortBy === key 
+                ? color === "blue" ? "bg-blue-600 hover:bg-blue-700" :
+                  color === "green" ? "bg-green-600 hover:bg-green-700" :
+                  color === "purple" ? "bg-purple-600 hover:bg-purple-700" :
+                  color === "cyan" ? "bg-cyan-600 hover:bg-cyan-700" :
+                  "bg-yellow-600 hover:bg-yellow-700"
+                : ""
+            }`}
+          >
+            {icon}
+            {label}
+          </Button>
+        ))}
+      </div>
+
       {/* Podium */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {topThree.map((user, index) => {
           const rank = index + 1;
           const styles = getPodiumStyles(rank);
-          const badge = getScoreBadgeClasses(user.points, maxScore);
+          const badge = getScoreBadgeClasses(user.totalPoints, maxScore);
+          const levelInfo = getUserLevel(user.totalPoints);
 
           return (
-            <Card key={user._id || user.userId} className={`border ${styles.wrapper}`}>
+            <Card key={user._id || user.odUserId} className={`border ${styles.wrapper}`}>
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <span
@@ -138,10 +193,8 @@ const LeaderboardClient = () => {
                       : t('dashboard:third')}
                   </span>
                 </CardTitle>
-                <span
-                  className={`text-xs px-2 py-1 rounded-md border ${badge}`}
-                >
-                  {user.points} {t('dashboard:pts')}
+                <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                  {user.totalPoints} pts
                 </span>
               </CardHeader>
               <CardContent>
@@ -151,15 +204,24 @@ const LeaderboardClient = () => {
                   >
                     {getInitials(user.name)}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold truncate">{user.name}</p>
+                    <div className="flex items-center gap-2 mt-1 text-xs">
+                      <span className="flex items-center gap-1 text-blue-600">
+                        <Zap className="h-3 w-3" /> {user.bluePoints}
+                      </span>
+                      <span className="flex items-center gap-1 text-green-600">
+                        <Star className="h-3 w-3" /> {user.greenPoints}
+                      </span>
+                      <Badge className={`${levelInfo.color} text-white text-[10px]`}>
+                        Nv.{levelInfo.level}
+                      </Badge>
+                    </div>
                     <div className="mt-2 h-2 w-full rounded-full bg-muted">
                       <div
                         className="h-2 rounded-full bg-gradient-to-r from-primary to-primary/60"
                         style={{
-                          width: `${Math.round(
-                            (user.points / maxScore) * 100
-                          )}%`,
+                          width: `${Math.round((user.totalPoints / maxScore) * 100)}%`,
                         }}
                       />
                     </div>
@@ -171,35 +233,46 @@ const LeaderboardClient = () => {
         })}
       </div>
 
-      {/* Top 10 List */}
+      {/* Top 20 List */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('dashboard:top_10')}</CardTitle>
+          <CardTitle>Top 20</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Table Header */}
-          <div className="hidden md:grid md:grid-cols-7 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
+          <div className="hidden md:grid md:grid-cols-8 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
             <div className="col-span-2">Étudiant</div>
-            <div className="text-center">Points Bleus</div>
-            <div className="text-center">Points Verts</div>
-            <div className="text-center">Total</div>
+            <div className="text-center">Points</div>
+            <div className="text-center">
+              <span className="flex items-center justify-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                Bleus
+              </span>
+            </div>
+            <div className="text-center">
+              <span className="flex items-center justify-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                Verts
+              </span>
+            </div>
             <div className="text-center">Niveau</div>
+            <div className="text-center">%</div>
             <div className="text-center">Progression</div>
           </div>
 
           <div className="divide-y">
-            {topTen.map((user, idx) => {
-              const rank = idx + 1;
-              const badge = getScoreBadgeClasses(user.points, maxScore);
-              const levelInfo = getUserLevel(user.points);
-              // Calculate blue/green points (mock calculation based on total)
-              const bluePoints = user.bluePoints || Math.floor(user.points * 0.6);
-              const greenPoints = user.greenPoints || Math.floor(user.points * 0.4);
+            {sorted.map((userData, idx) => {
+              const rank = userData.rank || idx + 1;
+              const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
+              const levelInfo = getUserLevel(userData.totalPoints);
+              const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
               
               return (
                 <div
-                  key={user._id || user.userId}
-                  className="flex md:grid md:grid-cols-7 items-center justify-between gap-4 py-3"
+                  key={userData._id || userData.odUserId || idx}
+                  className={`flex md:grid md:grid-cols-8 items-center justify-between gap-4 py-3 ${
+                    isCurrentUser ? "bg-blue-50 rounded-lg" : ""
+                  } ${rank <= 3 ? rank === 1 ? "bg-yellow-50/50" : rank === 2 ? "bg-slate-50/50" : "bg-orange-50/50" : ""}`}
                 >
                   {/* User Info */}
                   <div className="flex items-center gap-3 min-w-0 col-span-2">
@@ -227,36 +300,48 @@ const LeaderboardClient = () => {
                           : "bg-muted text-foreground/80"
                       }`}
                     >
-                      {getInitials(user.name)}
+                      {getInitials(userData.name)}
                     </div>
-                    <p className="font-medium truncate">{user.name}</p>
-                  </div>
-
-                  {/* Blue Points */}
-                  <div className="hidden md:flex items-center justify-center gap-1">
-                    <Zap className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm font-semibold text-blue-600">{bluePoints}</span>
-                  </div>
-
-                  {/* Green Points */}
-                  <div className="hidden md:flex items-center justify-center gap-1">
-                    <Star className="h-4 w-4 text-green-500" />
-                    <span className="text-sm font-semibold text-green-600">{greenPoints}</span>
+                    <div className="min-w-0">
+                      <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700" : ""}`}>
+                        {userData.name}
+                        {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Total Points */}
                   <div className="hidden md:flex justify-center">
                     <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                      {user.points} pts
+                      {userData.totalPoints} pts
                     </span>
+                  </div>
+
+                  {/* Blue Points */}
+                  <div className="hidden md:flex items-center justify-center gap-1">
+                    <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  </div>
+
+                  {/* Green Points */}
+                  <div className="hidden md:flex items-center justify-center gap-1">
+                    <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
                   </div>
 
                   {/* Level */}
                   <div className="hidden md:flex justify-center">
                     <Badge className={`${levelInfo.color} text-white text-xs`}>
                       <TrendingUp className="h-3 w-3 mr-1" />
-                      Nv. {levelInfo.level}
+                      {levelInfo.level}
                     </Badge>
+                  </div>
+
+                  {/* Percentage */}
+                  <div className="hidden md:flex justify-center">
+                    <span className="text-sm font-medium text-cyan-600">
+                      {userData.percentageAnswered || 0}%
+                    </span>
                   </div>
 
                   {/* Progress Bar */}
@@ -265,25 +350,137 @@ const LeaderboardClient = () => {
                       <div
                         className="h-2 rounded-full bg-primary/80"
                         style={{
-                          width: `${Math.round((user.points / maxScore) * 100)}%`,
+                          width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
                         }}
                       />
                     </div>
                   </div>
 
-                  {/* Mobile: Show only total points */}
+                  {/* Mobile: Show only main stats */}
                   <div className="md:hidden flex items-center gap-2">
                     <Badge className={`${levelInfo.color} text-white text-xs`}>
                       Nv. {levelInfo.level}
                     </Badge>
                     <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                      {user.points} pts
+                      {userData.totalPoints} pts
                     </span>
                   </div>
                 </div>
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* User Context - Show if user is not in top 20 */}
+      {userContext && userContext.userRank > 20 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MoreHorizontal className="h-5 w-5" />
+              Votre position
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Dots separator */}
+            <div className="flex justify-center py-4">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              </div>
+            </div>
+
+            <div className="divide-y">
+              {userContext.nearbyUsers.map((userData, idx) => {
+                const levelInfo = getUserLevel(userData.totalPoints);
+                const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
+                const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
+                
+                return (
+                  <div
+                    key={userData._id || userData.odUserId || idx}
+                    className={`flex md:grid md:grid-cols-8 items-center justify-between gap-4 py-3 ${
+                      isCurrentUser ? "bg-blue-100 rounded-lg border-2 border-blue-300" : ""
+                    }`}
+                  >
+                    {/* User Info */}
+                    <div className="flex items-center gap-3 min-w-0 col-span-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-foreground/70 border-muted">
+                        #{userData.rank}
+                      </span>
+                      <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80">
+                        {getInitials(userData.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
+                          {userData.name}
+                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="hidden md:flex justify-center">
+                      <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                        {userData.totalPoints} pts
+                      </span>
+                    </div>
+                    <div className="hidden md:flex items-center justify-center gap-1">
+                      <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
+                    </div>
+                    <div className="hidden md:flex items-center justify-center gap-1">
+                      <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
+                    </div>
+                    <div className="hidden md:flex justify-center">
+                      <Badge className={`${levelInfo.color} text-white text-xs`}>
+                        {levelInfo.level}
+                      </Badge>
+                    </div>
+                    <div className="hidden md:flex justify-center">
+                      <span className="text-sm font-medium text-cyan-600">
+                        {userData.percentageAnswered || 0}%
+                      </span>
+                    </div>
+                    <div className="hidden md:block">
+                      <div className="h-2 w-full rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-primary/80"
+                          style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mobile */}
+                    <div className="md:hidden flex items-center gap-2">
+                      <Badge className={`${levelInfo.color} text-white text-xs`}>
+                        Nv. {levelInfo.level}
+                      </Badge>
+                      <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                        {userData.totalPoints} pts
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Points System Info */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Système de points</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-2">
+          <p>• Réponse correcte: <span className="font-semibold text-green-600">+1 point</span></p>
+          <p>• Réponse incorrecte: <span className="font-semibold text-gray-500">+0 point</span></p>
+          <p>• Réessayer: <span className="font-semibold text-red-600">-1 point</span></p>
+          <p>• Report approuvé: <span className="font-semibold text-green-600">+1 point vert (= 30 pts)</span></p>
+          <p>• Explication approuvée: <span className="font-semibold text-blue-600">+1 point bleu (= 40 pts)</span></p>
+          <p>• 1 niveau = 50 points</p>
+          <p>• Pourcentage = questions répondues / total questions ({totalQuestionsInSystem})</p>
         </CardContent>
       </Card>
     </div>

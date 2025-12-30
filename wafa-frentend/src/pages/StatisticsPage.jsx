@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { 
   BarChart3, 
@@ -8,12 +8,18 @@ import {
   Award, 
   BookOpen,
   ChevronRight,
+  ChevronLeft,
   Trophy,
   MessageCircle,
   Lightbulb,
   HelpCircle,
   Target,
-  Filter
+  Filter,
+  Calendar,
+  FileText,
+  Database,
+  X,
+  Play
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +35,7 @@ import {
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { dashboardService } from "@/services/dashboardService";
 import { moduleService } from "@/services/moduleService";
+import { api } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const StatisticsPage = () => {
@@ -41,6 +48,16 @@ const StatisticsPage = () => {
   const [activeTab, setActiveTab] = useState("modules");
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [userSemesters, setUserSemesters] = useState([]);
+  
+  // Selected module state for showing exams
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [moduleExamTab, setModuleExamTab] = useState("exam-years");
+  const [moduleExams, setModuleExams] = useState({
+    examYears: [],
+    parCours: [],
+    qcmBanque: []
+  });
+  const [loadingExams, setLoadingExams] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,6 +131,43 @@ const StatisticsPage = () => {
     fetchData();
   }, []);
 
+  // Fetch exams when a module is selected
+  const fetchModuleExams = async (moduleId) => {
+    setLoadingExams(true);
+    try {
+      // Fetch all exam types for this module
+      const [examYearsRes, examCoursesRes, qcmBanqueRes] = await Promise.all([
+        api.get(`/exams/module/${moduleId}`).catch(() => ({ data: { data: [] } })),
+        api.get(`/exam-courses/module/${moduleId}`).catch(() => ({ data: { data: [] } })),
+        api.get(`/qcm-banque/module/${moduleId}`).catch(() => ({ data: { data: [] } }))
+      ]);
+
+      setModuleExams({
+        examYears: examYearsRes.data?.data || [],
+        parCours: examCoursesRes.data?.data || [],
+        qcmBanque: qcmBanqueRes.data?.data || []
+      });
+    } catch (error) {
+      console.error("Error fetching module exams:", error);
+      toast.error("Impossible de charger les examens");
+    } finally {
+      setLoadingExams(false);
+    }
+  };
+
+  // Handle module selection
+  const handleModuleClick = (module) => {
+    setSelectedModule(module);
+    setModuleExamTab("exam-years");
+    fetchModuleExams(module._id);
+  };
+
+  // Close module detail
+  const handleCloseModuleDetail = () => {
+    setSelectedModule(null);
+    setModuleExams({ examYears: [], parCours: [], qcmBanque: [] });
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -175,7 +229,7 @@ const StatisticsPage = () => {
   }, [modules, selectedSemester, filteredAndGroupedModules]);
 
   // Module Stats Card Component
-  const ModuleStatsCard = ({ module, index, onClick }) => {
+  const ModuleStatsCard = ({ module, index, onClick, isSelected }) => {
     const percentage = module.totalQuestions > 0 
       ? Math.round((module.questionsAnswered / module.totalQuestions) * 100) 
       : 0;
@@ -191,7 +245,11 @@ const StatisticsPage = () => {
         whileHover={{ scale: 1.02, y: -2 }}
         transition={{ duration: 0.2 }}
         onClick={onClick}
-        className="bg-blue-50/80 rounded-xl p-4 cursor-pointer border border-blue-100 hover:border-blue-200 hover:shadow-md transition-all duration-200"
+        className={`bg-blue-50/80 rounded-xl p-4 cursor-pointer border-2 transition-all duration-200 ${
+          isSelected 
+            ? "border-blue-500 shadow-lg ring-2 ring-blue-200" 
+            : "border-blue-100 hover:border-blue-200 hover:shadow-md"
+        }`}
       >
         <div className="flex items-center gap-4">
           {/* Circular Progress */}
@@ -236,6 +294,94 @@ const StatisticsPage = () => {
           <ChevronRight className="h-5 w-5 text-blue-500 flex-shrink-0" />
         </div>
       </motion.div>
+    );
+  };
+
+  // Exam Card Component for displaying individual exams
+  const ExamCard = ({ exam, type, moduleId }) => {
+    const questionCount = exam.questions?.length || exam.questionCount || exam.linkedQuestions?.length || 0;
+    
+    // Get the appropriate route based on exam type
+    const getExamRoute = () => {
+      switch (type) {
+        case "exam-years":
+          return `/exam/${exam._id}`;
+        case "par-cours":
+          return `/exam/${exam._id}?type=course`;
+        case "qcm-banque":
+          return `/exam/${exam._id}?type=qcm`;
+        default:
+          return "#";
+      }
+    };
+
+    const getExamTitle = () => {
+      if (type === "exam-years") {
+        return exam.year || exam.name || "Exam";
+      }
+      return exam.title || exam.name || "Exam";
+    };
+
+    return (
+      <motion.div
+        whileHover={{ scale: 1.01, x: 4 }}
+        className="bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+        onClick={() => navigate(getExamRoute())}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              {type === "exam-years" && <Calendar className="h-5 w-5 text-blue-600" />}
+              {type === "par-cours" && <FileText className="h-5 w-5 text-blue-600" />}
+              {type === "qcm-banque" && <Database className="h-5 w-5 text-blue-600" />}
+            </div>
+            <div>
+              <h4 className="font-semibold text-slate-800">{getExamTitle()}</h4>
+              <p className="text-sm text-slate-500">
+                {questionCount} question{questionCount !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(getExamRoute());
+            }}
+          >
+            <Play className="h-4 w-4" />
+            <span className="hidden sm:inline">Commencer</span>
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Empty State Component for when no exams exist
+  const EmptyExamState = ({ type }) => {
+    const getEmptyMessage = () => {
+      switch (type) {
+        case "exam-years":
+          return "Aucun examen par année disponible pour ce module";
+        case "par-cours":
+          return "Aucun cours disponible pour ce module";
+        case "qcm-banque":
+          return "Aucun QCM banque disponible pour ce module";
+        default:
+          return "Aucun contenu disponible";
+      }
+    };
+
+    return (
+      <div className="text-center py-8 text-slate-500">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
+          {type === "exam-years" && <Calendar className="h-8 w-8 text-slate-400" />}
+          {type === "par-cours" && <FileText className="h-8 w-8 text-slate-400" />}
+          {type === "qcm-banque" && <Database className="h-8 w-8 text-slate-400" />}
+        </div>
+        <p className="font-medium">{getEmptyMessage()}</p>
+        <p className="text-sm mt-1 text-slate-400">Revenez bientôt pour du nouveau contenu</p>
+      </div>
     );
   };
 
@@ -437,7 +583,8 @@ const StatisticsPage = () => {
                             key={module._id || index}
                             module={module}
                             index={index}
-                            onClick={() => navigate(`/dashboard/modules/${module._id}`)}
+                            onClick={() => handleModuleClick(module)}
+                            isSelected={selectedModule?._id === module._id}
                           />
                         ))}
                       </motion.div>
@@ -461,6 +608,141 @@ const StatisticsPage = () => {
                   </button>
                 </div>
               )}
+
+              {/* Module Detail Section - Shows when a module is selected */}
+              <AnimatePresence>
+                {selectedModule && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className="mt-8"
+                  >
+                    <Card className="border-blue-200 shadow-lg">
+                      <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={handleCloseModuleDetail}
+                              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <div>
+                              <CardTitle className="text-lg">{selectedModule.name}</CardTitle>
+                              <CardDescription className="text-blue-100">
+                                {selectedModule.semester} • {selectedModule.totalQuestions || 0} questions
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <button
+                            onClick={handleCloseModuleDetail}
+                            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        {/* Exam Type Tabs */}
+                        <Tabs value={moduleExamTab} onValueChange={setModuleExamTab} className="w-full">
+                          <TabsList className="w-full grid grid-cols-3 bg-slate-100">
+                            <TabsTrigger 
+                              value="exam-years"
+                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                            >
+                              <Calendar className="h-4 w-4" />
+                              <span className="hidden sm:inline">Exam par année</span>
+                              <span className="sm:hidden">Année</span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                              value="par-cours"
+                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                            >
+                              <FileText className="h-4 w-4" />
+                              <span className="hidden sm:inline">Par cours</span>
+                              <span className="sm:hidden">Cours</span>
+                            </TabsTrigger>
+                            <TabsTrigger 
+                              value="qcm-banque"
+                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                            >
+                              <Database className="h-4 w-4" />
+                              <span className="hidden sm:inline">QCM banque</span>
+                              <span className="sm:hidden">QCM</span>
+                            </TabsTrigger>
+                          </TabsList>
+
+                          {/* Loading State */}
+                          {loadingExams ? (
+                            <div className="mt-6 space-y-3">
+                              {[1, 2, 3].map((i) => (
+                                <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                              ))}
+                            </div>
+                          ) : (
+                            <>
+                              {/* Exam Years Content */}
+                              <TabsContent value="exam-years" className="mt-4">
+                                {moduleExams.examYears.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {moduleExams.examYears.map((exam) => (
+                                      <ExamCard 
+                                        key={exam._id} 
+                                        exam={exam} 
+                                        type="exam-years"
+                                        moduleId={selectedModule._id}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <EmptyExamState type="exam-years" />
+                                )}
+                              </TabsContent>
+
+                              {/* Par Cours Content */}
+                              <TabsContent value="par-cours" className="mt-4">
+                                {moduleExams.parCours.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {moduleExams.parCours.map((exam) => (
+                                      <ExamCard 
+                                        key={exam._id} 
+                                        exam={exam} 
+                                        type="par-cours"
+                                        moduleId={selectedModule._id}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <EmptyExamState type="par-cours" />
+                                )}
+                              </TabsContent>
+
+                              {/* QCM Banque Content */}
+                              <TabsContent value="qcm-banque" className="mt-4">
+                                {moduleExams.qcmBanque.length > 0 ? (
+                                  <div className="space-y-3">
+                                    {moduleExams.qcmBanque.map((exam) => (
+                                      <ExamCard 
+                                        key={exam._id} 
+                                        exam={exam} 
+                                        type="qcm-banque"
+                                        moduleId={selectedModule._id}
+                                      />
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <EmptyExamState type="qcm-banque" />
+                                )}
+                              </TabsContent>
+                            </>
+                          )}
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </TabsContent>
 
             {/* Exam Years Tab */}

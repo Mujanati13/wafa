@@ -220,11 +220,17 @@ const CommunityModal = ({
                 </div>
               ) : (
                 <>
-                  {/* Options with checkboxes */}
+                  {/* Options with checkboxes and vote percentages */}
                   <div className="space-y-2">
                     {options.map((option, index) => {
                       const isSelected = selectedOptions.includes(index);
                       const letter = String.fromCharCode(65 + index);
+                      const voteCount = stats.optionVotes[letter] || 0;
+                      const percentage = stats.totalVotes > 0 
+                        ? Math.round((voteCount / stats.totalVotes) * 1000) / 10 
+                        : 0;
+                      const isHighestVoted = hasVoted && voteCount > 0 && 
+                        voteCount === Math.max(...Object.values(stats.optionVotes));
 
                       return (
                         <button
@@ -262,7 +268,33 @@ const CommunityModal = ({
                             <span className="text-sm text-gray-700 flex-1">
                               {option.text}
                             </span>
+
+                            {/* Vote percentage - shown after voting */}
+                            {hasVoted && (
+                              <span 
+                                className={`text-sm font-semibold px-2 py-0.5 rounded ${
+                                  isHighestVoted 
+                                    ? 'bg-yellow-100 text-yellow-700' 
+                                    : 'text-gray-500'
+                                }`}
+                              >
+                                {percentage}%
+                              </span>
+                            )}
                           </div>
+
+                          {/* Vote progress bar - shown after voting */}
+                          {hasVoted && (
+                            <div className="h-1 bg-gray-100">
+                              <div 
+                                className="h-full transition-all duration-500"
+                                style={{
+                                  width: `${percentage}%`,
+                                  backgroundColor: isHighestVoted ? '#F59E0B' : '#D1D5DB'
+                                }}
+                              />
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -304,7 +336,7 @@ const CommunityModal = ({
                       <strong> ajouté un explication</strong>.
                     </p>
                     <p className="text-sm text-gray-600">
-                      Et en plus tu vas <span style={{ color: moduleColor }}>gagner un point bleu</span>.
+                      Et en plus tu vas <span className="text-blue-600 font-semibold">gagner un point bleu</span>.
                     </p>
                   </div>
 

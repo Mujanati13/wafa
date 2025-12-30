@@ -226,7 +226,7 @@ const HeroSection = ({ settings }) => {
   };
 
   return (
-    <section className="relative h-screen flex items-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30" aria-label={t("hero_badge")}>
+    <section id="accueil" className="relative h-screen flex items-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30" aria-label={t("hero_badge")}>
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-72 h-72 md:w-96 md:h-96 bg-blue-400/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
@@ -496,7 +496,7 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("features_title")}>
+    <section id="apropos" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("features_title")}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -688,7 +688,7 @@ const PricingSection = ({ settings }) => {
   }, [settings]);
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
+    <section id="tarifs" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1155,7 +1155,7 @@ const FeedbackSection = ({ settings }) => {
   };
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50">
+    <section id="contact" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -77,6 +77,10 @@ router.put("/update-with-image/:id", uploadCourseImage, async (req, res) => {
 
 // CRUD operations
 router.get("/", examCourseController.getAll);
+
+// Get courses by module - must be before /:id to avoid treating "module" as an ID
+router.get("/module/:moduleId", examCourseController.getByModuleId);
+
 router.get("/:id", examCourseController.getById);
 router.post("/", examCourseController.create);
 router.put("/:id", examCourseController.update);

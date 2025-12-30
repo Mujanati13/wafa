@@ -4,6 +4,7 @@ import "../strategies/google-strategy.js";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { AuthController } from "../controllers/auth.js";
+import { isAuthenticated } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -54,6 +55,10 @@ router.post("/resend-verification", AuthController.resendVerification);
 router.post("/forgot-password", AuthController.forgotPassword);
 router.post("/reset-password", AuthController.resetPassword);
 router.post("/change-password", AuthController.changePassword);
+
+// Profile verification (requires auth)
+router.post("/send-profile-verification", isAuthenticated, AuthController.sendProfileVerification);
+router.post("/verify-profile-code", isAuthenticated, AuthController.verifyProfileCode);
 
 // Firebase Authentication
 router.post("/firebase", AuthController.firebaseAuth);

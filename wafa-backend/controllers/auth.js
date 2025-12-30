@@ -500,7 +500,7 @@ export const AuthController = {
    */
   firebaseAuth: async (req, res) => {
     try {
-      const { idToken } = req.body;
+      const { idToken, firstName, lastName } = req.body;
 
       if (!idToken) {
         return res.status(400).json({
@@ -595,8 +595,17 @@ export const AuthController = {
         if (!user.profilePicture && picture) {
           user.profilePicture = picture;
         }
-        if (!user.name && name) {
-          user.name = name;
+        // Update name if firstName/lastName provided and user has no name
+        if (!user.name || user.name === user.username) {
+          if (firstName && lastName) {
+            user.name = `${firstName} ${lastName}`;
+          } else if (firstName) {
+            user.name = firstName;
+          } else if (lastName) {
+            user.name = lastName;
+          } else if (name) {
+            user.name = name;
+          }
         }
         user.lastLogin = new Date();
         await user.save();
@@ -638,11 +647,21 @@ export const AuthController = {
       // Create new user with Firebase authentication
       const username = email.split('@')[0] + '_' + Math.random().toString(36).substring(7);
       
+      // Build full name from firstName and lastName if provided, otherwise use Firebase name or username
+      let fullName = name || username;
+      if (firstName && lastName) {
+        fullName = `${firstName} ${lastName}`;
+      } else if (firstName) {
+        fullName = firstName;
+      } else if (lastName) {
+        fullName = lastName;
+      }
+      
       const newUser = await User.create({
         firebaseUid: uid,
         email,
         username,
-        name: name || username,
+        name: fullName,
         emailVerified: email_verified || false,
         profilePicture: picture || null,
         lastLogin: new Date(),
@@ -650,7 +669,7 @@ export const AuthController = {
 
       // Send welcome email
       try {
-        await sendWelcomeEmail(email, name || username);
+        await sendWelcomeEmail(email, fullName);
       } catch (emailError) {
         console.error("Error sending welcome email:", emailError);
       }
@@ -751,6 +770,106 @@ export const AuthController = {
       res.status(500).json({
         success: false,
         message: "Failed to check email",
+        error: error.message,
+      });
+    }
+  },
+
+  /**
+   * Send profile verification code to user's email
+   */
+  sendProfileVerification: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Utilisateur non trouvé",
+        });
+      }
+
+      // Generate 6-digit verification code
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const codeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      // Store the code in the user document (using resetCode field temporarily)
+      user.resetCode = verificationCode;
+      user.resetPasswordExpires = codeExpires;
+      await user.save();
+
+      // Send email with verification code
+      const { sendProfileVerificationEmail } = await import("../utils/emailService.js");
+      await sendProfileVerificationEmail(user.email, user.name || user.username, verificationCode);
+
+      res.status(200).json({
+        success: true,
+        message: "Code de vérification envoyé",
+      });
+    } catch (error) {
+      console.error("Send profile verification error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Échec de l'envoi du code de vérification",
+        error: error.message,
+      });
+    }
+  },
+
+  /**
+   * Verify profile code
+   */
+  verifyProfileCode: async (req, res) => {
+    try {
+      const userId = req.user._id;
+      const { code } = req.body;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          message: "Code de vérification requis",
+        });
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Utilisateur non trouvé",
+        });
+      }
+
+      // Check if code matches and not expired
+      if (user.resetCode !== code) {
+        return res.status(400).json({
+          success: false,
+          message: "Code de vérification invalide",
+        });
+      }
+
+      if (user.resetPasswordExpires && user.resetPasswordExpires < new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: "Le code de vérification a expiré",
+        });
+      }
+
+      // Clear the verification code
+      user.resetCode = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Code vérifié avec succès",
+      });
+    } catch (error) {
+      console.error("Verify profile code error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Échec de la vérification du code",
         error: error.message,
       });
     }

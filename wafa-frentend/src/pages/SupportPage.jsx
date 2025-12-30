@@ -76,25 +76,6 @@ const SupportPage = () => {
       ],
     },
     {
-      id: 'subscription',
-      title: 'Abonnement & Paiement',
-      icon: Ticket,
-      faqs: [
-        {
-          question: 'Quels sont les moyens de paiement acceptés ?',
-          answer: 'Nous acceptons PayPal pour tous les paiements. Les transactions sont sécurisées.',
-        },
-        {
-          question: 'Comment annuler mon abonnement ?',
-          answer: 'Rendez-vous dans Paramètres > Abonnement, puis cliquez sur "Annuler l\'abonnement". Vous conserverez l\'accès jusqu\'à la fin de la période payée.',
-        },
-        {
-          question: 'Puis-je obtenir un remboursement ?',
-          answer: 'Les remboursements sont possibles dans les 14 jours suivant l\'achat. Contactez notre support avec votre numéro de transaction.',
-        },
-      ],
-    },
-    {
       id: 'exams',
       title: 'Examens & Questions',
       icon: HelpCircle,
@@ -279,7 +260,7 @@ const SupportPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
       >
         <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
           <CardContent className="pt-6 text-center">
@@ -294,23 +275,6 @@ const SupportPage = () => {
               </div>
               <h3 className="font-semibold mb-1">Facebook</h3>
               <p className="text-sm text-muted-foreground">@wafa_app</p>
-            </a>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardContent className="pt-6 text-center">
-            <a
-              href="https://wa.me/212600000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <MessageCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-semibold mb-1">WhatsApp</h3>
-              <p className="text-sm text-muted-foreground">Réponse rapide</p>
             </a>
           </CardContent>
         </Card>
