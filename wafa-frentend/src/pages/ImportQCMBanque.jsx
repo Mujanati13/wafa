@@ -240,6 +240,14 @@ const ImportQCMBanque = () => {
               <CardDescription>
                 Sélectionnez le module, puis la QCM Banque, et enfin téléchargez le fichier Excel
               </CardDescription>
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-xs font-medium text-blue-800 mb-2">📋 Format Excel attendu:</p>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p><strong>Colonnes:</strong> Question | A | B | C | D | answer</p>
+                  <p><strong>answer:</strong> Texte de la bonne réponse (séparer par virgule si plusieurs réponses correctes)</p>
+                  <p><strong>Exemple:</strong> Si la réponse correcte est dans la colonne A, mettez le texte de A dans "answer"</p>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

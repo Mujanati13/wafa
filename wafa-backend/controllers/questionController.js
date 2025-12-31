@@ -518,24 +518,55 @@ export const questionController = {
 
             for (const row of jsonData) {
                 // Map Excel columns to question fields
-                // Expected columns: Question, Option A, Option B, Option C, Option D, Option E, Correct (A,B,C,D,E format), Session, Note
+                // Expected columns: Question, A, B, C, D, answer (correct answer text separated by commas)
                 const questionText = row['Question'] || row['question'] || row['Texte'] || row['texte'] || '';
                 
                 if (!questionText.trim()) continue;
 
-                // Parse options
-                const options = [];
-                const correctAnswers = (row['Correct'] || row['correct'] || row['Réponse'] || row['reponse'] || '').toUpperCase().split(',').map(s => s.trim());
+                // Get answer text(s) - can be comma-separated for multiple correct answers
+                const answerText = row['answer'] || row['Answer'] || row['Correct'] || row['correct'] || row['Réponse'] || row['reponse'] || '';
                 
-                ['A', 'B', 'C', 'D', 'E'].forEach(letter => {
-                    const optionText = row[`Option ${letter}`] || row[`option ${letter}`] || row[letter] || '';
-                    if (optionText.trim()) {
+                // Split answer by comma to get individual correct answers
+                const correctAnswerTexts = answerText.toString().split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+
+                // Parse options from columns A, B, C, D (can also have E)
+                const options = [];
+                const optionLetters = ['A', 'B', 'C', 'D', 'E'];
+                
+                for (const letter of optionLetters) {
+                    // Try different column name formats
+                    let optionText = row[letter] || row[letter.toLowerCase()] || 
+                                     row[`Option ${letter}`] || row[`option ${letter}`] || '';
+                    
+                    if (optionText.toString().trim()) {
+                        const optionTextTrimmed = optionText.toString().trim();
+                        
+                        // Check if this option is correct by comparing text
+                        // Support both: matching by letter (A,B,C,D) or by text content
+                        let isCorrect = false;
+                        
+                        // Check if answer contains letter reference (e.g., "A" or "A,B")
+                        const letterBasedAnswers = correctAnswerTexts.filter(a => 
+                            optionLetters.map(l => l.toLowerCase()).includes(a.toLowerCase())
+                        );
+                        
+                        if (letterBasedAnswers.length > 0) {
+                            // Letter-based matching
+                            isCorrect = letterBasedAnswers.includes(letter.toLowerCase());
+                        } else {
+                            // Text-based matching - check if any correct answer matches this option
+                            isCorrect = correctAnswerTexts.some(correctText => 
+                                optionTextTrimmed.toLowerCase().includes(correctText) ||
+                                correctText.includes(optionTextTrimmed.toLowerCase())
+                            );
+                        }
+                        
                         options.push({
-                            text: optionText.trim(),
-                            isCorrect: correctAnswers.includes(letter)
+                            text: optionTextTrimmed,
+                            isCorrect: isCorrect
                         });
                     }
-                });
+                }
 
                 if (options.length < 2) continue; // Skip questions with less than 2 options
 
