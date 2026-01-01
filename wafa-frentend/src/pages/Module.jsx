@@ -57,12 +57,16 @@ const Module = () => {
         semester: m?.semester || "",
         name: m?.name || "",
         imageUrl: getImageUrl(m?.imageUrl),
+        rawImageUrl: m?.imageUrl || "",
         totalQuestions: m.totalQuestions,
+        infoText: m?.infoText || "",
         helpText: m?.infoText || "",
         color: m?.color || "#6366f1",
         contentType: m?.contentType || "url",
         textContent: m?.textContent || "",
         helpContent: m?.helpContent || "",
+        helpImage: m?.helpImage || "",
+        helpPdf: m?.helpPdf || "",
         difficulty: m?.difficulty || "QE"
       }));
       setModules(list);

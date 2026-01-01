@@ -1,13 +1,6 @@
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
-import { Readable } from "stream";
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import fs from "fs";
+import path from "path";
 
 // Configure Multer to use memory storage
 const storage = multer.memoryStorage();
@@ -62,40 +55,43 @@ export const uploadPDF = multer({
   fileFilter: pdfFilter,
 });
 
-// Upload to Cloudinary from buffer
-export const uploadToCloudinary = (buffer) => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: "wafa-profiles",
-        transformation: [
-          {
-            width: 500,
-            height: 500,
-            crop: "fill",
-            gravity: "face",
-          },
-        ],
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      }
-    );
-
-    const readable = new Readable();
-    readable.push(buffer);
-    readable.push(null);
-    readable.pipe(uploadStream);
-  });
+// Save profile picture locally
+export const saveProfilePictureLocally = async (buffer, userId) => {
+  const uploadDir = path.join(process.cwd(), 'uploads', 'profiles');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  
+  const filename = `profile-${userId}-${Date.now()}.jpg`;
+  const filePath = path.join(uploadDir, filename);
+  
+  await fs.promises.writeFile(filePath, buffer);
+  
+  return {
+    secure_url: `/uploads/profiles/${filename}`,
+    public_id: filename
+  };
 };
+
+// Configure disk storage for question images
+const questionImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'questions');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = file.originalname.split('.').pop();
+    cb(null, `question-${uniqueSuffix}.${ext}`);
+  }
+});
 
 // Upload middleware for question images (multiple)
 export const uploadQuestionImages = multer({
-  storage: storage,
+  storage: questionImageStorage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB max per image
   },
@@ -111,60 +107,21 @@ export const uploadExcelFile = multer({
   fileFilter: excelFilter,
 }).single("file");
 
-// Upload multiple images to Cloudinary
-export const uploadImagesToCloudinary = async (files, folder = "wafa-questions") => {
-  const uploadPromises = files.map((file) => {
-    return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: folder,
-          transformation: [
-            {
-              width: 1200,
-              height: 1200,
-              crop: "limit",
-              quality: "auto",
-            },
-          ],
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve({
-              url: result.secure_url,
-              publicId: result.public_id,
-              originalName: file.originalname,
-            });
-          }
-        }
-      );
-
-      const readable = new Readable();
-      readable.push(file.buffer);
-      readable.push(null);
-      readable.pipe(uploadStream);
-    });
-  });
-
-  return Promise.all(uploadPromises);
-};
-
-// Helper function to delete image from Cloudinary
-export const deleteFromCloudinary = async (publicId) => {
+// Helper function to delete image from local storage
+export const deleteFromLocalStorage = async (filename) => {
   try {
-    await cloudinary.uploader.destroy(publicId);
+    const filePath = path.join(process.cwd(), 'uploads', filename);
+    await fs.promises.unlink(filePath);
   } catch (error) {
-    console.error("Error deleting from Cloudinary:", error);
+    console.error("Error deleting from local storage:", error);
   }
 };
 
 export default {
   uploadProfilePicture,
   uploadPDF,
-  uploadToCloudinary,
-  deleteFromCloudinary,
+  saveProfilePictureLocally,
+  deleteFromLocalStorage,
   uploadQuestionImages,
-  uploadImagesToCloudinary,
   uploadExcelFile
 };

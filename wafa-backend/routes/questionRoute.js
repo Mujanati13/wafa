@@ -12,6 +12,7 @@ router.patch("/update/:id", isAuthenticated, isAdmin, validate(QuestionSchema.up
 router.delete("/delete/:id", isAuthenticated, isAdmin, questionController.delete);
 router.get("/all", questionController.getAll);
 router.get("/by-exam/:examId", questionController.getByExamId);
+router.get("/exam/:examId", questionController.getByExamId); // Alias for frontend compatibility
 router.get("/all/:id", questionController.getById);
 
 // New filtered and bulk endpoints

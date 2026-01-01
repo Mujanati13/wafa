@@ -75,19 +75,28 @@ router.post("/create-with-image", uploadModuleImage, async (req, res) => {
 // Update module with image upload
 router.put("/update-with-image/:id", uploadModuleImage, async (req, res) => {
     try {
-        // Handle main module image
+        console.log("Update module with image - received body:", req.body);
+        console.log("Update module with image - received files:", req.files ? Object.keys(req.files) : "none");
+        
+        // Handle main module image - new upload takes priority, otherwise preserve existing
         if (req.files && req.files.moduleImage && req.files.moduleImage[0]) {
             req.body.imageUrl = `/uploads/modules/${req.files.moduleImage[0].filename}`
+        } else if (req.body.existingImageUrl) {
+            req.body.imageUrl = req.body.existingImageUrl
         }
         
-        // Handle help image
+        // Handle help image - new upload takes priority, otherwise preserve existing
         if (req.files && req.files.helpImage && req.files.helpImage[0]) {
             req.body.helpImage = `/uploads/modules/${req.files.helpImage[0].filename}`
+        } else if (req.body.existingHelpImage) {
+            req.body.helpImage = req.body.existingHelpImage
         }
         
-        // Handle help PDF
+        // Handle help PDF - new upload takes priority, otherwise preserve existing
         if (req.files && req.files.helpPdf && req.files.helpPdf[0]) {
             req.body.helpPdf = `/uploads/modules/${req.files.helpPdf[0].filename}`
+        } else if (req.body.existingHelpPdf) {
+            req.body.helpPdf = req.body.existingHelpPdf
         }
 
         req.params.id = req.params.id

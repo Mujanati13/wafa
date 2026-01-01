@@ -65,10 +65,10 @@ const Dashboard = () => {
   const [completionData, setCompletionData] = useState([]);
   const [semesterPage, setSemesterPage] = useState(0); // For paginating semesters (2 at a time)
 
-  const allSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+  // Only show subscribed semesters instead of all semesters
   const semestersPerPage = 2;
-  const totalSemesterPages = Math.ceil(allSemesters.length / semestersPerPage);
-  const visibleSemesters = allSemesters.slice(semesterPage * semestersPerPage, (semesterPage + 1) * semestersPerPage);
+  const totalSemesterPages = Math.max(1, Math.ceil(userSemesters.length / semestersPerPage));
+  const visibleSemesters = userSemesters.slice(semesterPage * semestersPerPage, (semesterPage + 1) * semestersPerPage);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -367,10 +367,10 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-yellow-300" />
                     </motion.div>
                     <div className="min-w-0 flex-1">
-                      <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">
+                      <h1 className="text-base xs:text-lg sm:text-xl lg:text-2xl font-bold text-white leading-tight">
                         Bienvenue, {user?.name || user?.fullName || 'Étudiant'} !
                       </h1>
-                      <p className="text-blue-100 text-xs xs:text-sm sm:text-base mt-1">
+                      <p className="text-blue-100 text-xs xs:text-sm mt-1">
                         Prêt à exceller dans vos études ?
                       </p>
                     </div>
@@ -456,29 +456,26 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       </Button>
                       
                       <div className="flex gap-1 sm:gap-2 flex-1 justify-center">
-                        {visibleSemesters.map((sem) => {
-                          const isSubscribed = userSemesters.includes(sem);
+                        {visibleSemesters.length > 0 ? visibleSemesters.map((sem) => {
                           const isSelected = semester === sem;
                           return (
                             <Button
                               key={sem}
                               variant={isSelected ? "default" : "outline"}
                               size="sm"
-                              disabled={!isSubscribed}
                               onClick={() => setSemester(sem)}
                               className={`min-w-[50px] xs:min-w-[58px] sm:min-w-[65px] text-xs sm:text-sm font-semibold transition-all ${
                                 isSelected
                                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md scale-105'
-                                  : isSubscribed
-                                    ? 'hover:bg-blue-50 hover:border-blue-300 text-slate-700'
-                                    : 'opacity-30 cursor-not-allowed'
+                                  : 'hover:bg-blue-50 hover:border-blue-300 text-slate-700'
                               }`}
                             >
                               {sem}
-                              {!isSubscribed && <Lock className="ml-0.5 sm:ml-1 h-2.5 w-2.5 sm:h-3 sm:w-3" />}
                             </Button>
                           );
-                        })}
+                        }) : (
+                          <p className="text-xs text-slate-500 py-2">Aucun semestre souscrit</p>
+                        )}
                       </div>
                       
                       <Button

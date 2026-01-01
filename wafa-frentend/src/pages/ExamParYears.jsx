@@ -120,10 +120,10 @@ const ExamParYears = () => {
     }
     
     setFormData({
-      examName: exam.examName,
-      moduleName: exam.moduleName,
-      year: exam.year,
-      imageUrl: exam.imageUrl === placeholderImage ? DEFAULT_EXAM_IMAGE : exam.imageUrl,
+      examName: exam.examName || "",
+      moduleName: exam.moduleName || "",
+      year: String(exam.year || ""),
+      imageUrl: (exam.imageUrl === placeholderImage || !exam.imageUrl) ? DEFAULT_EXAM_IMAGE : exam.imageUrl,
       helpText: exam.helpText || "",
     });
     setEditingExam(exam);
@@ -491,6 +491,10 @@ const ExamParYears = () => {
                         <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
                         <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
                         <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                        <SelectItem value="S7" className="text-black">Semestre 7</SelectItem>
+                        <SelectItem value="S8" className="text-black">Semestre 8</SelectItem>
+                        <SelectItem value="S9" className="text-black">Semestre 9</SelectItem>
+                        <SelectItem value="S10" className="text-black">Semestre 10</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

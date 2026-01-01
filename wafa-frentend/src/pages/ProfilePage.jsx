@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { debounce } from 'lodash';
@@ -38,6 +38,8 @@ const ProfilePage = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [user, setUser] = useState(null);
   const [userStats, setUserStats] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
   
   // Email verification states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -177,6 +179,50 @@ const ProfilePage = () => {
       toast.error(error.response?.data?.message || 'Échec de l\'envoi du code');
     } finally {
       setIsSendingCode(false);
+    }
+  };
+
+  // Handle profile photo upload
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image valide');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 5 Mo');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      // Don't set Content-Type manually - axios handles it for FormData
+      const response = await api.post('/users/upload-photo', formData);
+
+      if (response.data.success) {
+        setUser(prev => ({
+          ...prev,
+          profilePicture: response.data.profilePicture
+        }));
+        toast.success('Photo de profil mise à jour avec succès');
+      }
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      toast.error(error.response?.data?.message || 'Échec du téléchargement de la photo');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -615,17 +661,30 @@ const ProfilePage = () => {
                 <div className="flex flex-col items-center text-center space-y-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24">
-                      <AvatarImage src={user?.profilePicture} />
+                      <AvatarImage src={user?.profilePicture?.startsWith('http') ? user.profilePicture : user?.profilePicture ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.profilePicture}` : undefined} />
                       <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                         {getInitials()}
                       </AvatarFallback>
                     </Avatar>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handlePhotoUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
                     <Button
                       size="icon"
                       variant="secondary"
                       className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
                     >
-                      <Camera className="h-4 w-4" />
+                      {uploadingPhoto ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <div>

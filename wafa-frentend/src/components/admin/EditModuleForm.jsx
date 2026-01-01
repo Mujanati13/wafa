@@ -46,10 +46,10 @@ const DIFFICULTY_LEVELS = [
 const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedColor, setSelectedColor] = useState("#6366f1");
+  const [selectedColor, setSelectedColor] = useState(module?.color || "#6366f1");
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [difficulty, setDifficulty] = useState("QE");
-  const [selectedSemester, setSelectedSemester] = useState("");
+  const [difficulty, setDifficulty] = useState(module?.difficulty || "QE");
+  const [selectedSemester, setSelectedSemester] = useState(module?.semester || "");
   
   // File states
   const [moduleImageFile, setModuleImageFile] = useState(null);
@@ -78,6 +78,9 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   // Initialize form when module changes
   useEffect(() => {
     if (module) {
+      console.log("EditModuleForm - Initializing with module:", module);
+      console.log("EditModuleForm - Module semester:", module.semester);
+      
       form.reset({
         name: module.name || "",
         infoText: module.infoText || "",
@@ -90,11 +93,11 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       
       // Set existing image/pdf previews
       if (module.imageUrl) {
-        const fullUrl = module.imageUrl.startsWith("http") ? module.imageUrl : `${API_URL}${module.imageUrl}`;
+        const fullUrl = module.imageUrl.startsWith("http") ? module.imageUrl : `${API_URL?.replace('/api/v1', '')}${module.imageUrl}`;
         setModuleImagePreview(fullUrl);
       }
       if (module.helpImage) {
-        const fullUrl = module.helpImage.startsWith("http") ? module.helpImage : `${API_URL}${module.helpImage}`;
+        const fullUrl = module.helpImage.startsWith("http") ? module.helpImage : `${API_URL?.replace('/api/v1', '')}${module.helpImage}`;
         setHelpImagePreview(fullUrl);
       }
     }
@@ -144,9 +147,26 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       if (data.helpContent !== undefined) formData.append("helpContent", data.helpContent || "");
       if (data.textContent !== undefined) formData.append("textContent", data.textContent || "");
       
-      if (moduleImageFile) formData.append("moduleImage", moduleImageFile);
-      if (helpImageFile) formData.append("helpImage", helpImageFile);
-      if (helpPdfFile) formData.append("helpPdf", helpPdfFile);
+      // Handle files - send new files OR preserve existing paths
+      if (moduleImageFile) {
+        formData.append("moduleImage", moduleImageFile);
+      } else if (module.rawImageUrl || module.imageUrl) {
+        // Preserve existing image path
+        const existingPath = module.rawImageUrl || (module.imageUrl?.startsWith('/uploads') ? module.imageUrl : null);
+        if (existingPath) formData.append("existingImageUrl", existingPath);
+      }
+      
+      if (helpImageFile) {
+        formData.append("helpImage", helpImageFile);
+      } else if (module.helpImage) {
+        formData.append("existingHelpImage", module.helpImage);
+      }
+      
+      if (helpPdfFile) {
+        formData.append("helpPdf", helpPdfFile);
+      } else if (module.helpPdf) {
+        formData.append("existingHelpPdf", module.helpPdf);
+      }
 
       await api.put(`/modules/update-with-image/${module.id || module._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
@@ -217,7 +237,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                   <Label className="text-sm font-semibold text-gray-900">
                     {t("admin:select_semester")} *
                   </Label>
-                  <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                  <Select key={`semester-${module?.id || module?._id}`} value={selectedSemester} onValueChange={setSelectedSemester}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("admin:choose_semester")} />
                     </SelectTrigger>
@@ -355,7 +375,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                     {moduleImageFile && (
                       <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
                         <span className="text-sm text-blue-700 truncate">{moduleImageFile.name}</span>
-                        <button type="button" onClick={() => { setModuleImageFile(null); setModuleImagePreview(module?.imageUrl ? `${API_URL}${module.imageUrl}` : null); }} className="text-red-500 hover:text-red-700">
+                        <button type="button" onClick={() => { setModuleImageFile(null); setModuleImagePreview(module?.imageUrl ? `${API_URL?.replace('/api/v1', '')}${module.imageUrl}` : null); }} className="text-red-500 hover:text-red-700">
                           <X className="h-4 w-4" />
                         </button>
                       </div>
@@ -412,7 +432,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                     {helpImageFile && (
                       <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
                         <span className="text-sm text-green-700 truncate">{helpImageFile.name}</span>
-                        <button type="button" onClick={() => { setHelpImageFile(null); setHelpImagePreview(module?.helpImage ? `${API_URL}${module.helpImage}` : null); }} className="text-red-500 hover:text-red-700">
+                        <button type="button" onClick={() => { setHelpImageFile(null); setHelpImagePreview(module?.helpImage ? `${API_URL?.replace('/api/v1', '')}${module.helpImage}` : null); }} className="text-red-500 hover:text-red-700">
                           <X className="h-4 w-4" />
                         </button>
                       </div>

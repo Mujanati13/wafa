@@ -13,11 +13,10 @@ const examParYearSchema = joi.object({
         'number.base': 'Year must be a number',
         'any.required': 'Year is required'
     }),
-    imageUrl: joi.string().uri().allow('').messages({
-        'string.base': 'Image URL must be a string',
-        'string.uri': 'Image URL must be a valid URI'
+    imageUrl: joi.string().allow('', null).messages({
+        'string.base': 'Image URL must be a string'
     }),
-    infoText: joi.string().allow('').messages({
+    infoText: joi.string().allow('', null).messages({
         'string.base': 'Info text must be a string'
     })
 });
@@ -32,11 +31,10 @@ const updateExamParYearSchema = joi.object({
     year: joi.number().messages({
         'number.base': 'Year must be a number'
     }),
-    imageUrl: joi.string().uri().messages({
-        'string.base': 'Image URL must be a string',
-        'string.uri': 'Image URL must be a valid URI'
+    imageUrl: joi.string().allow('', null).messages({
+        'string.base': 'Image URL must be a string'
     }),
-    infoText: joi.string().messages({
+    infoText: joi.string().allow('', null).messages({
         'string.base': 'Info text must be a string'
     })
 });

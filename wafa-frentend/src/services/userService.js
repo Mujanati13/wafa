@@ -168,11 +168,8 @@ export const userService = {
             formData.append('profilePicture', file);
 
             console.log('Uploading profile picture to: /users/upload-photo');
-            const response = await api.post('/users/upload-photo', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            // Don't set Content-Type manually - axios handles it for FormData
+            const response = await api.post('/users/upload-photo', formData);
             return response.data.data.user;
         } catch (error) {
             console.error('Error uploading profile picture:', error);

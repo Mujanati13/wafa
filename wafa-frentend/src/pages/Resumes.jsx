@@ -107,7 +107,9 @@ const Resumes = () => {
       toast.error("PDF non disponible");
       return;
     }
-    window.open(pdfUrl, "_blank");
+    // Construct full URL for local paths
+    const fullUrl = pdfUrl.startsWith('http') ? pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${pdfUrl}`;
+    window.open(fullUrl, "_blank");
   };
 
   const handleImport = async () => {

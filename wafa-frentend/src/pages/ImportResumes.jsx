@@ -343,21 +343,24 @@ const ImportResumes = () => {
                                       - {courseName} :
                                     </span>
                                     <div className="flex flex-wrap gap-x-2 gap-y-1">
-                                      {courseResumes.map((resume, idx) => (
-                                        <React.Fragment key={resume._id}>
-                                          <a
-                                            href={resume.pdfUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                                          >
-                                            {resume.title} (lien)
-                                          </a>
-                                          {idx < courseResumes.length - 1 && (
-                                            <span className="text-gray-400">-</span>
-                                          )}
-                                        </React.Fragment>
-                                      ))}
+                                      {courseResumes.map((resume, idx) => {
+                                        const pdfFullUrl = resume.pdfUrl?.startsWith('http') ? resume.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${resume.pdfUrl}`;
+                                        return (
+                                          <React.Fragment key={resume._id}>
+                                            <a
+                                              href={pdfFullUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                                            >
+                                              {resume.title} (lien)
+                                            </a>
+                                            {idx < courseResumes.length - 1 && (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </React.Fragment>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 );

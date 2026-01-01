@@ -468,7 +468,7 @@ const DemandesDePayements = () => {
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={t.user?.profileImage} />
+                                <AvatarImage src={t.user?.profileImage?.startsWith('http') ? t.user.profileImage : t.user?.profileImage ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${t.user.profileImage}` : undefined} />
                                 <AvatarFallback>
                                   {t.user?.name
                                     ?.split(" ")

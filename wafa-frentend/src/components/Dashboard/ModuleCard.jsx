@@ -44,13 +44,22 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
   const correctAnswers = course.correctAnswers || 0;
   const wrongAnswers = questionsAttempted - correctAnswers;
 
+  // Construct proper URL for imageUrl
+  const getFullImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    return `${API_URL?.replace('/api/v1', '')}${url}`;
+  };
+
+  const fullImageUrl = getFullImageUrl(course.imageUrl);
+
   // Check if imageUrl is valid (not empty, not "null", not "undefined", starts with http or /)
-  const hasValidImageUrl = course.imageUrl &&
-    typeof course.imageUrl === 'string' &&
-    course.imageUrl.trim() !== '' &&
-    course.imageUrl !== 'null' &&
-    course.imageUrl !== 'undefined' &&
-    (course.imageUrl.startsWith('http') || course.imageUrl.startsWith('/') || course.imageUrl.startsWith('data:'));
+  const hasValidImageUrl = fullImageUrl &&
+    typeof fullImageUrl === 'string' &&
+    fullImageUrl.trim() !== '' &&
+    fullImageUrl !== 'null' &&
+    fullImageUrl !== 'undefined' &&
+    (fullImageUrl.startsWith('http') || fullImageUrl.startsWith('/') || fullImageUrl.startsWith('data:'));
 
   // Show fallback if no valid URL, or if image failed to load
   const showFallback = !hasValidImageUrl || imageError;
@@ -121,7 +130,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
           {hasValidImageUrl && !imageError && (
             <>
               <img
-                src={course.imageUrl}
+                src={fullImageUrl}
                 alt={course.name}
                 className={`absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setImageLoaded(true)}
@@ -327,7 +336,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
                 <img
                   src={(() => {
                     const imageUrl = course.helpImage || course.imageUrl;
-                    return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
+                    return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
                   })()}
                   alt="Guide du module"
                   className="max-w-full max-h-48 object-contain"
@@ -409,11 +418,11 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
               <img
                 src={(() => {
                   const imageUrl = course.helpImage || course.imageUrl;
-                  return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
+                  return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
                 })()}
                 alt="Guide du module"
                 className="max-w-full max-h-[85vh] object-contain rounded-lg"
-              />
+                />
             </motion.div>
           </motion.div>
         )}
@@ -450,7 +459,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
               </div>
               <iframe
                 src={(() => {
-                  const pdfUrl = course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL}${course.helpPdf}`;
+                  const pdfUrl = course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL?.replace('/api/v1', '')}${course.helpPdf}`;
                   return `${pdfUrl}#view=FitH`;
                 })()}
                 className="w-full h-[calc(100%-60px)]"

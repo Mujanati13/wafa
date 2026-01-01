@@ -148,9 +148,8 @@ const ImportExplications = () => {
           imgFormData.append('images', file);
         });
         
-        const uploadRes = await api.post('/questions/upload-images', imgFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // Don't set Content-Type manually - axios handles it for FormData
+        const uploadRes = await api.post('/questions/upload-images', imgFormData);
         
         if (uploadRes.data.success) {
           uploadedImageUrls = uploadRes.data.data.map(img => img.url);
@@ -162,9 +161,8 @@ const ImportExplications = () => {
         const pdfFormData = new FormData();
         pdfFormData.append('pdf', pdfFile);
         
-        const pdfRes = await api.post('/explanations/upload-pdf', pdfFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        // Don't set Content-Type manually - axios handles it for FormData
+        const pdfRes = await api.post('/explanations/upload-pdf', pdfFormData);
         
         if (pdfRes.data.success) {
           uploadedPdfUrl = pdfRes.data.data.url;
@@ -492,9 +490,11 @@ const ImportExplications = () => {
                     <ImageIcon className="w-4 h-4" />
                     Upload Images (optionnel, max {MAX_IMAGES})
                   </Label>
-                  <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
+                  <div 
+                    className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
+                    onClick={() => imageFiles.length < MAX_IMAGES && document.getElementById('images-input')?.click()}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <Upload className="w-8 h-8 text-purple-600" />
@@ -502,7 +502,7 @@ const ImportExplications = () => {
                         <p className="font-semibold text-gray-800">Drop images here or click to browse</p>
                         <p className="text-sm text-gray-600">Supports JPG, PNG, GIF, WebP (max {MAX_IMAGES} images)</p>
                       </div>
-                      <Input
+                      <input
                         type="file"
                         accept="image/*"
                         multiple
@@ -521,19 +521,21 @@ const ImportExplications = () => {
                           e.target.value = '';
                         }}
                         className="hidden"
-                        id="images"
+                        id="images-input"
                         disabled={imageFiles.length >= MAX_IMAGES}
                       />
-                      <label htmlFor="images">
-                        <Button 
-                          variant="outline" 
-                          className="bg-white hover:bg-purple-50" 
-                          type="button"
-                          disabled={imageFiles.length >= MAX_IMAGES}
-                        >
-                          Browse Files
-                        </Button>
-                      </label>
+                      <Button 
+                        variant="outline" 
+                        className="bg-white hover:bg-purple-50" 
+                        type="button"
+                        disabled={imageFiles.length >= MAX_IMAGES}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          document.getElementById('images-input')?.click();
+                        }}
+                      >
+                        Browse Files
+                      </Button>
                     </div>
                   </div>
 

@@ -367,6 +367,18 @@ const UsersWithTabs = () => {
     setShowViewDialog(true);
   };
 
+  // Helper function to safely format date
+  const formatDateSafe = (dateValue) => {
+    if (!dateValue) return "";
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split('T')[0];
+    } catch {
+      return "";
+    }
+  };
+
   // Open edit dialog
   const handleEditUser = (user) => {
     setSelectedUser(user);
@@ -375,12 +387,12 @@ const UsersWithTabs = () => {
       email: user.email || "",
       username: user.username || "",
       currentYear: user.currentYear || "",
-      semesters: user.semesters || [],
+      semesters: Array.isArray(user.semesters) ? user.semesters : [],
       plan: user.plan || "Free",
       isAactive: user.isAactive ?? true,
       paymentMode: user.paymentMode || "",
-      paymentDate: user.paymentDate ? new Date(user.paymentDate).toISOString().split('T')[0] : "",
-      approvalDate: user.approvalDate ? new Date(user.approvalDate).toISOString().split('T')[0] : "",
+      paymentDate: formatDateSafe(user.paymentDate),
+      approvalDate: formatDateSafe(user.approvalDate),
     });
     setShowEditDialog(true);
   };
@@ -390,13 +402,22 @@ const UsersWithTabs = () => {
     if (!selectedUser) return;
     setActionLoading(true);
     try {
-      await userService.updateUser(selectedUser._id, editFormData);
+      // Clean up data before sending - convert empty strings to null for enum fields
+      const cleanedData = {
+        ...editFormData,
+        paymentMode: editFormData.paymentMode || null,
+        paymentDate: editFormData.paymentDate || null,
+        approvalDate: editFormData.approvalDate || null,
+      };
+      
+      await userService.updateUser(selectedUser._id, cleanedData);
       toast.success("Utilisateur mis à jour avec succès");
       setShowEditDialog(false);
       setSelectedUser(null);
       fetchUsers(); // Refresh list
     } catch (error) {
-      toast.error("Erreur lors de la mise à jour");
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la mise à jour";
+      toast.error(errorMessage);
       console.error("Update error:", error);
     } finally {
       setActionLoading(false);

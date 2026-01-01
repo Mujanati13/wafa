@@ -71,6 +71,9 @@ router.put("/update-with-image/:id", isAuthenticated, isAdmin, uploadQCMImage, a
     try {
         if (req.file) {
             req.body.imageUrl = `/uploads/qcm/${req.file.filename}`;
+        } else if (req.body.existingImageUrl) {
+            // Preserve existing image URL if no new file is uploaded
+            req.body.imageUrl = req.body.existingImageUrl;
         }
         return qcmBanqueController.update(req, res);
     } catch (error) {

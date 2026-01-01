@@ -63,8 +63,11 @@ router.post("/create-with-image", uploadCourseImage, async (req, res) => {
 // Update with image upload
 router.put("/update-with-image/:id", uploadCourseImage, async (req, res) => {
     try {
+        // Handle image - new upload takes priority, otherwise preserve existing
         if (req.file) {
             req.body.imageUrl = `/uploads/courses/${req.file.filename}`;
+        } else if (req.body.existingImageUrl) {
+            req.body.imageUrl = req.body.existingImageUrl;
         }
         
         // Forward to the update controller

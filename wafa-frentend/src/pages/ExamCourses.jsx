@@ -73,7 +73,7 @@ const ExamCourses = () => {
         // Handle image URL - prepend API_URL if it's a relative path
         let imageUrl = c.imageUrl || placeholderImage;
         if (imageUrl && !imageUrl.startsWith("http") && imageUrl !== placeholderImage) {
-          imageUrl = `${API_URL}${imageUrl}`;
+          imageUrl = `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
         }
         
         return {
@@ -316,6 +316,14 @@ const ExamCourses = () => {
       
       if (imageFile) {
         submitData.append("courseImage", imageFile);
+      } else if (editingCourse.imageUrl && editingCourse.imageUrl !== placeholderImage) {
+        // Preserve existing image URL if no new file is uploaded
+        // Extract relative path if it's a full URL
+        let existingUrl = editingCourse.imageUrl;
+        if (existingUrl.includes('/uploads/')) {
+          existingUrl = existingUrl.substring(existingUrl.indexOf('/uploads/'));
+        }
+        submitData.append("existingImageUrl", existingUrl);
       }
 
       await api.put(`/exam-courses/update-with-image/${editingCourse.id}`, submitData, {
@@ -548,6 +556,10 @@ const ExamCourses = () => {
                         <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
                         <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
                         <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                        <SelectItem value="S7" className="text-black">Semestre 7</SelectItem>
+                        <SelectItem value="S8" className="text-black">Semestre 8</SelectItem>
+                        <SelectItem value="S9" className="text-black">Semestre 9</SelectItem>
+                        <SelectItem value="S10" className="text-black">Semestre 10</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

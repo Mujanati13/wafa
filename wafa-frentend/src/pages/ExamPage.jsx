@@ -1593,68 +1593,69 @@ const ExamPage = () => {
                   </div>
 
                   <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
-                    {/* Question Number and Reference - positioned below question number */}
-                    <div className="space-y-2">
-                      {/* Question Number Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            className="font-semibold text-sm px-3 py-1"
-                            style={{
-                              backgroundColor: `${moduleColor}20`,
-                              color: adjustColor(moduleColor, -60)
-                            }}
-                          >
-                            {currentQuestion + 1} / {questions.length}
-                          </Badge>
-                          {currentQuestionData.image && (
-                            <button
-                              onClick={() => setShowImageGallery(true)}
-                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs text-gray-600"
-                            >
-                              <Image className="h-3.5 w-3.5" />
-                              Image
-                            </button>
-                          )}
+                    {/* Question Number and Reference - single row layout */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      {/* Left side: Question Number and Reference */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge 
+                          className="font-semibold text-sm px-3 py-1 shrink-0"
+                          style={{
+                            backgroundColor: `${moduleColor}20`,
+                            color: adjustColor(moduleColor, -60)
+                          }}
+                        >
+                          {currentQuestion + 1} / {questions.length}
+                        </Badge>
+                        
+                        {/* Dynamic Reference based on entry type */}
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 bg-gray-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
+                          <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                          <span className="truncate max-w-[200px] sm:max-w-[300px]">
+                            {(() => {
+                              // Determine the entry type and build reference accordingly
+                              const moduleName = examData?.moduleName || 'Module';
+                              const examYear = examData?.year ? `${examData.year}` : '';
+                              const examType = examData?.examType || examData?.category || '';
+                              const courseName = currentQuestionData?.sessionLabel || examData?.courseName || '';
+                              const qcmName = examData?.title || examData?.name || '';
+
+                              // QCM Banque format: moduleName > qcmName
+                              if (examType === 'QCM banque' || examData?.isQcmBanque) {
+                                return `${moduleName} > ${qcmName}`;
+                              }
+                              
+                              // Par Cours format: moduleName > courseName > examYear
+                              if (examType === 'Exam par courses' || examData?.isParCours) {
+                                return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
+                              }
+                              
+                              // Par Année format (default): moduleName > examYear > courseName
+                              return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''} > Q${currentQuestion + 1}`;
+                            })()}
+                          </span>
                         </div>
-                        {isMultipleChoice && (
-                          <Badge 
-                            variant="outline"
-                            className="gap-1 text-xs"
+                        
+                        {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                          <button
+                            onClick={() => setShowImageGallery(true)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs text-gray-600"
                           >
-                            <CheckCircle2 className="h-3 w-3" />
-                            Choix multiple
-                          </Badge>
+                            <Image className="h-3.5 w-3.5" />
+                            Image ({currentQuestionData.images.length})
+                          </button>
                         )}
                       </div>
-
-                      {/* Dynamic Reference based on entry type */}
-                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 bg-gray-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
-                        <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
-                        <span className="truncate">
-                          {(() => {
-                            // Determine the entry type and build reference accordingly
-                            const moduleName = examData?.moduleName || 'Module';
-                            const examYear = examData?.year ? `${examData.year}` : '';
-                            const examType = examData?.examType || examData?.category || '';
-                            const courseName = currentQuestionData?.sessionLabel || examData?.courseName || '';
-                            const qcmName = examData?.title || examData?.name || '';
-
-                            // QCM Banque format: moduleName > qcmName
-                            if (examType === 'QCM banque' || examData?.isQcmBanque) {
-                              return `${moduleName} > ${qcmName}`;
-                            }
-                            
-                            // Par Cours format: moduleName > courseName > examYear
-                            if (examType === 'Exam par courses' || examData?.isParCours) {
-                              return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
-                            }
-                            
-                            // Par Année format (default): moduleName > examYear > courseName
-                            return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''} > Q${currentQuestion + 1}`;
-                          })()}
-                        </span>
-                      </div>
+                      
+                      {/* Right side: Multiple choice badge */}
+                      {isMultipleChoice && (
+                        <Badge 
+                          variant="outline"
+                          className="gap-1 text-xs shrink-0"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          Choix multiple
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Question Text */}
@@ -1662,17 +1663,21 @@ const ExamPage = () => {
                       className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
                       style={{ fontSize: `${Math.max(14, fontSize - 2)}px`, lineHeight: '1.6' }}
                     >
-                      {currentQuestionData.question}
+                      {currentQuestionData.question || currentQuestionData.text}
                     </div>
 
-                    {/* Question Image */}
-                    {currentQuestionData.image && (
-                      <div className="relative rounded-lg sm:rounded-xl overflow-hidden border bg-gray-50">
-                        <img
-                          src={currentQuestionData.image}
-                          alt="Question illustration"
-                          className="w-full max-h-48 sm:max-h-64 md:max-h-80 object-contain"
-                        />
+                    {/* Question Images */}
+                    {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                      <div className="space-y-2">
+                        {currentQuestionData.images.map((imgUrl, imgIdx) => (
+                          <div key={imgIdx} className="relative rounded-lg sm:rounded-xl overflow-hidden border bg-gray-50">
+                            <img
+                              src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`}
+                              alt={`Question illustration ${imgIdx + 1}`}
+                              className="w-full max-h-48 sm:max-h-64 md:max-h-80 object-contain"
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -2908,11 +2913,14 @@ const ExamPage = () => {
               <ScrollArea className="flex-1 p-3 sm:p-4">
                 {(() => {
                   const allImages = questions.reduce((acc, q, idx) => {
-                    if (q.image) {
-                      acc.push({
-                        src: q.image,
-                        questionIndex: idx,
-                        questionText: q.question?.substring(0, 50) + '...'
+                    if (q.images && q.images.length > 0) {
+                      q.images.forEach((imgUrl, imgIdx) => {
+                        acc.push({
+                          src: imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`,
+                          questionIndex: idx,
+                          questionText: q.text?.substring(0, 50) + '...',
+                          imageIndex: imgIdx
+                        });
                       });
                     }
                     return acc;

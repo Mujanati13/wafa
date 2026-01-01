@@ -67,7 +67,7 @@ const QCMBanque = () => {
                 // Handle image URL - prepend API_URL if it's a relative path
                 let imageUrl = q?.imageUrl || placeholderImage;
                 if (imageUrl && !imageUrl.startsWith("http") && imageUrl !== placeholderImage) {
-                    imageUrl = `${API_URL}${imageUrl}`;
+                    imageUrl = `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
                 }
                 
                 return {
@@ -210,6 +210,13 @@ const QCMBanque = () => {
             
             if (imageFile) {
                 submitData.append("qcmImage", imageFile);
+            } else if (editingQCM.imageUrl && editingQCM.imageUrl !== placeholderImage) {
+                // Preserve existing image URL if no new file is selected
+                // Extract the relative path from the full URL
+                const existingUrl = editingQCM.imageUrl.includes('/uploads/') 
+                    ? editingQCM.imageUrl.substring(editingQCM.imageUrl.indexOf('/uploads/'))
+                    : editingQCM.imageUrl;
+                submitData.append("existingImageUrl", existingUrl);
             }
 
             await api.put(`/qcm-banque/update-with-image/${editingQCM.id}`, submitData, {
@@ -494,6 +501,10 @@ const QCMBanque = () => {
                                                 <SelectItem value="S4" className="text-black">Semestre 4</SelectItem>
                                                 <SelectItem value="S5" className="text-black">Semestre 5</SelectItem>
                                                 <SelectItem value="S6" className="text-black">Semestre 6</SelectItem>
+                                                <SelectItem value="S7" className="text-black">Semestre 7</SelectItem>
+                                                <SelectItem value="S8" className="text-black">Semestre 8</SelectItem>
+                                                <SelectItem value="S9" className="text-black">Semestre 9</SelectItem>
+                                                <SelectItem value="S10" className="text-black">Semestre 10</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

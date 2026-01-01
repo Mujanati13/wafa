@@ -117,7 +117,7 @@ const ImportExamParCourse = () => {
       setUploading(true);
 
       for (const mapping of validMappings) {
-        // 1. Upload image to Cloudinary
+        // 1. Upload image to local storage
         const formData = new FormData();
         formData.append("images", mapping.file);
 

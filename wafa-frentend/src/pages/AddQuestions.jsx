@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Save, Eye, Edit, HelpCircle, Download, FileSpreadsheet, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Eye, Edit, HelpCircle, FileSpreadsheet, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -357,26 +357,6 @@ const AddQuestions = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <PageHeader title={t('admin:add_questions')} description={t('admin:select_context_add_content')} />
           <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportToExcel}
-              disabled={examQuestions.length === 0}
-              className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Exporter {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteAllQuestions}
-              disabled={examQuestions.length === 0}
-              className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              Supprimer {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : 'Tout'}
-            </Button>
             <Button variant="outline" onClick={() => setShowPreview((p) => !p)}>
               <Eye className="h-4 w-4 mr-2" />
               {t('admin:preview')}
@@ -933,7 +913,12 @@ const AddQuestions = () => {
                     <Label className="text-sm font-semibold text-gray-700">Images</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {viewingQuestion.images.map((img, idx) => (
-                        <img key={idx} src={img} alt={`Question image ${idx + 1}`} className="w-full h-32 object-cover rounded border" />
+                        <img 
+                          key={idx} 
+                          src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${img}`} 
+                          alt={`Question image ${idx + 1}`} 
+                          className="w-full h-32 object-cover rounded border" 
+                        />
                       ))}
                     </div>
                   </div>

@@ -103,9 +103,8 @@ const ImportExamParYears = () => {
       formData.append('file', excelFile);
       formData.append('type', 'exam-par-year');
 
-      await api.post('/questions/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Don't set Content-Type manually - axios handles it for FormData
+      await api.post('/questions/import', formData);
 
       toast.success("Questions importées avec succès");
       setExcelFile(null);
@@ -139,13 +138,12 @@ const ImportExamParYears = () => {
 
       // Process each image mapping
       for (const mapping of validImageMappings) {
-        // 1. Upload image to Cloudinary
+        // 1. Upload image to local storage
         const formData = new FormData();
         formData.append("images", mapping.file);
 
-        const uploadRes = await api.post("/questions/upload-images", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        // Don't set Content-Type manually - axios handles it for FormData
+        const uploadRes = await api.post("/questions/upload-images", formData);
 
         if (!uploadRes.data.success) {
           throw new Error("Échec du téléchargement de l'image");

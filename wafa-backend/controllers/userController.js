@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import UserStats from "../models/userStatsModel.js";
-import { uploadToCloudinary, deleteFromCloudinary } from "../middleware/uploadMiddleware.js";
+import { saveProfilePictureLocally, deleteFromLocalStorage } from "../middleware/uploadMiddleware.js";
 import asyncHandler from "../handlers/asyncHandler.js";
 import { NotificationController } from "./notificationController.js";
 import admin from "../config/firebase.js";
@@ -544,14 +544,13 @@ export const UserController = {
             throw new Error("Utilisateur non trouvé");
         }
 
-        // Delete old profile picture from Cloudinary if exists
-        if (user.profilePicture) {
-            const publicId = user.profilePicture.split("/").pop().split(".")[0];
-            await deleteFromCloudinary(`wafa-profiles/${publicId}`);
+        // Delete old profile picture from local storage if exists
+        if (user.profilePicture && user.profilePicture.startsWith('/uploads/')) {
+            await deleteFromLocalStorage(user.profilePicture);
         }
 
         // Upload new picture to Cloudinary
-        const result = await uploadToCloudinary(req.file.buffer);
+        const result = await saveProfilePictureLocally(req.file.buffer, req.user._id);
 
         user.profilePicture = result.secure_url;
         await user.save();
@@ -559,9 +558,7 @@ export const UserController = {
         res.status(200).json({
             success: true,
             message: "Photo de profil mise à jour avec succès",
-            data: {
-                profilePicture: user.profilePicture,
-            },
+            profilePicture: user.profilePicture,
         });
     }),
 

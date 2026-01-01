@@ -131,7 +131,9 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
                       </Badge>
                     </div>
                     <div className="grid gap-2 pl-6">
-                      {courseResumes.map((resume) => (
+                      {courseResumes.map((resume) => {
+                        const pdfFullUrl = resume.pdfUrl?.startsWith('http') ? resume.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${resume.pdfUrl}`;
+                        return (
                         <motion.div
                           key={resume._id}
                           initial={{ opacity: 0, x: -10 }}
@@ -155,7 +157,7 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => window.open(resume.pdfUrl, '_blank')}
+                              onClick={() => window.open(pdfFullUrl, '_blank')}
                               className="gap-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-100"
                             >
                               <ExternalLink className="h-4 w-4" />
@@ -166,7 +168,7 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement('a');
-                                link.href = resume.pdfUrl;
+                                link.href = pdfFullUrl;
                                 link.download = resume.title || 'resume.pdf';
                                 link.click();
                               }}
@@ -177,7 +179,8 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
                             </Button>
                           </div>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))

@@ -54,7 +54,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
 };
 
 // Exam Card Component
-const ExamCard = ({ exam, onStart, index, moduleColor }) => {
+const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   
   // Helper function to adjust color
@@ -72,7 +72,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
   const getImageUrl = () => {
     if (!exam.imageUrl) return null;
     if (exam.imageUrl.startsWith("http")) return exam.imageUrl;
-    return `${API_URL}${exam.imageUrl}`;
+    return `${API_URL?.replace('/api/v1', '')}${exam.imageUrl}`;
   };
 
   const imageUrl = getImageUrl();
@@ -88,7 +88,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
     >
       <Card
         className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-0 shadow-md"
-        onClick={() => onStart(exam.id)}
+        onClick={() => onStart(exam.id, examType)}
       >
         <CardContent className="p-0 h-full">
           <div className="flex items-center gap-4 p-4 sm:p-6">
@@ -135,7 +135,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor }) => {
                   className="h-8 px-2.5 text-xs gap-1.5 hover:bg-gray-100 border-gray-300 font-medium"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onStart(exam.id);
+                    onStart(exam.id, examType);
                   }}
                 >
                   <FileQuestion className="h-3.5 w-3.5" />
@@ -382,8 +382,11 @@ const SubjectsPage = () => {
     (exam) => selectedCategory === "all" || exam.category === selectedCategory
   );
 
-  const handleStartExam = (examId) => {
-    navigate(`/exam/${examId}`);
+  const handleStartExam = (examId, type) => {
+    // Include the exam type in the URL for ExamPage to use the correct API endpoint
+    const examTypeParam = type || selectedExamType;
+    const queryType = examTypeParam === 'year' ? 'exam' : examTypeParam === 'course' ? 'course' : 'qcm';
+    navigate(`/exam/${examId}?type=${queryType}`);
   };
 
   // Get current exams based on selected type
@@ -599,6 +602,7 @@ const SubjectsPage = () => {
                     onStart={handleStartExam}
                     index={index}
                     moduleColor={module?.color}
+                    examType="year"
                   />
                 ))}
               </div>
@@ -625,6 +629,7 @@ const SubjectsPage = () => {
                     onStart={handleStartExam}
                     index={index}
                     moduleColor={module?.color}
+                    examType="course"
                   />
                 ))}
               </div>
@@ -656,6 +661,7 @@ const SubjectsPage = () => {
                     onStart={handleStartExam}
                     index={index}
                     moduleColor={module?.color}
+                    examType="qcm"
                   />
                 ))}
               </div>

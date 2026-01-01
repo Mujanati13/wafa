@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle, BookOpen } from "lucide-react";
+import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle, BookOpen, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatCard } from "@/components/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +26,8 @@ import { cn } from "@/lib/utils";
 
 const Explications = () => {
   const { t } = useTranslation(['admin', 'common']);
+  const API_URL = import.meta.env.VITE_API_URL;
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -38,8 +44,76 @@ const Explications = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Add/Edit form states
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [modules, setModules] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    moduleId: "",
+    examId: "",
+    questionNumbers: "",
+    title: "",
+    contentText: "",
+  });
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    contentText: "",
+    status: "pending",
+  });
+  const [imageFiles, setImageFiles] = useState([]);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const imageInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
+
   const openQuestionPopup = (questionText) => {
     setQuestionPopup({ open: true, text: questionText });
+  };
+
+  // Fetch modules
+  const fetchModules = async () => {
+    try {
+      const { data } = await api.get("/modules");
+      setModules(data?.data || []);
+    } catch (e) {
+      console.error("Error fetching modules:", e);
+    }
+  };
+
+  // Fetch exams for a module
+  const fetchExamsForModule = async (moduleId) => {
+    if (!moduleId) {
+      setExams([]);
+      return;
+    }
+    try {
+      const [examsRes, qcmRes, coursesRes] = await Promise.all([
+        api.get("/exams/all"),
+        api.get("/qcm-banque/all"),
+        api.get(`/exam-courses?moduleId=${moduleId}`)
+      ]);
+      
+      const moduleExams = (examsRes.data?.data || []).filter(e => 
+        (e.moduleId?._id || e.moduleId) === moduleId
+      );
+      const moduleQcm = (qcmRes.data?.data || []).filter(q => 
+        (q.moduleId?._id || q.moduleId) === moduleId
+      );
+      const moduleCourses = coursesRes.data?.data || [];
+      
+      const allExams = [
+        ...moduleExams.map(e => ({ ...e, type: 'exam', label: `${e.name} (${e.year || 'N/A'})` })),
+        ...moduleQcm.map(q => ({ ...q, type: 'qcm', label: `QCM: ${q.name}` })),
+        ...moduleCourses.map(c => ({ ...c, type: 'course', label: `Cours: ${c.name}` }))
+      ];
+      
+      setExams(allExams);
+    } catch (e) {
+      console.error("Error fetching exams:", e);
+      setExams([]);
+    }
   };
 
   // Fetch explanations
@@ -84,7 +158,136 @@ const Explications = () => {
 
   useEffect(() => {
     fetchData();
+    fetchModules();
   }, []);
+
+  // Handle image file selection
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + imageFiles.length > 5) {
+      toast.error("Maximum 5 images autorisées");
+      return;
+    }
+    
+    const validFiles = files.filter(f => f.type.startsWith("image/"));
+    setImageFiles(prev => [...prev, ...validFiles]);
+    
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Remove image
+  const removeImage = (index) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Handle PDF file selection
+  const handlePdfSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setPdfFile(file);
+    } else {
+      toast.error("Veuillez sélectionner un fichier PDF valide");
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      moduleId: "",
+      examId: "",
+      questionNumbers: "",
+      title: "",
+      contentText: "",
+    });
+    setImageFiles([]);
+    setPdfFile(null);
+    setImagePreviews([]);
+    setExams([]);
+  };
+
+  // Handle add form submit
+  const handleAddSubmit = async () => {
+    if (!formData.moduleId || !formData.examId || !formData.questionNumbers) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      const submitData = new FormData();
+      submitData.append("moduleId", formData.moduleId);
+      submitData.append("examId", formData.examId);
+      submitData.append("questionNumbers", formData.questionNumbers);
+      submitData.append("title", formData.title || "Explication admin");
+      submitData.append("contentText", formData.contentText || "");
+
+      // Add images
+      imageFiles.forEach(file => {
+        submitData.append("images", file);
+      });
+
+      // Add PDF
+      if (pdfFile) {
+        submitData.append("pdf", pdfFile);
+      }
+
+      // Note: Don't set Content-Type for FormData - axios will set it automatically with boundary
+      const response = await api.post("/explanations/admin-create", submitData);
+
+      toast.success(response.data?.message || "Explication(s) créée(s) avec succès");
+      setShowAddDialog(false);
+      resetForm();
+      fetchData();
+    } catch (e) {
+      console.error("Error creating explanation:", e);
+      toast.error(e.response?.data?.message || "Erreur lors de la création");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handle edit form submit
+  const handleEditSubmit = async () => {
+    if (!selectedExplanation) return;
+
+    try {
+      setFormLoading(true);
+      await api.put(`/explanations/${selectedExplanation.id}`, {
+        title: editFormData.title,
+        contentText: editFormData.contentText,
+        status: editFormData.status,
+      });
+
+      toast.success("Explication mise à jour avec succès");
+      setShowEditDialog(false);
+      setSelectedExplanation(null);
+      fetchData();
+    } catch (e) {
+      console.error("Error updating explanation:", e);
+      toast.error("Erreur lors de la mise à jour");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Open edit dialog
+  const handleEditClick = (explanation) => {
+    setSelectedExplanation(explanation);
+    setEditFormData({
+      title: explanation.explicationTitle || "",
+      contentText: explanation.text || "",
+      status: explanation.status || "pending",
+    });
+    setShowEditDialog(true);
+  };
 
   // Handler functions
   const handleViewDetails = (explanation) => {
@@ -199,9 +402,18 @@ const Explications = () => {
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold text-slate-900">Explications Management</h1>
-        <p className="text-slate-500">Manage user-submitted explanation questions and verify content</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-slate-900">Explications Management</h1>
+          <p className="text-slate-500">Manage user-submitted explanation questions and verify content</p>
+        </div>
+        <Button 
+          className="gap-2" 
+          onClick={() => setShowAddDialog(true)}
+        >
+          <Plus className="h-4 w-4" />
+          Ajouter une Explication
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -431,7 +643,7 @@ const Explications = () => {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="cursor-pointer gap-2"
-                                onClick={() => handleViewDetails(report)}
+                                onClick={() => handleEditClick(report)}
                               >
                                 <Edit className="h-4 w-4" />
                                 Edit
@@ -561,21 +773,24 @@ const Explications = () => {
                 <div>
                   <p className="text-sm text-gray-500 mb-2">Images ({selectedExplanation.images.length})</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {selectedExplanation.images.map((imgUrl, idx) => (
+                    {selectedExplanation.images.map((imgUrl, idx) => {
+                      const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${imgUrl}`;
+                      return (
                       <a
                         key={idx}
-                        href={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                        href={fullImgUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block aspect-video overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors"
                       >
                         <img
-                          src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                          src={fullImgUrl}
                           alt={`Image ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />
                       </a>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -584,7 +799,7 @@ const Explications = () => {
                 <div>
                   <p className="text-sm text-gray-500 mb-2">Document PDF</p>
                   <a
-                    href={selectedExplanation.pdfUrl.startsWith('http') ? selectedExplanation.pdfUrl : `${import.meta.env.VITE_API_URL || ''}${selectedExplanation.pdfUrl}`}
+                    href={selectedExplanation.pdfUrl.startsWith('http') ? selectedExplanation.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${selectedExplanation.pdfUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
@@ -624,10 +839,261 @@ const Explications = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Explanation Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) resetForm(); setShowAddDialog(open); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-green-600" />
+              Ajouter une Explication
+            </DialogTitle>
+            <DialogDescription>
+              Créer une explication pour une ou plusieurs questions d'un examen
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Module *</Label>
+                <Select
+                  value={formData.moduleId}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, moduleId: value, examId: "" }));
+                    fetchExamsForModule(value);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modules.map(mod => (
+                      <SelectItem key={mod._id} value={mod._id}>
+                        {mod.name} ({mod.semester})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Examen / QCM *</Label>
+                <Select
+                  value={formData.examId}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, examId: value }))}
+                  disabled={!formData.moduleId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un examen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exams.map(exam => (
+                      <SelectItem key={exam._id} value={exam._id}>
+                        {exam.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Numéros de Questions *</Label>
+              <Input
+                placeholder="Ex: 1-5, 7, 10-15"
+                value={formData.questionNumbers}
+                onChange={(e) => setFormData(prev => ({ ...prev, questionNumbers: e.target.value }))}
+              />
+              <p className="text-xs text-gray-500">
+                Utilisez des virgules et des tirets pour spécifier plusieurs questions (ex: 1-5, 7, 10)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input
+                placeholder="Titre de l'explication"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contenu de l'explication</Label>
+              <Textarea
+                placeholder="Écrivez l'explication ici..."
+                value={formData.contentText}
+                onChange={(e) => setFormData(prev => ({ ...prev, contentText: e.target.value }))}
+                rows={4}
+              />
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label>Images (max 5)</Label>
+              <div className="space-y-3">
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {imagePreviews.map((preview, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={preview} alt={`Preview ${idx + 1}`} className="w-full h-20 object-cover rounded border" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={imageFiles.length >= 5}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Ajouter des images
+                </Button>
+              </div>
+            </div>
+
+            {/* PDF Upload */}
+            <div className="space-y-2">
+              <Label>Document PDF</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={pdfInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePdfSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => pdfInputRef.current?.click()}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {pdfFile ? "Changer le PDF" : "Ajouter un PDF"}
+                </Button>
+                {pdfFile && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>{pdfFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPdfFile(null)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { resetForm(); setShowAddDialog(false); }}>
+              Annuler
+            </Button>
+            <Button onClick={handleAddSubmit} disabled={formLoading}>
+              {formLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                "Créer l'explication"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Explanation Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-blue-600" />
+              Modifier l'Explication
+            </DialogTitle>
+            <DialogDescription>
+              Modifier le titre, le contenu et le statut de l'explication
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input
+                placeholder="Titre de l'explication"
+                value={editFormData.title}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Contenu</Label>
+              <Textarea
+                placeholder="Contenu de l'explication..."
+                value={editFormData.contentText}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, contentText: e.target.value }))}
+                rows={6}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Statut</Label>
+              <Select
+                value={editFormData.status}
+                onValueChange={(value) => setEditFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="approved">Approuvé</SelectItem>
+                  <SelectItem value="rejected">Rejeté</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleEditSubmit} disabled={formLoading}>
+              {formLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Mise à jour...
+                </>
+              ) : (
+                "Enregistrer"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default Explications;
-
-// dummy data removed; using API data

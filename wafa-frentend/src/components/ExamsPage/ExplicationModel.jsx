@@ -124,9 +124,8 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
         formData.append('pdf', uploadedPdf);
       }
 
-      await api.post('/explanations/create', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Note: Don't set Content-Type for FormData - axios will set it automatically with boundary
+      await api.post('/explanations/create', formData);
 
       toast.success("Votre explication a été soumise pour révision !", {
         description: "Elle sera publiée après validation par notre équipe. Vous gagnerez 1 point bleu si approuvée!"
@@ -262,22 +261,25 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   {/* AI Images */}
                   {aiExplanation.images.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {aiExplanation.images.map((src, idx) => (
+                      {aiExplanation.images.map((src, idx) => {
+                        const fullImgUrl = src.startsWith('http') ? src : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${src}`;
+                        return (
                         <button
                           key={`${src}-${idx}`}
                           type="button"
                           className="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                          onClick={() => window.open(src, "_blank", "noopener,noreferrer")}
+                          onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
                           title="Ouvrir l'image"
                         >
                           <img
-                            src={src}
+                            src={fullImgUrl}
                             alt={`explication ${idx + 1}`}
                             className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                             loading="lazy"
                           />
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -369,25 +371,25 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   {/* Display images if any */}
                   {currentUserExplanation.images?.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
-                      {currentUserExplanation.images.map((imgUrl, idx) => (
+                      {currentUserExplanation.images.map((imgUrl, idx) => {
+                        const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${imgUrl}`;
+                        return (
                         <button
                           key={idx}
                           type="button"
                           className="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                          onClick={() => window.open(
-                            imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`,
-                            "_blank", "noopener,noreferrer"
-                          )}
+                          onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
                           title="Ouvrir l'image"
                         >
                           <img
-                            src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL || ''}${imgUrl}`}
+                            src={fullImgUrl}
                             alt={`Image ${idx + 1}`}
                             className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                             loading="lazy"
                           />
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -396,7 +398,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                     <a
                       href={currentUserExplanation.pdfUrl.startsWith('http') 
                         ? currentUserExplanation.pdfUrl 
-                        : `${import.meta.env.VITE_API_URL || ''}${currentUserExplanation.pdfUrl}`}
+                        : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${currentUserExplanation.pdfUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm"

@@ -126,15 +126,14 @@ const ImportImages = () => {
     try {
       setUploading(true);
       
-      // 1. Upload images to Cloudinary
+      // 1. Upload images to local storage
       const formData = new FormData();
       imageFiles.forEach(file => {
         formData.append('images', file);
       });
       
-      const uploadRes = await api.post('/questions/upload-images', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Don't set Content-Type manually - let axios handle it for FormData
+      const uploadRes = await api.post('/questions/upload-images', formData);
       
       if (!uploadRes.data.success) {
         throw new Error("Échec du téléchargement des images");
@@ -406,9 +405,11 @@ const ImportImages = () => {
                     <ImageIcon className="w-4 h-4" />
                     Upload Images *
                   </Label>
-                  <div className="border-2 border-dashed border-cyan-300 rounded-lg p-8 bg-cyan-50 hover:bg-cyan-100 transition-colors cursor-pointer"
+                  <div 
+                    className="border-2 border-dashed border-cyan-300 rounded-lg p-8 bg-cyan-50 hover:bg-cyan-100 transition-colors cursor-pointer"
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
+                    onClick={() => document.getElementById('images-input')?.click()}
                   >
                     <div className="flex flex-col items-center gap-3">
                       <Upload className="w-10 h-10 text-cyan-600" />
@@ -416,7 +417,7 @@ const ImportImages = () => {
                         <p className="font-semibold text-gray-800">Drop images here or click to browse</p>
                         <p className="text-sm text-gray-600">Supports JPG, PNG, GIF, WebP (multiple files)</p>
                       </div>
-                      <Input
+                      <input
                         type="file"
                         accept="image/*"
                         multiple
@@ -428,13 +429,19 @@ const ImportImages = () => {
                           e.target.value = '';
                         }}
                         className="hidden"
-                        id="images"
+                        id="images-input"
                       />
-                      <label htmlFor="images">
-                        <Button variant="outline" className="bg-white hover:bg-cyan-50" type="button">
-                          Browse Files
-                        </Button>
-                      </label>
+                      <Button 
+                        variant="outline" 
+                        className="bg-white hover:bg-cyan-50" 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          document.getElementById('images-input')?.click();
+                        }}
+                      >
+                        Browse Files
+                      </Button>
                     </div>
                   </div>
 

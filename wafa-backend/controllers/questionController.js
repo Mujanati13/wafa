@@ -204,16 +204,25 @@ export const questionController = {
             });
         }
 
-        // Dynamic import to avoid circular dependency
-        const { uploadImagesToCloudinary } = await import("../middleware/uploadMiddleware.js");
+        try {
+            const uploadedImages = req.files.map(file => ({
+                url: `/uploads/questions/${file.filename}`,
+                originalName: file.originalname,
+                filename: file.filename
+            }));
 
-        const uploadedImages = await uploadImagesToCloudinary(req.files);
-
-        res.status(200).json({
-            success: true,
-            message: `${uploadedImages.length} image(s) téléchargée(s) avec succès`,
-            data: uploadedImages
-        });
+            res.status(200).json({
+                success: true,
+                message: `${uploadedImages.length} image(s) téléchargée(s) avec succès`,
+                data: uploadedImages
+            });
+        } catch (error) {
+            console.error("Error uploading images:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Erreur lors du téléchargement des images: " + (error.message || "Erreur inconnue")
+            });
+        }
     }),
 
     // Attach images to questions by question numbers

@@ -1,34 +1,24 @@
 import resumeModel from "../models/resumeModel.js";
 import asyncHandler from '../handlers/asyncHandler.js';
-import { v2 as cloudinary } from "cloudinary";
-import { Readable } from "stream";
+import fs from 'fs';
+import path from 'path';
 
-// Helper function to upload PDF to Cloudinary
-const uploadPdfToCloudinary = (buffer, originalName) => {
-    return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder: "wafa-resumes",
-                resource_type: "raw", // For non-image files like PDFs
-                public_id: `resume-${Date.now()}-${originalName.replace(/\.[^/.]+$/, "")}`,
-            },
-            (error, result) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve({
-                        url: result.secure_url,
-                        publicId: result.public_id,
-                    });
-                }
-            }
-        );
-
-        const readable = new Readable();
-        readable.push(buffer);
-        readable.push(null);
-        readable.pipe(uploadStream);
-    });
+// Helper function to save PDF locally
+const savePdfLocally = async (buffer, originalName) => {
+    const uploadDir = path.join(process.cwd(), 'uploads', 'resumes');
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    const filename = `resume-${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const filePath = path.join(uploadDir, filename);
+    
+    await fs.promises.writeFile(filePath, buffer);
+    
+    return {
+        url: `/uploads/resumes/${filename}`,
+        filename: filename
+    };
 };
 
 export const resumeController = {
@@ -205,13 +195,13 @@ export const resumeController = {
             });
         }
 
-        // Upload PDF to Cloudinary
+        // Save PDF locally
         let pdfUrl;
         try {
-            const uploadResult = await uploadPdfToCloudinary(req.file.buffer, req.file.originalname);
+            const uploadResult = await savePdfLocally(req.file.buffer, req.file.originalname);
             pdfUrl = uploadResult.url;
         } catch (error) {
-            console.error("Error uploading PDF to Cloudinary:", error);
+            console.error("Error saving PDF:", error);
             return res.status(500).json({
                 success: false,
                 message: "Failed to upload PDF"

@@ -68,7 +68,9 @@ const CreateCategoriesForCourses = () => {
         moduleId: c.moduleId?._id || c.moduleId || "",
         moduleName: c.moduleName || c.moduleId?.name || "",
         categoryCourseName: c.name || "",
+        category: c.category || "",
         imageUrl: getImageUrl(c.imageUrl),
+        rawImageUrl: c.imageUrl || "",
         totalQuestions: c.totalQuestions || 0,
       }));
       setCategoriesForCourses(list);
@@ -131,8 +133,15 @@ const CreateCategoriesForCourses = () => {
       name: category.categoryCourseName,
       moduleId: category.moduleId,
       category: category.category || "",
-      imageUrl: category.imageUrl === placeholderImage ? "" : category.imageUrl,
+      imageUrl: category.rawImageUrl || "",
     });
+    // Set image preview for existing image
+    if (category.imageUrl && category.imageUrl !== placeholderImage) {
+      setImagePreview(category.imageUrl);
+    } else {
+      setImagePreview(null);
+    }
+    setImageFile(null);
     setEditingCategory(category);
     setShowCreateForm(true);
   };
@@ -148,16 +157,27 @@ const CreateCategoriesForCourses = () => {
     const courseName = selectedModule ? `${selectedModule.name} - ${formData.category}` : formData.category;
 
     try {
-      await api.put(`/exam-courses/${editingCategory.id}`, {
-        name: courseName,
-        moduleId: formData.moduleId,
-        category: formData.category,
-        imageUrl: formData.imageUrl || "",
+      const data = new FormData();
+      data.append("name", courseName);
+      data.append("moduleId", formData.moduleId);
+      data.append("category", formData.category);
+      
+      if (imageFile) {
+        data.append("courseImage", imageFile);
+      } else if (editingCategory.rawImageUrl) {
+        // Preserve existing image path
+        data.append("existingImageUrl", editingCategory.rawImageUrl);
+      }
+
+      await api.put(`/exam-courses/update-with-image/${editingCategory.id}`, data, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
       toast.success("Catégorie mise à jour avec succès");
       setShowCreateForm(false);
       setEditingCategory(null);
       setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      setImageFile(null);
+      setImagePreview(null);
       fetchCourses();
     } catch (err) {
       console.error("Error updating category:", err);
@@ -263,6 +283,15 @@ const CreateCategoriesForCourses = () => {
       {/* Gradient Header */}
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <h3 className="font-semibold text-blue-800 mb-2">📋 Information</h3>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• <strong>Catégories de Modules</strong> : Gère les modules (Anatomie, Physiologie, etc.) → Page /admin/categoriesOfModules</li>
+            <li>• <strong>Catégories de Cours</strong> (cette page) : Gère les sous-catégories dans "Exam par cours" → Apparaît côté utilisateur dans la section "Exam par cours"</li>
+          </ul>
+        </div>
+
         {/* Action Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -271,8 +300,8 @@ const CreateCategoriesForCourses = () => {
           className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div>
-            <h2 className="text-2xl font-bold text-black mb-1">Course Categories</h2>
-            <p className="text-gray-600">Total: <span className="font-semibold text-black">{filtered.length}</span> categories</p>
+            <h2 className="text-2xl font-bold text-black mb-1">Catégories de Cours (Exam par cours)</h2>
+            <p className="text-gray-600">Total: <span className="font-semibold text-black">{filtered.length}</span> catégories • Ces catégories apparaissent dans "Exam par cours" côté utilisateur</p>
           </div>
           <Button
             size="lg"
@@ -280,7 +309,7 @@ const CreateCategoriesForCourses = () => {
             onClick={() => setShowCreateForm(true)}
           >
             <Plus className="w-5 h-5 mr-2" />
-            Create Category
+            Créer une catégorie
           </Button>
         </motion.div>
 
@@ -340,9 +369,9 @@ const CreateCategoriesForCourses = () => {
             <CardHeader className="pb-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-black text-xl">Categories List</CardTitle>
+                  <CardTitle className="text-black text-xl">Liste des catégories</CardTitle>
                   <CardDescription className="text-gray-600">
-                    {filtered.length === 0 ? "No categories found" : `Showing ${Math.min(currentRows.length, itemsPerPage)} of ${filtered.length}`}
+                    {filtered.length === 0 ? "Aucune catégorie trouvée" : `Affichage de ${Math.min(currentRows.length, itemsPerPage)} sur ${filtered.length}`}
                   </CardDescription>
                 </div>
                 <Badge className="bg-gray-200 text-black border border-gray-300">
@@ -360,7 +389,8 @@ const CreateCategoriesForCourses = () => {
                         <tr className="border-b border-gray-200 bg-gray-50">
                           <th className="text-left py-4 px-6 font-semibold text-black">ID</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
-                          <th className="text-left py-4 px-6 font-semibold text-black">Categories of courses names</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Nom du cours</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Catégorie</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Image</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Questions</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Actions</th>
@@ -379,11 +409,16 @@ const CreateCategoriesForCourses = () => {
                             >
                               <td className="py-4 px-6">
                                 <Badge className="bg-gray-200 text-black border border-gray-300">
-                                  #{row.id}
+                                  #{row.id.slice(-6)}
                                 </Badge>
                               </td>
                               <td className="py-4 px-6 text-black font-medium">{row.moduleName}</td>
                               <td className="py-4 px-6 text-gray-700">{row.categoryCourseName}</td>
+                              <td className="py-4 px-6">
+                                <Badge className="bg-blue-100 text-blue-700 border border-blue-200">
+                                  {row.category}
+                                </Badge>
+                              </td>
                               <td className="py-4 px-6">
                                 <motion.div
                                   whileHover={{ scale: 1.05 }}
@@ -469,16 +504,19 @@ const CreateCategoriesForCourses = () => {
               >
                 <DialogHeader>
                   <DialogTitle className="text-black text-xl">
-                    {editingCategory ? "Modifier la catégorie" : "Create New Category"}
+                    {editingCategory ? "Modifier la catégorie" : "Créer une catégorie de cours"}
                   </DialogTitle>
                   <DialogDescription className="text-gray-600">
-                    Add a new category with module and course category information
+                    Cette catégorie apparaîtra dans la section "Exam par cours" côté utilisateur
                   </DialogDescription>
                 </DialogHeader>
 
                 <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingCategory ? handleUpdate() : handleCreate(); }}>
                   <div className="space-y-2">
                     <Label className="text-black">Select Module *</Label>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Le module auquel cette catégorie de cours sera rattachée
+                    </p>
                     <Select value={formData.moduleId} onValueChange={(value) => handleFormChange("moduleId", value)}>
                       <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
                         <SelectValue placeholder="Choose module" />
@@ -494,17 +532,16 @@ const CreateCategoriesForCourses = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-black">Category *</Label>
-                    <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
-                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
-                        <SelectValue placeholder="Choose category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-gray-200">
-                        <SelectItem value="Exam par years" className="text-black">Exam par years</SelectItem>
-                        <SelectItem value="Exam par courses" className="text-black">Exam par courses</SelectItem>
-                        <SelectItem value="QCM banque" className="text-black">QCM banque</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-black">Nom de la catégorie *</Label>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Cette catégorie apparaîtra dans "Exam par cours" côté utilisateur
+                    </p>
+                    <Input
+                      value={formData.category}
+                      onChange={(e) => handleFormChange("category", e.target.value)}
+                      placeholder="Ex: Cardiologie, Neurologie, Anatomie..."
+                      className="bg-gray-50 border-gray-300 text-black"
+                    />
                   </div>
 
                   <div className="space-y-2">

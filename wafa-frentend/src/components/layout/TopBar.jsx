@@ -332,7 +332,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user?.profilePicture} alt={user?.name} />
+                  <AvatarImage src={user?.profilePicture?.startsWith('http') ? user.profilePicture : user?.profilePicture ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.profilePicture}` : undefined} alt={user?.name} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-teal-500 text-white">
                     {getUserInitials()}
                   </AvatarFallback>

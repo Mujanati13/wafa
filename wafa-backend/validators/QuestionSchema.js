@@ -1,6 +1,7 @@
 import joi from 'joi';
 
 const optionSchema = joi.object({
+    _id: joi.string().optional().allow('', null), // Allow _id from MongoDB
     text: joi.string().required().messages({
         'string.base': 'Option text must be a string',
         'any.required': 'Option text is required'
