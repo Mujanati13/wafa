@@ -10,6 +10,8 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_BASED_URL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
 });
 
 // Request interceptor for logging

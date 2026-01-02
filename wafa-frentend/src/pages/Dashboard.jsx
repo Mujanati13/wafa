@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 import { dashboardService } from "@/services/dashboardService";
 import { useSemester } from "@/context/SemesterContext";
-import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, ChevronLeft, ChevronRight, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download } from "lucide-react";
+import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, ChevronLeft, ChevronRight, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download, Book } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import ModuleCard from "@/components/Dashboard/ModuleCard";
 import ModulePreviewModal from "@/components/Dashboard/ModulePreviewModal";
@@ -558,26 +558,38 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     <CardContent className="text-center py-16">
                       <div className="max-w-md mx-auto space-y-4">
                         <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center">
-                          <Lock className="h-8 w-8 text-slate-400" />
+                          {userSemesters.length === 0 ? (
+                            <Lock className="h-8 w-8 text-slate-400" />
+                          ) : (
+                            <Book className="h-8 w-8 text-blue-400" />
+                          )}
                         </div>
                         <h3 className="text-xl font-semibold text-slate-700">
                           {userSemesters.length === 0
                             ? "Aucun semestre souscrit"
-                            : "Aucun module disponible"
+                            : `Aucun module pour ${semester}`
                           }
                         </h3>
                         <p className="text-slate-500">
                           {userSemesters.length === 0
                             ? "Abonnez-vous pour accéder aux modules et commencer votre apprentissage"
-                            : "Sélectionnez un autre semestre ou vérifiez votre abonnement"
+                            : userSemesters.length > 1 
+                              ? "Aucun module n'est encore disponible pour ce semestre. Essayez un autre semestre."
+                              : "Aucun module n'est encore disponible pour ce semestre. Les modules seront ajoutés prochainement."
                           }
                         </p>
-                        <Button
-                          onClick={() => navigate('/dashboard/subscription')}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          {userSemesters.length === 0 ? "Voir les abonnements" : "Gérer mon abonnement"}
-                        </Button>
+                        {userSemesters.length === 0 ? (
+                          <Button
+                            onClick={() => navigate('/dashboard/subscription')}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Voir les abonnements
+                          </Button>
+                        ) : userSemesters.length > 1 && (
+                          <p className="text-sm text-blue-600 font-medium">
+                            Vos semestres: {userSemesters.join(', ')}
+                          </p>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

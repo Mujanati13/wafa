@@ -308,13 +308,30 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
                     {filteredModules.length === 0 ? (
                       sidebarOpen && (
                         <div className="px-3 py-4 text-center">
-                          <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                          <p className="text-xs text-muted-foreground">
-                            {t('dashboard:no_modules_available', 'Aucun module disponible')}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {t('dashboard:subscribe_to_access', 'Souscrivez à un plan pour accéder aux modules')}
-                          </p>
+                          {userSemesters && userSemesters.length > 0 ? (
+                            <>
+                              <Book className="h-8 w-8 mx-auto text-blue-400/50 mb-2" />
+                              <p className="text-xs text-muted-foreground">
+                                Aucun module pour {selectedSemester || 'ce semestre'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {userSemesters.length > 1 
+                                  ? 'Essayez un autre semestre'
+                                  : 'Les modules seront ajoutés prochainement'
+                                }
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                              <p className="text-xs text-muted-foreground">
+                                {t('dashboard:no_modules_available', 'Aucun module disponible')}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {t('dashboard:subscribe_to_access', 'Souscrivez à un plan pour accéder aux modules')}
+                              </p>
+                            </>
+                          )}
                         </div>
                       )
                     ) : (

@@ -1060,6 +1060,22 @@ const UsersWithTabs = () => {
                   <p className="font-medium">{selectedUser.consentAcceptedAt ? "Oui" : "Non"}</p>
                 </div>
               </div>
+              
+              {/* Semesters Section */}
+              <div className="border-t pt-4">
+                <Label className="text-gray-500">Semestres assignés</Label>
+                {selectedUser.semesters && selectedUser.semesters.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedUser.semesters.map((sem) => (
+                      <Badge key={sem} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        {sem}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 mt-1">Aucun semestre assigné</p>
+                )}
+              </div>
             </div>
           )}
           <DialogFooter>

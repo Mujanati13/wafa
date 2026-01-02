@@ -123,9 +123,7 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
       if (helpImageFile) formData.append("helpImage", helpImageFile);
       if (helpPdfFile) formData.append("helpPdf", helpPdfFile);
 
-      await api.post("/modules/create-with-image", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      await api.post("/modules/create-with-image", formData);
 
       form.reset();
       setModuleImageFile(null);
