@@ -20,13 +20,16 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
+  
+  // Adjust text size based on circle size
+  const fontSize = size > 60 ? 'text-xl' : size > 40 ? 'text-sm' : 'text-xs';
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="transform -rotate-90" width={size} height={size}>
         <circle
           className="text-gray-200"
-          strokeWidth="4"
+          strokeWidth="6"
           stroke="currentColor"
           fill="transparent"
           r={radius}
@@ -35,7 +38,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
         />
         <circle
           className={!color ? "text-blue-600 transition-all duration-500" : "transition-all duration-500"}
-          strokeWidth="4"
+          strokeWidth="6"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
@@ -47,7 +50,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-gray-700">{progress}%</span>
+        <span className={`${fontSize} font-bold`} style={{ color: color || '#374151' }}>{progress}%</span>
       </div>
     </div>
   );
@@ -123,36 +126,26 @@ const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
             </div>
 
             {/* Right side - Info */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-900 line-clamp-2 text-sm sm:text-base mb-2 leading-tight">
-                {exam.name}
-              </h3>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Questions counter with button */}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-8 px-2.5 text-xs gap-1.5 hover:bg-gray-100 border-gray-300 font-medium"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStart(exam.id, examType);
-                  }}
-                >
-                  <FileQuestion className="h-3.5 w-3.5" />
+            <div className="flex-1 min-w-0 flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-2 leading-tight break-words">
+                  {exam.name}
+                </h3>
+                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                  <FileQuestion className="h-4 w-4" />
                   <span className="font-semibold">{answeredQuestions}</span>
                   <span className="text-gray-400">/</span>
                   <span>{exam.questions}</span>
-                </Button>
-                
-                {/* Progress percentage with module color */}
-                <Badge 
-                  className="text-xs font-bold text-white h-8 flex items-center px-3 shadow-sm group-hover:shadow-md transition-shadow"
-                  style={{
-                    backgroundColor: moduleColor || '#3b82f6'
-                  }}
-                >
-                  {exam.progress || 0}%
-                </Badge>
+                </div>
+              </div>
+              
+              {/* Circular Progress */}
+              <div className="flex-shrink-0">
+                <ProgressCircle 
+                  progress={exam.progress || 0} 
+                  size={60} 
+                  color={moduleColor || '#f59e0b'} 
+                />
               </div>
             </div>
           </div>
@@ -171,6 +164,7 @@ const SubjectsPage = () => {
   const [hasAccess, setHasAccess] = useState(true);
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
+  const [moduleStats, setModuleStats] = useState(null);
 
   // Helper function to darken/lighten color (same as ModuleCard)
   function adjustColor(color, amount) {
@@ -364,6 +358,17 @@ const SubjectsPage = () => {
           setQcmBanque([]);
         }
 
+        // Fetch module stats for the current user
+        try {
+          const statsResponse = await api.get(`/modules/${id}/stats`);
+          if (statsResponse.data?.success) {
+            setModuleStats(statsResponse.data.data);
+          }
+        } catch (statsError) {
+          console.error("Error fetching module stats:", statsError);
+          // Continue without stats - not critical
+        }
+
       } catch (error) {
         console.error(error);
         toast.error(t('dashboard:error_loading_module'));
@@ -488,7 +493,7 @@ const SubjectsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <Button
             variant="outline"
             size="icon"
@@ -496,7 +501,7 @@ const SubjectsPage = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{module.name}</h1>
             <div
               className={`h-1 w-24 mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
@@ -505,6 +510,9 @@ const SubjectsPage = () => {
               } : undefined}
             />
           </div>
+          
+          {/* Module Stats Card */}
+          
         </div>
 
         {/* Exam Type Tabs */}

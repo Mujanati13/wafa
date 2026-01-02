@@ -3,6 +3,9 @@ import moduleSchema from "../models/moduleModel.js";
 
 import examParYearModel from "../models/examParYearModel.js";
 import questionModule from "../models/questionModule.js";
+import UserStats from "../models/userStatsModel.js";
+import examCourseModel from "../models/examCourseModel.js";
+import qcmBanqueModel from "../models/qcmBanqueModel.js";
 
 export const moduleController = {
     create: asyncHandler(async (req, res) => {
@@ -173,6 +176,81 @@ export const moduleController = {
                 exams: examParYears,
                 questions,
                 totalQuestions: questionCount
+            }
+        });
+    }),
+
+    // Get module stats for current user
+    getUserModuleStats: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const userId = req.user._id;
+
+        // Get the module
+        const module = await moduleSchema.findById(id).lean();
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module not found"
+            });
+        }
+
+        // Get all exam types for this module
+        const [examParYears, examCourses, qcmBanques] = await Promise.all([
+            examParYearModel.find({ moduleId: id }).lean(),
+            examCourseModel.find({ moduleId: id }).lean(),
+            qcmBanqueModel.find({ moduleId: id }).lean()
+        ]);
+
+        // Collect all exam IDs
+        const allExamIds = [
+            ...examParYears.map(e => e._id),
+            ...examCourses.map(e => e._id),
+            ...qcmBanques.map(e => e._id)
+        ];
+
+        // Get all questions for these exams
+        const questions = await questionModule.find({ 
+            examId: { $in: allExamIds } 
+        }).lean();
+        
+        const totalQuestions = questions.length;
+
+        // Get user stats
+        const userStats = await UserStats.findOne({ userId }).lean();
+        
+        let questionsAnswered = 0;
+        let percentage = 0;
+
+        if (userStats && userStats.answeredQuestions) {
+            // Count how many questions from this module the user has answered
+            const answeredQuestionsMap = userStats.answeredQuestions;
+            
+            // Convert Map to object if needed
+            const answeredQuestionsObj = answeredQuestionsMap instanceof Map 
+                ? Object.fromEntries(answeredQuestionsMap)
+                : answeredQuestionsMap;
+
+            // Count answered questions for this module
+            questions.forEach(q => {
+                if (answeredQuestionsObj[q._id.toString()]) {
+                    questionsAnswered++;
+                }
+            });
+
+            // Calculate percentage
+            if (totalQuestions > 0) {
+                percentage = Math.round((questionsAnswered / totalQuestions) * 100);
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                moduleId: id,
+                moduleName: module.name,
+                totalQuestions,
+                questionsAnswered,
+                percentage
             }
         });
     })

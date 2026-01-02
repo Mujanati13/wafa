@@ -115,8 +115,9 @@ const Dashboard = () => {
         const userData = profileData.data?.user || profileData.data;
         setUser(userData);
         
-        // Update localStorage with fresh data
+        // Update both localStorage keys for consistency
         localStorage.setItem("userProfile", JSON.stringify(userData));
+        localStorage.setItem("user", JSON.stringify(userData));
 
         // Note: userSemesters and semester are now managed by SemesterContext
       } catch (error) {

@@ -627,9 +627,35 @@ export const UserController = {
             throw new Error("Utilisateur non trouvé");
         }
 
+        // Get user stats for additional data
+        const UserStats = (await import("../models/userStatsModel.js")).default;
+        const userStats = await UserStats.findOne({ userId: req.user._id });
+
+        // Merge user data with stats
+        const userData = user.toObject();
+        if (userStats) {
+            userData.totalPoints = userStats.totalPoints || 0;
+            userData.bluePoints = userStats.bluePoints || 0;
+            userData.greenPoints = userStats.greenPoints || 0;
+            userData.questionsAnswered = userStats.questionsAnswered || 0;
+            userData.correctAnswers = userStats.correctAnswers || 0;
+            userData.percentageAnswered = userStats.percentageAnswered || 0;
+            userData.level = Math.floor((userStats.totalPoints || 0) / 50);
+            userData.xpToNextLevel = (userStats.totalPoints || 0) % 50;
+        } else {
+            userData.totalPoints = 0;
+            userData.bluePoints = 0;
+            userData.greenPoints = 0;
+            userData.questionsAnswered = 0;
+            userData.correctAnswers = 0;
+            userData.percentageAnswered = 0;
+            userData.level = 0;
+            userData.xpToNextLevel = 0;
+        }
+
         res.status(200).json({
             success: true,
-            data: { user },
+            data: { user: userData },
         });
     }),
 

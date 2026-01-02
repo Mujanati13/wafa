@@ -2,6 +2,7 @@ import { Router } from "express"
 import validate from "../middleware/validateSchema.js"
 import moduleSchema from "../validators/ModuleSchema.js"
 import { moduleController } from "../controllers/moduleController.js"
+import { isAuthenticated } from "../middleware/authMiddleware.js"
 import multer from "multer"
 import path from "path"
 import fs from "fs"
@@ -115,6 +116,9 @@ router.get("/", moduleController.getAll)
 
 // Get a single module by ID
 router.get("/:id", moduleController.getById)
+
+// Get user module stats (authenticated)
+router.get("/:id/stats", isAuthenticated, moduleController.getUserModuleStats)
 
 // Update a module (partial updates allowed)
 router.put("/:id", moduleController.update)

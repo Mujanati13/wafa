@@ -44,6 +44,9 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
         // Force refresh on component mount to ensure we have latest data
         const userData = await userService.getUserProfile(true);
         setUser(userData);
+        // Sync both localStorage keys
+        localStorage.setItem('userProfile', JSON.stringify(userData));
+        localStorage.setItem('user', JSON.stringify(userData));
       } catch (error) {
         console.error('Failed to fetch user in TopBar:', error);
       }
@@ -146,7 +149,11 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
   }, []);
 
   const handleLogout = () => {
+    // Clear all auth and user data
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userProfile");
+    userService.clearProfileCache();
     navigate("/login");
   };
 
@@ -359,6 +366,22 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                     <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
                       {user?.totalPoints || 0} pts
                     </Badge>
+                  </div>
+                  {/* Level and Progress */}
+                  <div className="pt-2 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-600 font-medium">Niveau {Math.floor((user?.totalPoints || 0) / 50)}</span>
+                      <span className="text-slate-500">{((user?.totalPoints || 0) % 50)}/50 XP</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-teal-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(((user?.totalPoints || 0) % 50) / 50) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {user?.percentageAnswered ? `${user.percentageAnswered.toFixed(1)}% des questions répondues` : '0% des questions répondues'}
+                    </div>
                   </div>
                 </div>
               </DropdownMenuLabel>

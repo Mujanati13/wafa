@@ -1,5 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, HelpCircle, X, BookOpen, Info, CheckCircle, Image as ImageIcon, FileText, File } from "lucide-react";
@@ -98,15 +99,16 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-white transition-all"
+          className="absolute top-2 left-2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:shadow-xl transition-all border-2 border-blue-100"
           onClick={(e) => {
             e.stopPropagation();
             setShowHelpModal(true);
           }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.9 }}
+          title="Aide et informations"
         >
-          <HelpCircle className="w-4 h-4" />
+          <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
         </motion.button>
 
         {/* Course Image with gradient overlay */}
@@ -247,7 +249,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
           </DialogHeader>
 
           {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2 max-h-[60vh]">
             {/* Module Info with toggle buttons */}
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="gap-1">
@@ -268,7 +270,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
                   onClick={() => setShowImageModal(true)}
                 >
                   <ImageIcon className="w-3 h-3" />
-                  Image
+                  Voir Image
                 </Badge>
               )}
 
@@ -279,7 +281,7 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
                   onClick={() => setShowPdfModal(true)}
                 >
                   <File className="w-3 h-3" />
-                  PDF
+                  Voir PDF
                 </Badge>
               )}
 
@@ -287,74 +289,89 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
               {(course.helpContent || course.infoText || course.textContent) && (
                 <Badge className="gap-1 bg-gradient-to-r from-cyan-500 to-teal-500 text-white">
                   <FileText className="w-3 h-3" />
-                  Texte
+                  Texte disponible
                 </Badge>
               )}
             </div>
 
-            {/* Text Content - Show by default first */}
+            {/* Text Content - Show by default first (priority 1) */}
             {course.textContent && (
-              <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-                <h4 className="font-medium text-indigo-800 mb-2 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
+              <div className="p-4 bg-indigo-50 border-2 border-indigo-200 rounded-xl">
+                <h4 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
                   Contenu du module
                 </h4>
-                <div className="text-sm text-indigo-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">{course.textContent}</div>
+                <div className="text-sm text-indigo-800 leading-relaxed whitespace-pre-wrap overflow-y-auto" style={{ maxHeight: '300px' }}>
+                  {course.textContent}
+                </div>
               </div>
             )}
 
-            {/* Short Description */}
-            {course.infoText && (
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
-                  <Info className="w-4 h-4" />
-                  En bref
-                </h4>
-                <p className="text-sm text-blue-700 max-h-[150px] overflow-y-auto">{course.infoText}</p>
-              </div>
-            )}
-
-            {/* Detailed Help Content (helpContent text) */}
+            {/* Detailed Help Content (priority 2) */}
             {course.helpContent && (
-              <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                <h4 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4" />
+              <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5" />
                   Guide détaillé
                 </h4>
-                <div className="text-sm text-gray-600 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                <div className="text-sm text-blue-800 leading-relaxed whitespace-pre-wrap overflow-y-auto" style={{ maxHeight: '300px' }}>
                   {course.helpContent}
                 </div>
               </div>
             )}
 
+            {/* Short Description (priority 3) */}
+            {course.infoText && (
+              <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-xl">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  En bref
+                </h4>
+                <p className="text-sm text-gray-700 leading-relaxed overflow-y-auto" style={{ maxHeight: '200px' }}>
+                  {course.infoText}
+                </p>
+              </div>
+            )}
+
             {/* Help Image Preview - click opens modal */}
             {(course.helpImage || course.imageUrl) && (
-              <div 
-                className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 min-h-[120px] flex items-center justify-center overflow-hidden cursor-pointer hover:border-pink-300 transition-colors"
-                onClick={() => setShowImageModal(true)}
-              >
-                <img
-                  src={(() => {
-                    const imageUrl = course.helpImage || course.imageUrl;
-                    return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
-                  })()}
-                  alt="Guide du module"
-                  className="max-w-full max-h-48 object-contain"
-                />
+              <div className="space-y-2">
+                <h4 className="font-semibold text-pink-900 flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-pink-600" />
+                  Image d'aide
+                </h4>
+                <div 
+                  className="rounded-xl border-2 border-pink-200 bg-pink-50 min-h-[120px] flex items-center justify-center overflow-hidden cursor-pointer hover:border-pink-400 hover:shadow-lg transition-all"
+                  onClick={() => setShowImageModal(true)}
+                >
+                  <img
+                    src={(() => {
+                      const imageUrl = course.helpImage || course.imageUrl;
+                      return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
+                    })()}
+                    alt="Guide du module"
+                    className="max-w-full max-h-48 object-contain hover:scale-105 transition-transform"
+                  />
+                </div>
+                <p className="text-xs text-pink-700 text-center">Cliquez pour agrandir l'image</p>
               </div>
             )}
 
             {/* Help PDF - click opens modal */}
             {course.helpPdf && (
-              <div 
-                className="p-4 bg-purple-50 border border-purple-100 rounded-xl cursor-pointer hover:bg-purple-100 transition-colors"
-                onClick={() => setShowPdfModal(true)}
-              >
-                <h4 className="font-medium text-purple-800 mb-2 flex items-center gap-2">
-                  <File className="w-4 h-4" />
+              <div className="space-y-2">
+                <h4 className="font-semibold text-purple-900 flex items-center gap-2">
+                  <File className="w-5 h-5 text-purple-600" />
                   Document PDF
                 </h4>
-                <p className="text-sm text-purple-600">Cliquez pour voir le PDF</p>
+                <div 
+                  className="p-6 bg-purple-50 border-2 border-purple-200 rounded-xl cursor-pointer hover:bg-purple-100 hover:border-purple-400 hover:shadow-lg transition-all text-center"
+                  onClick={() => setShowPdfModal(true)}
+                >
+                  <File className="w-12 h-12 mx-auto text-purple-600 mb-3" />
+                  <p className="text-sm font-medium text-purple-800">Cliquez pour ouvrir le PDF</p>
+                  <p className="text-xs text-purple-600 mt-1">Document d'aide disponible</p>
+                </div>
               </div>
             )}
 
@@ -392,83 +409,101 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Image Modal */}
-      <AnimatePresence>
-        {showImageModal && (course.helpImage || course.imageUrl) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setShowImageModal(false)}
-          >
+      {/* Image Modal - Full screen with scroll */}
+      {createPortal(
+        <AnimatePresence>
+          {showImageModal && (course.helpImage || course.imageUrl) && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-4xl max-h-[90vh] overflow-auto"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+              onClick={() => setShowImageModal(false)}
             >
-              <button
-                onClick={() => setShowImageModal(false)}
-                className="absolute top-2 right-2 z-10 p-2 bg-white/90 rounded-full shadow-lg hover:bg-white transition-colors"
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="relative w-full max-w-6xl max-h-[95vh] bg-white rounded-xl shadow-2xl overflow-hidden z-[10000]"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-5 h-5 text-gray-700" />
-              </button>
-              <img
-                src={(() => {
-                  const imageUrl = course.helpImage || course.imageUrl;
-                  return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
-                })()}
-                alt="Guide du module"
-                className="max-w-full max-h-[85vh] object-contain rounded-lg"
-                />
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-pink-50 to-rose-50">
+                  <h3 className="font-semibold text-pink-900 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    {course.name} - Image d'aide
+                  </h3>
+                  <button
+                    onClick={() => setShowImageModal(false)}
+                    className="p-2 hover:bg-pink-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-pink-700" />
+                  </button>
+                </div>
+                {/* Scrollable Image Container */}
+                <div className="overflow-auto p-6 flex items-center justify-center bg-gray-50" style={{ maxHeight: 'calc(95vh - 80px)' }}>
+                  <img
+                    src={(() => {
+                      const imageUrl = course.helpImage || course.imageUrl;
+                      return imageUrl.startsWith("http") ? imageUrl : `${API_URL?.replace('/api/v1', '')}${imageUrl}`;
+                    })()}
+                    alt="Guide du module"
+                    className="max-w-full h-auto object-contain rounded-lg shadow-lg"
+                  />
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-      {/* PDF Modal */}
-      <AnimatePresence>
-        {showPdfModal && course.helpPdf && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setShowPdfModal(false)}
-          >
+      {/* PDF Modal - Full screen with iframe */}
+      {createPortal(
+        <AnimatePresence>
+          {showPdfModal && course.helpPdf && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-5xl h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+              onClick={() => setShowPdfModal(false)}
             >
-              <div className="flex items-center justify-between p-4 border-b bg-purple-50">
-                <h3 className="font-semibold text-purple-800 flex items-center gap-2">
-                  <File className="w-5 h-5" />
-                  Document PDF - {course.name}
-                </h3>
-                <button
-                  onClick={() => setShowPdfModal(false)}
-                  className="p-2 hover:bg-purple-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-purple-700" />
-                </button>
-              </div>
-              <iframe
-                src={(() => {
-                  const pdfUrl = course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL?.replace('/api/v1', '')}${course.helpPdf}`;
-                  return `${pdfUrl}#view=FitH`;
-                })()}
-                className="w-full h-[calc(100%-60px)]"
-                title="PDF Viewer"
-              />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="relative w-full max-w-6xl h-[95vh] bg-white rounded-xl shadow-2xl overflow-hidden z-[10000]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-50 to-violet-50">
+                  <h3 className="font-semibold text-purple-900 flex items-center gap-2">
+                    <File className="w-5 h-5" />
+                    {course.name} - Document PDF
+                  </h3>
+                  <button
+                    onClick={() => setShowPdfModal(false)}
+                    className="p-2 hover:bg-purple-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-purple-700" />
+                  </button>
+                </div>
+                <div className="h-[calc(95vh-80px)] overflow-auto">
+                  <iframe
+                    src={(() => {
+                      const pdfUrl = course.helpPdf.startsWith("http") ? course.helpPdf : `${API_URL?.replace('/api/v1', '')}${course.helpPdf}`;
+                      return `${pdfUrl}#view=FitH`;
+                    })()}
+                    className="w-full h-full"
+                    title="PDF Viewer"
+                  />
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

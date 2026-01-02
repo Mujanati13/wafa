@@ -53,8 +53,18 @@ const Login = () => {
         return;
       }
 
-      // Store user data
+      // Store user data in both keys for consistency
       localStorage.setItem('user', JSON.stringify(result.user));
+      localStorage.setItem('userProfile', JSON.stringify(result.user));
+
+      // Fetch full profile to ensure we have latest data
+      try {
+        const fullProfile = await userService.getUserProfile(true);
+        localStorage.setItem('userProfile', JSON.stringify(fullProfile));
+        localStorage.setItem('user', JSON.stringify(fullProfile));
+      } catch (profileError) {
+        console.error('Error fetching full profile:', profileError);
+      }
 
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
@@ -99,8 +109,18 @@ const Login = () => {
     try {
       const result = await loginWithGoogle();
 
-      // Store user data
+      // Store user data in both keys for consistency
       localStorage.setItem('user', JSON.stringify(result.user));
+      localStorage.setItem('userProfile', JSON.stringify(result.user));
+
+      // Fetch full profile to ensure we have latest data
+      try {
+        const fullProfile = await userService.getUserProfile(true);
+        localStorage.setItem('userProfile', JSON.stringify(fullProfile));
+        localStorage.setItem('user', JSON.stringify(fullProfile));
+      } catch (profileError) {
+        console.error('Error fetching full profile:', profileError);
+      }
 
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
