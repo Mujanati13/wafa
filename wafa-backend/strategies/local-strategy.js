@@ -10,7 +10,11 @@ Passport.serializeUser((user, done) => {
 Passport.deserializeUser(async (id, done) => {
   try {
     const foundUser = await user.findById(id);
-    if (!foundUser) throw new Error("User not found");
+    if (!foundUser) {
+      // User no longer exists - clear the session
+      console.log("⚠️ Session user not found, clearing session");
+      return done(null, false);
+    }
 
     done(null, foundUser);
   } catch (error) {
@@ -21,8 +25,24 @@ Passport.deserializeUser(async (id, done) => {
 export default Passport.use(
   new Strategy({ usernameField: "email" }, async (email, password, done) => {
     try {
+      console.log("🔍 Login attempt - Email:", email);
+      console.log("🔍 Email type:", typeof email);
+      console.log("🔍 Email length:", email?.length);
+      
       const foundUser = await user.findOne({ email: email });
-      if (!foundUser) throw new Error("User not found");
+      console.log("🔍 User found:", foundUser ? "Yes" : "No");
+      
+      if (!foundUser) {
+        // Check if there are any users at all
+        const totalUsers = await user.countDocuments();
+        console.log("📊 Total users in DB:", totalUsers);
+        
+        // Try to find with trimmed email
+        const trimmedUser = await user.findOne({ email: email.trim() });
+        console.log("🔍 User found with trimmed email:", trimmedUser ? "Yes" : "No");
+        
+        throw new Error("User not found");
+      }
 
       // Check if email is verified
       if (!foundUser.emailVerified) {

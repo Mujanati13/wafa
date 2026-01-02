@@ -32,7 +32,7 @@ const storage = multer.diskStorage({
 
 const uploadModuleImage = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
     fileFilter: (req, file, cb) => {
         // Accept images and PDFs
         if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
