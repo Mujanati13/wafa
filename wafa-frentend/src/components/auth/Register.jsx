@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { registerWithEmail, loginWithGoogle } from '@/services/authService';
+import { userService } from '@/services/userService';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Register = () => {
@@ -146,6 +147,20 @@ const Register = () => {
       toast.success(t('auth:account_created'), {
         description: t('auth:account_created'),
       });
+
+      // Check if user needs to select free semester (new users via Google)
+      try {
+        const semesterStatus = await userService.checkFreeSemesterStatus();
+        if (semesterStatus.data?.needsToSelectSemester) {
+          setTimeout(() => {
+            navigate('/select-semester');
+          }, 1000);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking semester status:', error);
+        // Continue with normal flow if check fails
+      }
 
       // Redirect to dashboard
       setTimeout(() => {

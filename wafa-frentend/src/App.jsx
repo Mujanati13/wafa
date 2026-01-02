@@ -65,6 +65,7 @@ import LandingPageAdmin from "./pages/LandingPageAdmin";
 import PrivacyPolicyAdmin from "./pages/PrivacyPolicyAdmin";
 import ContactMessagesAdmin from "./pages/ContactMessagesAdmin";
 import StatisticsPage from "./pages/StatisticsPage";
+import SelectFreeSemester from "./pages/SelectFreeSemester";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
 import AdminLogin from "./components/auth/AdminLogin";
 import NotFound from "./pages/NotFound";
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="/terms-of-use" element={<TermsOfUsePage />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
+        <Route path="/select-semester" element={<SelectFreeSemester />} />
 
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route path="home" element={<Dashboard />} />

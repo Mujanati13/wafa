@@ -691,6 +691,110 @@ export const UserController = {
         });
     }),
 
+    // Select free semester for new users (one-time only)
+    selectFreeSemester: asyncHandler(async (req, res) => {
+        const userId = req.user._id;
+        const { semester } = req.body;
+
+        // Validate semester
+        const validSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
+        if (!semester || !validSemesters.includes(semester)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid semester. Please select a valid semester (S1-S10)"
+            });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Check if user already used their free semester selection
+        if (user.hasUsedFreeSemester) {
+            return res.status(400).json({
+                success: false,
+                message: "You have already selected your free semester. Upgrade to Premium for more access.",
+                alreadyUsed: true
+            });
+        }
+
+        // Check if user already has semesters (shouldn't happen, but extra check)
+        if (user.semesters && user.semesters.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "You already have semester access",
+                alreadyHasSemesters: true
+            });
+        }
+
+        // Grant the free semester
+        user.semesters = [semester];
+        user.hasUsedFreeSemester = true;
+        user.freeSemesterSelectedAt = new Date();
+        await user.save();
+
+        // Clear profile cache
+        try {
+            // Send notification about free semester
+            await NotificationController.createNotification(
+                userId,
+                "system",
+                "Semestre gratuit activé !",
+                `Vous avez maintenant accès au ${semester}. Profitez de votre apprentissage !`,
+                "/dashboard/home"
+            );
+        } catch (notifError) {
+            console.error("Error sending notification:", notifError);
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Free semester ${semester} has been activated!`,
+            data: {
+                user: {
+                    _id: user._id,
+                    semesters: user.semesters,
+                    hasUsedFreeSemester: user.hasUsedFreeSemester,
+                    plan: user.plan
+                }
+            }
+        });
+    }),
+
+    // Check if user needs to select free semester
+    checkFreeSemesterStatus: asyncHandler(async (req, res) => {
+        const userId = req.user._id;
+
+        const user = await User.findById(userId).select('semesters hasUsedFreeSemester plan');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const needsToSelectSemester = 
+            user.plan === "Free" && 
+            !user.hasUsedFreeSemester && 
+            (!user.semesters || user.semesters.length === 0);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                needsToSelectSemester,
+                hasUsedFreeSemester: user.hasUsedFreeSemester || false,
+                currentSemesters: user.semesters || [],
+                plan: user.plan
+            }
+        });
+    }),
+
     // Unlock achievement and send notification
     unlockAchievement: asyncHandler(async (req, res) => {
         const { userId, achievementName, achievementDescription } = req.body;

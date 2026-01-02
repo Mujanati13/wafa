@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
 import { dashboardService } from "@/services/dashboardService";
+import { userService } from "@/services/userService";
 import { useSemester } from "@/context/SemesterContext";
 import { Lock, Sparkles, TrendingUp, Award, Clock, HelpCircle, ChevronDown, ChevronLeft, ChevronRight, GraduationCap, UserPlus, BarChart3, Shield, RefreshCcw, Settings2, LineChart as LineChartIcon, Activity, BookOpen, FileText, Image as ImageIcon, Download, Book } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -69,6 +70,21 @@ const Dashboard = () => {
   const semestersPerPage = 2;
   const totalSemesterPages = Math.max(1, Math.ceil(userSemesters.length / semestersPerPage));
   const visibleSemesters = userSemesters.slice(semesterPage * semestersPerPage, (semesterPage + 1) * semestersPerPage);
+
+  // Check if user needs to select free semester on first load
+  useEffect(() => {
+    const checkFreeSemester = async () => {
+      try {
+        const response = await userService.checkFreeSemesterStatus();
+        if (response.data?.needsToSelectSemester) {
+          navigate('/select-semester');
+        }
+      } catch (error) {
+        console.error('Error checking free semester status:', error);
+      }
+    };
+    checkFreeSemester();
+  }, [navigate]);
 
   useEffect(() => {
     const fetchData = async () => {

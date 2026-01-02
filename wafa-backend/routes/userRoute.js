@@ -33,6 +33,10 @@ router.get("/my-stats", isAuthenticated, UserController.getMyStats);
 // Get user's subscription info (authenticated)
 router.get("/subscription-info", isAuthenticated, UserController.getSubscriptionInfo);
 
+// Free semester selection routes (authenticated)
+router.get("/free-semester-status", isAuthenticated, UserController.checkFreeSemesterStatus);
+router.post("/select-free-semester", isAuthenticated, UserController.selectFreeSemester);
+
 // Get leaderboard (public)
 router.get("/leaderboard", UserController.getLeaderboard);
 

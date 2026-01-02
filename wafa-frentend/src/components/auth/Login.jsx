@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { loginWithEmail, loginWithGoogle } from '@/services/authService';
+import { userService } from '@/services/userService';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Login = () => {
@@ -59,6 +60,22 @@ const Login = () => {
         description: t('auth:login_success'),
       });
 
+      // Check if user needs to select free semester (for non-admin free users)
+      if (!result.user?.isAdmin) {
+        try {
+          const semesterStatus = await userService.checkFreeSemesterStatus();
+          if (semesterStatus.data?.needsToSelectSemester) {
+            setTimeout(() => {
+              navigate('/select-semester');
+            }, 1000);
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking semester status:', error);
+          // Continue with normal flow if check fails
+        }
+      }
+
       // Redirect based on user role
       setTimeout(() => {
         if (result.user?.isAdmin) {
@@ -88,6 +105,22 @@ const Login = () => {
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
+
+      // Check if user needs to select free semester (for non-admin free users)
+      if (!result.user?.isAdmin) {
+        try {
+          const semesterStatus = await userService.checkFreeSemesterStatus();
+          if (semesterStatus.data?.needsToSelectSemester) {
+            setTimeout(() => {
+              navigate('/select-semester');
+            }, 1000);
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking semester status:', error);
+          // Continue with normal flow if check fails
+        }
+      }
 
       // Redirect based on user role
       setTimeout(() => {

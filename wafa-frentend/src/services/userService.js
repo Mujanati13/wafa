@@ -237,4 +237,28 @@ export const userService = {
             throw error;
         }
     },
+
+    // Check if user needs to select free semester
+    checkFreeSemesterStatus: async () => {
+        try {
+            const response = await api.get('/users/free-semester-status');
+            return response.data;
+        } catch (error) {
+            console.error('Error checking free semester status:', error);
+            throw error;
+        }
+    },
+
+    // Select free semester for new users
+    selectFreeSemester: async (semester) => {
+        try {
+            // Clear profile cache since we're updating the user
+            userService.clearProfileCache();
+            const response = await api.post('/users/select-free-semester', { semester });
+            return response.data;
+        } catch (error) {
+            console.error('Error selecting free semester:', error);
+            throw error;
+        }
+    },
 };

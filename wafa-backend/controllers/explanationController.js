@@ -119,34 +119,74 @@ export const explanationController = {
             .populate('userId', 'name email')
             .populate({
                 path: 'questionId',
-                select: 'text examId sessionLabel',
-                populate: {
-                    path: 'examId',
-                    select: 'name year moduleId category courseName totalQuestions linkedQuestions',
-                    populate: {
-                        path: 'moduleId',
-                        select: 'name category'
+                select: 'text examId sessionLabel qcmBanqueId',
+                populate: [
+                    {
+                        path: 'examId',
+                        select: 'name year moduleId category courseName totalQuestions linkedQuestions',
+                        populate: {
+                            path: 'moduleId',
+                            select: 'name category'
+                        }
+                    },
+                    {
+                        path: 'qcmBanqueId',
+                        select: 'name moduleId',
+                        populate: {
+                            path: 'moduleId',
+                            select: 'name category'
+                        }
                     }
-                }
+                ]
             })
             .lean();
 
+        // Import Question model to get question positions
+        const Question = (await import('../models/questionModule.js')).default;
+
         // Shape the data to include module and exam info
-        const shaped = explanations.map((item) => ({
-            ...item,
-            // Module info
-            moduleName: item.questionId?.examId?.moduleId?.name || null,
-            moduleCategory: item.questionId?.examId?.moduleId?.category || null,
-            // Exam/Course info
-            examName: item.questionId?.examId?.name || null,
-            examYear: item.questionId?.examId?.year || null,
-            courseCategory: item.questionId?.examId?.category || null,
-            courseName: item.questionId?.examId?.courseName || item.questionId?.examId?.name || null,
-            // Number of questions
-            numberOfQuestions: item.questionId?.examId?.totalQuestions ||
-                item.questionId?.examId?.linkedQuestions?.length || null,
-            // Question session label
-            sessionLabel: item.questionId?.sessionLabel || null,
+        const shaped = await Promise.all(explanations.map(async (item) => {
+            // Determine the source (exam or qcm banque)
+            const examSource = item.questionId?.examId;
+            const qcmSource = item.questionId?.qcmBanqueId;
+            const moduleSource = examSource?.moduleId || qcmSource?.moduleId;
+
+            // Get question number (position in exam)
+            let questionNumber = null;
+            if (item.questionId && (examSource?._id || qcmSource?._id)) {
+                const sourceId = examSource?._id || qcmSource?._id;
+                const sourceField = examSource?._id ? 'examId' : 'qcmBanqueId';
+                
+                // Find all questions for this exam/qcm and get the position
+                const allQuestions = await Question.find({ [sourceField]: sourceId })
+                    .select('_id')
+                    .sort({ createdAt: 1 })
+                    .lean();
+                
+                const questionIndex = allQuestions.findIndex(
+                    q => q._id.toString() === item.questionId._id.toString()
+                );
+                questionNumber = questionIndex !== -1 ? questionIndex + 1 : null;
+            }
+
+            return {
+                ...item,
+                // Question number
+                questionNumber,
+                // Module info
+                moduleName: moduleSource?.name || null,
+                moduleCategory: moduleSource?.category || null,
+                // Exam/Course info
+                examName: examSource?.name || qcmSource?.name || null,
+                examYear: examSource?.year || null,
+                courseCategory: examSource?.category || null,
+                courseName: examSource?.courseName || examSource?.name || qcmSource?.name || null,
+                // Number of questions in exam
+                numberOfQuestions: examSource?.totalQuestions ||
+                    examSource?.linkedQuestions?.length || null,
+                // Question session label
+                sessionLabel: item.questionId?.sessionLabel || null,
+            };
         }));
 
         res.status(200).json({

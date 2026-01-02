@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle, BookOpen, Plus, Upload, X } from "lucide-react";
+import { FileQuestion, Loader2, ChevronLeft, ChevronRight, CheckCircle2, Trash, MoreVertical, Eye, Edit, ImageIcon, AlertCircle, BookOpen, Plus, Upload, X, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +34,11 @@ const Explications = () => {
   const [explanations, setExplanations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [moduleFilter, setModuleFilter] = useState("all");
 
   // Popup state for question viewing
   const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
@@ -128,6 +133,7 @@ const Explications = () => {
         username: item?.userId?.email || "—",
         name: item?.userId?.name || "—",
         question: item?.questionId?.text || "—",
+        questionNumber: item?.questionNumber || null,
         explicationTitle: item?.title || "—",
         date: item?.createdAt
           ? new Date(item.createdAt).toISOString().slice(0, 10)
@@ -331,12 +337,6 @@ const Explications = () => {
     }
   };
 
-  // Calculate pagination
-  const totalPages = Math.max(1, Math.ceil(explanations.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentReports = explanations.slice(startIndex, endIndex);
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -399,6 +399,55 @@ const Explications = () => {
 
     return buttons;
   };
+
+  // Get unique modules for filter
+  const uniqueModules = useMemo(() => {
+    const modules = explanations.map(e => e.moduleName).filter(m => m && m !== "—");
+    return [...new Set(modules)];
+  }, [explanations]);
+
+  // Filter explanations based on search and filters
+  const filteredExplanations = useMemo(() => {
+    return explanations.filter(exp => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          exp.name?.toLowerCase().includes(query) ||
+          exp.username?.toLowerCase().includes(query) ||
+          exp.moduleName?.toLowerCase().includes(query) ||
+          exp.examName?.toLowerCase().includes(query) ||
+          exp.explicationTitle?.toLowerCase().includes(query) ||
+          exp.question?.toLowerCase().includes(query) ||
+          (exp.questionNumber && exp.questionNumber.toString().includes(query));
+        if (!matchesSearch) return false;
+      }
+
+      // Status filter
+      if (statusFilter !== "all" && exp.status !== statusFilter) {
+        return false;
+      }
+
+      // Module filter
+      if (moduleFilter !== "all" && exp.moduleName !== moduleFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [explanations, searchQuery, statusFilter, moduleFilter]);
+
+  // Calculate pagination using filtered data
+  const totalPages = Math.max(1, Math.ceil(filteredExplanations.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentReports = filteredExplanations.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, moduleFilter]);
+
   return (
     <div className="space-y-6 pb-10">
       {/* Header */}
@@ -448,7 +497,9 @@ const Explications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600">Approved</p>
-                  <p className="text-3xl font-bold text-green-900 mt-2">0</p>
+                  <p className="text-3xl font-bold text-green-900 mt-2">
+                    {explanations.filter(e => e.status === 'approved').length}
+                  </p>
                 </div>
                 <div className="p-3 bg-green-200 rounded-lg">
                   <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -468,7 +519,9 @@ const Explications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-600">Pending Review</p>
-                  <p className="text-3xl font-bold text-amber-900 mt-2">{explanations.length}</p>
+                  <p className="text-3xl font-bold text-amber-900 mt-2">
+                    {explanations.filter(e => e.status === 'pending').length}
+                  </p>
                 </div>
                 <div className="p-3 bg-amber-200 rounded-lg">
                   <AlertCircle className="w-6 h-6 text-amber-600" />
@@ -482,8 +535,52 @@ const Explications = () => {
       {/* Main Table Card */}
       <Card className="shadow-lg border-slate-200">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-          <CardTitle>All Explanations</CardTitle>
-          <CardDescription>View and manage all user-submitted explanations</CardDescription>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <CardTitle>All Explanations</CardTitle>
+              <CardDescription>View and manage all user-submitted explanations</CardDescription>
+            </div>
+            
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full sm:w-64"
+                />
+              </div>
+              
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="approved">Approuvé</SelectItem>
+                  <SelectItem value="rejected">Rejeté</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Module Filter */}
+              <Select value={moduleFilter} onValueChange={setModuleFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Module" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les modules</SelectItem>
+                  {uniqueModules.map(mod => (
+                    <SelectItem key={mod} value={mod}>{mod}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading && (
@@ -505,14 +602,25 @@ const Explications = () => {
             </div>
           )}
 
-          {!loading && !error && explanations.length === 0 && (
+          {!loading && !error && filteredExplanations.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12">
               <FileQuestion className="h-12 w-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 font-medium">No explanations found</p>
+              <p className="text-slate-500 font-medium">
+                {explanations.length === 0 ? "No explanations found" : "Aucun résultat pour cette recherche"}
+              </p>
+              {explanations.length > 0 && (
+                <Button 
+                  variant="link" 
+                  onClick={() => { setSearchQuery(""); setStatusFilter("all"); setModuleFilter("all"); }}
+                  className="mt-2"
+                >
+                  Réinitialiser les filtres
+                </Button>
+              )}
             </div>
           )}
 
-          {!loading && !error && explanations.length > 0 && (
+          {!loading && !error && filteredExplanations.length > 0 && (
             <>
               <div className="overflow-x-auto">
                 <Table>
@@ -522,11 +630,12 @@ const Explications = () => {
                       <TableHead className="font-semibold text-slate-700">Module</TableHead>
                       <TableHead className="font-semibold text-slate-700">Type d'Examen</TableHead>
                       <TableHead className="font-semibold text-slate-700">Examen / Cours</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Nb Questions</TableHead>
+                      <TableHead className="font-semibold text-slate-700">N° Question</TableHead>
                       <TableHead className="font-semibold text-slate-700">Question</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Title</TableHead>
-                      <TableHead className="font-semibold text-slate-700">Date</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Contenu</TableHead>
                       <TableHead className="font-semibold text-slate-700">Media</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Status</TableHead>
+                      <TableHead className="font-semibold text-slate-700">Date</TableHead>
                       <TableHead className="text-right font-semibold text-slate-700">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -585,9 +694,13 @@ const Explications = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium text-slate-600">
-                            {report.numberOfQuestions}
-                          </span>
+                          {report.questionNumber ? (
+                            <Badge className="bg-indigo-100 text-indigo-700 font-bold">
+                              Q{report.questionNumber}
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -598,18 +711,29 @@ const Explications = () => {
                             Voir la question
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-slate-700 border-slate-300">
-                            {report.explicationTitle || "—"}
-                          </Badge>
+                        <TableCell className="max-w-xs">
+                          {report.text ? (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-slate-700 truncate max-w-[200px]" title={report.explicationTitle}>
+                                {report.explicationTitle !== "—" ? report.explicationTitle : "Explication"}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate max-w-[200px]" title={report.text}>
+                                {report.text.length > 50 ? report.text.substring(0, 50) + "..." : report.text}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-sm">Pas de texte</span>
+                          )}
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600">{report.date}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 flex-wrap">
                             {report.images?.length > 0 && (
-                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+                              <Badge 
+                                className="bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+                                onClick={() => handleViewDetails(report)}
+                              >
                                 <ImageIcon className="h-3 w-3 mr-1" />
-                                {report.images.length}
+                                {report.images.length} img
                               </Badge>
                             )}
                             {report.pdfUrl && (
@@ -617,13 +741,24 @@ const Explications = () => {
                                 PDF
                               </Badge>
                             )}
-                            {report.text && (
-                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                                Text
-                              </Badge>
+                            {!report.images?.length && !report.pdfUrl && !report.text && (
+                              <span className="text-slate-400 text-xs">—</span>
                             )}
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <Badge className={cn(
+                            "capitalize",
+                            report.status === 'approved' && "bg-green-100 text-green-700",
+                            report.status === 'pending' && "bg-yellow-100 text-yellow-700",
+                            report.status === 'rejected' && "bg-red-100 text-red-700"
+                          )}>
+                            {report.status === 'approved' ? 'Approuvé' : 
+                             report.status === 'pending' ? 'En attente' : 
+                             report.status === 'rejected' ? 'Rejeté' : report.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-600">{report.date}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -677,8 +812,13 @@ const Explications = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200">
                   <p className="text-sm text-slate-600">
                     Showing <span className="font-semibold">{startIndex + 1}</span> to{" "}
-                    <span className="font-semibold">{Math.min(endIndex, explanations.length)}</span> of{" "}
-                    <span className="font-semibold">{explanations.length}</span> results
+                    <span className="font-semibold">{Math.min(endIndex, filteredExplanations.length)}</span> of{" "}
+                    <span className="font-semibold">{filteredExplanations.length}</span> results
+                    {filteredExplanations.length !== explanations.length && (
+                      <span className="text-slate-400 ml-1">
+                        (filtered from {explanations.length})
+                      </span>
+                    )}
                   </p>
                   <div className="flex items-center gap-2">
                     {renderPaginationButtons()}
@@ -744,28 +884,57 @@ const Explications = () => {
                   <p className="font-medium">{selectedExplanation.moduleName}</p>
                 </div>
                 <div>
+                  <p className="text-sm text-gray-500">N° Question</p>
+                  <p className="font-medium">
+                    {selectedExplanation.questionNumber ? (
+                      <Badge className="bg-indigo-100 text-indigo-700 font-bold">
+                        Q{selectedExplanation.questionNumber}
+                      </Badge>
+                    ) : "—"}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-gray-500">Date</p>
                   <p className="font-medium">{selectedExplanation.date}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Statut</p>
-                  <Badge className={selectedExplanation.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                    {selectedExplanation.status}
+                  <Badge className={cn(
+                    selectedExplanation.status === 'approved' ? 'bg-green-100 text-green-700' : 
+                    selectedExplanation.status === 'rejected' ? 'bg-red-100 text-red-700' : 
+                    'bg-yellow-100 text-yellow-700'
+                  )}>
+                    {selectedExplanation.status === 'approved' ? 'Approuvé' : 
+                     selectedExplanation.status === 'pending' ? 'En attente' : 
+                     selectedExplanation.status === 'rejected' ? 'Rejeté' : selectedExplanation.status}
                   </Badge>
                 </div>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Question</p>
-                <p className="font-medium mt-1">{selectedExplanation.question}</p>
+                <Card className="mt-1 bg-blue-50 border-blue-200">
+                  <CardContent className="p-3">
+                    <p className="text-sm whitespace-pre-wrap">{selectedExplanation.question}</p>
+                  </CardContent>
+                </Card>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Titre</p>
                 <p className="font-medium mt-1">{selectedExplanation.explicationTitle}</p>
               </div>
-              {selectedExplanation.text && (
+              {selectedExplanation.text ? (
+                <div>
+                  <p className="text-sm text-gray-500">Contenu de l'explication</p>
+                  <Card className="mt-1 bg-green-50 border-green-200">
+                    <CardContent className="p-3">
+                      <p className="text-sm whitespace-pre-wrap">{selectedExplanation.text}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
                 <div>
                   <p className="text-sm text-gray-500">Contenu</p>
-                  <p className="mt-1 whitespace-pre-wrap">{selectedExplanation.text}</p>
+                  <p className="text-sm text-slate-400 mt-1 italic">Aucun texte fourni</p>
                 </div>
               )}
               {/* Display Images */}
@@ -787,6 +956,10 @@ const Explications = () => {
                           src={fullImgUrl}
                           alt={`Image ${idx + 1}`}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = '<div class="flex items-center justify-center h-full bg-gray-100 text-gray-400 text-xs">Image non disponible</div>';
+                          }}
                         />
                       </a>
                       );

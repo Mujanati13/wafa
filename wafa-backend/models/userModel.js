@@ -146,6 +146,15 @@ const userSchema = new mongoose.Schema(
       enum: ["PayPal", "Bank Transfer", "Contact", "Manual", null],
       default: null,
     },
+    // Free semester selection tracking
+    hasUsedFreeSemester: {
+      type: Boolean,
+      default: false,
+    },
+    freeSemesterSelectedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
