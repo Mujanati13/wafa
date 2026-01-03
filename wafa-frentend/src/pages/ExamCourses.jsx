@@ -30,6 +30,7 @@ const ExamCourses = () => {
   const itemsPerPage = 8;
   const [moduleFilter, setModuleFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [semesterFilter, setSemesterFilter] = useState("all"); // Semester filter for table
   const [formSemesterFilter, setFormSemesterFilter] = useState("all"); // Semester filter for module selection
   const [useCustomCategory, setUseCustomCategory] = useState(false); // Toggle for custom category input
   const [imageFile, setImageFile] = useState(null); // File upload state
@@ -103,14 +104,17 @@ const ExamCourses = () => {
     return examCourses.filter((course) => {
       const passesModule = moduleFilter === "all" || course.moduleName === moduleFilter;
       const passesCategory = categoryFilter === "all" || course.category === categoryFilter;
+      // Check semester filter - find module and compare semester
+      const courseModule = modules.find(m => m.name === course.moduleName);
+      const passesSemester = semesterFilter === "all" || (courseModule && courseModule.semester === semesterFilter);
       const passesSearch =
         course.courseName.toLowerCase().includes(term) ||
         course.moduleName.toLowerCase().includes(term) ||
         course.category.toLowerCase().includes(term) ||
         String(course.id).includes(term);
-      return passesModule && passesCategory && passesSearch;
+      return passesModule && passesCategory && passesSemester && passesSearch;
     });
-  }, [searchTerm, moduleFilter, categoryFilter, examCourses]);
+  }, [searchTerm, moduleFilter, categoryFilter, semesterFilter, examCourses, modules]);
 
   const totalPages = Math.ceil(filteredCourses.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -124,7 +128,7 @@ const ExamCourses = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, moduleFilter, categoryFilter]);
+  }, [searchTerm, moduleFilter, categoryFilter, semesterFilter]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -380,11 +384,24 @@ const ExamCourses = () => {
             <CardDescription>{t('admin:search_manage_exam_courses')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input type="text" placeholder={t('admin:search_by_name_module_category')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
+              <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les semestres" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les semestres</SelectItem>
+                  {["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "EXT"].map((sem) => (
+                    <SelectItem key={sem} value={sem}>
+                      {sem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('admin:all_modules')} />

@@ -3,8 +3,8 @@ import asyncHandler from '../handlers/asyncHandler.js';
 import fs from 'fs';
 import path from 'path';
 
-// Helper function to save PDF locally
-const savePdfLocally = async (buffer, originalName) => {
+// Helper function to save document locally (PDF, images, Word)
+const saveDocumentLocally = async (buffer, originalName) => {
     const uploadDir = path.join(process.cwd(), 'uploads', 'resumes');
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -191,20 +191,20 @@ export const resumeController = {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                message: "PDF file is required"
+                message: "File is required (PDF, Image, or Word document)"
             });
         }
 
-        // Save PDF locally
+        // Save document locally
         let pdfUrl;
         try {
-            const uploadResult = await savePdfLocally(req.file.buffer, req.file.originalname);
+            const uploadResult = await saveDocumentLocally(req.file.buffer, req.file.originalname);
             pdfUrl = uploadResult.url;
         } catch (error) {
-            console.error("Error saving PDF:", error);
+            console.error("Error saving document:", error);
             return res.status(500).json({
                 success: false,
-                message: "Failed to upload PDF"
+                message: "Failed to upload document"
             });
         }
 

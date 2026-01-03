@@ -102,7 +102,7 @@ const ImportResumes = () => {
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append('file', file);
       formData.append('moduleId', selectedModule);
       formData.append('courseName', courseName.trim());
       formData.append('title', resumeName.trim());
@@ -210,13 +210,13 @@ const ImportResumes = () => {
                     Drop your file here or click to browse
                   </p>
                   <p className="text-sm text-gray-600">
-                    Supports PDF files only
+                    Supports PDF, Word (.doc, .docx), and Images (.jpg, .png, .gif, .webp)
                   </p>
                 </div>
                 <Input
                   id="file-upload"
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
                   onChange={handleFileChange}
                   className="hidden"
                 />

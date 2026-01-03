@@ -2,7 +2,7 @@ import { Router } from "express";
 import { resumeController } from "../controllers/resumeController.js";
 import validate from "../middleware/validateSchema.js";
 import resumeSchema from "../validators/ResumeSchema.js";
-import { uploadPDF } from "../middleware/uploadMiddleware.js";
+import { uploadDocument } from "../middleware/uploadMiddleware.js";
 import { isAuthenticated, isAdmin } from "../middleware/authMiddleware.js";
 
 const router = Router();
@@ -16,7 +16,7 @@ router.put("/:id", validate(resumeSchema), resumeController.update);
 router.delete("/:id", isAuthenticated, isAdmin, resumeController.delete);
 
 // Admin upload with file
-router.post("/admin-upload", isAuthenticated, isAdmin, uploadPDF.single('pdf'), resumeController.adminUpload);
+router.post("/admin-upload", isAuthenticated, isAdmin, uploadDocument.single('file'), resumeController.adminUpload);
 
 // Additional routes
 router.get("/question/:questionId", resumeController.getByQuestionId);

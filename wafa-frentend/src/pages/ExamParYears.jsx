@@ -208,14 +208,17 @@ const ExamParYears = () => {
     return exams.filter((exam) => {
       const passesModule = moduleFilter === "all" || exam.moduleName === moduleFilter;
       const passesYear = yearFilter === "all" || exam.year === yearFilter;
+      // Check semester filter - find module and compare semester
+      const examModule = modules.find(m => m.name === exam.moduleName);
+      const passesSemester = semesterFilter === "all" || (examModule && examModule.semester === semesterFilter);
       const passesSearch =
         exam.examName.toLowerCase().includes(term) ||
         exam.moduleName.toLowerCase().includes(term) ||
         exam.year.includes(term) ||
         String(exam.id).includes(term);
-      return passesModule && passesYear && passesSearch;
+      return passesModule && passesYear && passesSemester && passesSearch;
     });
-  }, [searchTerm, moduleFilter, yearFilter, exams]);
+  }, [searchTerm, moduleFilter, yearFilter, semesterFilter, exams, modules]);
 
   const totalPages = Math.ceil(filteredExams.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -229,7 +232,7 @@ const ExamParYears = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, moduleFilter, yearFilter]);
+  }, [searchTerm, moduleFilter, yearFilter, semesterFilter]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -313,11 +316,24 @@ const ExamParYears = () => {
             <CardDescription>Rechercher et gérer les examens par années</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input type="text" placeholder="Rechercher par nom, module ou année..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
+              <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les semestres" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les semestres</SelectItem>
+                  {["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "EXT"].map((sem) => (
+                    <SelectItem key={sem} value={sem}>
+                      {sem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les modules" />

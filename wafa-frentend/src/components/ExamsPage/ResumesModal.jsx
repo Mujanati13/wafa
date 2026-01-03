@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileText, Download, ExternalLink, Loader2, FolderOpen, BookOpen } from "lucide-react";
+import { X, FileText, Download, ExternalLink, Loader2, FolderOpen, BookOpen, Image as ImageIcon, FileType } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const ResumesModal = ({ isOpen, onClose, examData }) => {
   const { t } = useTranslation(['dashboard', 'common']);
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     if (isOpen && examData?.moduleId) {
@@ -44,6 +46,39 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
     acc[courseName].push(resume);
     return acc;
   }, {});
+
+  // Helper function to determine file type
+  const getFileType = (url) => {
+    if (!url) return 'unknown';
+    const extension = url.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) return 'image';
+    if (['doc', 'docx'].includes(extension)) return 'word';
+    if (extension === 'pdf') return 'pdf';
+    return 'document';
+  };
+
+  // Helper function to get appropriate icon
+  const getFileIcon = (fileType) => {
+    switch (fileType) {
+      case 'image':
+        return <ImageIcon className="h-4 w-4 text-purple-600" />;
+      case 'word':
+        return <FileType className="h-4 w-4 text-blue-600" />;
+      case 'pdf':
+        return <FileText className="h-4 w-4 text-red-600" />;
+      default:
+        return <FileText className="h-4 w-4 text-purple-600" />;
+    }
+  };
+
+  // Handle file viewing based on type
+  const handleViewFile = (resume, fileType, fullUrl) => {
+    if (fileType === 'image') {
+      setSelectedImage(fullUrl);
+    } else {
+      window.open(fullUrl, '_blank');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -132,53 +167,62 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
                     </div>
                     <div className="grid gap-2 pl-6">
                       {courseResumes.map((resume) => {
-                        const pdfFullUrl = resume.pdfUrl?.startsWith('http') ? resume.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${resume.pdfUrl}`;
+                        const fileFullUrl = resume.pdfUrl?.startsWith('http') ? resume.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${resume.pdfUrl}`;
+                        const fileType = getFileType(resume.pdfUrl);
                         return (
-                        <motion.div
-                          key={resume._id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-purple-50 hover:border-purple-200 transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white rounded-lg border group-hover:bg-purple-100 transition-colors">
-                              <FileText className="h-4 w-4 text-purple-600" />
+                          <motion.div
+                            key={resume._id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-purple-50 hover:border-purple-200 transition-colors group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-white rounded-lg border group-hover:bg-purple-100 transition-colors">
+                                {getFileIcon(fileType)}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 text-sm">
+                                  {resume.title}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(resume.createdAt).toLocaleDateString('fr-FR')}
+                                  </p>
+                                  {fileType !== 'pdf' && (
+                                    <Badge variant="outline" className="text-xs capitalize">
+                                      {fileType === 'word' ? 'Word' : fileType === 'image' ? 'Image' : 'Doc'}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">
-                                {resume.title}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(resume.createdAt).toLocaleDateString('fr-FR')}
-                              </p>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewFile(resume, fileType, fileFullUrl)}
+                                className="gap-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('common:view', 'Voir')}</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = fileFullUrl;
+                                  const ext = fileType === 'image' ? '.jpg' : fileType === 'word' ? '.docx' : '.pdf';
+                                  link.download = resume.title || `resume${ext}`;
+                                  link.click();
+                                }}
+                                className="gap-1.5 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('common:download', 'Télécharger')}</span>
+                              </Button>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(pdfFullUrl, '_blank')}
-                              className="gap-1.5 text-purple-600 hover:text-purple-700 hover:bg-purple-100"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('common:view', 'Voir')}</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = pdfFullUrl;
-                                link.download = resume.title || 'resume.pdf';
-                                link.click();
-                              }}
-                              className="gap-1.5 text-gray-600 hover:text-gray-700 hover:bg-gray-100"
-                            >
-                              <Download className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('common:download', 'Télécharger')}</span>
-                            </Button>
-                          </div>
-                        </motion.div>
+                          </motion.div>
                         );
                       })}
                     </div>
@@ -188,6 +232,27 @@ const ResumesModal = ({ isOpen, onClose, examData }) => {
             </div>
           </ScrollArea>
         </motion.div>
+
+        {/* Image Viewer Dialog */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+            <div className="relative bg-black">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              <img
+                src={selectedImage}
+                alt="Resume"
+                className="w-full h-auto max-h-[85vh] object-contain"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </AnimatePresence>
   );

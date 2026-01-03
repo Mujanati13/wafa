@@ -23,6 +23,25 @@ const pdfFilter = (req, file, cb) => {
   }
 };
 
+// File filter for documents (PDF, Images, Word)
+const documentFilter = (req, file, cb) => {
+  const allowedMimes = [
+    "application/pdf", // PDF
+    "image/jpeg", // JPEG
+    "image/jpg", // JPG
+    "image/png", // PNG
+    "image/gif", // GIF
+    "image/webp", // WebP
+    "application/msword", // .doc
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Veuillez télécharger un fichier valide (PDF, Image, ou Word)"), false);
+  }
+};
+
 // File filter for Excel files
 const excelFilter = (req, file, cb) => {
   const allowedMimes = [
@@ -53,6 +72,15 @@ export const uploadPDF = multer({
     fileSize: 10 * 1024 * 1024, // 10MB max for PDFs
   },
   fileFilter: pdfFilter,
+});
+
+// Upload middleware for documents (PDF, Images, Word)
+export const uploadDocument = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  },
+  fileFilter: documentFilter,
 });
 
 // Save profile picture locally
@@ -120,6 +148,7 @@ export const deleteFromLocalStorage = async (filename) => {
 export default {
   uploadProfilePicture,
   uploadPDF,
+  uploadDocument,
   saveProfilePictureLocally,
   deleteFromLocalStorage,
   uploadQuestionImages,

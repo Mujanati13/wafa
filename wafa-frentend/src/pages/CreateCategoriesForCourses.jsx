@@ -25,6 +25,7 @@ const CreateCategoriesForCourses = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [moduleFilter, setModuleFilter] = useState("all");
+  const [semesterFilter, setSemesterFilter] = useState("all");
   const itemsPerPage = 8;
 
   const [categoriesForCourses, setCategoriesForCourses] = useState([]);
@@ -103,6 +104,7 @@ const CreateCategoriesForCourses = () => {
         data.append("name", courseName);
         data.append("moduleId", formData.moduleId);
         data.append("category", formData.category);
+        data.append("status", "active");
         data.append("courseImage", imageFile);
 
         await api.post("/exam-courses/create-with-image", data, {
@@ -113,6 +115,7 @@ const CreateCategoriesForCourses = () => {
           name: courseName,
           moduleId: formData.moduleId,
           category: formData.category,
+          status: "active",
           imageUrl: formData.imageUrl || "",
         });
       }
@@ -161,6 +164,7 @@ const CreateCategoriesForCourses = () => {
       data.append("name", courseName);
       data.append("moduleId", formData.moduleId);
       data.append("category", formData.category);
+      data.append("status", "active");
       
       if (imageFile) {
         data.append("courseImage", imageFile);
@@ -203,13 +207,20 @@ const CreateCategoriesForCourses = () => {
     return categoriesForCourses.filter((item) => {
       const passesModule =
         moduleFilter === "all" || String(item.moduleId) === moduleFilter;
+      
+      // Get semester from module
+      const itemModule = modules.find(m => m._id === item.moduleId);
+      const itemSemester = itemModule?.semester || '';
+      const passesSemester =
+        semesterFilter === "all" || itemSemester === semesterFilter;
+      
       const passesSearch =
         item.moduleName.toLowerCase().includes(term) ||
         item.categoryCourseName.toLowerCase().includes(term) ||
         String(item.id).includes(term);
-      return passesModule && passesSearch;
+      return passesModule && passesSemester && passesSearch;
     });
-  }, [searchTerm, moduleFilter, categoriesForCourses]);
+  }, [searchTerm, moduleFilter, semesterFilter, categoriesForCourses, modules]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -223,7 +234,7 @@ const CreateCategoriesForCourses = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, moduleFilter]);
+  }, [searchTerm, moduleFilter, semesterFilter]);
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -330,7 +341,7 @@ const CreateCategoriesForCourses = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
@@ -341,6 +352,21 @@ const CreateCategoriesForCourses = () => {
                     className="pl-10 bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-black focus:ring-black"
                   />
                 </div>
+                <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                  <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-gray-200">
+                    <SelectItem value="all" className="text-black">All Semesters</SelectItem>
+                    <SelectItem value="S1" className="text-black">S1</SelectItem>
+                    <SelectItem value="S2" className="text-black">S2</SelectItem>
+                    <SelectItem value="S3" className="text-black">S3</SelectItem>
+                    <SelectItem value="S4" className="text-black">S4</SelectItem>
+                    <SelectItem value="S5" className="text-black">S5</SelectItem>
+                    <SelectItem value="S6" className="text-black">S6</SelectItem>
+                    <SelectItem value="EXT" className="text-black">EXT</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={moduleFilter} onValueChange={setModuleFilter}>
                   <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
                     <SelectValue placeholder="Select module" />
@@ -389,7 +415,6 @@ const CreateCategoriesForCourses = () => {
                         <tr className="border-b border-gray-200 bg-gray-50">
                           <th className="text-left py-4 px-6 font-semibold text-black">ID</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
-                          <th className="text-left py-4 px-6 font-semibold text-black">Nom du cours</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Catégorie</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Image</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Questions</th>
@@ -413,7 +438,6 @@ const CreateCategoriesForCourses = () => {
                                 </Badge>
                               </td>
                               <td className="py-4 px-6 text-black font-medium">{row.moduleName}</td>
-                              <td className="py-4 px-6 text-gray-700">{row.categoryCourseName}</td>
                               <td className="py-4 px-6">
                                 <Badge className="bg-blue-100 text-blue-700 border border-blue-200">
                                   {row.category}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, Save, Eye, Edit, HelpCircle, FileSpreadsheet, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Eye, Edit, HelpCircle, FileSpreadsheet, AlertTriangle, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,10 +115,26 @@ const AddQuestions = () => {
 
   // Filters for questions table
   const [filterModule, setFilterModule] = useState("all");
+  const [filterSemester, setFilterSemester] = useState("all"); // Semester filter for table
   const [filterExamType, setFilterExamType] = useState("all");
 
   // Selected questions for bulk operations
   const [selectedQuestions, setSelectedQuestions] = useState([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Calculate paginated questions
+  const totalPages = Math.ceil(examQuestions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedQuestions = examQuestions.slice(startIndex, endIndex);
+
+  // Reset to first page when questions change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [examQuestions.length, itemsPerPage]);
 
   // Toggle select all
   const handleSelectAll = (checked) => {
@@ -168,7 +184,19 @@ const AddQuestions = () => {
       let url = '/questions/all';
       const params = new URLSearchParams();
 
-      if (filterModule && filterModule !== 'all') params.append('moduleId', filterModule);
+      // If semester is selected but no module, get all modules for that semester and filter
+      if (filterSemester && filterSemester !== 'all') {
+        const semesterModules = modules.filter(m => m.semester === filterSemester);
+        if (filterModule && filterModule !== 'all') {
+          params.append('moduleId', filterModule);
+        } else {
+          // Send all module IDs for this semester
+          semesterModules.forEach(m => params.append('moduleIds', m._id));
+        }
+      } else if (filterModule && filterModule !== 'all') {
+        params.append('moduleId', filterModule);
+      }
+      
       if (filterExamType && filterExamType !== 'all') params.append('examType', filterExamType);
 
       if (params.toString()) {
@@ -190,7 +218,7 @@ const AddQuestions = () => {
     if (!hasContextSelected) {
       fetchAllQuestions();
     }
-  }, [filterModule, filterExamType]);
+  }, [filterModule, filterSemester, filterExamType, modules.length]);
 
   // Clear selections when questions change
   useEffect(() => {
@@ -342,7 +370,7 @@ const AddQuestions = () => {
     }
 
     try {
-      await api.delete(`/questions/${questionId}`);
+      await api.delete(`/questions/delete/${questionId}`);
       setExamQuestions(prev => prev.filter(q => (q._id || q.id) !== questionId));
       toast.success("Question supprimée avec succès");
     } catch (err) {
@@ -701,7 +729,27 @@ const AddQuestions = () => {
             {/* Filters - Only show when no context is selected */}
             {!hasContextSelected && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Filtrer par Semestre</Label>
+                    <Select value={filterSemester} onValueChange={(val) => {
+                      setFilterSemester(val);
+                      setFilterModule("all"); // Reset module when semester changes
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les semestres" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les semestres</SelectItem>
+                        {["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "EXT"].map((sem) => (
+                          <SelectItem key={sem} value={sem}>
+                            {sem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Filtrer par Module</Label>
                     <Select value={filterModule} onValueChange={setFilterModule}>
@@ -710,7 +758,7 @@ const AddQuestions = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tous les modules</SelectItem>
-                        {modules.map((m) => (
+                        {(filterSemester === "all" ? modules : modules.filter(m => m.semester === filterSemester)).map((m) => (
                           <SelectItem key={m._id} value={m._id}>
                             {m.name}
                           </SelectItem>
@@ -740,6 +788,7 @@ const AddQuestions = () => {
                       variant="outline"
                       className="w-full"
                       onClick={() => {
+                        setFilterSemester("all");
                         setFilterModule("all");
                         setFilterExamType("all");
                       }}
@@ -786,16 +835,16 @@ const AddQuestions = () => {
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Question</TableHead>
-                    <TableHead>Option A</TableHead>
-                    <TableHead>Option B</TableHead>
-                    <TableHead>Option C</TableHead>
-                    <TableHead>Option D</TableHead>
-                    <TableHead>Option E</TableHead>
-                    <TableHead>Insert</TableHead>
-                    <TableHead className="text-right">Operate</TableHead>
+                    <TableHead className="w-16">ID</TableHead>
+                    <TableHead className="w-20">Image</TableHead>
+                    <TableHead className="min-w-[200px] max-w-[250px]">Question</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Option A</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Option B</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Option C</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Option D</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Option E</TableHead>
+                    <TableHead className="w-24">Insert</TableHead>
+                    <TableHead className="w-28 text-right">Operate</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -813,7 +862,7 @@ const AddQuestions = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    examQuestions.map((q, idx) => (
+                    paginatedQuestions.map((q, idx) => (
                       <TableRow key={q._id || q.id}>
                         <TableCell>
                           <Checkbox
@@ -821,26 +870,48 @@ const AddQuestions = () => {
                             onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{idx + 1}</TableCell>
+                        <TableCell className="font-mono text-sm">{startIndex + idx + 1}</TableCell>
                         <TableCell>
                           {q.images?.length > 0 ? (
                             <Badge variant="outline" className="text-xs">
-                              {q.images.length} image(s)
+                              {q.images.length} img
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground text-sm">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate" title={q.text}>
-                          {q.text}
+                        <TableCell className="max-w-[250px]">
+                          <div className="line-clamp-2 text-sm" title={q.text}>
+                            {q.text}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-sm">{q.options?.[0]?.text || "—"}</TableCell>
-                        <TableCell className="text-sm">{q.options?.[1]?.text || "—"}</TableCell>
-                        <TableCell className="text-sm">{q.options?.[2]?.text || "—"}</TableCell>
-                        <TableCell className="text-sm">{q.options?.[3]?.text || "—"}</TableCell>
-                        <TableCell className="text-sm">{q.options?.[4]?.text || "—"}</TableCell>
+                        <TableCell className="max-w-[150px]">
+                          <div className="line-clamp-2 text-xs" title={q.options?.[0]?.text}>
+                            {q.options?.[0]?.text || "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[150px]">
+                          <div className="line-clamp-2 text-xs" title={q.options?.[1]?.text}>
+                            {q.options?.[1]?.text || "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[150px]">
+                          <div className="line-clamp-2 text-xs" title={q.options?.[2]?.text}>
+                            {q.options?.[2]?.text || "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[150px]">
+                          <div className="line-clamp-2 text-xs" title={q.options?.[3]?.text}>
+                            {q.options?.[3]?.text || "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[150px]">
+                          <div className="line-clamp-2 text-xs" title={q.options?.[4]?.text}>
+                            {q.options?.[4]?.text || "—"}
+                          </div>
+                        </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{q.sessionLabel || "—"}</Badge>
+                          <Badge variant="secondary" className="text-xs truncate max-w-[80px]">{q.sessionLabel || "—"}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -887,9 +958,96 @@ const AddQuestions = () => {
             </div>
           </CardContent>
           {examQuestions.length > 0 && (
-            <CardFooter className="border-t bg-slate-50/50">
+            <CardFooter className="border-t bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 py-4">
+              {/* Left side - Info */}
               <div className="text-sm text-muted-foreground">
-                Affichage de {examQuestions.length} questions
+                Affichage de {startIndex + 1} à {Math.min(endIndex, examQuestions.length)} sur {examQuestions.length} questions
+              </div>
+              
+              {/* Center - Items per page selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Afficher:</span>
+                <Select value={itemsPerPage.toString()} onValueChange={(val) => setItemsPerPage(parseInt(val))}>
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">par page</span>
+              </div>
+              
+              {/* Right side - Pagination controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="h-8 px-2"
+                >
+                  Début
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="h-8 w-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="h-8 px-2"
+                >
+                  Fin
+                </Button>
               </div>
             </CardFooter>
           )}
@@ -904,6 +1062,28 @@ const AddQuestions = () => {
                 <DialogDescription>Informations complètes de la question</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* Reference Information */}
+                <div className="space-y-2 pb-3 border-b">
+                  <Label className="text-sm font-semibold text-gray-700">Référence</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingQuestion.examId && (
+                      <Badge variant="outline" className="text-xs">
+                        Exam ID: {viewingQuestion.examId._id || viewingQuestion.examId}
+                      </Badge>
+                    )}
+                    {viewingQuestion.qcmBanqueId && (
+                      <Badge variant="outline" className="text-xs">
+                        QCM ID: {viewingQuestion.qcmBanqueId._id || viewingQuestion.qcmBanqueId}
+                      </Badge>
+                    )}
+                    {viewingQuestion.sessionLabel && (
+                      <Badge variant="secondary" className="text-xs">
+                        Niveau: {viewingQuestion.sessionLabel}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-gray-700">Question</Label>
                   <p className="text-gray-900 bg-gray-50 p-3 rounded border">{viewingQuestion.text}</p>
@@ -937,14 +1117,8 @@ const AddQuestions = () => {
                 </div>
                 {viewingQuestion.note && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-gray-700">Note</Label>
-                    <p className="text-gray-900 bg-gray-50 p-2 rounded border">{viewingQuestion.note}</p>
-                  </div>
-                )}
-                {viewingQuestion.sessionLabel && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-gray-700">Niveau</Label>
-                    <Badge variant="secondary">{viewingQuestion.sessionLabel}</Badge>
+                    <Label className="text-sm font-semibold text-gray-700">Note / Correction</Label>
+                    <p className="text-gray-900 bg-gray-50 p-2 rounded border whitespace-pre-wrap">{viewingQuestion.note}</p>
                   </div>
                 )}
               </div>
@@ -958,12 +1132,13 @@ const AddQuestions = () => {
         {/* Edit Question Dialog */}
         {showEditDialog && editingQuestion && (
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Modifier la Question</DialogTitle>
-                <DialogDescription>Modifiez les détails de la question</DialogDescription>
+                <DialogDescription>Modifiez les détails de la question et ses images</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* Question Text */}
                 <div className="space-y-2">
                   <Label>Question</Label>
                   <Textarea
@@ -972,6 +1147,58 @@ const AddQuestions = () => {
                     rows={4}
                   />
                 </div>
+                
+                {/* Current Images */}
+                {editingQuestion.images && editingQuestion.images.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Images actuelles</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {editingQuestion.images.map((img, idx) => (
+                        <div key={idx} className="relative group">
+                          <img 
+                            src={img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${img}`} 
+                            alt={`Image ${idx + 1}`} 
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              const newImages = editingQuestion.images.filter((_, i) => i !== idx);
+                              setEditingQuestion({ ...editingQuestion, images: newImages });
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Upload New Images */}
+                <div className="space-y-2">
+                  <Label>Ajouter des images</Label>
+                  <Input 
+                    type="file" 
+                    accept="image/*" 
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) {
+                        setEditingQuestion({ ...editingQuestion, newImageFiles: files });
+                      }
+                    }}
+                  />
+                  {editingQuestion.newImageFiles && editingQuestion.newImageFiles.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {editingQuestion.newImageFiles.length} nouveau(x) fichier(s) sélectionné(s)
+                    </p>
+                  )}
+                </div>
+                
+                {/* Options */}
                 <div className="space-y-3">
                   <Label>Options</Label>
                   {editingQuestion.options?.map((opt, idx) => (
@@ -997,12 +1224,25 @@ const AddQuestions = () => {
                     </div>
                   ))}
                 </div>
+                
+                {/* Session Label */}
                 <div className="space-y-2">
-                  <Label>Note (optionnel)</Label>
+                  <Label>Niveau / Session (optionnel)</Label>
+                  <Input
+                    value={editingQuestion.sessionLabel || ''}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, sessionLabel: e.target.value })}
+                    placeholder="Ex: Session 1, Niveau avancé, etc."
+                  />
+                </div>
+                
+                {/* Note / Correction */}
+                <div className="space-y-2">
+                  <Label>Note / Correction Excel (optionnel)</Label>
                   <Textarea
                     value={editingQuestion.note || ''}
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, note: e.target.value })}
-                    rows={3}
+                    rows={4}
+                    placeholder="Ajoutez des notes ou la correction de la question..."
                   />
                 </div>
               </div>
@@ -1010,11 +1250,42 @@ const AddQuestions = () => {
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>Annuler</Button>
                 <Button onClick={async () => {
                   try {
+                    // If new images were selected, upload them first
+                    let updatedImages = [...(editingQuestion.images || [])];
+                    
+                    if (editingQuestion.newImageFiles && editingQuestion.newImageFiles.length > 0) {
+                      const formData = new FormData();
+                      formData.append('questionId', editingQuestion._id || editingQuestion.id);
+                      editingQuestion.newImageFiles.forEach((file) => {
+                        formData.append('images', file);
+                      });
+                      
+                      try {
+                        const uploadResponse = await api.post('/questions/upload-images', formData, {
+                          headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        // Backend returns array of objects with url property
+                        const uploadedData = uploadResponse.data?.data;
+                        if (uploadedData && Array.isArray(uploadedData)) {
+                          const newImageUrls = uploadedData.map(img => img.url);
+                          updatedImages = [...updatedImages, ...newImageUrls];
+                        }
+                      } catch (uploadErr) {
+                        console.error('Error uploading images:', uploadErr);
+                        toast.error('Erreur lors du téléchargement des images');
+                        return; // Stop if upload fails
+                      }
+                    }
+                    
+                    // Update question with all data
                     await api.patch(`/questions/update/${editingQuestion._id || editingQuestion.id}`, {
                       text: editingQuestion.text,
                       options: editingQuestion.options,
-                      note: editingQuestion.note
+                      note: editingQuestion.note,
+                      sessionLabel: editingQuestion.sessionLabel,
+                      images: updatedImages
                     });
+                    
                     toast.success("Question mise à jour avec succès");
                     setShowEditDialog(false);
                     if (hasContextSelected) {

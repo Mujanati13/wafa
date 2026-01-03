@@ -29,6 +29,7 @@ const CategoriesOfModules = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterModule, setFilterModule] = useState("all");
+  const [filterSemester, setFilterSemester] = useState("all"); // Semester filter for table
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,12 +83,13 @@ const CategoriesOfModules = () => {
     return modulesWithCategories.filter((m) => {
       const passesCategory = filterCategory === "all" || m.displayCategory === filterCategory;
       const passesModule = filterModule === "all" || m._id === filterModule;
+      const passesSemester = filterSemester === "all" || m.semester === filterSemester;
       const passesSearch =
         m.name?.toLowerCase().includes(term) ||
         m.semester?.toLowerCase().includes(term);
-      return passesCategory && passesModule && passesSearch;
+      return passesCategory && passesModule && passesSemester && passesSearch;
     });
-  }, [searchTerm, filterCategory, filterModule, modulesWithCategories]);
+  }, [searchTerm, filterCategory, filterModule, filterSemester, modulesWithCategories]);
 
   const totalPages = Math.ceil(filteredModules.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -101,7 +103,7 @@ const CategoriesOfModules = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterCategory, filterModule]);
+  }, [searchTerm, filterCategory, filterModule, filterSemester]);
 
   // Stats
   const categoryStats = DEFAULT_CATEGORIES.map(cat => ({
@@ -278,7 +280,7 @@ const CategoriesOfModules = () => {
             <CardDescription>Modules organisés par les 3 catégories principales</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
@@ -289,6 +291,19 @@ const CategoriesOfModules = () => {
                   className="pl-10"
                 />
               </div>
+              <Select value={filterSemester} onValueChange={setFilterSemester}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tous les semestres" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les semestres</SelectItem>
+                  {["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "EXT"].map((sem) => (
+                    <SelectItem key={sem} value={sem}>
+                      {sem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={filterModule} onValueChange={setFilterModule}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les modules" />

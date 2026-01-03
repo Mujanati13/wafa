@@ -27,6 +27,7 @@ const QCMBanque = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const [moduleFilter, setModuleFilter] = useState("all");
+    const [semesterFilter, setSemesterFilter] = useState("all"); // Semester filter for table
     const [formSemesterFilter, setFormSemesterFilter] = useState("all");
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
@@ -236,13 +237,16 @@ const QCMBanque = () => {
         const term = searchTerm.toLowerCase();
         return qcmList.filter((qcm) => {
             const passesModule = moduleFilter === "all" || qcm.moduleId === moduleFilter;
+            // Check semester filter - find module and compare semester
+            const qcmModule = modules.find(m => m._id === qcm.moduleId);
+            const passesSemester = semesterFilter === "all" || (qcmModule && qcmModule.semester === semesterFilter);
             const passesSearch =
                 qcm.name.toLowerCase().includes(term) ||
                 qcm.moduleName.toLowerCase().includes(term) ||
                 String(qcm.id).includes(term);
-            return passesModule && passesSearch;
+            return passesModule && passesSemester && passesSearch;
         });
-    }, [searchTerm, moduleFilter, qcmList]);
+    }, [searchTerm, moduleFilter, semesterFilter, qcmList, modules]);
 
     const totalPages = Math.ceil(filteredQCMs.length / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -256,7 +260,7 @@ const QCMBanque = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, moduleFilter]);
+    }, [searchTerm, moduleFilter, semesterFilter]);
 
     const renderPagination = () => {
         if (totalPages <= 1) return null;
@@ -335,11 +339,24 @@ const QCMBanque = () => {
                         <CardDescription>Gérer les banques de QCM par module</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                 <Input type="text" placeholder="Rechercher par nom ou module..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
                             </div>
+                            <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Tous les semestres" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Tous les semestres</SelectItem>
+                                    {["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "EXT"].map((sem) => (
+                                        <SelectItem key={sem} value={sem}>
+                                            {sem}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <Select value={moduleFilter} onValueChange={setModuleFilter}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Tous les modules" />

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle } from "lucide-react";
+import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle, HelpCircle } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { api } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -57,7 +58,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
 };
 
 // Exam Card Component
-const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
+const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   
   // Helper function to adjust color
@@ -93,7 +94,22 @@ const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
         className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-0 shadow-md"
         onClick={() => onStart(exam.id, examType)}
       >
-        <CardContent className="p-0 h-full">
+        <CardContent className="p-0 h-full relative">
+          {/* Help button - top right corner */}
+          {exam.helpText && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2 h-8 w-8 p-0 z-10 hover:bg-blue-50 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowHelp(exam);
+              }}
+            >
+              <HelpCircle className="h-4 w-4 text-blue-600" />
+            </Button>
+          )}
+          
           <div className="flex items-center gap-4 p-4 sm:p-6">
             {/* Left side - Icon/Image with rounded corners */}
             <div className="flex-shrink-0">
@@ -126,13 +142,13 @@ const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
             </div>
 
             {/* Right side - Info */}
-            <div className="flex-1 min-w-0 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-2 leading-tight break-words">
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0 pr-6">
+                <h3 className="font-semibold text-gray-900 text-sm mb-1.5 leading-snug line-clamp-2">
                   {exam.name}
                 </h3>
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <FileQuestion className="h-4 w-4" />
+                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <FileQuestion className="h-3.5 w-3.5" />
                   <span className="font-semibold">{answeredQuestions}</span>
                   <span className="text-gray-400">/</span>
                   <span>{exam.questions}</span>
@@ -143,7 +159,7 @@ const ExamCard = ({ exam, onStart, index, moduleColor, examType }) => {
               <div className="flex-shrink-0">
                 <ProgressCircle 
                   progress={exam.progress || 0} 
-                  size={60} 
+                  size={52} 
                   color={moduleColor || '#f59e0b'} 
                 />
               </div>
@@ -165,6 +181,8 @@ const SubjectsPage = () => {
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
   const [moduleStats, setModuleStats] = useState(null);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [selectedHelpExam, setSelectedHelpExam] = useState(null);
 
   // Helper function to darken/lighten color (same as ModuleCard)
   function adjustColor(color, amount) {
@@ -279,7 +297,8 @@ const SubjectsPage = () => {
             progress: 0,
             category: "Exam par years",
             imageUrl: e.imageUrl,
-            year: e.year
+            year: e.year,
+            helpText: e.infoText || e.helpText || e.description || ""
           }));
 
           // Map QCM banque from /qcm-banque endpoint
@@ -289,7 +308,8 @@ const SubjectsPage = () => {
             questions: q.totalQuestions || 0,
             progress: 0,
             category: "QCM banque",
-            imageUrl: q.imageUrl
+            imageUrl: q.imageUrl,
+            helpText: q.infoText || q.helpText || q.description || ""
           }));
 
           // Also get exam-courses with category "Exam par years" as fallback
@@ -301,7 +321,8 @@ const SubjectsPage = () => {
               questions: c.totalQuestions || 0,
               progress: 0,
               category: c.category,
-              imageUrl: c.imageUrl
+              imageUrl: c.imageUrl,
+              helpText: c.infoText || c.helpText || c.description || ""
             }));
 
           // Get all exam courses that are NOT "Exam par years" and NOT "QCM banque"
@@ -314,7 +335,8 @@ const SubjectsPage = () => {
               questions: c.totalQuestions || 0,
               progress: 0,
               category: c.category, // Use the actual category for filtering
-              imageUrl: c.imageUrl
+              imageUrl: c.imageUrl,
+              helpText: c.infoText || c.helpText || c.description || ""
             }));
 
           // QCM from exam-courses as fallback
@@ -326,7 +348,8 @@ const SubjectsPage = () => {
               questions: c.totalQuestions || 0,
               progress: 0,
               category: c.category,
-              imageUrl: c.imageUrl
+              imageUrl: c.imageUrl,
+              helpText: c.infoText || c.helpText || c.description || ""
             }));
 
           // Combine sources - prioritize direct API sources
@@ -386,6 +409,11 @@ const SubjectsPage = () => {
   const filteredCourseExams = examsParCours.filter(
     (exam) => selectedCategory === "all" || exam.category === selectedCategory
   );
+
+  const handleShowHelp = (exam) => {
+    setSelectedHelpExam(exam);
+    setHelpModalOpen(true);
+  };
 
   const handleStartExam = (examId, type) => {
     // Include the exam type in the URL for ExamPage to use the correct API endpoint
@@ -608,6 +636,7 @@ const SubjectsPage = () => {
                     key={exam.id}
                     exam={exam}
                     onStart={handleStartExam}
+                    onShowHelp={handleShowHelp}
                     index={index}
                     moduleColor={module?.color}
                     examType="year"
@@ -635,6 +664,7 @@ const SubjectsPage = () => {
                     key={exam.id}
                     exam={exam}
                     onStart={handleStartExam}
+                    onShowHelp={handleShowHelp}
                     index={index}
                     moduleColor={module?.color}
                     examType="course"
@@ -667,6 +697,7 @@ const SubjectsPage = () => {
                     key={exam.id}
                     exam={exam}
                     onStart={handleStartExam}
+                    onShowHelp={handleShowHelp}
                     index={index}
                     moduleColor={module?.color}
                     examType="qcm"
@@ -689,6 +720,30 @@ const SubjectsPage = () => {
           </div>
         </Tabs>
       </div>
+
+      {/* Help Modal */}
+      <Dialog open={helpModalOpen} onOpenChange={setHelpModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-blue-600" />
+              {selectedHelpExam?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Informations d'aide pour cet examen
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {selectedHelpExam?.helpText ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-gray-900 whitespace-pre-wrap">{selectedHelpExam.helpText}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">Aucune information d'aide disponible pour cet examen.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

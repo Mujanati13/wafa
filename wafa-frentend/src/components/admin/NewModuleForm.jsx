@@ -52,6 +52,9 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
   const { t } = useTranslation(["admin"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#6366f1");
+  const [gradientColor, setGradientColor] = useState("");
+  const [gradientDirection, setGradientDirection] = useState("to-br");
+  const [useGradient, setUseGradient] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [difficulty, setDifficulty] = useState("QE");
   
@@ -114,6 +117,8 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
       formData.append("semester", data.semester);
       formData.append("difficulty", difficulty);
       formData.append("color", selectedColor);
+      formData.append("gradientColor", useGradient ? gradientColor : "");
+      formData.append("gradientDirection", gradientDirection);
       formData.append("contentType", data.textContent ? "text" : "url");
       
       if (data.infoText) formData.append("infoText", data.infoText);
@@ -272,7 +277,7 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 gap-5">
                     {/* Color Picker */}
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-gray-900">Couleur du Module</Label>
@@ -316,22 +321,84 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                                   value={selectedColor}
                                   onChange={(e) => setSelectedColor(e.target.value)}
                                   className="flex-1 h-9 text-sm font-mono"
+                                  placeholder="#6366f1"
                                 />
                               </div>
                             </div>
                           </div>
                         </PopoverContent>
                       </Popover>
+                      
+                      {/* Gradient Toggle */}
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="useGradient"
+                          checked={useGradient}
+                          onChange={(e) => setUseGradient(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                        />
+                        <Label htmlFor="useGradient" className="text-sm font-medium cursor-pointer">
+                          Utiliser un dégradé
+                        </Label>
+                      </div>
+
+                      {/* Gradient Color Picker */}
+                      {useGradient && (
+                        <div className="space-y-3 pl-4 border-l-2 border-blue-200">
+                          <Label className="text-sm font-semibold text-gray-900">Couleur de dégradé</Label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={gradientColor || "#8b5cf6"}
+                              onChange={(e) => setGradientColor(e.target.value)}
+                              className="w-10 h-9 rounded-lg border cursor-pointer"
+                            />
+                            <Input
+                              type="text"
+                              value={gradientColor}
+                              onChange={(e) => setGradientColor(e.target.value)}
+                              className="flex-1 h-9 text-sm font-mono"
+                              placeholder="#8b5cf6"
+                            />
+                          </div>
+                          
+                          {/* Gradient Direction */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-gray-900">Direction du dégradé</Label>
+                            <Select value={gradientDirection} onValueChange={setGradientDirection}>
+                              <SelectTrigger className="h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="to-br">↘ Bas Droite</SelectItem>
+                                <SelectItem value="to-tr">↗ Haut Droite</SelectItem>
+                                <SelectItem value="to-bl">↙ Bas Gauche</SelectItem>
+                                <SelectItem value="to-tl">↖ Haut Gauche</SelectItem>
+                                <SelectItem value="to-r">→ Droite</SelectItem>
+                                <SelectItem value="to-l">← Gauche</SelectItem>
+                                <SelectItem value="to-b">↓ Bas</SelectItem>
+                                <SelectItem value="to-t">↑ Haut</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="p-4 rounded-lg border-2 border-dashed flex items-center gap-3">
                         <div
                           className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md"
-                          style={{ backgroundColor: selectedColor }}
+                          style={{
+                            background: useGradient && gradientColor
+                              ? `linear-gradient(${gradientDirection.replace('to-', 'to ')}, ${selectedColor}, ${gradientColor})`
+                              : selectedColor
+                          }}
                         >
                           M
                         </div>
                         <div className="text-sm">
                           <p className="font-semibold text-gray-900">Aperçu de la carte</p>
-                          <p className="text-gray-600">Le module s'affichera avec cette couleur</p>
+                          <p className="text-gray-600">{useGradient ? "Dégradé" : "Couleur unie"}</p>
                         </div>
                       </div>
                     </div>

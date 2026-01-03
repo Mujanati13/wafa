@@ -34,6 +34,17 @@ const moduleSchema = new mongoose.Schema(
                 type: String,
                 default: "#6366f1", // Default indigo color
         },
+        // Gradient color (optional second color for gradient effect)
+        gradientColor: {
+                type: String,
+                default: "", // Empty means no gradient, just solid color
+        },
+        // Gradient direction
+        gradientDirection: {
+                type: String,
+                enum: ["to-br", "to-tr", "to-bl", "to-tl", "to-r", "to-l", "to-b", "to-t"],
+                default: "to-br", // to bottom right
+        },
         // Help content for the help modal (text)
         helpContent: {
                 type: String,
