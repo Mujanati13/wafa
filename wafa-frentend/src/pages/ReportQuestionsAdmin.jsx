@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from 'react-i18next';
-import { FileQuestion, Trash2, Check, AlertCircle, FilePenLine, Loader2, Eye, X, BookOpen, Calendar, Hash, Layers, ChevronDown } from "lucide-react";
+import { FileQuestion, Trash2, Check, AlertCircle, FilePenLine, Loader2, Eye, X, BookOpen, Calendar, Hash, Layers, ChevronDown, Search, Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { PageHeader, StatCard, TableFilters } from "@/components/shared";
+import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
@@ -28,6 +28,8 @@ const ReportQuestionsAdmin = () => {
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [moduleFilter, setModuleFilter] = useState("all");
+  const [userFilter, setUserFilter] = useState("all");
 
   // Dialog states
   const [selectedReport, setSelectedReport] = useState(null);
@@ -144,12 +146,31 @@ const ReportQuestionsAdmin = () => {
     }
   };
 
-  // Filter reports based on search, date, status, and category
+  // Get unique values for filters
+  const uniqueModules = [...new Set(reports.map(r => r.moduleName).filter(m => m && m !== "—"))].sort();
+  const uniqueUsers = [...new Set(reports.map(r => r.username).filter(u => u && u !== "—"))].sort();
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchTerm("");
+    setDateFrom("");
+    setDateTo("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+    setModuleFilter("all");
+    setUserFilter("all");
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = searchTerm || dateFrom || dateTo || statusFilter !== "all" || categoryFilter !== "all" || moduleFilter !== "all" || userFilter !== "all";
+
+  // Filter reports based on search, date, status, category, module, and user
   const filteredReports = reports.filter((report) => {
     const matchesSearch =
       report.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.question?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.moduleName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.examName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.text?.toLowerCase().includes(searchTerm.toLowerCase());
 
     let matchesDate = true;
@@ -162,8 +183,10 @@ const ReportQuestionsAdmin = () => {
 
     const matchesStatus = statusFilter === "all" || report.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || report.moduleCategory === categoryFilter;
+    const matchesModule = moduleFilter === "all" || report.moduleName === moduleFilter;
+    const matchesUser = userFilter === "all" || report.username === userFilter;
 
-    return matchesSearch && matchesDate && matchesStatus && matchesCategory;
+    return matchesSearch && matchesDate && matchesStatus && matchesCategory && matchesModule && matchesUser;
   });
 
   // Pagination calculations
@@ -272,31 +295,39 @@ const ReportQuestionsAdmin = () => {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="shadow-lg border-slate-200">
           <CardContent className="p-4">
             <div className="space-y-4">
-              {/* Search and Date Filters */}
-              <TableFilters
-                onSearch={setSearchTerm}
-                onDateChange={(from, to) => {
-                  setDateFrom(from);
-                  setDateTo(to);
-                }}
-                placeholder="Rechercher par utilisateur, question, module..."
-                showYearFilter={false}
-              />
+              {/* Row 1: Search */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Rechercher par utilisateur, question, module, examen..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-full"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={fetchReports}
+                  title="Rafraîchir"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
 
-              {/* Status and Category Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Row 2: Main Filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Status Filter */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Statut
-                  </label>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Statut</Label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                   >
                     <option value="all">Tous les statuts</option>
                     <option value="pending">En attente</option>
@@ -306,14 +337,12 @@ const ReportQuestionsAdmin = () => {
                 </div>
 
                 {/* Category Filter */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Type d'Examen
-                  </label>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Type d'Examen</Label>
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
                   >
                     <option value="all">Tous les types</option>
                     <option value="Exam par years">Exam par years</option>
@@ -322,7 +351,120 @@ const ReportQuestionsAdmin = () => {
                     <option value="Résumé et cours">Résumé et cours</option>
                   </select>
                 </div>
+
+                {/* Module Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Module</Label>
+                  <select
+                    value={moduleFilter}
+                    onChange={(e) => setModuleFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                  >
+                    <option value="all">Tous les modules</option>
+                    {uniqueModules.map(mod => (
+                      <option key={mod} value={mod}>{mod}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* User Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Utilisateur</Label>
+                  <select
+                    value={userFilter}
+                    onChange={(e) => setUserFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm"
+                  >
+                    <option value="all">Tous les utilisateurs</option>
+                    {uniqueUsers.map(user => (
+                      <option key={user} value={user}>{user}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              {/* Row 3: Date Range */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Date début</Label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Date fin</Label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="lg:col-span-2 flex items-end">
+                  {hasActiveFilters && (
+                    <Button
+                      variant="ghost"
+                      onClick={resetFilters}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Réinitialiser les filtres
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Active Filters Display */}
+              {hasActiveFilters && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+                  <span className="text-sm text-slate-500">Filtres actifs:</span>
+                  {searchTerm && (
+                    <Badge variant="secondary" className="gap-1">
+                      Recherche: {searchTerm.length > 15 ? searchTerm.substring(0, 15) + '...' : searchTerm}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchTerm("")} />
+                    </Badge>
+                  )}
+                  {statusFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Statut: {statusFilter === 'pending' ? 'En attente' : statusFilter === 'resolved' ? 'Résolu' : 'Rejeté'}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter("all")} />
+                    </Badge>
+                  )}
+                  {categoryFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Type: {categoryFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setCategoryFilter("all")} />
+                    </Badge>
+                  )}
+                  {moduleFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Module: {moduleFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setModuleFilter("all")} />
+                    </Badge>
+                  )}
+                  {userFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Utilisateur: {userFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setUserFilter("all")} />
+                    </Badge>
+                  )}
+                  {dateFrom && (
+                    <Badge variant="secondary" className="gap-1">
+                      Depuis: {dateFrom}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setDateFrom("")} />
+                    </Badge>
+                  )}
+                  {dateTo && (
+                    <Badge variant="secondary" className="gap-1">
+                      Jusqu'à: {dateTo}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setDateTo("")} />
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

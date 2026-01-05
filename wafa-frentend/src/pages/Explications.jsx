@@ -39,6 +39,10 @@ const Explications = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [moduleFilter, setModuleFilter] = useState("all");
+  const [examTypeFilter, setExamTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
 
   // Popup state for question viewing
   const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
@@ -403,7 +407,21 @@ const Explications = () => {
   // Get unique modules for filter
   const uniqueModules = useMemo(() => {
     const modules = explanations.map(e => e.moduleName).filter(m => m && m !== "—");
-    return [...new Set(modules)];
+    return [...new Set(modules)].sort();
+  }, [explanations]);
+
+  // Get unique exam types for filter
+  const uniqueExamTypes = useMemo(() => {
+    const types = explanations.map(e => e.moduleCategory).filter(t => t && t !== "—");
+    return [...new Set(types)];
+  }, [explanations]);
+
+  // Get unique users for filter
+  const uniqueUsers = useMemo(() => {
+    const users = explanations.map(e => ({ name: e.name, email: e.username })).filter(u => u.name && u.name !== "—");
+    const uniqueMap = new Map();
+    users.forEach(u => uniqueMap.set(u.email, u));
+    return Array.from(uniqueMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [explanations]);
 
   // Filter explanations based on search and filters
@@ -433,9 +451,27 @@ const Explications = () => {
         return false;
       }
 
+      // Exam type filter
+      if (examTypeFilter !== "all" && exp.moduleCategory !== examTypeFilter) {
+        return false;
+      }
+
+      // User filter
+      if (userFilter !== "all" && exp.username !== userFilter) {
+        return false;
+      }
+
+      // Date range filter
+      if (dateFrom && exp.date < dateFrom) {
+        return false;
+      }
+      if (dateTo && exp.date > dateTo) {
+        return false;
+      }
+
       return true;
     });
-  }, [explanations, searchQuery, statusFilter, moduleFilter]);
+  }, [explanations, searchQuery, statusFilter, moduleFilter, examTypeFilter, userFilter, dateFrom, dateTo]);
 
   // Calculate pagination using filtered data
   const totalPages = Math.max(1, Math.ceil(filteredExplanations.length / itemsPerPage));
@@ -446,7 +482,18 @@ const Explications = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, moduleFilter]);
+  }, [searchQuery, statusFilter, moduleFilter, examTypeFilter, userFilter, dateFrom, dateTo]);
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setModuleFilter("all");
+    setExamTypeFilter("all");
+    setUserFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   return (
     <div className="space-y-6 pb-10">
@@ -541,22 +588,36 @@ const Explications = () => {
               <CardDescription>View and manage all user-submitted explanations</CardDescription>
             </div>
             
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Filters Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('filters-section').classList.toggle('hidden')}
+              className="gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filtres
+            </Button>
+          </div>
+          
+          {/* Expanded Filters Section */}
+          <div id="filters-section" className="pt-4 border-t border-slate-200 space-y-4">
+            {/* Row 1: Search and Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Search Input */}
-              <div className="relative">
+              <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Rechercher..."
+                  placeholder="Rechercher par nom, email, module, question..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-64"
+                  className="pl-9 w-full"
                 />
               </div>
               
               {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger>
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -567,9 +628,25 @@ const Explications = () => {
                 </SelectContent>
               </Select>
 
+              {/* Exam Type Filter */}
+              <Select value={examTypeFilter} onValueChange={setExamTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Type d'examen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  <SelectItem value="Exam par years">Exam par years</SelectItem>
+                  <SelectItem value="Exam par courses">Exam par courses</SelectItem>
+                  <SelectItem value="QCM banque">QCM banque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Row 2: Module, User, Date Range */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Module Filter */}
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger>
                   <SelectValue placeholder="Module" />
                 </SelectTrigger>
                 <SelectContent>
@@ -579,6 +656,95 @@ const Explications = () => {
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* User Filter */}
+              <Select value={userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Utilisateur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les utilisateurs</SelectItem>
+                  {uniqueUsers.map(user => (
+                    <SelectItem key={user.email} value={user.email}>{user.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Date From */}
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Date début</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Date fin</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Active Filters & Reset */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(searchQuery || statusFilter !== "all" || moduleFilter !== "all" || examTypeFilter !== "all" || userFilter !== "all" || dateFrom || dateTo) && (
+                <>
+                  <span className="text-sm text-slate-500">Filtres actifs:</span>
+                  {searchQuery && (
+                    <Badge variant="secondary" className="gap-1">
+                      Recherche: {searchQuery}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                    </Badge>
+                  )}
+                  {statusFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Statut: {statusFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter("all")} />
+                    </Badge>
+                  )}
+                  {moduleFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Module: {moduleFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setModuleFilter("all")} />
+                    </Badge>
+                  )}
+                  {examTypeFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Type: {examTypeFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setExamTypeFilter("all")} />
+                    </Badge>
+                  )}
+                  {userFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Utilisateur: {uniqueUsers.find(u => u.email === userFilter)?.name || userFilter}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setUserFilter("all")} />
+                    </Badge>
+                  )}
+                  {dateFrom && (
+                    <Badge variant="secondary" className="gap-1">
+                      Depuis: {dateFrom}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setDateFrom("")} />
+                    </Badge>
+                  )}
+                  {dateTo && (
+                    <Badge variant="secondary" className="gap-1">
+                      Jusqu'à: {dateTo}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setDateTo("")} />
+                    </Badge>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    Réinitialiser tout
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -611,7 +777,7 @@ const Explications = () => {
               {explanations.length > 0 && (
                 <Button 
                   variant="link" 
-                  onClick={() => { setSearchQuery(""); setStatusFilter("all"); setModuleFilter("all"); }}
+                  onClick={resetFilters}
                   className="mt-2"
                 >
                   Réinitialiser les filtres
