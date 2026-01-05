@@ -20,6 +20,7 @@ import landingPageSettingsRoute from "./landingPageSettingsRoute.js";
 import examCourseRoute from "./examCourseRoute.js";
 import settingsRoute from "./settingsRoute.js";
 import qcmBanqueRoute from "./qcmBanqueRoute.js";
+import courseCategoryRoute from "./courseCategoryRoute.js";
 
 const router = Router();
 
@@ -42,6 +43,7 @@ router.use("/subscription-plans", subscriptionPlanRoute);
 router.use("/paypal-settings", paypalSettingsRoute);
 router.use("/landing-settings", landingPageSettingsRoute);
 router.use("/exam-courses", examCourseRoute);
+router.use("/course-categories", courseCategoryRoute);
 router.use("/settings", settingsRoute);
 
 export default router;

@@ -26,6 +26,7 @@ export default Passport.use(
   new Strategy({ usernameField: "email" }, async (email, password, done) => {
     try {
       console.log("🔍 Login attempt - Email:", email);
+      console.log("🔍 Password received:", password ? "Yes (length: " + password.length + ")" : "No/Empty");
       console.log("🔍 Email type:", typeof email);
       console.log("🔍 Email length:", email?.length);
       
@@ -47,6 +48,17 @@ export default Passport.use(
       // Check if email is verified
       if (!foundUser.emailVerified) {
         throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
+      }
+
+      // Check if password exists in user document
+      if (!foundUser.password) {
+        console.log("❌ User has no password field - might be a Google/Firebase user");
+        throw new Error("This account uses Google sign-in. Please sign in with Google.");
+      }
+
+      // Ensure password from request exists
+      if (!password) {
+        throw new Error("Password is required");
       }
 
       const comparePassword = await bcrypt.compare(

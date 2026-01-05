@@ -33,11 +33,26 @@ import {
 } from "../ui/popover";
 import { api } from "@/lib/utils";
 
-// Preset colors for module cards
-const PRESET_COLORS = [
-  "#6366f1", "#8b5cf6", "#a855f7", "#ec4899", "#ef4444", "#f97316",
-  "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#10b981", "#14b8a6",
-  "#06b6d4", "#0ea5e9", "#3b82f6", "#6b7280",
+// Simple color choices
+const SIMPLE_COLORS = [
+  { color: "#3b82f6", name: "Bleu" },
+  { color: "#8b5cf6", name: "Violet" },
+  { color: "#ec4899", name: "Rose" },
+  { color: "#ef4444", name: "Rouge" },
+  { color: "#f97316", name: "Orange" },
+  { color: "#22c55e", name: "Vert" },
+  { color: "#06b6d4", name: "Cyan" },
+  { color: "#6b7280", name: "Gris" },
+];
+
+// Simple gradient choices
+const SIMPLE_GRADIENTS = [
+  { name: "Océan", from: "#0ea5e9", to: "#3b82f6", direction: "to-br" },
+  { name: "Coucher", from: "#f97316", to: "#ec4899", direction: "to-br" },
+  { name: "Forêt", from: "#22c55e", to: "#14b8a6", direction: "to-br" },
+  { name: "Violet", from: "#8b5cf6", to: "#ec4899", direction: "to-br" },
+  { name: "Feu", from: "#ef4444", to: "#f97316", direction: "to-br" },
+  { name: "Menthe", from: "#10b981", to: "#06b6d4", direction: "to-br" },
 ];
 
 // Difficulty levels
@@ -278,116 +293,119 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                   </div>
 
                   <div className="grid grid-cols-1 gap-5">
-                    {/* Color Picker */}
+                    {/* Simple Color Picker */}
                     <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-gray-900">Couleur du Module</Label>
-                      <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
-                        <PopoverTrigger asChild>
-                          <Button type="button" variant="outline" className="w-full justify-start gap-3 h-11">
-                            <div className="w-6 h-6 rounded-lg border-2" style={{ backgroundColor: selectedColor }} />
-                            <span className="font-mono">{selectedColor}</span>
-                            <Palette className="w-4 h-4 ml-auto text-gray-400" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-4 z-[100001]" align="start">
-                          <div className="space-y-4">
-                            <span className="text-sm font-semibold">Couleurs prédéfinies</span>
-                            <div className="grid grid-cols-8 gap-2">
-                              {PRESET_COLORS.map((color) => (
-                                <button
-                                  key={color}
-                                  type="button"
-                                  className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${
-                                    selectedColor === color ? "border-gray-900 ring-2 ring-blue-300" : "border-gray-300"
-                                  }`}
-                                  style={{ backgroundColor: color }}
-                                  onClick={() => { setSelectedColor(color); setShowColorPicker(false); }}
-                                >
-                                  {selectedColor === color && <Check className="w-4 h-4 text-white mx-auto" />}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="pt-3 border-t">
-                              <Label className="text-xs mb-2 block">Couleur personnalisée</Label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="color"
-                                  value={selectedColor}
-                                  onChange={(e) => setSelectedColor(e.target.value)}
-                                  className="w-10 h-9 rounded-lg border cursor-pointer"
-                                />
-                                <Input
-                                  type="text"
-                                  value={selectedColor}
-                                  onChange={(e) => setSelectedColor(e.target.value)}
-                                  className="flex-1 h-9 text-sm font-mono"
-                                  placeholder="#6366f1"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <Label className="text-sm font-semibold text-gray-900">Choisir une couleur</Label>
                       
-                      {/* Gradient Toggle */}
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <input
-                          type="checkbox"
-                          id="useGradient"
-                          checked={useGradient}
-                          onChange={(e) => setUseGradient(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                        />
-                        <Label htmlFor="useGradient" className="text-sm font-medium cursor-pointer">
-                          Utiliser un dégradé
-                        </Label>
+                      <div className="flex flex-wrap gap-3">
+                        {SIMPLE_COLORS.map((item) => (
+                          <button
+                            key={item.color}
+                            type="button"
+                            onClick={() => { setSelectedColor(item.color); setUseGradient(false); }}
+                            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all hover:scale-105 ${
+                              selectedColor === item.color && !useGradient ? "ring-2 ring-blue-500" : ""
+                            }`}
+                          >
+                            <div
+                              className="w-12 h-12 rounded-lg border-2 border-white shadow-md"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-xs text-gray-600">{item.name}</span>
+                          </button>
+                        ))}
                       </div>
 
-                      {/* Gradient Color Picker */}
-                      {useGradient && (
-                        <div className="space-y-3 pl-4 border-l-2 border-blue-200">
-                          <Label className="text-sm font-semibold text-gray-900">Couleur de dégradé</Label>
-                          <div className="flex gap-2">
-                            <input
-                              type="color"
-                              value={gradientColor || "#8b5cf6"}
-                              onChange={(e) => setGradientColor(e.target.value)}
-                              className="w-10 h-9 rounded-lg border cursor-pointer"
-                            />
-                            <Input
-                              type="text"
-                              value={gradientColor}
-                              onChange={(e) => setGradientColor(e.target.value)}
-                              className="flex-1 h-9 text-sm font-mono"
-                              placeholder="#8b5cf6"
-                            />
-                          </div>
-                          
-                          {/* Gradient Direction */}
-                          <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-gray-900">Direction du dégradé</Label>
-                            <Select value={gradientDirection} onValueChange={setGradientDirection}>
-                              <SelectTrigger className="h-9">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="to-br">↘ Bas Droite</SelectItem>
-                                <SelectItem value="to-tr">↗ Haut Droite</SelectItem>
-                                <SelectItem value="to-bl">↙ Bas Gauche</SelectItem>
-                                <SelectItem value="to-tl">↖ Haut Gauche</SelectItem>
-                                <SelectItem value="to-r">→ Droite</SelectItem>
-                                <SelectItem value="to-l">← Gauche</SelectItem>
-                                <SelectItem value="to-b">↓ Bas</SelectItem>
-                                <SelectItem value="to-t">↑ Haut</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                      {/* Custom Color */}
+                      <div className="flex items-center gap-2 pt-2">
+                        <Label className="text-xs text-gray-600">Couleur personnalisée:</Label>
+                        <input
+                          type="color"
+                          value={selectedColor}
+                          onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
+                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                        />
+                        <Input
+                          type="text"
+                          value={selectedColor}
+                          onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
+                          className="w-28 h-10 text-xs font-mono"
+                          placeholder="#3b82f6"
+                        />
+                      </div>
+
+                      <div className="border-t pt-3 mt-3">
+                        <span className="text-xs text-gray-600 mb-2 block">Ou choisir un dégradé</span>
+                        <div className="flex flex-wrap gap-3">
+                          {SIMPLE_GRADIENTS.map((gradient) => (
+                            <button
+                              key={gradient.name}
+                              type="button"
+                              onClick={() => {
+                                setSelectedColor(gradient.from);
+                                setGradientColor(gradient.to);
+                                setGradientDirection(gradient.direction);
+                                setUseGradient(true);
+                              }}
+                              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all hover:scale-105 ${
+                                useGradient && selectedColor === gradient.from && gradientColor === gradient.to
+                                  ? "ring-2 ring-blue-500"
+                                  : ""
+                              }`}
+                            >
+                              <div
+                                className="w-16 h-16 rounded-lg border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xl"
+                                style={{
+                                  background: `linear-gradient(${gradient.direction.replace('to-', 'to ')}, ${gradient.from}, ${gradient.to})`
+                                }}
+                              >
+                                M
+                              </div>
+                              <span className="text-xs text-gray-600 font-medium">{gradient.name}</span>
+                            </button>
+                          ))}
                         </div>
-                      )}
+                        
+                        {/* Custom Gradient */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <Label className="text-xs text-gray-600">Dégradé personnalisé:</Label>
+                          <input
+                            type="color"
+                            value={selectedColor}
+                            onChange={(e) => setSelectedColor(e.target.value)}
+                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                            title="Couleur de départ"
+                          />
+                          <span className="text-gray-400">→</span>
+                          <input
+                            type="color"
+                            value={gradientColor || "#8b5cf6"}
+                            onChange={(e) => { setGradientColor(e.target.value); setUseGradient(true); }}
+                            className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
+                            title="Couleur de fin"
+                          />
+                          <Select value={gradientDirection} onValueChange={setGradientDirection}>
+                            <SelectTrigger className="w-32 h-10 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="to-br">↘ Bas Droite</SelectItem>
+                              <SelectItem value="to-tr">↗ Haut Droite</SelectItem>
+                              <SelectItem value="to-bl">↙ Bas Gauche</SelectItem>
+                              <SelectItem value="to-tl">↖ Haut Gauche</SelectItem>
+                              <SelectItem value="to-r">→ Droite</SelectItem>
+                              <SelectItem value="to-l">← Gauche</SelectItem>
+                              <SelectItem value="to-b">↓ Bas</SelectItem>
+                              <SelectItem value="to-t">↑ Haut</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       
-                      <div className="p-4 rounded-lg border-2 border-dashed flex items-center gap-3">
+                      {/* Preview */}
+                      <div key={`${selectedColor}-${gradientColor}-${useGradient}`} className="mt-4 p-3 rounded-lg bg-gray-50 flex items-center gap-3">
                         <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md"
+                          className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md"
                           style={{
                             background: useGradient && gradientColor
                               ? `linear-gradient(${gradientDirection.replace('to-', 'to ')}, ${selectedColor}, ${gradientColor})`
@@ -397,8 +415,8 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                           M
                         </div>
                         <div className="text-sm">
-                          <p className="font-semibold text-gray-900">Aperçu de la carte</p>
-                          <p className="text-gray-600">{useGradient ? "Dégradé" : "Couleur unie"}</p>
+                          <p className="font-semibold text-gray-900">Aperçu</p>
+                          <p className="text-gray-500">{useGradient ? "Dégradé" : "Couleur unie"}</p>
                         </div>
                       </div>
                     </div>

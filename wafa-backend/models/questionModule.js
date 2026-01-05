@@ -16,6 +16,10 @@ const questionSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        questionNumber: {
+            type: Number,
+            required: false
+        },
         options: [
             {
                 text: {

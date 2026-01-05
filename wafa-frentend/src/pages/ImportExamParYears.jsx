@@ -249,7 +249,8 @@ const ImportExamParYears = () => {
               <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-xs font-medium text-blue-800 mb-2">📋 Format Excel attendu:</p>
                 <div className="text-xs text-blue-700 space-y-1">
-                  <p><strong>Colonnes:</strong> Question | A | B | C | D | answer</p>
+                  <p><strong>Colonnes:</strong> qst Num | Question | A | B | C | D | answer</p>
+                  <p><strong>qst Num:</strong> Numéro de la question (1, 2, 3, ...)</p>
                   <p><strong>answer:</strong> Texte de la bonne réponse (séparer par virgule si plusieurs réponses correctes)</p>
                   <p><strong>Exemple:</strong> Si la réponse correcte est dans la colonne A, mettez le texte de A dans "answer"</p>
                 </div>

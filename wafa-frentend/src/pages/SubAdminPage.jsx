@@ -119,6 +119,8 @@ const SubAdminPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
   const [adminRole, setAdminRole] = useState("editor"); // editor, moderator, admin
+  const [adminPassword, setAdminPassword] = useState(""); // Password for admin
+  const [editPassword, setEditPassword] = useState(""); // Password for editing admin
 
   // Fetch admins
   const fetchAdmins = async () => {
@@ -127,6 +129,7 @@ const SubAdminPage = () => {
       const response = await userService.getAllUsers(1, 1000);
       if (response.success) {
         const adminUsers = response.data.users.filter((user) => user.isAdmin);
+        console.log('📋 Admin users fetched:', adminUsers.map(u => ({ email: u.email, hasPassword: u.hasPassword })));
         setAdmins(adminUsers);
       }
     } catch (error) {
@@ -190,13 +193,34 @@ const SubAdminPage = () => {
       return;
     }
 
+    // Check if user needs password (no existing password)
+    if (!selectedUser.hasPassword && !adminPassword) {
+      toast.error("Veuillez définir un mot de passe pour cet utilisateur");
+      return;
+    }
+
+    if (adminPassword && adminPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
     try {
       // Note: This requires a backend endpoint to promote user
-      const response = await userService.updateUser(selectedUser._id, {
+      const updateData = {
         isAdmin: true,
         adminRole: adminRole,
         permissions: selectedPermissions,
-      });
+      };
+
+      // Add password if provided
+      if (adminPassword) {
+        updateData.password = adminPassword;
+        console.log('📤 Sending password with update, length:', adminPassword.length);
+      }
+
+      console.log('📤 Update data being sent:', updateData);
+      const response = await userService.updateUser(selectedUser._id, updateData);
+      console.log('📥 Response:', response);
 
       if (response.success) {
         toast.success(
@@ -205,6 +229,7 @@ const SubAdminPage = () => {
         setShowAddDialog(false);
         setSelectedUser(null);
         setSelectedPermissions([]);
+        setAdminPassword("");
         fetchAdmins();
         fetchAllUsers();
       }
@@ -242,22 +267,53 @@ const SubAdminPage = () => {
 
   // Update admin permissions
   const handleUpdateAdmin = async () => {
-    if (!selectedAdmin) return;
+    console.log('🚀 handleUpdateAdmin called!');
+    console.log('🚀 selectedAdmin:', selectedAdmin?._id, selectedAdmin?.email);
+    console.log('🚀 editPassword value:', editPassword, 'length:', editPassword?.length);
+    
+    if (!selectedAdmin) {
+      console.log('❌ No selectedAdmin!');
+      return;
+    }
+
+    // Validate password if provided
+    if (editPassword && editPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
 
     try {
-      const response = await userService.updateUser(selectedAdmin._id, {
+      const updateData = {
         adminRole: adminRole,
         permissions: selectedPermissions,
-      });
+      };
+
+      // Add password if provided
+      if (editPassword && editPassword.trim()) {
+        updateData.password = editPassword.trim();
+        console.log('📤 Password will be sent:', editPassword.trim());
+      } else {
+        console.log('⚠️ No password to send - editPassword is empty or whitespace');
+      }
+
+      console.log('📤 Final updateData:', JSON.stringify(updateData));
+      console.log('📤 Calling API for user:', selectedAdmin._id);
+      
+      const response = await userService.updateUser(selectedAdmin._id, updateData);
+      console.log('📥 API Response:', response);
 
       if (response.success) {
-        toast.success("Permissions mises à jour");
+        toast.success(editPassword ? "Permissions et mot de passe mis à jour" : "Permissions mises à jour");
         setShowEditDialog(false);
         setSelectedAdmin(null);
+        setEditPassword("");
         fetchAdmins();
+      } else {
+        console.log('❌ Response not success:', response);
+        toast.error(response.message || "Erreur lors de la mise à jour");
       }
     } catch (error) {
-      console.error("Error updating admin:", error);
+      console.error("❌ Error updating admin:", error);
       toast.error("Erreur lors de la mise à jour");
     }
   };
@@ -531,6 +587,7 @@ const SubAdminPage = () => {
                                 setSelectedAdmin(admin);
                                 setAdminRole(admin.adminRole || "admin");
                                 setSelectedPermissions(admin.permissions || []);
+                                setEditPassword("");
                                 setShowEditDialog(true);
                               }}
                               className="gap-2"
@@ -544,6 +601,7 @@ const SubAdminPage = () => {
                                 setSelectedAdmin(admin);
                                 setAdminRole(admin.adminRole || "admin");
                                 setSelectedPermissions(admin.permissions || []);
+                                setEditPassword("");
                                 setShowEditDialog(true);
                               }}
                             >
@@ -636,6 +694,27 @@ const SubAdminPage = () => {
 
               <Separator />
 
+              {/* Password Field */}
+              {selectedUser && (
+                <div className="space-y-3">
+                  <Label>Mot de passe {!selectedUser.hasPassword && <span className="text-red-500">*</span>}</Label>
+                  <Input
+                    type="password"
+                    placeholder={selectedUser.hasPassword ? "Laisser vide pour conserver l'actuel" : "Définir un mot de passe (obligatoire)"}
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                  />
+                  {!selectedUser.hasPassword && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      Cet utilisateur n'a pas de mot de passe (compte Google). Un mot de passe est requis.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <Separator />
+
               {/* Role Selection */}
               <div className="space-y-3">
                 <Label>Rôle</Label>
@@ -708,12 +787,12 @@ const SubAdminPage = () => {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              <Button variant="outline" onClick={() => { setShowAddDialog(false); setAdminPassword(""); setSelectedUser(null); }}>
                 Annuler
               </Button>
               <Button
                 onClick={handlePromoteUser}
-                disabled={!selectedUser}
+                disabled={!selectedUser || (!selectedUser.hasPassword && !adminPassword)}
                 className="bg-gradient-to-r from-purple-500 to-indigo-600"
               >
                 Ajouter comme Admin
@@ -773,6 +852,31 @@ const SubAdminPage = () => {
 
               <Separator />
 
+              {/* Password Change */}
+              <div className="space-y-3">
+                <Label>Changer le mot de passe</Label>
+                <Input
+                  type="password"
+                  placeholder="Nouveau mot de passe (laisser vide pour ne pas changer)"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                />
+                {editPassword && editPassword.length > 0 && editPassword.length < 6 && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Le mot de passe doit contenir au moins 6 caractères
+                  </p>
+                )}
+                {selectedAdmin?.hasPassword === false && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Cet utilisateur n'a pas de mot de passe (compte Google)
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
               {/* Permissions */}
               <div className="space-y-3">
                 <Label>Permissions</Label>
@@ -811,7 +915,7 @@ const SubAdminPage = () => {
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setShowEditDialog(false)}
+                onClick={() => { setShowEditDialog(false); setEditPassword(""); }}
               >
                 Annuler
               </Button>

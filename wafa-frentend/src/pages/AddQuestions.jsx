@@ -117,6 +117,8 @@ const AddQuestions = () => {
   const [filterModule, setFilterModule] = useState("all");
   const [filterSemester, setFilterSemester] = useState("all"); // Semester filter for table
   const [filterExamType, setFilterExamType] = useState("all");
+  const [filterExam, setFilterExam] = useState("all"); // Filter by specific exam
+  const [searchQuery, setSearchQuery] = useState(""); // Search in question text
 
   // Selected questions for bulk operations
   const [selectedQuestions, setSelectedQuestions] = useState([]);
@@ -125,21 +127,46 @@ const AddQuestions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Calculate paginated questions
-  const totalPages = Math.ceil(examQuestions.length / itemsPerPage);
+  // Filter questions based on search and exam filter
+  const filteredQuestions = useMemo(() => {
+    let result = examQuestions;
+    
+    // Filter by specific exam
+    if (filterExam !== "all") {
+      result = result.filter(q => 
+        (q.examId?._id || q.examId) === filterExam || 
+        (q.qcmBanqueId?._id || q.qcmBanqueId) === filterExam
+      );
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(q => 
+        q.text?.toLowerCase().includes(query) ||
+        q.options?.some(opt => opt.text?.toLowerCase().includes(query)) ||
+        q.questionNumber?.toString().includes(query)
+      );
+    }
+    
+    return result;
+  }, [examQuestions, filterExam, searchQuery]);
+
+  // Calculate paginated questions from filtered results
+  const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedQuestions = examQuestions.slice(startIndex, endIndex);
+  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
 
-  // Reset to first page when questions change
+  // Reset to first page when questions or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [examQuestions.length, itemsPerPage]);
+  }, [filteredQuestions.length, itemsPerPage]);
 
-  // Toggle select all
+  // Toggle select all (only for filtered questions)
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedQuestions(examQuestions.map(q => q._id || q.id));
+      setSelectedQuestions(filteredQuestions.map(q => q._id || q.id));
     } else {
       setSelectedQuestions([]);
     }
@@ -715,13 +742,16 @@ const AddQuestions = () => {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   {hasContextSelected ? "Questions de l'Examen" : "Toutes les Questions"}
-                  <Badge variant="secondary">{examQuestions.length} Total</Badge>
+                  <Badge variant="secondary">{filteredQuestions.length} Affichée(s)</Badge>
+                  {filteredQuestions.length !== examQuestions.length && (
+                    <Badge variant="outline" className="text-xs">{examQuestions.length} Total</Badge>
+                  )}
                   {selectedQuestions.length > 0 && (
                     <Badge variant="default" className="bg-blue-500">{selectedQuestions.length} sélectionnée(s)</Badge>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  {hasContextSelected ? "Toutes les questions de cet examen" : "Toutes les questions de tous les examens"}
+                  {hasContextSelected ? "Toutes les questions de cet examen" : "Filtrez et gérez les questions importées"}
                 </CardDescription>
               </div>
             </div>
@@ -729,12 +759,26 @@ const AddQuestions = () => {
             {/* Filters - Only show when no context is selected */}
             {!hasContextSelected && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+                {/* Search Box */}
+                <div className="pt-4 border-t">
+                  <div className="relative">
+                    <Input
+                      placeholder="Rechercher par texte, option ou N° question..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                    <HelpCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Filtrer par Semestre</Label>
+                    <Label className="text-sm font-medium">Semestre</Label>
                     <Select value={filterSemester} onValueChange={(val) => {
                       setFilterSemester(val);
                       setFilterModule("all"); // Reset module when semester changes
+                      setFilterExam("all");
                     }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Tous les semestres" />
@@ -751,8 +795,11 @@ const AddQuestions = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Filtrer par Module</Label>
-                    <Select value={filterModule} onValueChange={setFilterModule}>
+                    <Label className="text-sm font-medium">Module</Label>
+                    <Select value={filterModule} onValueChange={(val) => {
+                      setFilterModule(val);
+                      setFilterExam("all");
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Tous les modules" />
                       </SelectTrigger>
@@ -768,17 +815,48 @@ const AddQuestions = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Filtrer par Type d'Examen</Label>
-                    <Select value={filterExamType} onValueChange={setFilterExamType}>
+                    <Label className="text-sm font-medium">Type d'Examen</Label>
+                    <Select value={filterExamType} onValueChange={(val) => {
+                      setFilterExamType(val);
+                      setFilterExam("all");
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Tous les types" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Tous les types</SelectItem>
                         <SelectItem value="years">Exam par années</SelectItem>
-                        <SelectItem value="courses">Exam par courses</SelectItem>
-                        <SelectItem value="tp">Exam TP</SelectItem>
-                        <SelectItem value="qcm">Exam QCM</SelectItem>
+                        <SelectItem value="qcm">Banque QCM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Examen spécifique</Label>
+                    <Select value={filterExam} onValueChange={setFilterExam} disabled={filterModule === "all"}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={filterModule === "all" ? "Sélectionnez un module" : "Tous les examens"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les examens</SelectItem>
+                        {filterModule !== "all" && (
+                          <>
+                            {filterExamType !== "qcm" && exams
+                              .filter(e => (e.moduleId?._id || e.moduleId) === filterModule)
+                              .map((e) => (
+                                <SelectItem key={e._id} value={e._id}>
+                                  {e.name} {e.year && `(${e.year})`}
+                                </SelectItem>
+                              ))}
+                            {filterExamType !== "years" && qcmBanques
+                              .filter(q => (q.moduleId?._id || q.moduleId) === filterModule)
+                              .map((q) => (
+                                <SelectItem key={q._id} value={q._id}>
+                                  QCM: {q.name}
+                                </SelectItem>
+                              ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -791,9 +869,11 @@ const AddQuestions = () => {
                         setFilterSemester("all");
                         setFilterModule("all");
                         setFilterExamType("all");
+                        setFilterExam("all");
+                        setSearchQuery("");
                       }}
                     >
-                      Réinitialiser les filtres
+                      Réinitialiser
                     </Button>
                   </div>
                 </div>
@@ -831,137 +911,138 @@ const AddQuestions = () => {
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={examQuestions.length > 0 && selectedQuestions.length === examQuestions.length}
+                        checked={filteredQuestions.length > 0 && selectedQuestions.length === filteredQuestions.length}
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="w-16">ID</TableHead>
+                    <TableHead className="w-16">N°</TableHead>
+                    <TableHead className="w-20">Qst Num</TableHead>
+                    <TableHead className="min-w-[120px] max-w-[150px]">Examen</TableHead>
                     <TableHead className="w-20">Image</TableHead>
                     <TableHead className="min-w-[200px] max-w-[250px]">Question</TableHead>
-                    <TableHead className="min-w-[120px] max-w-[150px]">Option A</TableHead>
-                    <TableHead className="min-w-[120px] max-w-[150px]">Option B</TableHead>
-                    <TableHead className="min-w-[120px] max-w-[150px]">Option C</TableHead>
-                    <TableHead className="min-w-[120px] max-w-[150px]">Option D</TableHead>
-                    <TableHead className="min-w-[120px] max-w-[150px]">Option E</TableHead>
-                    <TableHead className="w-24">Insert</TableHead>
-                    <TableHead className="w-28 text-right">Operate</TableHead>
+                    <TableHead className="min-w-[100px] max-w-[120px]">Réponse</TableHead>
+                    <TableHead className="w-24">Session</TableHead>
+                    <TableHead className="w-28 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loadingQuestions ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-12">
+                      <TableCell colSpan={9} className="text-center py-12">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
                         <p className="text-muted-foreground mt-2">Chargement des questions...</p>
                       </TableCell>
                     </TableRow>
-                  ) : examQuestions.length === 0 ? (
+                  ) : filteredQuestions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
-                        Aucune question trouvée pour cet examen
+                      <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                        {examQuestions.length === 0 
+                          ? "Aucune question trouvée" 
+                          : "Aucune question ne correspond aux critères de recherche"}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedQuestions.map((q, idx) => (
-                      <TableRow key={q._id || q.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedQuestions.includes(q._id || q.id)}
-                            onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{startIndex + idx + 1}</TableCell>
-                        <TableCell>
-                          {q.images?.length > 0 ? (
-                            <Badge variant="outline" className="text-xs">
-                              {q.images.length} img
+                    paginatedQuestions.map((q, idx) => {
+                      // Get exam/QCM name
+                      const examName = q.examId?.name || q.qcmBanqueId?.name || "—";
+                      const examYear = q.examId?.year || "";
+                      // Get correct options
+                      const correctOptions = q.options?.filter(opt => opt.isCorrect) || [];
+                      const correctAnswerText = correctOptions.map((opt, i) => {
+                        const optIndex = q.options.indexOf(opt);
+                        return String.fromCharCode(65 + optIndex);
+                      }).join(", ") || "—";
+                      
+                      return (
+                        <TableRow key={q._id || q.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedQuestions.includes(q._id || q.id)}
+                              onCheckedChange={(checked) => handleSelectQuestion(q._id || q.id, checked)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{startIndex + idx + 1}</TableCell>
+                          <TableCell className="font-mono text-sm font-semibold text-blue-600">
+                            {q.questionNumber || "—"}
+                          </TableCell>
+                          <TableCell className="max-w-[150px]">
+                            <div className="line-clamp-2 text-xs" title={`${examName} ${examYear}`}>
+                              <span className="font-medium">{examName}</span>
+                              {examYear && <span className="text-muted-foreground ml-1">({examYear})</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {q.images?.length > 0 ? (
+                              <Badge variant="outline" className="text-xs">
+                                {q.images.length} img
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-[250px]">
+                            <div className="line-clamp-2 text-sm" title={q.text}>
+                              {q.text}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[120px]">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                              {correctAnswerText}
                             </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-[250px]">
-                          <div className="line-clamp-2 text-sm" title={q.text}>
-                            {q.text}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[150px]">
-                          <div className="line-clamp-2 text-xs" title={q.options?.[0]?.text}>
-                            {q.options?.[0]?.text || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[150px]">
-                          <div className="line-clamp-2 text-xs" title={q.options?.[1]?.text}>
-                            {q.options?.[1]?.text || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[150px]">
-                          <div className="line-clamp-2 text-xs" title={q.options?.[2]?.text}>
-                            {q.options?.[2]?.text || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[150px]">
-                          <div className="line-clamp-2 text-xs" title={q.options?.[3]?.text}>
-                            {q.options?.[3]?.text || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[150px]">
-                          <div className="line-clamp-2 text-xs" title={q.options?.[4]?.text}>
-                            {q.options?.[4]?.text || "—"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-xs truncate max-w-[80px]">{q.sessionLabel || "—"}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              title="Voir"
-                              onClick={() => {
-                                setViewingQuestion(q);
-                                setShowViewDialog(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Modifier"
-                              onClick={() => {
-                                setEditingQuestion(q);
-                                setShowEditDialog(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleDeleteQuestion(q._id || q.id)}
-                              title="Supprimer"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs truncate max-w-[80px]">{q.sessionLabel || "—"}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="Voir"
+                                onClick={() => {
+                                  setViewingQuestion(q);
+                                  setShowViewDialog(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="Modifier"
+                                onClick={() => {
+                                  setEditingQuestion(q);
+                                  setShowEditDialog(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteQuestion(q._id || q.id)}
+                                title="Supprimer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
-          {examQuestions.length > 0 && (
+          {filteredQuestions.length > 0 && (
             <CardFooter className="border-t bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 py-4">
               {/* Left side - Info */}
               <div className="text-sm text-muted-foreground">
-                Affichage de {startIndex + 1} à {Math.min(endIndex, examQuestions.length)} sur {examQuestions.length} questions
+                Affichage de {startIndex + 1} à {Math.min(endIndex, filteredQuestions.length)} sur {filteredQuestions.length} questions
               </div>
               
               {/* Center - Items per page selector */}
@@ -1065,20 +1146,35 @@ const AddQuestions = () => {
                 {/* Reference Information */}
                 <div className="space-y-2 pb-3 border-b">
                   <Label className="text-sm font-semibold text-gray-700">Référence</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {viewingQuestion.examId && (
-                      <Badge variant="outline" className="text-xs">
-                        Exam ID: {viewingQuestion.examId._id || viewingQuestion.examId}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-600 font-medium">N° Question</p>
+                      <p className="text-lg font-bold text-blue-800">
+                        {viewingQuestion.questionNumber || "Non défini"}
+                      </p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                      <p className="text-xs text-purple-600 font-medium">Examen</p>
+                      <p className="text-sm font-semibold text-purple-800 line-clamp-2">
+                        {viewingQuestion.examId?.name || viewingQuestion.qcmBanqueId?.name || "—"}
+                        {viewingQuestion.examId?.year && ` (${viewingQuestion.examId.year})`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {viewingQuestion.examId?.moduleId?.name && (
+                      <Badge variant="outline" className="text-xs bg-gray-50">
+                        Module: {viewingQuestion.examId.moduleId.name}
                       </Badge>
                     )}
-                    {viewingQuestion.qcmBanqueId && (
-                      <Badge variant="outline" className="text-xs">
-                        QCM ID: {viewingQuestion.qcmBanqueId._id || viewingQuestion.qcmBanqueId}
+                    {viewingQuestion.qcmBanqueId?.moduleId?.name && (
+                      <Badge variant="outline" className="text-xs bg-gray-50">
+                        Module: {viewingQuestion.qcmBanqueId.moduleId.name}
                       </Badge>
                     )}
                     {viewingQuestion.sessionLabel && (
                       <Badge variant="secondary" className="text-xs">
-                        Niveau: {viewingQuestion.sessionLabel}
+                        Session: {viewingQuestion.sessionLabel}
                       </Badge>
                     )}
                   </div>
@@ -1117,8 +1213,10 @@ const AddQuestions = () => {
                 </div>
                 {viewingQuestion.note && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-gray-700">Note / Correction</Label>
-                    <p className="text-gray-900 bg-gray-50 p-2 rounded border whitespace-pre-wrap">{viewingQuestion.note}</p>
+                    <Label className="text-sm font-semibold text-gray-700">Correction / Note (Excel)</Label>
+                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+                      <p className="text-gray-900 whitespace-pre-wrap">{viewingQuestion.note}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1138,6 +1236,30 @@ const AddQuestions = () => {
                 <DialogDescription>Modifiez les détails de la question et ses images</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* Reference Information (Read-only) */}
+                <div className="grid grid-cols-2 gap-3 pb-3 border-b">
+                  <div className="space-y-2">
+                    <Label>N° Question dans l'examen</Label>
+                    <Input
+                      type="number"
+                      value={editingQuestion.questionNumber || ''}
+                      onChange={(e) => setEditingQuestion({ 
+                        ...editingQuestion, 
+                        questionNumber: e.target.value ? parseInt(e.target.value) : null 
+                      })}
+                      placeholder="Ex: 1, 2, 3..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Examen de référence</Label>
+                    <Input
+                      value={editingQuestion.examId?.name || editingQuestion.qcmBanqueId?.name || 'Non défini'}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </div>
+                </div>
+
                 {/* Question Text */}
                 <div className="space-y-2">
                   <Label>Question</Label>
@@ -1200,7 +1322,7 @@ const AddQuestions = () => {
                 
                 {/* Options */}
                 <div className="space-y-3">
-                  <Label>Options</Label>
+                  <Label>Options (cochez les réponses correctes)</Label>
                   {editingQuestion.options?.map((opt, idx) => (
                     <div key={idx} className="flex items-center gap-3">
                       <Checkbox
@@ -1211,6 +1333,7 @@ const AddQuestions = () => {
                           setEditingQuestion({ ...editingQuestion, options: newOptions });
                         }}
                       />
+                      <span className="font-medium text-sm w-6">{String.fromCharCode(65 + idx)}.</span>
                       <Input
                         value={opt.text}
                         onChange={(e) => {
@@ -1219,7 +1342,7 @@ const AddQuestions = () => {
                           setEditingQuestion({ ...editingQuestion, options: newOptions });
                         }}
                         placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-                        className="flex-1"
+                        className={`flex-1 ${opt.isCorrect ? 'border-green-400 bg-green-50' : ''}`}
                       />
                     </div>
                   ))}
@@ -1227,7 +1350,7 @@ const AddQuestions = () => {
                 
                 {/* Session Label */}
                 <div className="space-y-2">
-                  <Label>Niveau / Session (optionnel)</Label>
+                  <Label>Session / Niveau (optionnel)</Label>
                   <Input
                     value={editingQuestion.sessionLabel || ''}
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, sessionLabel: e.target.value })}
@@ -1235,15 +1358,19 @@ const AddQuestions = () => {
                   />
                 </div>
                 
-                {/* Note / Correction */}
+                {/* Note / Correction from Excel */}
                 <div className="space-y-2">
-                  <Label>Note / Correction Excel (optionnel)</Label>
+                  <Label>Correction / Note (importé depuis Excel)</Label>
                   <Textarea
                     value={editingQuestion.note || ''}
                     onChange={(e) => setEditingQuestion({ ...editingQuestion, note: e.target.value })}
                     rows={4}
-                    placeholder="Ajoutez des notes ou la correction de la question..."
+                    placeholder="Ajoutez la correction ou des notes explicatives..."
+                    className="bg-yellow-50 border-yellow-200"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Cette note peut contenir la correction ou explication de la question
+                  </p>
                 </div>
               </div>
               <DialogFooter>
@@ -1277,12 +1404,13 @@ const AddQuestions = () => {
                       }
                     }
                     
-                    // Update question with all data
+                    // Update question with all data including questionNumber
                     await api.patch(`/questions/update/${editingQuestion._id || editingQuestion.id}`, {
                       text: editingQuestion.text,
                       options: editingQuestion.options,
                       note: editingQuestion.note,
                       sessionLabel: editingQuestion.sessionLabel,
+                      questionNumber: editingQuestion.questionNumber,
                       images: updatedImages
                     });
                     

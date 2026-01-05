@@ -36,7 +36,7 @@ const CreateCategoriesForCourses = () => {
   const placeholderImage = "https://via.placeholder.com/150x100/111827/FFFFFF?text=Image";
 
   useEffect(() => {
-    fetchCourses();
+    fetchCategories();
     fetchModules();
   }, []);
 
@@ -49,10 +49,10 @@ const CreateCategoriesForCourses = () => {
     }
   };
 
-  const fetchCourses = async () => {
+  const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/exam-courses");
+      const { data } = await api.get("/course-categories");
 
       // Helper to get full image URL
       const getImageUrl = (imageUrl) => {
@@ -67,16 +67,19 @@ const CreateCategoriesForCourses = () => {
       const list = (data?.data || []).map((c) => ({
         id: c._id,
         moduleId: c.moduleId?._id || c.moduleId || "",
-        moduleName: c.moduleName || c.moduleId?.name || "",
-        categoryCourseName: c.name || "",
-        category: c.category || "",
+        moduleName: c.moduleId?.name || "",
+        moduleSemester: c.moduleId?.semester || "",
+        categoryName: c.name || "",
         imageUrl: getImageUrl(c.imageUrl),
         rawImageUrl: c.imageUrl || "",
-        totalQuestions: c.totalQuestions || 0,
+        examCourseCount: c.examCourseCount || 0,
+        description: c.description || "",
+        color: c.color || "#3b82f6",
+        status: c.status || "active"
       }));
       setCategoriesForCourses(list);
     } catch (err) {
-      console.error("Error fetching courses:", err);
+      console.error("Error fetching categories:", err);
       toast.error("Erreur lors du chargement");
     } finally {
       setLoading(false);
@@ -93,29 +96,21 @@ const CreateCategoriesForCourses = () => {
       return;
     }
 
-    // Get module name for the course name
-    const selectedModule = modules.find(m => m._id === formData.moduleId);
-    const courseName = selectedModule ? `${selectedModule.name} - ${formData.category}` : formData.category;
-
     try {
       if (imageFile) {
         // Use FormData for file upload
         const data = new FormData();
-        data.append("name", courseName);
+        data.append("name", formData.category);
         data.append("moduleId", formData.moduleId);
-        data.append("category", formData.category);
-        data.append("status", "active");
-        data.append("courseImage", imageFile);
+        data.append("categoryImage", imageFile);
 
-        await api.post("/exam-courses/create-with-image", data, {
+        await api.post("/course-categories/create-with-image", data, {
           headers: { "Content-Type": "multipart/form-data" }
         });
       } else {
-        await api.post("/exam-courses", {
-          name: courseName,
+        await api.post("/course-categories", {
+          name: formData.category,
           moduleId: formData.moduleId,
-          category: formData.category,
-          status: "active",
           imageUrl: formData.imageUrl || "",
         });
       }
@@ -124,7 +119,7 @@ const CreateCategoriesForCourses = () => {
       setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
       setImageFile(null);
       setImagePreview(null);
-      fetchCourses();
+      fetchCategories();
     } catch (err) {
       console.error("Error creating category:", err);
       toast.error(err.response?.data?.message || "Erreur lors de la création");
@@ -133,9 +128,9 @@ const CreateCategoriesForCourses = () => {
 
   const handleEdit = (category) => {
     setFormData({
-      name: category.categoryCourseName,
+      name: category.categoryName,
       moduleId: category.moduleId,
-      category: category.category || "",
+      category: category.categoryName || "",
       imageUrl: category.rawImageUrl || "",
     });
     // Set image preview for existing image
@@ -155,25 +150,19 @@ const CreateCategoriesForCourses = () => {
       return;
     }
 
-    // Get module name for the course name
-    const selectedModule = modules.find(m => m._id === formData.moduleId);
-    const courseName = selectedModule ? `${selectedModule.name} - ${formData.category}` : formData.category;
-
     try {
       const data = new FormData();
-      data.append("name", courseName);
+      data.append("name", formData.category);
       data.append("moduleId", formData.moduleId);
-      data.append("category", formData.category);
-      data.append("status", "active");
       
       if (imageFile) {
-        data.append("courseImage", imageFile);
+        data.append("categoryImage", imageFile);
       } else if (editingCategory.rawImageUrl) {
         // Preserve existing image path
         data.append("existingImageUrl", editingCategory.rawImageUrl);
       }
 
-      await api.put(`/exam-courses/update-with-image/${editingCategory.id}`, data, {
+      await api.put(`/course-categories/update-with-image/${editingCategory.id}`, data, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       toast.success("Catégorie mise à jour avec succès");
@@ -182,10 +171,10 @@ const CreateCategoriesForCourses = () => {
       setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
       setImageFile(null);
       setImagePreview(null);
-      fetchCourses();
+      fetchCategories();
     } catch (err) {
       console.error("Error updating category:", err);
-      toast.error("Erreur lors de la mise à jour");
+      toast.error(err.response?.data?.message || "Erreur lors de la mise à jour");
     }
   };
 
@@ -193,12 +182,12 @@ const CreateCategoriesForCourses = () => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette catégorie ?")) return;
 
     try {
-      await api.delete(`/exam-courses/${id}`);
+      await api.delete(`/course-categories/${id}`);
       toast.success("Catégorie supprimée avec succès");
-      fetchCourses();
+      fetchCategories();
     } catch (err) {
       console.error("Error deleting category:", err);
-      toast.error("Erreur lors de la suppression");
+      toast.error(err.response?.data?.message || "Erreur lors de la suppression");
     }
   };
 
@@ -208,19 +197,18 @@ const CreateCategoriesForCourses = () => {
       const passesModule =
         moduleFilter === "all" || String(item.moduleId) === moduleFilter;
       
-      // Get semester from module
-      const itemModule = modules.find(m => m._id === item.moduleId);
-      const itemSemester = itemModule?.semester || '';
+      // Get semester from module or from item directly
+      const itemSemester = item.moduleSemester || '';
       const passesSemester =
         semesterFilter === "all" || itemSemester === semesterFilter;
       
       const passesSearch =
         item.moduleName.toLowerCase().includes(term) ||
-        item.categoryCourseName.toLowerCase().includes(term) ||
+        item.categoryName.toLowerCase().includes(term) ||
         String(item.id).includes(term);
       return passesModule && passesSemester && passesSearch;
     });
-  }, [searchTerm, moduleFilter, semesterFilter, categoriesForCourses, modules]);
+  }, [searchTerm, moduleFilter, semesterFilter, categoriesForCourses]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -417,7 +405,7 @@ const CreateCategoriesForCourses = () => {
                           <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Catégorie</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Image</th>
-                          <th className="text-left py-4 px-6 font-semibold text-black">Questions</th>
+                          <th className="text-left py-4 px-6 font-semibold text-black">Cours</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Actions</th>
                         </tr>
                       </thead>
@@ -440,7 +428,7 @@ const CreateCategoriesForCourses = () => {
                               <td className="py-4 px-6 text-black font-medium">{row.moduleName}</td>
                               <td className="py-4 px-6">
                                 <Badge className="bg-blue-100 text-blue-700 border border-blue-200">
-                                  {row.category}
+                                  {row.categoryName}
                                 </Badge>
                               </td>
                               <td className="py-4 px-6">
@@ -450,14 +438,14 @@ const CreateCategoriesForCourses = () => {
                                 >
                                   <img
                                     src={row.imageUrl}
-                                    alt={row.categoryCourseName}
+                                    alt={row.categoryName}
                                     className="w-full h-full object-cover"
                                   />
                                 </motion.div>
                               </td>
                               <td className="py-4 px-6">
                                 <Badge className="bg-gray-200 text-black border border-gray-300">
-                                  {row.totalQuestions}
+                                  {row.examCourseCount}
                                 </Badge>
                               </td>
                               <td className="py-4 px-6">

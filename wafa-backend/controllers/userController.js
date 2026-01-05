@@ -183,10 +183,19 @@ export const UserController = {
             const skip = (page - 1) * limit;
 
             const users = await User.find({})
-                .select('-password -resetCode')
+                .select('-resetCode')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit);
+
+            // Add hasPassword field and remove actual password
+            const usersWithPasswordFlag = users.map(user => {
+                const userObj = user.toObject();
+                const hasPassword = !!(userObj.password && userObj.password.length > 0);
+                userObj.hasPassword = hasPassword;
+                delete userObj.password;
+                return userObj;
+            });
 
             const totalUsers = await User.countDocuments({});
             const totalPages = Math.ceil(totalUsers / limit);
@@ -194,7 +203,7 @@ export const UserController = {
             res.status(200).json({
                 success: true,
                 data: {
-                    users,
+                    users: usersWithPasswordFlag,
                     pagination: {
                         currentPage: page,
                         totalPages,
@@ -442,12 +451,16 @@ export const UserController = {
             const { userId } = req.params;
             const updateData = req.body;
 
+            console.log('📝 updateUser called for:', userId);
+            console.log('📝 Received data:', JSON.stringify(updateData, null, 2));
+            console.log('📝 Password in request:', updateData.password ? 'Yes (length: ' + updateData.password.length + ')' : 'No');
+
             // Allowed fields for update - expanded to include all user fields
             const allowedFields = [
                 'isAdmin', 'adminRole', 'permissions', 'plan', 'isAactive',
                 'name', 'email', 'currentYear', 'semesters',
                 'paymentDate', 'approvalDate', 'planExpiry', 'paymentMode',
-                'phone', 'university', 'faculty'
+                'phone', 'university', 'faculty', 'password'
             ];
             const updates = {};
 
@@ -456,6 +469,15 @@ export const UserController = {
                     updates[field] = updateData[field];
                 }
             });
+
+            console.log('📝 Fields to update:', Object.keys(updates));
+
+            // Hash password if provided
+            if (updates.password) {
+                console.log('📝 Hashing password:', updates.password);
+                updates.password = await bcrypt.hash(updates.password, 10);
+                console.log('📝 Password hashed successfully, new hash:', updates.password.substring(0, 20) + '...');
+            }
 
             // If email is being updated, check if it's already taken
             if (updates.email) {

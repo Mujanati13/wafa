@@ -15,10 +15,16 @@ export const questionController = {
 
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { examId, text, options, note, images } = req.body;
+        const { examId, text, options, note, images, sessionLabel, questionNumber } = req.body;
+        
+        const updateData = { text, options, note, images };
+        if (examId) updateData.examId = examId;
+        if (sessionLabel !== undefined) updateData.sessionLabel = sessionLabel;
+        if (questionNumber !== undefined) updateData.questionNumber = questionNumber;
+        
         const updated = await QuestionModel.findByIdAndUpdate(
             id,
-            { examId, text, options, note, images },
+            updateData,
             { new: true, runValidators: true }
         );
         if (!updated) {
@@ -37,7 +43,39 @@ export const questionController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        const questions = await QuestionModel.find();
+        const { moduleId, moduleIds, examType } = req.query;
+        
+        let filter = {};
+        
+        // Build filter based on query params
+        if (moduleId || (moduleIds && moduleIds.length > 0)) {
+            // Get exams for the specified module(s)
+            const moduleFilter = moduleId ? { moduleId } : { moduleId: { $in: moduleIds } };
+            const exams = await ExamParYear.find(moduleFilter).select('_id');
+            const qcms = await QCMBanque.find(moduleFilter).select('_id');
+            
+            const examIds = exams.map(e => e._id);
+            const qcmIds = qcms.map(q => q._id);
+            
+            filter.$or = [
+                { examId: { $in: examIds } },
+                { qcmBanqueId: { $in: qcmIds } }
+            ];
+        }
+        
+        const questions = await QuestionModel.find(filter)
+            .populate({
+                path: 'examId',
+                select: 'name year moduleId',
+                populate: { path: 'moduleId', select: 'name semester' }
+            })
+            .populate({
+                path: 'qcmBanqueId',
+                select: 'name moduleId',
+                populate: { path: 'moduleId', select: 'name semester' }
+            })
+            .sort({ createdAt: -1 });
+            
         res.status(200).json({ success: true, data: questions });
     }),
 
@@ -52,7 +90,20 @@ export const questionController = {
 
     getByExamId: asyncHandler(async (req, res) => {
         const { examId } = req.params;
-        const questions = await QuestionModel.find({ examId });
+        const questions = await QuestionModel.find({ 
+            $or: [{ examId }, { qcmBanqueId: examId }] 
+        })
+            .populate({
+                path: 'examId',
+                select: 'name year moduleId',
+                populate: { path: 'moduleId', select: 'name semester' }
+            })
+            .populate({
+                path: 'qcmBanqueId',
+                select: 'name moduleId',
+                populate: { path: 'moduleId', select: 'name semester' }
+            })
+            .sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: questions });
     }),
 
@@ -527,10 +578,15 @@ export const questionController = {
 
             for (const row of jsonData) {
                 // Map Excel columns to question fields
-                // Expected columns: Question, A, B, C, D, answer (correct answer text separated by commas)
+                // Expected columns: qst Num, Question, A, B, C, D, answer (correct answer text separated by commas)
                 const questionText = row['Question'] || row['question'] || row['Texte'] || row['texte'] || '';
                 
                 if (!questionText.trim()) continue;
+
+                // Get question number from Excel (qst Num column)
+                const qstNum = row['qst Num'] || row['qst num'] || row['Qst Num'] || row['QST NUM'] || 
+                               row['N°'] || row['Num'] || row['num'] || row['Number'] || row['number'] || null;
+                const questionNumber = qstNum ? parseInt(qstNum, 10) : null;
 
                 // Get answer text(s) - can be comma-separated for multiple correct answers
                 const answerText = row['answer'] || row['Answer'] || row['Correct'] || row['correct'] || row['Réponse'] || row['reponse'] || '';
@@ -586,6 +642,11 @@ export const questionController = {
                     note: row['Note'] || row['note'] || '',
                     images: []
                 };
+
+                // Add question number if provided
+                if (questionNumber && !isNaN(questionNumber)) {
+                    questionData.questionNumber = questionNumber;
+                }
 
                 // Set the appropriate reference based on type
                 if (type === 'qcm-banque' && qcmBanqueId) {
