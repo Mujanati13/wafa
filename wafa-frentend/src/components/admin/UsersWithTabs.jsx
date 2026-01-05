@@ -52,6 +52,7 @@ import {
   CreditCard,
   GraduationCap,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { TableFilters } from "../shared";
 import NewUserForm from "./NewUserForm";
@@ -379,6 +380,24 @@ const UsersWithTabs = () => {
     }
   };
 
+  // Helper function to format datetime for datetime-local input
+  const formatDatetimeLocal = (dateValue) => {
+    if (!dateValue) return "";
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return "";
+      // Format: YYYY-MM-DDTHH:MM
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return "";
+    }
+  };
+
   // Open edit dialog
   const handleEditUser = (user) => {
     setSelectedUser(user);
@@ -393,6 +412,8 @@ const UsersWithTabs = () => {
       paymentMode: user.paymentMode || "",
       paymentDate: formatDateSafe(user.paymentDate),
       approvalDate: formatDateSafe(user.approvalDate),
+      consentAcceptedAt: formatDatetimeLocal(user.consentAcceptedAt),
+      hasAcceptedCGU: !!user.consentAcceptedAt,
     });
     setShowEditDialog(true);
   };
@@ -408,7 +429,18 @@ const UsersWithTabs = () => {
         paymentMode: editFormData.paymentMode || null,
         paymentDate: editFormData.paymentDate || null,
         approvalDate: editFormData.approvalDate || null,
+        // Handle CGU: if toggled on and no date set, use current date; if toggled off, set to null
+        consentAcceptedAt: editFormData.hasAcceptedCGU 
+          ? (editFormData.consentAcceptedAt 
+              ? new Date(editFormData.consentAcceptedAt).toISOString() 
+              : new Date().toISOString())
+          : null,
       };
+      
+      // Remove the hasAcceptedCGU helper field before sending
+      delete cleanedData.hasAcceptedCGU;
+      
+      console.log('Sending CGU data:', cleanedData.consentAcceptedAt);
       
       await userService.updateUser(selectedUser._id, cleanedData);
       toast.success("Utilisateur mis à jour avec succès");
@@ -924,14 +956,19 @@ const UsersWithTabs = () => {
                         )}
                         <td className="py-4 px-4">
                           {user.consentAcceptedAt ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-200 gap-1">
-                              <Shield className="w-3 h-3" />
-                              Accepté
-                            </Badge>
+                            <div className="space-y-1">
+                              <Badge className="bg-green-100 text-green-700 border-green-200 gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Accepté
+                              </Badge>
+                              <p className="text-xs text-gray-500">
+                                {new Date(user.consentAcceptedAt).toLocaleDateString("fr-FR")}
+                              </p>
+                            </div>
                           ) : (
-                            <Badge variant="outline" className="text-gray-400 gap-1">
-                              <Shield className="w-3 h-3" />
-                              Non
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Non accepté
                             </Badge>
                           )}
                         </td>
@@ -957,12 +994,22 @@ const UsersWithTabs = () => {
                                 <Edit className="w-4 h-4" />
                                 Modifier
                               </DropdownMenuItem>
-                              {user.consentAcceptedAt && (
-                                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
-                                  <FileText className="w-4 h-4" />
-                                  Voir consentement
-                                </DropdownMenuItem>
-                              )}
+                              <DropdownMenuItem
+                                className="flex items-center gap-2 cursor-pointer"
+                                onClick={() => {
+                                  handleEditUser(user);
+                                  // Scroll to CGU section after opening (small delay for dialog to render)
+                                  setTimeout(() => {
+                                    const cguSection = document.getElementById('edit-cgu-accepted');
+                                    if (cguSection) {
+                                      cguSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                  }, 100);
+                                }}
+                              >
+                                <Shield className="w-4 h-4 text-purple-600" />
+                                Gérer CGU
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="flex items-center gap-2 text-red-600 cursor-pointer"
@@ -1055,9 +1102,23 @@ const UsersWithTabs = () => {
                   <Label className="text-gray-500">Date d'inscription</Label>
                   <p className="font-medium">{new Date(selectedUser.createdAt).toLocaleDateString("fr-FR")}</p>
                 </div>
-                <div>
-                  <Label className="text-gray-500">CGU accepté</Label>
-                  <p className="font-medium">{selectedUser.consentAcceptedAt ? "Oui" : "Non"}</p>
+                <div className="col-span-2">
+                  <Label className="text-gray-500">CGU (Conditions Générales d'Utilisation)</Label>
+                  {selectedUser.consentAcceptedAt ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-green-100 text-green-700 border-green-200 gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Accepté
+                      </Badge>
+                      <span className="text-sm text-gray-600">
+                        le {new Date(selectedUser.consentAcceptedAt).toLocaleDateString("fr-FR")} à {new Date(selectedUser.consentAcceptedAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="mt-1 text-gray-500">
+                      Non accepté
+                    </Badge>
+                  )}
                 </div>
               </div>
               
@@ -1236,6 +1297,59 @@ const UsersWithTabs = () => {
                 className="rounded"
               />
               <Label htmlFor="edit-active" className="cursor-pointer">Compte actif</Label>
+            </div>
+
+            {/* CGU (Terms of Use) Section */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-purple-600" />
+                Conditions Générales d'Utilisation (CGU)
+              </h4>
+              <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-cgu-accepted"
+                    checked={editFormData.hasAcceptedCGU || false}
+                    onChange={(e) => {
+                      const isAccepted = e.target.checked;
+                      setEditFormData({ 
+                        ...editFormData, 
+                        hasAcceptedCGU: isAccepted,
+                        // If accepting for first time and no date set, will use current date on save
+                        consentAcceptedAt: isAccepted ? (editFormData.consentAcceptedAt || formatDatetimeLocal(new Date())) : ""
+                      });
+                    }}
+                    className="rounded"
+                  />
+                  <Label htmlFor="edit-cgu-accepted" className="cursor-pointer font-medium">
+                    L'utilisateur a accepté les CGU
+                  </Label>
+                </div>
+                
+                {editFormData.hasAcceptedCGU && (
+                  <div>
+                    <Label htmlFor="edit-consent-date" className="text-sm">Date d'acceptation</Label>
+                    <Input
+                      id="edit-consent-date"
+                      type="datetime-local"
+                      value={editFormData.consentAcceptedAt || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, consentAcceptedAt: e.target.value })}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Date et heure à laquelle l'utilisateur a accepté les conditions d'utilisation
+                    </p>
+                  </div>
+                )}
+                
+                {!editFormData.hasAcceptedCGU && (
+                  <p className="text-sm text-amber-600 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    L'utilisateur n'a pas encore accepté les CGU
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter className="mt-4">

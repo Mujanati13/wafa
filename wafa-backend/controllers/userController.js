@@ -460,7 +460,7 @@ export const UserController = {
                 'isAdmin', 'adminRole', 'permissions', 'plan', 'isAactive',
                 'name', 'email', 'currentYear', 'semesters',
                 'paymentDate', 'approvalDate', 'planExpiry', 'paymentMode',
-                'phone', 'university', 'faculty', 'password'
+                'phone', 'university', 'faculty', 'password', 'consentAcceptedAt'
             ];
             const updates = {};
 

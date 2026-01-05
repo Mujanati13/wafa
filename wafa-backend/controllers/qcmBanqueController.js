@@ -84,7 +84,7 @@ export const qcmBanqueController = {
 
     getById: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const qcm = await QCMBanque.findById(id).populate('moduleId', 'name').lean();
+        const qcm = await QCMBanque.findById(id).populate('moduleId', 'name color').lean();
         if (!qcm) {
             return res.status(404).json({
                 success: false,
@@ -99,6 +99,7 @@ export const qcmBanqueController = {
             data: {
                 ...qcm,
                 moduleName: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.name : undefined,
+                moduleColor: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.color : undefined,
                 totalQuestions: questions.length,
                 questions
             }
