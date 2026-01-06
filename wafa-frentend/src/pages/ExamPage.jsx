@@ -57,7 +57,8 @@ import {
   User,
   Settings,
   CreditCard,
-  Highlighter
+  Highlighter,
+  Calendar
 } from "lucide-react";
 import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
@@ -168,6 +169,8 @@ const ExamPage = () => {
     return saved ? parseInt(saved) : 16;
   });
   const [collapsedSessions, setCollapsedSessions] = useState(new Set());
+  const [isExamInfoCollapsed, setIsExamInfoCollapsed] = useState(true);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Animation states
@@ -942,104 +945,68 @@ const ExamPage = () => {
 
       {/* ============== MOBILE HEADER ============== */}
       <header className={cn(
-        "lg:hidden bg-white/95 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-40 shadow-sm",
+        "lg:hidden bg-white border-b sticky top-0 z-40 shadow-sm w-full",
         showResults && "mt-32" // Add margin when results banner is showing
       )}>
-        {/* Top row */}
-        <div className="flex items-center justify-between px-3 py-2">
-          {/* Menu button (far left) */}
-          <button
-            onClick={() => setShowSidebar(true)}
-            className="p-2 -ml-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-          >
-            <Menu className="h-5 w-5 text-gray-700" />
-          </button>
-
-          {/* Exit button + Title */}
-          <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+        {/* Single compact row */}
+        <div className="flex items-center justify-between gap-1.5 px-2 py-1.5">
+          {/* Left: Menu + Exit */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            >
+              <Menu className="h-5 w-5 text-gray-700" />
+            </button>
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors text-gray-700"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors text-gray-700"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm font-medium">Exit</span>
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">Exit</span>
             </button>
           </div>
           
-          {/* Timer + Font + Profile */}
-          <div className="flex items-center gap-1.5">
-            <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-medium",
-              getTimeColor()
-            )}>
+          {/* Center: Timer + Progress */}
+          <div className="flex items-center gap-2 flex-1 justify-center">
+            <Badge
+              variant="outline"
+              className={cn(
+                "gap-1 font-mono text-[10px] px-1.5 py-0.5 transition-colors",
+                getTimeColor()
+              )}
+            >
               <Timer className="h-3 w-3" />
-              {formatTime(timeElapsed)}
-            </div>
-
-            {/* Font Controls Popup Button */}
-            <div className="relative">
-              <button
-                onClick={() => setShowFontPopup(!showFontPopup)}
-                className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 transition-colors"
-              >
-                <span className="text-xs font-bold">YA</span>
-              </button>
-              
-              {/* Font Popup */}
-              <AnimatePresence>
-                {showFontPopup && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border p-3 z-50 min-w-[140px]"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => adjustFontSize(-2)}
-                        disabled={fontSize <= 12}
-                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 transition-colors"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-sm font-semibold min-w-[40px] text-center">{fontSize}px</span>
-                      <button
-                        onClick={() => adjustFontSize(2)}
-                        disabled={fontSize >= 24}
-                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 transition-colors"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <span>{formatTime(timeElapsed)}</span>
+            </Badge>
+            <span className="text-[10px] text-gray-400">
+              {currentQuestion + 1}/{questions.length}
+            </span>
+          </div>
+          
+          {/* Right: Verified + Avatar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-emerald-600 flex items-center gap-0.5">
+              <CheckCircle2 className="h-3 w-3" />
+              {verifiedCount}
+            </span>
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-semibold">
+              {userProfile?.name?.charAt(0) || userProfile?.firstName?.charAt(0) || 'U'}
             </div>
           </div>
         </div>
 
-        {/* Progress bar with question indicator */}
-        <div className="px-3 pb-2">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-            <span className="font-medium" style={{ color: moduleColor }}>
-              Question {currentQuestion + 1} / {questions.length}
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-              {verifiedCount} vérifiées
-            </span>
-          </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{
-                background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
-              }}
-              initial={{ width: 0 }}
-              animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
+        {/* Thin progress bar */}
+        <div className="h-1 bg-gray-100">
+          <motion.div
+            className="h-full"
+            style={{
+              background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
+            }}
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
         </div>
       </header>
 
@@ -1258,12 +1225,73 @@ const ExamPage = () => {
           {/* Sidebar - Desktop */}
           <div className="hidden lg:block lg:col-span-1">
             <Card className="sticky top-24 shadow-xl border-0 overflow-hidden">
+              {/* Exam Info Header */}
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 border-b">
+                <button
+                  onClick={() => setIsExamInfoCollapsed(!isExamInfoCollapsed)}
+                  className="w-full p-4 hover:bg-orange-100/30 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      "transition-transform duration-200 mt-1",
+                      !isExamInfoCollapsed && "rotate-90"
+                    )}>
+                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                    </div>
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${moduleColor}20` }}>
+                    <BookOpen className="h-6 w-6" style={{ color: moduleColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1">
+                      {examData?.name || examData?.title || 'Exam'}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {examData?.moduleName || 'Module'}
+                    </p>
+                    {!isExamInfoCollapsed && (
+                      <div className="space-y-1 mt-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-orange-600">
+                            {Math.round((Object.keys(selectedAnswers).length / questions.length) * 100)}% Complete
+                          </span>
+                          <span className="text-gray-500">
+                            {Object.keys(selectedAnswers).length} / {questions.length}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-white/60 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-300"
+                            style={{ width: `${(Object.keys(selectedAnswers).length / questions.length) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  </div>
+                </button>
+              </div>
+
               <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b py-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>{t('dashboard:questions_by_session') || 'Questions'}</span>
-                  <Badge className="bg-blue-100 text-blue-700">{questions.length}</Badge>
-                </CardTitle>
+                <button
+                  onClick={() => setIsLegendCollapsed(!isLegendCollapsed)}
+                  className="w-full text-left hover:opacity-80 transition-opacity"
+                >
+                  <CardTitle className="text-base flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "transition-transform duration-200",
+                        !isLegendCollapsed && "rotate-90"
+                      )}>
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <span>{t('dashboard:questions_by_session') || 'Questions'}</span>
+                    </div>
+                    <Badge className="bg-blue-100 text-blue-700">{questions.length}</Badge>
+                  </CardTitle>
+                </button>
                 {/* Legend */}
+                {!isLegendCollapsed && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[10px]">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
@@ -1294,14 +1322,15 @@ const ExamPage = () => {
                     </>
                   )}
                 </div>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 <ScrollArea className="h-[450px]">
-                  <div className="p-4 space-y-4">
+                  <div className="p-3 space-y-2">
                     {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
                       const isCollapsed = collapsedSessions.has(sessionName);
                       return (
-                        <div key={sessionName} className="space-y-2">
+                        <div key={sessionName} className="space-y-1">
                           <button
                             onClick={() => {
                               const newCollapsed = new Set(collapsedSessions);
@@ -1312,25 +1341,24 @@ const ExamPage = () => {
                               }
                               setCollapsedSessions(newCollapsed);
                             }}
-                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors group"
                           >
                             <div className="flex items-center gap-2">
-                              <BookOpen className="h-4 w-4 text-gray-500" />
+                              <div className={cn(
+                                "transition-transform duration-200",
+                                !isCollapsed && "rotate-90"
+                              )}>
+                                <ChevronRight className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Calendar className="h-4 w-4 text-gray-500" />
                               <span className="font-medium text-sm text-gray-700">{sessionName}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {sessionQuestions.length}
-                              </Badge>
-                              {isCollapsed ? (
-                                <ChevronDown className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <ChevronUp className="h-4 w-4 text-gray-400" />
-                              )}
-                            </div>
+                            <Badge variant="outline" className="text-xs bg-gray-50">
+                              {sessionQuestions.length}
+                            </Badge>
                           </button>
                           {!isCollapsed && (
-                            <div className="grid grid-cols-5 gap-1.5 pl-2">
+                            <div className="pl-6 space-y-0.5">
                               {sessionQuestions.map((q, idx) => {
                                 const globalIndex = questions.findIndex(question => question._id === q._id);
                                 const { status, isFlagged } = getQuestionStatus(globalIndex);
@@ -1340,20 +1368,25 @@ const ExamPage = () => {
                                     key={q._id}
                                     onClick={() => goToQuestion(globalIndex)}
                                     className={cn(
-                                      "relative aspect-square rounded-md text-xs font-medium transition-all border-2",
-                                      isCurrent && "ring-2 ring-blue-500 ring-offset-1 scale-110",
-                                      status === 'correct' && "bg-emerald-100 border-emerald-400 text-emerald-700",
-                                      status === 'incorrect' && "bg-red-100 border-red-400 text-red-700",
+                                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-all",
+                                      isCurrent && "bg-blue-50 border-l-2 border-blue-500",
+                                      !isCurrent && "hover:bg-gray-50"
+                                    )}
+                                  >
+                                    <div className={cn(
+                                      "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] border",
+                                      status === 'correct' && "bg-emerald-100 border-emerald-300 text-emerald-700",
+                                      status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
                                       status === 'answered' && !isFlagged && "bg-blue-100 border-blue-300 text-blue-700",
                                       status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
                                       status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
-                                      isFlagged && !showResults && "bg-purple-100 border-purple-400 text-purple-700",
-                                      "hover:scale-105"
-                                    )}
-                                  >
-                                    {globalIndex + 1}
+                                      isFlagged && !showResults && "bg-purple-100 border-purple-300 text-purple-700"
+                                    )}>
+                                      {q.questionNumber || (idx + 1)}
+                                    </div>
+                                    <span className="flex-1 text-left text-gray-600">Q{q.questionNumber || (idx + 1)}</span>
                                     {isFlagged && !showResults && (
-                                      <Flag className="absolute -top-1 -right-1 h-3 w-3 fill-purple-500 text-purple-500" />
+                                      <Flag className="h-3 w-3 fill-purple-500 text-purple-500 shrink-0" />
                                     )}
                                   </button>
                                 );
@@ -1476,63 +1509,44 @@ const ExamPage = () => {
                 className="touch-pan-y"
               >
                 <Card className="shadow-xl border-0 overflow-hidden">
-                  {/* Mobile Swipe Hint */}
-                  <div className="lg:hidden flex items-center justify-center gap-2 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100/50 text-xs text-gray-400">
-                    <ChevronLeft className="h-3 w-3" />
-                    <span>Glissez pour naviguer</span>
-                    <ChevronRight className="h-3 w-3" />
-                  </div>
+                  {/* Question Header - Compact unified row */}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-2 sm:px-4 md:px-6 py-2 sm:py-2.5">
+                    <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                      {/* Left: Breadcrumb with question counter integrated */}
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                        {/* Breadcrumb */}
+                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600 bg-white px-2 py-1 sm:py-1.5 rounded-md min-w-0 border">
+                          <BookOpen className="h-3 w-3 shrink-0" />
+                          <span className="truncate font-medium">
+                            {(() => {
+                              const moduleName = examData?.moduleName || 'Module';
+                              const examYear = examData?.year ? `${examData.year}` : '';
+                              const examType = examData?.examType || examData?.category || '';
+                              const courseName = currentQuestionData?.sessionLabel || examData?.courseName || '';
+                              const qcmName = examData?.title || examData?.name || '';
 
-                  {/* Question Header */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        <Badge 
-                          className="font-semibold text-[10px] sm:text-xs"
-                          style={{
-                            backgroundColor: `${moduleColor}20`,
-                            color: adjustColor(moduleColor, -60)
-                          }}
-                        >
-                          Q{currentQuestion + 1}
-                        </Badge>
-                        {currentQuestionData.sessionLabel && (
-                          <Badge variant="outline" className="text-gray-600 text-[10px] sm:text-xs hidden xs:inline-flex">
-                            {currentQuestionData.sessionLabel}
-                          </Badge>
-                        )}
-                        {isMultipleChoice && (
-                          <Badge 
-                            className="gap-1 text-[10px] sm:text-xs"
-                            style={{
-                              backgroundColor: `${moduleColor}15`,
-                              color: adjustColor(moduleColor, -40)
-                            }}
-                          >
-                            <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            <span className="hidden xs:inline">{t('dashboard:multiple_choice') || 'Multiple'}</span>
-                            <span className="xs:hidden">Multi</span>
-                          </Badge>
-                        )}
-                        {flaggedQuestions.has(currentQuestion) && (
-                          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 gap-1 text-[10px] sm:text-xs">
-                            <Flag className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-current" />
-                            <span className="hidden sm:inline">{t('dashboard:flagged') || 'Flagged'}</span>
-                          </Badge>
-                        )}
+                              if (examType === 'QCM banque' || examData?.isQcmBanque) {
+                                return `${moduleName} > ${qcmName}`;
+                              }
+                              
+                              if (examType === 'Exam par courses' || examData?.isParCours) {
+                                return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
+                              }
+                              
+                              return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''}`;
+                            })()}
+                          </span>
+                        </div>
                       </div>
-                      {/* Desktop action buttons - hidden on mobile since we have bottom bar */}
-                      <div className="hidden lg:flex items-center gap-0.5 sm:gap-1">
-                        {/* Image Gallery Button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowImageGallery(true)}
-                          className="shrink-0 text-gray-400 h-7 w-7 sm:h-8 sm:w-8"
-                          style={{
-                            '--hover-color': moduleColor,
-                            '--hover-bg': `${moduleColor}10`
-                          }}
+                      
+                      {/* Right: Compact action buttons */}
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowImageGallery(true)}
+                            className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8 lg:flex"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = moduleColor;
                             e.currentTarget.style.backgroundColor = `${moduleColor}10`;
@@ -1541,15 +1555,16 @@ const ExamPage = () => {
                             e.currentTarget.style.color = '';
                             e.currentTarget.style.backgroundColor = '';
                           }}
-                          title="Images"
-                        >
-                          <Image className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </Button>
+                            title="Images"
+                          >
+                            <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowNoteModal(true)}
-                          className="shrink-0 text-gray-400 h-7 w-7 sm:h-8 sm:w-8"
+                          className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = moduleColor;
                             e.currentTarget.style.backgroundColor = `${moduleColor}10`;
@@ -1560,23 +1575,23 @@ const ExamPage = () => {
                           }}
                           title="Note"
                         >
-                          <NotebookPen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setShowReportModal(true)}
-                          className="shrink-0 text-gray-400 hover:text-red-600 hover:bg-red-50 h-7 w-7 sm:h-8 sm:w-8"
+                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-6 w-6 sm:h-8 sm:w-8 hidden sm:flex"
                           title="Signaler"
                         >
-                          <TriangleAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => toggleFlag(currentQuestion)}
                           className={cn(
-                            "shrink-0 transition-all h-7 w-7 sm:h-8 sm:w-8",
+                            "transition-all h-6 w-6 sm:h-8 sm:w-8",
                             flaggedQuestions.has(currentQuestion)
                               ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                               : "text-gray-400 hover:text-gray-600"
@@ -1584,7 +1599,7 @@ const ExamPage = () => {
                           title="Surligner"
                         >
                           <Flag className={cn(
-                            "h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform",
+                            "h-3 w-3 sm:h-4 sm:w-4 transition-transform",
                             flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
                           )} />
                         </Button>
@@ -1593,71 +1608,6 @@ const ExamPage = () => {
                   </div>
 
                   <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
-                    {/* Question Number and Reference - single row layout */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      {/* Left side: Question Number and Reference */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge 
-                          className="font-semibold text-sm px-3 py-1 shrink-0"
-                          style={{
-                            backgroundColor: `${moduleColor}20`,
-                            color: adjustColor(moduleColor, -60)
-                          }}
-                        >
-                          {currentQuestion + 1} / {questions.length}
-                        </Badge>
-                        
-                        {/* Dynamic Reference based on entry type */}
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 bg-gray-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
-                          <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
-                          <span className="truncate max-w-[200px] sm:max-w-[300px]">
-                            {(() => {
-                              // Determine the entry type and build reference accordingly
-                              const moduleName = examData?.moduleName || 'Module';
-                              const examYear = examData?.year ? `${examData.year}` : '';
-                              const examType = examData?.examType || examData?.category || '';
-                              const courseName = currentQuestionData?.sessionLabel || examData?.courseName || '';
-                              const qcmName = examData?.title || examData?.name || '';
-
-                              // QCM Banque format: moduleName > qcmName
-                              if (examType === 'QCM banque' || examData?.isQcmBanque) {
-                                return `${moduleName} > ${qcmName}`;
-                              }
-                              
-                              // Par Cours format: moduleName > courseName > examYear
-                              if (examType === 'Exam par courses' || examData?.isParCours) {
-                                return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
-                              }
-                              
-                              // Par Année format (default): moduleName > examYear > courseName
-                              return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''} > Q${currentQuestion + 1}`;
-                            })()}
-                          </span>
-                        </div>
-                        
-                        {currentQuestionData.images && currentQuestionData.images.length > 0 && (
-                          <button
-                            onClick={() => setShowImageGallery(true)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs text-gray-600"
-                          >
-                            <Image className="h-3.5 w-3.5" />
-                            Image ({currentQuestionData.images.length})
-                          </button>
-                        )}
-                      </div>
-                      
-                      {/* Right side: Multiple choice badge */}
-                      {isMultipleChoice && (
-                        <Badge 
-                          variant="outline"
-                          className="gap-1 text-xs shrink-0"
-                        >
-                          <CheckCircle2 className="h-3 w-3" />
-                          Choix multiple
-                        </Badge>
-                      )}
-                    </div>
-
                     {/* Question Text */}
                     <div
                       className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
@@ -2456,23 +2406,127 @@ const ExamPage = () => {
               className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-                <h3 className="font-semibold text-gray-900">{t('dashboard:questions') || 'Questions'}</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
+              {/* Header */}
+              <div className="border-b bg-gradient-to-br from-orange-50 to-orange-100/50">
+                <div className="flex items-center justify-between p-3 border-b bg-white/50">
+                  <h3 className="font-semibold text-gray-900 text-sm">{t('dashboard:questions') || 'Questions'}</h3>
+                  <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)} className="h-8 w-8">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                {/* Exam Info */}
+                <div className="border-b">
+                  <button
+                    onClick={() => setIsExamInfoCollapsed(!isExamInfoCollapsed)}
+                    className="w-full p-4 hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "transition-transform duration-200 mt-1",
+                        !isExamInfoCollapsed && "rotate-90"
+                      )}>
+                        <ChevronRight className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${moduleColor}20` }}>
+                        <BookOpen className="h-6 w-6" style={{ color: moduleColor }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm text-gray-900 line-clamp-2 mb-1">
+                          {examData?.name || examData?.title || 'Exam'}
+                        </h4>
+                        <p className="text-xs text-gray-600">
+                          {examData?.moduleName || 'Module'}
+                        </p>
+                        {!isExamInfoCollapsed && (
+                        <div className="space-y-1 mt-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium text-orange-600">
+                              {Math.round((Object.keys(selectedAnswers).length / questions.length) * 100)}% Complete
+                            </span>
+                            <span className="text-gray-500">
+                              {Object.keys(selectedAnswers).length} / {questions.length}
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-white/60 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-300"
+                              style={{ width: `${(Object.keys(selectedAnswers).length / questions.length) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Legend Section */}
+                <div className="border-b">
+                  <button
+                    onClick={() => setIsLegendCollapsed(!isLegendCollapsed)}
+                    className="w-full px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={cn(
+                          "transition-transform duration-200",
+                          !isLegendCollapsed && "rotate-90"
+                        )}>
+                          <ChevronRight className="h-4 w-4 text-gray-500" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Questions par Session</span>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700 text-xs">{questions.length}</Badge>
+                    </div>
+                  </button>
+                  {!isLegendCollapsed && (
+                    <div className="px-4 pb-3">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px]">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                          <span className="text-gray-500">Non visité</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                          <span className="text-gray-500">Visité</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
+                          <span className="text-gray-500">Répondu</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                          <span className="text-gray-500">Surligné</span>
+                        </div>
+                        {showResults && (
+                          <>
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
+                              <span className="text-gray-500">Correct</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                              <span className="text-gray-500">Incorrect</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <ScrollArea className="h-[calc(100vh-130px)]">
-                <div className="p-4 space-y-4">
+              <ScrollArea className="h-[calc(100vh-340px)]">
+                <div className="p-3 space-y-2">
                   {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
                     const isCollapsed = collapsedSessions.has(sessionName);
-                    const startIndex = questions.findIndex(q => q.sessionLabel === sessionName);
 
                     return (
-                      <div key={sessionName} className="space-y-2">
+                      <div key={sessionName} className="space-y-1">
                         <button
-                          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                          className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors group"
                           onClick={() => {
                             const newCollapsed = new Set(collapsedSessions);
                             if (newCollapsed.has(sessionName)) {
@@ -2483,41 +2537,53 @@ const ExamPage = () => {
                             setCollapsedSessions(newCollapsed);
                           }}
                         >
-                          <span className="text-sm font-medium truncate">{sessionName}</span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{sessionQuestions.length}</Badge>
-                            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                          <div className="flex items-center gap-2.5">
+                            <div className={cn(
+                              "transition-transform duration-200",
+                              !isCollapsed && "rotate-90"
+                            )}>
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium truncate text-gray-700">{sessionName}</span>
                           </div>
+                          <Badge variant="outline" className="bg-gray-50">{sessionQuestions.length}</Badge>
                         </button>
 
                         {!isCollapsed && (
-                          <div className="grid grid-cols-5 gap-1.5">
-                            {sessionQuestions.map((_, qIndex) => {
-                              const globalIndex = startIndex + qIndex;
+                          <div className="pl-6 space-y-0.5">
+                            {sessionQuestions.map((q, idx) => {
+                              const globalIndex = questions.findIndex(question => question._id === q._id);
                               const { status, isFlagged } = getQuestionStatus(globalIndex);
+                              const isCurrent = globalIndex === currentQuestion;
 
                               return (
                                 <button
-                                  key={globalIndex}
+                                  key={q._id}
                                   className={cn(
-                                    "relative h-9 rounded-lg text-xs font-medium transition-all",
-                                    globalIndex === currentQuestion && "ring-2 ring-blue-500",
-                                    status === 'correct' && "bg-emerald-100 text-emerald-700",
-                                    status === 'incorrect' && "bg-red-100 text-red-700",
-                                    status === 'verified' && "bg-blue-100 text-blue-700",
-                                    status === 'flagged' && "bg-purple-100 text-purple-700",
-                                    status === 'answered' && "bg-blue-100 text-blue-700",
-                                    status === 'visited' && "bg-orange-100 text-orange-700",
-                                    status === 'unanswered' && "bg-gray-100 text-gray-600"
+                                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-all",
+                                    isCurrent && "bg-blue-50 border-l-2 border-blue-500",
+                                    !isCurrent && "hover:bg-gray-50 active:bg-gray-100"
                                   )}
                                   onClick={() => {
                                     goToQuestion(globalIndex);
                                     setShowSidebar(false);
                                   }}
                                 >
-                                  {qIndex + 1}
+                                  <div className={cn(
+                                    "w-6 h-6 rounded flex items-center justify-center shrink-0 text-xs border font-medium",
+                                    status === 'correct' && "bg-emerald-100 border-emerald-300 text-emerald-700",
+                                    status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
+                                    status === 'answered' && !isFlagged && "bg-blue-100 border-blue-300 text-blue-700",
+                                    status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
+                                    status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
+                                    isFlagged && !showResults && "bg-purple-100 border-purple-300 text-purple-700"
+                                  )}>
+                                    {q.questionNumber || (idx + 1)}
+                                  </div>
+                                  <span className="flex-1 text-left text-gray-600">Q{q.questionNumber || (idx + 1)}</span>
                                   {isFlagged && (
-                                    <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 fill-purple-500 text-purple-500" />
+                                    <Flag className="h-3 w-3 fill-purple-500 text-purple-500 shrink-0" />
                                   )}
                                 </button>
                               );

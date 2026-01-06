@@ -40,6 +40,8 @@ router.post("/login", (req, res, next) => {
           email: user.email,
           name: user.name,
           isAdmin: user.isAdmin,
+          adminRole: user.adminRole,
+          permissions: user.permissions || [],
           plan: user.plan,
         },
       });

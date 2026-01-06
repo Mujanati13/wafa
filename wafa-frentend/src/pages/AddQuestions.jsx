@@ -921,7 +921,7 @@ const AddQuestions = () => {
                     <TableHead className="w-20">Image</TableHead>
                     <TableHead className="min-w-[200px] max-w-[250px]">Question</TableHead>
                     <TableHead className="min-w-[100px] max-w-[120px]">Réponse</TableHead>
-                    <TableHead className="w-24">Session</TableHead>
+                    <TableHead className="min-w-[120px]">Référence</TableHead>
                     <TableHead className="w-28 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -952,6 +952,31 @@ const AddQuestions = () => {
                         const optIndex = q.options.indexOf(opt);
                         return String.fromCharCode(65 + optIndex);
                       }).join(", ") || "—";
+                      
+                      // Determine question reference (which model/type)
+                      const getQuestionReference = () => {
+                        if (q.examId) {
+                          return {
+                            type: "Exam par years",
+                            module: q.examId?.moduleId?.name || q.examId?.moduleName || "—",
+                            color: "bg-blue-100 text-blue-800"
+                          };
+                        } else if (q.qcmBanqueId) {
+                          return {
+                            type: "QCM banque",
+                            module: q.qcmBanqueId?.moduleId?.name || q.qcmBanqueId?.moduleName || "—",
+                            color: "bg-purple-100 text-purple-800"
+                          };
+                        } else if (q.examCourseId) {
+                          return {
+                            type: "Exam par courses",
+                            module: q.examCourseId?.moduleId?.name || q.examCourseId?.moduleName || "—",
+                            color: "bg-green-100 text-green-800"
+                          };
+                        }
+                        return { type: "Non spécifié", module: "—", color: "bg-gray-100 text-gray-800" };
+                      };
+                      const reference = getQuestionReference();
                       
                       return (
                         <TableRow key={q._id || q.id}>
@@ -991,7 +1016,14 @@ const AddQuestions = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className="text-xs truncate max-w-[80px]">{q.sessionLabel || "—"}</Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className={`text-xs ${reference.color}`}>
+                                {reference.type}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={reference.module}>
+                                {reference.module}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -1162,19 +1194,26 @@ const AddQuestions = () => {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {viewingQuestion.examId?.moduleId?.name && (
+                    {/* Question Type Badge */}
+                    <Badge variant="outline" className={
+                      viewingQuestion.examId ? "text-xs bg-blue-50 text-blue-700 border-blue-200" :
+                      viewingQuestion.qcmBanqueId ? "text-xs bg-purple-50 text-purple-700 border-purple-200" :
+                      viewingQuestion.examCourseId ? "text-xs bg-green-50 text-green-700 border-green-200" :
+                      "text-xs"
+                    }>
+                      {viewingQuestion.examId ? "Exam par years" :
+                       viewingQuestion.qcmBanqueId ? "QCM banque" :
+                       viewingQuestion.examCourseId ? "Exam par courses" :
+                       "Non spécifié"}
+                    </Badge>
+                    {/* Module Badge */}
+                    {(viewingQuestion.examId?.moduleId?.name || 
+                      viewingQuestion.qcmBanqueId?.moduleId?.name || 
+                      viewingQuestion.examCourseId?.moduleId?.name) && (
                       <Badge variant="outline" className="text-xs bg-gray-50">
-                        Module: {viewingQuestion.examId.moduleId.name}
-                      </Badge>
-                    )}
-                    {viewingQuestion.qcmBanqueId?.moduleId?.name && (
-                      <Badge variant="outline" className="text-xs bg-gray-50">
-                        Module: {viewingQuestion.qcmBanqueId.moduleId.name}
-                      </Badge>
-                    )}
-                    {viewingQuestion.sessionLabel && (
-                      <Badge variant="secondary" className="text-xs">
-                        Session: {viewingQuestion.sessionLabel}
+                        Module: {viewingQuestion.examId?.moduleId?.name || 
+                                viewingQuestion.qcmBanqueId?.moduleId?.name || 
+                                viewingQuestion.examCourseId?.moduleId?.name}
                       </Badge>
                     )}
                   </div>
@@ -1348,14 +1387,28 @@ const AddQuestions = () => {
                   ))}
                 </div>
                 
-                {/* Session Label */}
+                {/* Question Reference - Read Only */}
                 <div className="space-y-2">
-                  <Label>Session / Niveau (optionnel)</Label>
-                  <Input
-                    value={editingQuestion.sessionLabel || ''}
-                    onChange={(e) => setEditingQuestion({ ...editingQuestion, sessionLabel: e.target.value })}
-                    placeholder="Ex: Session 1, Niveau avancé, etc."
-                  />
+                  <Label>Référence de la question</Label>
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border">
+                    <Badge variant="secondary" className={
+                      editingQuestion.examId ? "bg-blue-100 text-blue-800" :
+                      editingQuestion.qcmBanqueId ? "bg-purple-100 text-purple-800" :
+                      editingQuestion.examCourseId ? "bg-green-100 text-green-800" :
+                      "bg-gray-100 text-gray-800"
+                    }>
+                      {editingQuestion.examId ? "Exam par years" :
+                       editingQuestion.qcmBanqueId ? "QCM banque" :
+                       editingQuestion.examCourseId ? "Exam par courses" :
+                       "Non spécifié"}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Module: {editingQuestion.examId?.moduleId?.name || 
+                               editingQuestion.qcmBanqueId?.moduleId?.name || 
+                               editingQuestion.examCourseId?.moduleId?.name || 
+                               "—"}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* Note / Correction from Excel */}
@@ -1409,7 +1462,6 @@ const AddQuestions = () => {
                       text: editingQuestion.text,
                       options: editingQuestion.options,
                       note: editingQuestion.note,
-                      sessionLabel: editingQuestion.sessionLabel,
                       questionNumber: editingQuestion.questionNumber,
                       images: updatedImages
                     });

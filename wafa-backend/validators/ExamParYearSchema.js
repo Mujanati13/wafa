@@ -18,6 +18,9 @@ const examParYearSchema = joi.object({
     }),
     infoText: joi.string().allow('', null).messages({
         'string.base': 'Info text must be a string'
+    }),
+    courseCategoryId: joi.string().allow('', null).messages({
+        'string.base': 'Course Category ID must be a string'
     })
 });
 
@@ -36,6 +39,9 @@ const updateExamParYearSchema = joi.object({
     }),
     infoText: joi.string().allow('', null).messages({
         'string.base': 'Info text must be a string'
+    }),
+    courseCategoryId: joi.string().allow('', null).messages({
+        'string.base': 'Course Category ID must be a string'
     })
 });
 

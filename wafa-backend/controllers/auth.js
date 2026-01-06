@@ -571,6 +571,10 @@ export const AuthController = {
               name: user.name,
               profilePicture: user.profilePicture,
               emailVerified: user.emailVerified,
+              isAdmin: user.isAdmin,
+              adminRole: user.adminRole,
+              permissions: user.permissions || [],
+              plan: user.plan,
               role: user.role,
             },
           });
@@ -637,6 +641,10 @@ export const AuthController = {
               name: user.name,
               profilePicture: user.profilePicture,
               emailVerified: user.emailVerified,
+              isAdmin: user.isAdmin,
+              adminRole: user.adminRole,
+              permissions: user.permissions || [],
+              plan: user.plan,
               role: user.role,
             },
           });
@@ -701,6 +709,10 @@ export const AuthController = {
             name: newUser.name,
             profilePicture: newUser.profilePicture,
             emailVerified: newUser.emailVerified,
+            isAdmin: newUser.isAdmin || false,
+            adminRole: newUser.adminRole || null,
+            permissions: newUser.permissions || [],
+            plan: newUser.plan || "Free",
             role: newUser.role,
           },
         });

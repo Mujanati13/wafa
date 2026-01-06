@@ -21,6 +21,11 @@ const examParYearSchema = new mongoose.Schema(
         },
         infoText: {
                 type: String,
+        },
+        courseCategoryId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "CourseCategory",
+                default: null
         }
     },
     { timestamps: true }

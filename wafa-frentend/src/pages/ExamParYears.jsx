@@ -40,6 +40,7 @@ const ExamParYears = () => {
     year: "",
     imageUrl: DEFAULT_EXAM_IMAGE,
     helpText: "",
+    courseCategoryId: "",
   });
 
   const placeholderImage = DEFAULT_EXAM_IMAGE;
@@ -47,9 +48,11 @@ const ExamParYears = () => {
   useEffect(() => {
     fetchExams();
     fetchModules();
+    fetchCourseCategories();
   }, [showCreateForm]);
 
   const [modules, setModules] = useState([]);
+  const [courseCategories, setCourseCategories] = useState([]);
 
   const fetchModules = async () => {
     try {
@@ -57,6 +60,15 @@ const ExamParYears = () => {
       setModules(data?.data || []);
     } catch (err) {
       console.error("Error fetching modules:", err);
+    }
+  };
+
+  const fetchCourseCategories = async () => {
+    try {
+      const { data } = await api.get("/course-categories");
+      setCourseCategories(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching course categories:", err);
     }
   };
 
@@ -80,6 +92,7 @@ const ExamParYears = () => {
         year: parseInt(formData.year),
         imageUrl: formData.imageUrl || DEFAULT_EXAM_IMAGE,
         infoText: formData.helpText || "",
+        courseCategoryId: formData.courseCategoryId || null,
       });
 
       setShowAddExamForm(false);
@@ -90,6 +103,7 @@ const ExamParYears = () => {
         year: "",
         imageUrl: DEFAULT_EXAM_IMAGE,
         helpText: "",
+        courseCategoryId: "",
       });
       toast.success(t('admin:exam_added_success'));
       fetchExams();
@@ -125,6 +139,7 @@ const ExamParYears = () => {
       year: String(exam.year || ""),
       imageUrl: (exam.imageUrl === placeholderImage || !exam.imageUrl) ? DEFAULT_EXAM_IMAGE : exam.imageUrl,
       helpText: exam.helpText || "",
+      courseCategoryId: exam.courseCategoryId || "",
     });
     setEditingExam(exam);
     setShowAddExamForm(true);
@@ -149,6 +164,7 @@ const ExamParYears = () => {
         year: parseInt(formData.year),
         imageUrl: formData.imageUrl || DEFAULT_EXAM_IMAGE,
         infoText: formData.helpText || "",
+        courseCategoryId: formData.courseCategoryId || null,
       });
 
       if (response.data?.success) {
@@ -190,6 +206,7 @@ const ExamParYears = () => {
         imageUrl: e?.imageUrl || placeholderImage,
         totalQuestions: Array.isArray(e?.questions) ? e.questions.length : 0,
         helpText: e?.infoText || "",
+        courseCategoryId: e?.courseCategoryId || "",
         status: "active",
       }));
       list.sort((a, b) => b.year.localeCompare(a.year));
@@ -536,6 +553,58 @@ const ExamParYears = () => {
                         {modules.filter(m => m.semester === formSemesterFilter).length} module(s) dans {formSemesterFilter}
                       </p>
                     )}
+                  </div>
+
+                  {/* Course Category Select - Optional */}
+                  <div className="space-y-2">
+                    <Label className="text-black font-medium">Catégorie de cours (optionnel)</Label>
+                    <Select 
+                      value={formData.courseCategoryId || "none"} 
+                      onValueChange={(value) => handleFormChange("courseCategoryId", value === "none" ? "" : value)}
+                      disabled={!formData.moduleName}
+                    >
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder={formData.moduleName ? "Sélectionner une catégorie" : "Sélectionnez d'abord un module"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="none" className="text-gray-500">
+                          Aucune catégorie
+                        </SelectItem>
+                        {formData.moduleName && (() => {
+                          const selectedModule = modules.find(m => m.name === formData.moduleName);
+                          if (!selectedModule) return null;
+                          
+                          const filteredCategories = courseCategories.filter(cat => {
+                            const catModuleId = typeof cat.moduleId === 'object' ? cat.moduleId?._id : cat.moduleId;
+                            return catModuleId === selectedModule._id;
+                          });
+                          
+                          return filteredCategories.map((cat) => (
+                            <SelectItem key={cat._id} value={cat._id} className="text-black">
+                              {cat.name}
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                    {formData.moduleName && (() => {
+                      const selectedModule = modules.find(m => m.name === formData.moduleName);
+                      const count = selectedModule 
+                        ? courseCategories.filter(cat => {
+                            const catModuleId = typeof cat.moduleId === 'object' ? cat.moduleId?._id : cat.moduleId;
+                            return catModuleId === selectedModule._id;
+                          }).length
+                        : 0;
+                      return count > 0 ? (
+                        <p className="text-xs text-gray-500">
+                          {count} catégorie(s) disponible(s)
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400">
+                          Aucune catégorie pour ce module
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   <div className="space-y-2">

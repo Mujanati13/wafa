@@ -48,4 +48,39 @@ api.interceptors.response.use(
   }
 );
 
+// Permission helper functions
+export const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    return {};
+  }
+};
 
+export const isSuperAdmin = () => {
+  const user = getUser();
+  return user.isAdmin && user.adminRole === 'super_admin';
+};
+
+export const hasPermission = (permission) => {
+  const user = getUser();
+  if (!user.isAdmin) return false;
+  if (user.adminRole === 'super_admin') return true;
+  return (user.permissions || []).includes(permission);
+};
+
+export const hasAnyPermission = (...permissions) => {
+  const user = getUser();
+  if (!user.isAdmin) return false;
+  if (user.adminRole === 'super_admin') return true;
+  const userPermissions = user.permissions || [];
+  return permissions.some(p => userPermissions.includes(p));
+};
+
+export const hasAllPermissions = (...permissions) => {
+  const user = getUser();
+  if (!user.isAdmin) return false;
+  if (user.adminRole === 'super_admin') return true;
+  const userPermissions = user.permissions || [];
+  return permissions.every(p => userPermissions.includes(p));
+};

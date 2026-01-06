@@ -38,18 +38,65 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-// Items that require super_admin role (editors cannot see these)
-const RESTRICTED_ITEMS = ['analytics'];
-const RESTRICTED_CATEGORIES = []; // Entire category hidden for non-super-admins
+// Permission mapping for each menu item
+const ITEM_PERMISSIONS = {
+  // Overview
+  analytics: 'analytics',
+  leaderboard: null, // accessible to all
+  
+  // Users
+  Users: 'users',
+  subAdmins: 'users', // Only super_admin, handled separately
+  
+  // Structure
+  semesters: 'content',
+  module: 'content',
+  categoriesOfModules: 'content',
+  createCategoriesForCourses: 'content',
+  
+  // Exams
+  examParYears: 'content',
+  examCourses: 'content',
+  qcmBanque: 'content',
+  addQuestions: 'content',
+  
+  // Content
+  resumes: 'content',
+  explications: 'reports',
+  reportQuestions: 'reports',
+  
+  // Imports
+  importExamParYears: 'content',
+  importExamParCourse: 'content',
+  importQCMBanque: 'content',
+  importResumes: 'content',
+  importExplications: 'content',
+  importImages: 'content',
+  
+  // Payments
+  subscription: 'payments',
+  demandesDePayements: 'payments',
+  paypalSettings: 'payments',
+  
+  // Settings
+  notifications: 'notifications',
+  contactMessages: 'settings',
+  landingSettings: 'settings',
+  privacyPolicy: 'settings',
+};
+
+// Items that require super_admin role (not just permissions)
+const SUPER_ADMIN_ONLY_ITEMS = ['subAdmins'];
 
 const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
   const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get user role from localStorage
+  // Get user role and permissions from localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isSuperAdmin = user.adminRole === 'super_admin';
+  const userPermissions = user.permissions || [];
 
   const [openCategories, setOpenCategories] = useState({
     overview: true,
@@ -304,13 +351,28 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
     }
 
     return sidebarCategories
-      .filter(category => !RESTRICTED_CATEGORIES.includes(category.id))
       .map(category => ({
         ...category,
-        items: category.items.filter(item => !RESTRICTED_ITEMS.includes(item.id))
+        items: category.items.filter(item => {
+          // Check if item is super_admin only
+          if (SUPER_ADMIN_ONLY_ITEMS.includes(item.id)) {
+            return false;
+          }
+          
+          // Check required permission for this item
+          const requiredPermission = ITEM_PERMISSIONS[item.id];
+          
+          // If no permission required (null), item is visible to all admins
+          if (requiredPermission === null || requiredPermission === undefined) {
+            return true;
+          }
+          
+          // Check if user has the required permission
+          return userPermissions.includes(requiredPermission);
+        })
       }))
       .filter(category => category.items.length > 0); // Remove empty categories
-  }, [isSuperAdmin, sidebarCategories]);
+  }, [isSuperAdmin, userPermissions, sidebarCategories]);
 
   const toggleCategory = (categoryId) => {
     setOpenCategories((prev) => ({

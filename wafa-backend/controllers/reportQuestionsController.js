@@ -1,5 +1,6 @@
 import asyncHandler from "../handlers/asyncHandler.js";
 import ReportQuestions from "../models/reportQuestions.js";
+import Question from "../models/questionModule.js";
 
 export const reportQuestionsController = {
     create: asyncHandler(async (req, res) => {
@@ -43,36 +44,77 @@ export const reportQuestionsController = {
             .populate({ path: "userId", select: "username email" })
             .populate({
                 path: "questionId",
-                select: "text examId sessionLabel",
-                populate: {
-                    path: "examId",
-                    select: "name year moduleId category courseName totalQuestions linkedQuestions",
-                    populate: {
-                        path: "moduleId",
-                        select: "name category"
+                select: "text examId qcmBanqueId sessionLabel",
+                populate: [
+                    {
+                        path: "examId",
+                        select: "name year moduleId category courseName",
+                        populate: {
+                            path: "moduleId",
+                            select: "name category"
+                        }
+                    },
+                    {
+                        path: "qcmBanqueId",
+                        select: "name moduleId",
+                        populate: {
+                            path: "moduleId",
+                            select: "name category"
+                        }
                     }
-                }
+                ]
             })
             .lean();
 
-        const shaped = reports.map((r) => ({
-            ...r,
-            username: r.userId?.username,
-            userEmail: r.userId?.email,
-            questionTitle: r.questionId?.text,
-            questionSessionLabel: r.questionId?.sessionLabel,
-            examName: r.questionId?.examId?.name,
-            examYear: r.questionId?.examId?.year,
-            moduleName: r.questionId?.examId?.moduleId?.name,
-            moduleCategory: r.questionId?.examId?.moduleId?.category,
-            // Course specific fields
-            courseCategory: r.questionId?.examId?.category || null,
-            courseName: r.questionId?.examId?.courseName || r.questionId?.examId?.name,
-            // Number of questions in the exam/course
-            numberOfQuestions: r.questionId?.examId?.totalQuestions ||
-                r.questionId?.examId?.linkedQuestions?.length ||
-                null,
-        }));
+        // Get question counts for all related exams/qcm banques
+        const examIds = [...new Set(reports.map(r => r.questionId?.examId?._id).filter(Boolean))];
+        const qcmBanqueIds = [...new Set(reports.map(r => r.questionId?.qcmBanqueId?._id).filter(Boolean))];
+
+        // Count questions per exam
+        const examQuestionCounts = {};
+        if (examIds.length > 0) {
+            const examCounts = await Question.aggregate([
+                { $match: { examId: { $in: examIds } } },
+                { $group: { _id: "$examId", count: { $sum: 1 } } }
+            ]);
+            examCounts.forEach(c => { examQuestionCounts[c._id.toString()] = c.count; });
+        }
+
+        // Count questions per QCM Banque
+        const qcmQuestionCounts = {};
+        if (qcmBanqueIds.length > 0) {
+            const qcmCounts = await Question.aggregate([
+                { $match: { qcmBanqueId: { $in: qcmBanqueIds } } },
+                { $group: { _id: "$qcmBanqueId", count: { $sum: 1 } } }
+            ]);
+            qcmCounts.forEach(c => { qcmQuestionCounts[c._id.toString()] = c.count; });
+        }
+
+        const shaped = reports.map((r) => {
+            const examId = r.questionId?.examId?._id?.toString();
+            const qcmBanqueId = r.questionId?.qcmBanqueId?._id?.toString();
+            
+            return {
+                ...r,
+                username: r.userId?.username,
+                userEmail: r.userId?.email,
+                questionTitle: r.questionId?.text,
+                questionSessionLabel: r.questionId?.sessionLabel,
+                examName: r.questionId?.examId?.name || r.questionId?.qcmBanqueId?.name,
+                examYear: r.questionId?.examId?.year,
+                moduleName: r.questionId?.examId?.moduleId?.name || r.questionId?.qcmBanqueId?.moduleId?.name,
+                moduleCategory: r.questionId?.examId?.moduleId?.category || r.questionId?.qcmBanqueId?.moduleId?.category,
+                // Course specific fields
+                courseCategory: r.questionId?.examId?.category || null,
+                courseName: r.questionId?.examId?.courseName || r.questionId?.examId?.name,
+                // Number of questions in the exam/course
+                numberOfQuestions: examId 
+                    ? examQuestionCounts[examId] || 0
+                    : qcmBanqueId 
+                        ? qcmQuestionCounts[qcmBanqueId] || 0
+                        : 0,
+            };
+        });
 
         res.status(200).json({ success: true, data: shaped });
     }),

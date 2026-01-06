@@ -6,13 +6,14 @@ import { NotificationController } from "./notificationController.js";
 export const examController = {
     create: asyncHandler(async (req, res) => {
 
-        const { name, moduleId, year, imageUrl, infoText } = req.body;
+        const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
         const newExam = await examModel.create({
             name,
             moduleId,
             year,
             imageUrl,
-            infoText
+            infoText,
+            courseCategoryId: courseCategoryId || null
         });
         res.status(201).json({
             success: true,
@@ -23,7 +24,7 @@ export const examController = {
 
     update: asyncHandler(async (req, res) => {
         const { id } = req.params;
-        const { name, moduleId, year, imageUrl, infoText } = req.body;
+        const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
         const updatedExam = await examModel.findByIdAndUpdate(
             id,
             {
@@ -31,7 +32,8 @@ export const examController = {
                 moduleId,
                 year,
                 imageUrl,
-                infoText
+                infoText,
+                courseCategoryId: courseCategoryId || null
             },
             { new: true }
         );
@@ -83,6 +85,7 @@ export const examController = {
             ...exam,
             moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
             moduleColor: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.color : '#6366f1',
+            courseCategoryId: exam.courseCategoryId || null,
             questions: questionsByExam[exam._id.toString()] || []
         }));
 

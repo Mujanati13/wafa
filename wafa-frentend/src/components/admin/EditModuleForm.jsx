@@ -378,7 +378,19 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                             <div
                               className="w-16 h-16 rounded-lg border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xl"
                               style={{
-                                background: `linear-gradient(${gradient.direction.replace('to-', 'to ')}, ${gradient.from}, ${gradient.to})`
+                                background: `linear-gradient(${(() => {
+                                  const dirMap = {
+                                    'to-br': 'to bottom right',
+                                    'to-tr': 'to top right', 
+                                    'to-bl': 'to bottom left',
+                                    'to-tl': 'to top left',
+                                    'to-r': 'to right',
+                                    'to-l': 'to left',
+                                    'to-b': 'to bottom',
+                                    'to-t': 'to top'
+                                  };
+                                  return dirMap[gradient.direction] || 'to bottom right';
+                                })()}, ${gradient.from}, ${gradient.to})`
                               }}
                             >
                               M
@@ -425,12 +437,24 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                     </div>
                     
                     {/* Preview */}
-                    <div key={`${selectedColor}-${gradientColor}-${useGradient}`} className="mt-4 p-3 rounded-lg bg-gray-50 flex items-center gap-3">
+                    <div key={`${selectedColor}-${gradientColor}-${useGradient}-${gradientDirection}`} className="mt-4 p-3 rounded-lg bg-gray-50 flex items-center gap-3">
                       <div
                         className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md"
                         style={{
                           background: useGradient && gradientColor
-                            ? `linear-gradient(${gradientDirection.replace('to-', 'to ')}, ${selectedColor}, ${gradientColor})`
+                            ? `linear-gradient(${(() => {
+                                const dirMap = {
+                                  'to-br': 'to bottom right',
+                                  'to-tr': 'to top right', 
+                                  'to-bl': 'to bottom left',
+                                  'to-tl': 'to top left',
+                                  'to-r': 'to right',
+                                  'to-l': 'to left',
+                                  'to-b': 'to bottom',
+                                  'to-t': 'to top'
+                                };
+                                return dirMap[gradientDirection] || 'to bottom right';
+                              })()}, ${selectedColor}, ${gradientColor})`
                             : selectedColor
                         }}
                       >
@@ -438,7 +462,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       </div>
                       <div className="text-sm">
                         <p className="font-semibold text-gray-900">Aperçu</p>
-                        <p className="text-gray-500">{useGradient ? "Dégradé" : "Couleur unie"}</p>
+                        <p className="text-gray-500">{useGradient && gradientColor ? "Dégradé" : "Couleur unie"}</p>
                       </div>
                     </div>
                   </div>
