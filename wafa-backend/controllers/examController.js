@@ -69,8 +69,10 @@ export const examController = {
         const exams = await examModel.find().populate('moduleId', 'name color').lean();
         // For each exam, get its related questions
         const examIds = exams.map(e => e._id);
-        // Assuming QuestionModel has a field 'examId' referencing exam
-        const questions = await QuestionModel.find({ examId: { $in: examIds } }).lean();
+        // Get questions sorted by questionNumber
+        const questions = await QuestionModel.find({ examId: { $in: examIds } })
+            .sort({ questionNumber: 1, createdAt: 1 })
+            .lean();
 
         // Group questions by examId
         const questionsByExam = {};
@@ -106,12 +108,14 @@ export const examController = {
             });
         }
 
-        // Get questions related to this exam
-        const questions = await QuestionModel.find({ examId: id }).lean();
+        // Get questions related to this exam, sorted by questionNumber then by createdAt
+        const questions = await QuestionModel.find({ examId: id })
+            .sort({ questionNumber: 1, createdAt: 1 })
+            .lean();
 
         // Group questions by session.label
         const groupedQuestions = questions.reduce((acc, q) => {
-            const session = q.sessionLabel || "No Session"; // fallback if no session
+            const session = q.sessionLabel || "Session principale"; // fallback if no session
             if (!acc[session]) acc[session] = [];
             acc[session].push(q);
             return acc;

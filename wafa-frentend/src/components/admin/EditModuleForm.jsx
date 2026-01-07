@@ -336,25 +336,57 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                           <span className="text-xs text-gray-600">{item.name}</span>
                         </button>
                       ))}
+                      
+                      {/* Custom Color Button */}
+                      <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all hover:scale-105 ${
+                              !SIMPLE_COLORS.some(c => c.color === selectedColor) && !useGradient ? "ring-2 ring-blue-500" : ""
+                            }`}
+                          >
+                            <div
+                              className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-400 shadow-md flex items-center justify-center bg-gradient-to-br from-red-400 via-green-400 to-blue-400"
+                            >
+                              <Palette className="h-5 w-5 text-white drop-shadow-md" />
+                            </div>
+                            <span className="text-xs text-gray-600">Custom</span>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-4 z-[100001]" align="start">
+                          <div className="space-y-3">
+                            <Label className="text-sm font-semibold">Couleur personnalisée</Label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="color"
+                                value={selectedColor}
+                                onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
+                                className="w-14 h-14 rounded-lg border-2 border-gray-300 cursor-pointer"
+                              />
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  type="text"
+                                  value={selectedColor}
+                                  onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
+                                  className="h-9 text-xs font-mono uppercase"
+                                  placeholder="#3b82f6"
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => setShowColorPicker(false)}
+                                >
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Appliquer
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
-
-                      {/* Custom Color */}
-                      <div className="flex items-center gap-2 pt-2">
-                        <Label className="text-xs text-gray-600">Couleur personnalisée:</Label>
-                        <input
-                          type="color"
-                          value={selectedColor}
-                          onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
-                          className="w-10 h-10 rounded-lg border-2 border-gray-300 cursor-pointer"
-                        />
-                        <Input
-                          type="text"
-                          value={selectedColor}
-                          onChange={(e) => { setSelectedColor(e.target.value); setUseGradient(false); }}
-                          className="w-28 h-10 text-xs font-mono"
-                          placeholder="#3b82f6"
-                        />
-                      </div>
 
                     <div className="border-t pt-3 mt-3">
                       <span className="text-xs text-gray-600 mb-2 block">Ou choisir un dégradé</span>

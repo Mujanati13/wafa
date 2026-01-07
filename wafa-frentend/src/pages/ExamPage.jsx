@@ -394,16 +394,27 @@ const ExamPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [selectedAnswers, showResults, examData]);
 
-  // Get all questions
+  // Get all questions - sorted by questionNumber
   const questions = useMemo(() => {
     if (!examData?.questions) return [];
     const allQuestions = [];
     Object.entries(examData.questions).forEach(([sessionName, sessionQuestions]) => {
-      sessionQuestions.forEach(q => {
+      // Sort session questions by questionNumber first
+      const sortedSessionQuestions = [...sessionQuestions].sort((a, b) => {
+        const numA = a.questionNumber || 0;
+        const numB = b.questionNumber || 0;
+        return numA - numB;
+      });
+      sortedSessionQuestions.forEach(q => {
         allQuestions.push({ ...q, sessionLabel: sessionName });
       });
     });
-    return allQuestions;
+    // Also sort all questions by questionNumber for consistent ordering
+    return allQuestions.sort((a, b) => {
+      const numA = a.questionNumber || 0;
+      const numB = b.questionNumber || 0;
+      return numA - numB;
+    });
   }, [examData]);
 
   const currentQuestionData = questions[currentQuestion];
@@ -980,7 +991,7 @@ const ExamPage = () => {
               <span>{formatTime(timeElapsed)}</span>
             </Badge>
             <span className="text-[10px] text-gray-400">
-              {currentQuestion + 1}/{questions.length}
+              Q{currentQuestionData?.questionNumber || currentQuestion + 1}/{questions.length}
             </span>
           </div>
           
@@ -2984,6 +2995,7 @@ const ExamPage = () => {
                         acc.push({
                           src: imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`,
                           questionIndex: idx,
+                          questionNumber: q.questionNumber || (idx + 1),
                           questionText: q.text?.substring(0, 50) + '...',
                           imageIndex: imgIdx
                         });
@@ -3021,16 +3033,16 @@ const ExamPage = () => {
                         >
                           <img
                             src={img.src}
-                            alt={`Question ${img.questionIndex + 1}`}
+                            alt={`Question ${img.questionNumber}`}
                             className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                             <span className="text-white text-xs font-medium">
-                              Q{img.questionIndex + 1}
+                              Q{img.questionNumber}
                             </span>
                           </div>
                           <Badge className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-purple-600 text-[10px] sm:text-xs">
-                            Q{img.questionIndex + 1}
+                            Q{img.questionNumber}
                           </Badge>
                         </div>
                       ))}

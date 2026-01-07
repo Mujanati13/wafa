@@ -47,6 +47,7 @@ const ExamCourses = () => {
 
   const [examCourses, setExamCourses] = useState([]);
   const [modules, setModules] = useState([]);
+  const [courseCategories, setCourseCategories] = useState([]); // Categories from /course-categories
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const placeholderImage = DEFAULT_COURSE_IMAGE;
@@ -54,6 +55,7 @@ const ExamCourses = () => {
   useEffect(() => {
     fetchCourses();
     fetchModules();
+    fetchCourseCategories();
   }, []);
 
   const fetchModules = async () => {
@@ -62,6 +64,15 @@ const ExamCourses = () => {
       setModules(data?.data || []);
     } catch (err) {
       console.error("Error fetching modules:", err);
+    }
+  };
+
+  const fetchCourseCategories = async () => {
+    try {
+      const { data } = await api.get("/course-categories");
+      setCourseCategories(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching course categories:", err);
     }
   };
 
@@ -165,8 +176,8 @@ const ExamCourses = () => {
 
   const uniqueModules = Array.from(new Set(examCourses.map((c) => c.moduleName))).filter(Boolean);
   const uniqueCategories = Array.from(new Set(examCourses.map((c) => c.category))).filter(Boolean);
-  // Get all unique categories from exam courses (not default predefined ones)
-  const allCategories = uniqueCategories.filter(Boolean);
+  // Get categories from /course-categories endpoint
+  const allCategories = courseCategories.map(cat => cat.name).filter(Boolean);
 
   // Handle file selection
   const handleFileSelect = (e) => {
@@ -516,7 +527,7 @@ const ExamCourses = () => {
         </Card>
       </div>
 
-      {showCreateForm && <NewExamCourseForm setShowNewExamCourseForm={setShowCreateForm} modules={uniqueModules} categories={uniqueCategories} />}
+      {showCreateForm && <NewExamCourseForm setShowNewExamCourseForm={setShowCreateForm} modules={uniqueModules} categories={allCategories} />}
 
       {/* Add/Edit Course Dialog */}
       <AnimatePresence>
