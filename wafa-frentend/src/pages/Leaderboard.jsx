@@ -62,13 +62,25 @@ const Leaderboard = () => {
       });
       
       // Transform data to include all point types
-      const transformedData = (response.data.leaderboard || []).map(user => ({
-        ...user,
-        normalPoints: user.normalPoints || user.points || 0,
-        bluePoints: user.bluePoints || 0,
-        greenPoints: user.greenPoints || 0,
-        totalPoints: (user.normalPoints || user.points || 0) + (user.bluePoints || 0) + (user.greenPoints || 0),
-      }));
+      const transformedData = (response.data.leaderboard || []).map(user => {
+        // Calculate year from semesters if currentYear not set
+        let year = user.currentYear;
+        if (!year && user.semesters && user.semesters.length > 0) {
+          // Extract year number from first semester (S1-S2 = 1, S3-S4 = 2, etc.)
+          const firstSem = user.semesters[0];
+          const semNum = parseInt(firstSem?.replace('S', '') || '0');
+          year = Math.ceil(semNum / 2);
+        }
+        
+        return {
+          ...user,
+          normalPoints: user.normalPoints || user.points || 0,
+          bluePoints: user.bluePoints || 0,
+          greenPoints: user.greenPoints || 0,
+          totalPoints: user.totalPoints || ((user.normalPoints || user.points || 0) + (user.bluePoints || 0) + (user.greenPoints || 0)),
+          currentYear: year
+        };
+      });
       
       setLeaderboardData(transformedData);
       setStats(response.data.stats);

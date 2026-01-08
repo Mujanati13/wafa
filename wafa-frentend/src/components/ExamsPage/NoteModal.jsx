@@ -25,8 +25,9 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
           withCredentials: true,
         }
       );
-      if (data.notes && data.notes.length > 0) {
-        const note = data.notes[0];
+      // Backend returns {success, data: [...]} not {notes: [...]}
+      if (data.data && data.data.length > 0) {
+        const note = data.data[0];
         setContent(note.content);
         setExistingNoteId(note._id);
       }
@@ -49,10 +50,14 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
       } else {
         const { data } = await axios.post(
           `${import.meta.env.VITE_API_URL}/notes`,
-          { questionId, content },
+          { 
+            questionId, 
+            content,
+            title: `Note Q${questionId?.slice(-6) || 'Question'}` // Generate a title from question ID
+          },
           { withCredentials: true }
         );
-        setExistingNoteId(data.note._id);
+        setExistingNoteId(data.data?._id || data.note?._id);
       }
       setLastSaved(new Date());
     } catch (error) {

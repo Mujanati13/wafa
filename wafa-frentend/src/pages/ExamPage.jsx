@@ -58,7 +58,9 @@ import {
   Settings,
   CreditCard,
   Highlighter,
-  Calendar
+  Calendar,
+  Cloud,
+  CloudOff
 } from "lucide-react";
 import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
@@ -75,6 +77,7 @@ import NoteModal from "@/components/ExamsPage/NoteModal";
 import ReportModal from "@/components/ExamsPage/ReportModal";
 import CommunityModal from "@/components/ExamsPage/CommunityModal";
 import ResumesModal from "@/components/ExamsPage/ResumesModal";
+import PlaylistModal from "@/components/ExamsPage/PlaylistModal";
 
 // Confetti function (simple implementation without external library)
 const triggerConfetti = () => {
@@ -149,9 +152,15 @@ const ExamPage = () => {
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
   const [showResumesModal, setShowResumesModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
   const [showVueEnsemble, setShowVueEnsemble] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
+
+  // Save status tracking
+  const [isSaved, setIsSaved] = useState(true);
+  const [lastSaveTime, setLastSaveTime] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Extract module color from exam data
   const moduleColor = examData?.moduleColor || '#6366f1'; // Default indigo
@@ -373,24 +382,60 @@ const ExamPage = () => {
     fetchData();
   }, [examId, examType, t, getExamEndpoint, transformExamData]);
 
-  // Auto-save progress (including verified state)
+  // Mark as unsaved when answers change
   useEffect(() => {
-    if (!examData || showResults) return;
+    if (examData && !showResults) {
+      setHasUnsavedChanges(true);
+    }
+  }, [selectedAnswers, flaggedQuestions, verifiedQuestions]);
+
+  // Auto-save progress (including verified state) - debounced
+  useEffect(() => {
+    if (!examData || showResults || !hasUnsavedChanges) return;
 
     const saveProgress = () => {
-      const progress = {
-        answers: selectedAnswers,
-        currentQ: currentQuestion,
-        timeSpent: timeElapsed,
-        flags: Array.from(flaggedQuestions),
-        verified: verifiedQuestions
-      };
-      localStorage.setItem(`exam_progress_${examType}_${examId}`, JSON.stringify(progress));
+      setIsSaved(false); // Show saving indicator briefly
+      try {
+        const progress = {
+          answers: selectedAnswers,
+          currentQ: currentQuestion,
+          timeSpent: timeElapsed,
+          flags: Array.from(flaggedQuestions),
+          verified: verifiedQuestions
+        };
+        localStorage.setItem(`exam_progress_${examType}_${examId}`, JSON.stringify(progress));
+        setIsSaved(true);
+        setLastSaveTime(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Failed to save progress:', error);
+        setIsSaved(false);
+      }
     };
 
-    const saveTimer = setTimeout(saveProgress, 1000);
+    const saveTimer = setTimeout(saveProgress, 300);
     return () => clearTimeout(saveTimer);
-  }, [selectedAnswers, currentQuestion, timeElapsed, flaggedQuestions, verifiedQuestions, examId, examData, showResults]);
+  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed]);
+
+  // Periodically save time elapsed (every 30 seconds)
+  useEffect(() => {
+    if (!examData || showResults) return;
+    
+    const timeUpdateTimer = setInterval(() => {
+      try {
+        const savedProgress = localStorage.getItem(`exam_progress_${examType}_${examId}`);
+        if (savedProgress) {
+          const progress = JSON.parse(savedProgress);
+          progress.timeSpent = timeElapsed;
+          localStorage.setItem(`exam_progress_${examType}_${examId}`, JSON.stringify(progress));
+        }
+      } catch (error) {
+        console.error('Failed to save time:', error);
+      }
+    }, 30000); // Every 30 seconds
+    
+    return () => clearInterval(timeUpdateTimer);
+  }, [examData, showResults, examType, examId, timeElapsed]);
 
   // Warn before leaving
   useEffect(() => {
@@ -480,15 +525,25 @@ const ExamPage = () => {
     setAnswerAnimation({ questionIndex, optionIndex });
     setTimeout(() => setAnswerAnimation(null), 300);
 
-    // Always allow multiple selection (toggle behavior)
-    const current = selectedAnswers[questionIndex] || [];
-    const updated = current.includes(optionIndex)
-      ? current.filter(i => i !== optionIndex)
-      : [...current, optionIndex];
-    setSelectedAnswers({ ...selectedAnswers, [questionIndex]: updated });
+    // Use functional update to avoid stale closure issues
+    setSelectedAnswers(prevAnswers => {
+      const current = prevAnswers[questionIndex] || [];
+      const updated = current.includes(optionIndex)
+        ? current.filter(i => i !== optionIndex)
+        : [...current, optionIndex];
+      
+      // Remove the key if no answers selected, otherwise update it
+      const newAnswers = { ...prevAnswers };
+      if (updated.length === 0) {
+        delete newAnswers[questionIndex];
+      } else {
+        newAnswers[questionIndex] = updated;
+      }
+      return newAnswers;
+    });
 
     playSound('select');
-  }, [questions, selectedAnswers, showResults, verifiedQuestions, playSound]);
+  }, [questions, showResults, verifiedQuestions, playSound]);
 
   // Toggle flag
   const toggleFlag = useCallback((index) => {
@@ -732,12 +787,21 @@ const ExamPage = () => {
   }, [examId, examType, t]);
 
   const score = useMemo(() => calculateScore(), [calculateScore]);
+  
+  // Count only questions with actual answers (not empty arrays)
+  const answeredCount = useMemo(() => {
+    return Object.entries(selectedAnswers).filter(([_, answers]) => answers && answers.length > 0).length;
+  }, [selectedAnswers]);
+  
   const progress = useMemo(() =>
-    (Object.keys(selectedAnswers).length / Math.max(questions.length, 1)) * 100,
-    [selectedAnswers, questions.length]
+    (answeredCount / Math.max(questions.length, 1)) * 100,
+    [answeredCount, questions.length]
   );
 
   // Get question status with enhanced colors
+  // Convert selectedAnswers keys to a string for dependency tracking
+  const selectedAnswersKeys = Object.keys(selectedAnswers).join(',');
+  
   const getQuestionStatus = useCallback((index) => {
     const hasAnswer = selectedAnswers[index]?.length > 0;
     const isVerified = verifiedQuestions[index];
@@ -773,7 +837,7 @@ const ExamPage = () => {
     }
 
     return { status: 'unanswered', isFlagged, isVisited: false };
-  }, [selectedAnswers, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
+  }, [selectedAnswers, selectedAnswersKeys, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -927,7 +991,6 @@ const ExamPage = () => {
   }
 
   const isMultipleChoice = currentQuestionData.options.filter(opt => opt.isCorrect).length > 1;
-  const answeredCount = Object.keys(selectedAnswers).length;
   const flaggedCount = flaggedQuestions.size;
 
   // Calculate verified stats for mobile header
@@ -1010,7 +1073,7 @@ const ExamPage = () => {
           </div>
           
           {/* Center: Timer + Progress */}
-          <div className="flex items-center gap-2 flex-1 justify-center">
+          <div className="flex items-center gap-1.5 flex-1 justify-center">
             <Badge
               variant="outline"
               className={cn(
@@ -1021,6 +1084,11 @@ const ExamPage = () => {
               <Timer className="h-3 w-3" />
               <span>{formatTime(timeElapsed)}</span>
             </Badge>
+            {isSaved ? (
+              <Cloud className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <CloudOff className="h-3 w-3 text-amber-500 animate-pulse" />
+            )}
             <span className="text-[10px] text-gray-400">
               Q{currentQuestionData?.displayNumber || currentQuestion + 1}/{questions.length}
             </span>
@@ -1088,6 +1156,22 @@ const ExamPage = () => {
               >
                 <Timer className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span>{formatTime(timeElapsed)}</span>
+              </Badge>
+
+              {/* Save Status Indicator */}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 transition-all",
+                  isSaved ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"
+                )}
+              >
+                {isSaved ? (
+                  <Cloud className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                ) : (
+                  <CloudOff className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-pulse" />
+                )}
+                <span className="hidden sm:inline">{isSaved ? 'Enregistré' : 'Enregistrement...'}</span>
               </Badge>
             </div>
 
@@ -1304,6 +1388,7 @@ const ExamPage = () => {
                             <div className="pl-6 space-y-0.5">
                               {sessionQuestions.map((q, idx) => {
                                 const globalIndex = questions.findIndex(question => question._id === q._id);
+                                if (globalIndex === -1) return null; // Skip if question not found
                                 const questionData = questions[globalIndex]; // Get the question with displayNumber
                                 const { status, isFlagged } = getQuestionStatus(globalIndex);
                                 const isCurrent = globalIndex === currentQuestion;
@@ -1346,57 +1431,80 @@ const ExamPage = () => {
                 {/* Progression Section */}
                 {!showResults && (
                   <div className="border-t p-3 bg-gradient-to-br from-gray-50 to-white shrink-0">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="font-medium text-gray-700">Progression</span>
-                      <span className="text-gray-500">
-                        {Object.keys(verifiedQuestions).length} / {questions.length} vérifiées
-                      </span>
-                    </div>
-                    <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
-                      {(() => {
-                        const correctCount = questions.filter((_, i) => {
-                          if (!verifiedQuestions[i]) return false;
-                          const selected = selectedAnswers[i] || [];
-                          const correctIndices = questions[i].options
-                            .map((opt, idx) => opt.isCorrect ? idx : null)
-                            .filter(idx => idx !== null);
-                          return selected.length === correctIndices.length &&
-                            selected.every(s => correctIndices.includes(s));
-                        }).length;
+                    <div className="space-y-3">
+                      {/* Answered Progress */}
+                      <div>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="font-medium text-gray-700">Répondues</span>
+                          <span className="font-semibold" style={{ color: moduleColor }}>
+                            {answeredCount} / {questions.length}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full transition-all duration-300 rounded-full"
+                            style={{ 
+                              width: `${(answeredCount / questions.length) * 100}%`,
+                              background: `linear-gradient(90deg, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Verified Progress */}
+                      <div>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="font-medium text-gray-700">Vérifiées</span>
+                          <span className="text-gray-500">
+                            {Object.keys(verifiedQuestions).length} / {questions.length}
+                          </span>
+                        </div>
+                        <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
+                          {(() => {
+                            const correctCount = questions.filter((_, i) => {
+                              if (!verifiedQuestions[i]) return false;
+                              const selected = selectedAnswers[i] || [];
+                              const correctIndices = questions[i].options
+                                .map((opt, idx) => opt.isCorrect ? idx : null)
+                                .filter(idx => idx !== null);
+                              return selected.length === correctIndices.length &&
+                                selected.every(s => correctIndices.includes(s));
+                            }).length;
 
-                        const incorrectCount = Object.keys(verifiedQuestions).length - correctCount;
-                        const unansweredCount = questions.length - Object.keys(verifiedQuestions).length;
+                            const incorrectCount = Object.keys(verifiedQuestions).length - correctCount;
 
-                        const correctPct = (correctCount / questions.length) * 100;
-                        const incorrectPct = (incorrectCount / questions.length) * 100;
+                            const correctPct = (correctCount / questions.length) * 100;
+                            const incorrectPct = (incorrectCount / questions.length) * 100;
 
-                        return (
-                          <>
-                            <div
-                              className="bg-emerald-500 transition-all"
-                              style={{ width: `${correctPct}%` }}
-                            />
-                            <div
-                              className="bg-red-500 transition-all"
-                              style={{ width: `${incorrectPct}%` }}
-                            />
-                          </>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        Correctes
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        Incorrectes
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                        Non vérifiées
-                      </span>
+                            return (
+                              <>
+                                <div
+                                  className="bg-emerald-500 transition-all"
+                                  style={{ width: `${correctPct}%` }}
+                                />
+                                <div
+                                  className="bg-red-500 transition-all"
+                                  style={{ width: `${incorrectPct}%` }}
+                                />
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            Correctes
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            Incorrectes
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
+                            Non vérifiées
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1552,7 +1660,7 @@ const ExamPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setShowResumesModal(true)}
+                          onClick={() => setShowPlaylistModal(true)}
                           className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = moduleColor;
@@ -2355,6 +2463,7 @@ const ExamPage = () => {
                           <div className="pl-6 space-y-0.5">
                             {sessionQuestions.map((q, idx) => {
                               const globalIndex = questions.findIndex(question => question._id === q._id);
+                              if (globalIndex === -1) return null; // Skip if question not found
                               const questionData = questions[globalIndex]; // Get the question with displayNumber
                               const { status, isFlagged } = getQuestionStatus(globalIndex);
                               const isCurrent = globalIndex === currentQuestion;
@@ -2405,11 +2514,11 @@ const ExamPage = () => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-gray-700">Progression</span>
                       <span className="font-semibold" style={{ color: moduleColor }}>
-                        {Math.round((Object.keys(selectedAnswers).length / questions.length) * 100)}%
+                        {Math.round((answeredCount / questions.length) * 100)}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{Object.keys(selectedAnswers).length} / {questions.length} répondues</span>
+                      <span>{answeredCount} / {questions.length} répondues</span>
                       {verifiedCount > 0 && (
                         <span>{verifiedCount} vérifiées</span>
                       )}
@@ -2418,7 +2527,7 @@ const ExamPage = () => {
                       <div 
                         className="h-full transition-all duration-300 rounded-full"
                         style={{ 
-                          width: `${(Object.keys(selectedAnswers).length / questions.length) * 100}%`,
+                          width: `${(answeredCount / questions.length) * 100}%`,
                           background: `linear-gradient(90deg, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
                         }}
                       />
@@ -2613,6 +2722,15 @@ const ExamPage = () => {
         <ResumesModal
           isOpen={showResumesModal}
           onClose={() => setShowResumesModal(false)}
+          examData={examData}
+        />
+      )}
+
+      {showPlaylistModal && currentQuestionData && (
+        <PlaylistModal
+          isOpen={showPlaylistModal}
+          onClose={() => setShowPlaylistModal(false)}
+          questionId={currentQuestionData._id}
           examData={examData}
         />
       )}

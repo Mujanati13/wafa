@@ -696,23 +696,48 @@ export const UserController = {
                 totalScore: 0,
                 studyHours: 0,
                 rank: 0,
-                achievements: []
+                achievements: [],
+                answeredQuestions: new Map()
+            });
+        }
+
+        // Convert Map to plain object for JSON serialization
+        const answeredQuestionsObj = {};
+        if (userStats.answeredQuestions && userStats.answeredQuestions.size > 0) {
+            // Mongoose Map - use entries() or forEach()
+            userStats.answeredQuestions.forEach((value, key) => {
+                answeredQuestionsObj[key] = {
+                    selectedAnswers: value.selectedAnswers || [],
+                    isVerified: value.isVerified || false,
+                    isCorrect: value.isCorrect || false,
+                    answeredAt: value.answeredAt,
+                    examId: value.examId?.toString(),
+                    moduleId: value.moduleId?.toString()
+                };
             });
         }
 
         // Calculate additional stats
         const stats = {
-            examsCompleted: userStats.totalExams || 0,
+            examsCompleted: userStats.totalExams || userStats.totalExamsCompleted || 0,
             averageScore: userStats.averageScore || 0,
-            studyHours: userStats.studyHours || 0,
+            studyHours: userStats.studyHours || Math.round((userStats.totalTimeSpent || 0) / 3600),
             rank: userStats.rank || 0,
             achievements: userStats.achievements || [],
-            moduleProgress: userStats.moduleProgress || []
+            moduleProgress: userStats.moduleProgress || [],
+            questionsAnswered: userStats.questionsAnswered || 0,
+            correctAnswers: userStats.correctAnswers || 0,
+            totalQuestionsAttempted: userStats.totalQuestionsAttempted || 0,
+            totalCorrectAnswers: userStats.totalCorrectAnswers || 0,
+            totalIncorrectAnswers: userStats.totalIncorrectAnswers || 0
         };
 
         res.status(200).json({
             success: true,
-            data: { stats },
+            data: { 
+                stats,
+                answeredQuestions: answeredQuestionsObj
+            },
         });
     }),
 

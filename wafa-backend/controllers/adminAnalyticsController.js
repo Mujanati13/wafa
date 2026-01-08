@@ -288,17 +288,27 @@ export const AdminAnalyticsController = {
           username: '$user.username',
           name: '$user.name',
           email: '$user.email',
+          normalPoints: { $ifNull: ['$totalPoints', 0] },
           points: { $ifNull: ['$totalPoints', 0] },
           bluePoints: { $ifNull: ['$bluePoints', 0] },
+          greenPoints: { $ifNull: ['$greenPoints', 0] },
           totalExams: { $ifNull: ['$totalExams', 0] },
           averageScore: { $ifNull: ['$averageScore', 0] },
           studyHours: { $ifNull: ['$studyHours', 0] },
+          questionsAnswered: { $ifNull: ['$questionsAnswered', 0] },
+          correctAnswers: { $ifNull: ['$correctAnswers', 0] },
           semesters: '$user.semesters',
-          plan: '$user.plan'
+          plan: '$user.plan',
+          currentYear: '$user.currentYear'
         }
       },
       {
-        $sort: { points: -1 }
+        $addFields: {
+          totalPoints: { $add: ['$normalPoints', '$bluePoints', '$greenPoints'] }
+        }
+      },
+      {
+        $sort: { totalPoints: -1 }
       },
       {
         $limit: parseInt(limit)
@@ -313,9 +323,9 @@ export const AdminAnalyticsController = {
     
     // Calculate statistics
     const totalUsers = leaderboard.length;
-    const topPoints = leaderboard[0]?.points || 0;
+    const topPoints = leaderboard[0]?.totalPoints || 0;
     const avgPoints = totalUsers > 0
-      ? Math.round(leaderboard.reduce((acc, u) => acc + u.points, 0) / totalUsers)
+      ? Math.round(leaderboard.reduce((acc, u) => acc + (u.totalPoints || 0), 0) / totalUsers)
       : 0;
     
     res.status(200).json({

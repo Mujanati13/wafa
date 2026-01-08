@@ -356,9 +356,74 @@ const SubjectsPage = () => {
           const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
           const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
 
-          setExamsParYear(yearExams);
-          setExamsParCours(courseExams);
-          setQcmBanque(qcmExams);
+          // Fetch user statistics for each exam to get progress
+          try {
+            const userStatsResponse = await api.get('/users/my-stats');
+            const userStats = userStatsResponse.data?.data;
+            
+            if (userStats && userStats.answeredQuestions) {
+              const answeredQuestionsMap = userStats.answeredQuestions;
+              
+              // Helper function to calculate progress for an exam
+              const calculateExamProgress = async (exam, examTypeKey) => {
+                try {
+                  const questionsResponse = await api.get(`/questions/exam/${exam.id}`);
+                  const examQuestions = questionsResponse.data?.data || [];
+                  const totalQuestions = examQuestions.length;
+                  
+                  if (totalQuestions === 0) return { ...exam, progress: 0, answeredQuestions: 0 };
+                  
+                  // Count VERIFIED questions from server
+                  // Use toString() to ensure ID comparison works
+                  let answeredCount = examQuestions.filter(q => {
+                    const questionId = q._id?.toString() || q._id;
+                    const answer = answeredQuestionsMap[questionId];
+                    return answer && answer.isVerified === true;
+                  }).length;
+                  
+                  // Also check localStorage for additional progress (in case server sync failed)
+                  try {
+                    const localProgress = localStorage.getItem(`exam_progress_${examTypeKey}_${exam.id}`);
+                    if (localProgress) {
+                      const { verified } = JSON.parse(localProgress);
+                      if (verified && Object.keys(verified).length > answeredCount) {
+                        answeredCount = Object.keys(verified).length;
+                      }
+                    }
+                  } catch (localErr) {
+                    // Ignore localStorage errors
+                  }
+                  
+                  const progress = Math.round((answeredCount / totalQuestions) * 100);
+                  
+                  return { ...exam, progress, answeredQuestions: answeredCount, questions: totalQuestions };
+                } catch (err) {
+                  console.error('Error calculating progress for exam:', exam.id, err);
+                  return exam;
+                }
+              };
+              
+              // Calculate progress for all exams in parallel
+              const [updatedYearExams, updatedCourseExams, updatedQcmExams] = await Promise.all([
+                Promise.all(yearExams.map(e => calculateExamProgress(e, 'exam'))),
+                Promise.all(courseExams.map(e => calculateExamProgress(e, 'course'))),
+                Promise.all(qcmExams.map(e => calculateExamProgress(e, 'qcm')))
+              ]);
+              
+              setExamsParYear(updatedYearExams);
+              setExamsParCours(updatedCourseExams);
+              setQcmBanque(updatedQcmExams);
+            } else {
+              setExamsParYear(yearExams);
+              setExamsParCours(courseExams);
+              setQcmBanque(qcmExams);
+            }
+          } catch (statsError) {
+            console.error('Error fetching user stats:', statsError);
+            setExamsParYear(yearExams);
+            setExamsParCours(courseExams);
+            setQcmBanque(qcmExams);
+          }
 
           // Extract unique categories from course exams
           const uniqueCategories = [...new Set(courseExams.map(e => e.category))];
