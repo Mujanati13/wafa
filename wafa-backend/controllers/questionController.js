@@ -789,8 +789,8 @@ export const questionController = {
             pointsAwarded = -1;
             pointType = "normal";
         } else if (isCorrect) {
-            // +1 point for correct answer
-            pointsAwarded = 1;
+            // +2 points for correct answer
+            pointsAwarded = 2;
             pointType = "normal";
         }
         // 0 points for wrong answer (no point record needed)
@@ -891,8 +891,7 @@ export const questionController = {
             if (isCorrect) {
                 userStats.correctAnswers = (userStats.correctAnswers || 0) + 1;
                 userStats.totalCorrectAnswers = (userStats.totalCorrectAnswers || 0) + 1;
-                // Add 1 point for correct answer
-                userStats.totalPoints = (userStats.totalPoints || 0) + 1;
+                // Points are already handled by verify-answer endpoint (+2 for correct, -1 for retry)
             } else {
                 userStats.totalIncorrectAnswers = (userStats.totalIncorrectAnswers || 0) + 1;
             }

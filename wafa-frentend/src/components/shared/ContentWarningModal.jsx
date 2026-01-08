@@ -55,72 +55,81 @@ const ContentWarningModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="h-6 w-6 text-amber-600" />
+      <DialogContent className="max-w-md overflow-hidden p-0">
+        {/* Red Header Section */}
+        <div className="bg-red-500 px-6 py-8 text-center space-y-3">
+          <div className="flex justify-center mb-2">
+            <div className="h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-lg">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-            <DialogTitle className="text-xl">
-              {t('common:content_warning', 'Avertissement de contenu')}
-            </DialogTitle>
           </div>
-          <DialogDescription asChild>
-            <div className="space-y-4">
-              <p className="text-base text-foreground">
-                {t('common:upload_warning_intro', `Avant de télécharger votre ${getUploadTypeLabel()}, veuillez lire attentivement:`)}
+          <h2 className="text-2xl font-bold text-white">
+            {t('common:warning', 'WARNING!')}
+          </h2>
+        </div>
+
+        {/* Content Section */}
+        <div className="px-6 py-6 space-y-4">
+          <div className="space-y-4">
+            <p className="text-base font-semibold text-gray-800">
+              {t('common:upload_warning_title', 'Aucun contenu (text, image, pdf ...)')}
+            </p>
+            
+            {/* Prohibited Content List */}
+            <div className="space-y-2 ml-2">
+              <p className="text-sm text-gray-700 font-medium mb-2">
+                {t('common:prohibited_content', 'Contenu strictement interdit:')}
               </p>
-              
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-                <p className="font-semibold text-red-700 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  {t('common:prohibited_content', 'Contenu strictement interdit:')}
-                </p>
-                <ul className="text-sm text-red-600 space-y-2 ml-6 list-disc">
-                  <li>{t('common:no_illegal', 'Contenu illégal ou contraire à la loi')}</li>
-                  <li>{t('common:no_pornographic', 'Contenu pornographique ou à caractère sexuel')}</li>
-                  <li>{t('common:no_violent', 'Contenu violent ou incitant à la haine')}</li>
-                  <li>{t('common:no_offtopic', 'Contenu hors-sujet ou non pertinent')}</li>
-                  <li>{t('common:no_copyright', 'Contenu violant les droits d\'auteur')}</li>
-                </ul>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-800 font-medium">
-                  ⚠️ {t('common:account_deletion_risk', 'Le non-respect de ces règles entraînera la suppression immédiate de votre compte sans préavis.')}
-                </p>
-              </div>
-
-              <div className="flex items-start gap-3 pt-2">
-                <Checkbox 
-                  id="accept-terms"
-                  checked={accepted}
-                  onCheckedChange={setAccepted}
-                />
-                <Label 
-                  htmlFor="accept-terms" 
-                  className="text-sm leading-relaxed cursor-pointer"
-                >
-                  {t('common:accept_content_policy', "J'ai lu et j'accepte la politique de contenu. Je comprends que mon compte peut être supprimé en cas de violation.")}
-                </Label>
-              </div>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500 font-bold mt-0.5">•</span>
+                  <span>{t('common:no_illegal', 'illégal qui est n\'est pas bien (pornographique ...) ou les chose qui est hors sujet, n\'est autorisé.')}</span>
+                </li>
+              </ul>
             </div>
-          </DialogDescription>
-        </DialogHeader>
-        
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+
+            {/* Risk Warning Box */}
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md mt-4">
+              <p className="text-red-700 font-semibold text-sm">
+                {t('common:account_deletion_risk', 'Le non-respect de cette règle entraînera la suppression définitive de votre compte.')}
+              </p>
+            </div>
+
+            {/* Acceptance Checkbox */}
+            <div className="flex items-start gap-3 pt-4">
+              <Checkbox 
+                id="accept-terms"
+                checked={accepted}
+                onCheckedChange={setAccepted}
+                className="mt-1"
+              />
+              <Label 
+                htmlFor="accept-terms" 
+                className="text-xs leading-relaxed cursor-pointer text-gray-700"
+              >
+                {t('common:accept_content_policy', "J'ai lu et j'accepte la politique de contenu. Je comprends que mon compte peut être supprimé en cas de violation.")}
+              </Label>
+            </div>
+          </div>
+        </div>
+
+        {/* Button Section */}
+        <div className="px-6 py-4 bg-gray-50 flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleClose}
+            className="flex-1 h-12 font-semibold text-gray-700 border-2"
+          >
             {t('common:cancel', 'Annuler')}
           </Button>
           <Button 
             onClick={handleConfirm}
             disabled={!accepted}
-            className="w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700"
+            className="flex-1 h-12 font-semibold text-white bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            <CheckCircle2 className="h-4 w-4" />
-            {t('common:confirm_upload', 'Confirmer et continuer')}
+            {t('common:confirm_upload', 'ok')}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

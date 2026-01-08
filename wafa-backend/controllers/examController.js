@@ -113,9 +113,12 @@ export const examController = {
             .sort({ questionNumber: 1, createdAt: 1 })
             .lean();
 
+        // Build default session name from exam name and year
+        const defaultSessionName = exam.name || (exam.year ? `Exam ${exam.year}` : "Session principale");
+
         // Group questions by session.label
         const groupedQuestions = questions.reduce((acc, q) => {
-            const session = q.sessionLabel || "Session principale"; // fallback if no session
+            const session = q.sessionLabel || defaultSessionName; // fallback to exam name/year
             if (!acc[session]) acc[session] = [];
             acc[session].push(q);
             return acc;

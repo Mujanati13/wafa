@@ -1,4 +1,4 @@
-import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText, Loader2, TriangleAlert } from "lucide-react";
+import { X, Sparkles, Users, Plus, Bot, User, Send, AlertCircle, Upload, FileImage, FileText, Loader2, TriangleAlert, Check } from "lucide-react";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -197,12 +197,15 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
   const currentUserExplanation = userExplanations[activeExplanationIndex];
 
+  // Calculate correct answers count
+  const correctAnswersCount = question?.options?.filter(opt => opt.isCorrect).length || 0;
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden relative flex flex-col">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] overflow-hidden relative flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Sparkles className="h-5 w-5 text-blue-600" />
             <h3 className="text-lg font-semibold text-gray-900">
               Explications
@@ -220,12 +223,12 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
         </div>
 
         {/* Main Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 bg-gray-50">
           <button
             onClick={() => setActiveTab("ai")}
             className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "ai"
-              ? "border-b-2 border-blue-600 text-blue-700 bg-blue-50/50"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "border-b-2 border-blue-600 text-blue-700 bg-white"
+              : "text-gray-600 hover:bg-gray-100"
               }`}
           >
             <Bot className="h-4 w-4" />
@@ -237,14 +240,14 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
           <button
             onClick={() => setActiveTab("user")}
             className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "user"
-              ? "border-b-2 border-purple-600 text-purple-700 bg-purple-50/50"
-              : "text-gray-600 hover:bg-gray-50"
+              ? "border-b-2 border-purple-600 text-purple-700 bg-white"
+              : "text-gray-600 hover:bg-gray-100"
               }`}
           >
             <Users className="h-4 w-4" />
             Explications Communauté
             {userExplanations.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700">
                 {userExplanations.length}
               </Badge>
             )}
@@ -252,47 +255,54 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-5">
           {activeTab === "ai" ? (
             // AI Explanation Tab
             <div className="space-y-4">
               {hasAIExplanation ? (
                 <>
-                  {/* AI Images */}
-                  {aiExplanation.images.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {aiExplanation.images.map((src, idx) => {
-                        const fullImgUrl = src.startsWith('http') ? src : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${src}`;
-                        return (
-                        <button
-                          key={`${src}-${idx}`}
-                          type="button"
-                          className="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                          onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
-                          title="Ouvrir l'image"
-                        >
-                          <img
-                            src={fullImgUrl}
-                            alt={`explication ${idx + 1}`}
-                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                            loading="lazy"
-                          />
-                        </button>
-                        );
-                      })}
+                  {/* AI Text */}
+                  {aiExplanation.text && (
+                    <div className="border border-blue-200 rounded-lg bg-gradient-to-br from-blue-50/50 to-white p-4 space-y-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
+                      </div>
+                      <div className="prose prose-sm max-w-none">
+                        <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                          {aiExplanation.text}
+                        </p>
+                      </div>
                     </div>
                   )}
 
-                  {/* AI Text */}
-                  {aiExplanation.text && (
-                    <div className="border border-gray-200 rounded-lg bg-gradient-to-br from-blue-50/50 to-white p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Bot className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">Généré par IA</span>
+                  {/* AI Images */}
+                  {aiExplanation.images.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">Il doit etre comme ça :</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {aiExplanation.images.map((src, idx) => {
+                          const fullImgUrl = src.startsWith('http') ? src : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${src}`;
+                          return (
+                          <button
+                            key={`${src}-${idx}`}
+                            type="button"
+                            className="group relative aspect-video w-full overflow-hidden rounded-xl border-2 border-gray-200 bg-gray-50 hover:border-blue-400 transition-all shadow-sm hover:shadow-md"
+                            onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
+                            title="Lors de la click d'image : agrandir"
+                          >
+                            <img
+                              src={fullImgUrl}
+                              alt={`explication ${idx + 1}`}
+                              className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                          </button>
+                          );
+                        })}
                       </div>
-                      <p className="text-gray-800 text-base whitespace-pre-line leading-relaxed">
-                        {aiExplanation.text}
-                      </p>
+                      <p className="text-xs text-gray-500 italic">💡 Lors de la click d'image : ouvrir en plein écran</p>
                     </div>
                   )}
                 </>
@@ -344,6 +354,14 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                 </div>
               )}
 
+              {/* Correct Answers Count */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-green-800">
+                  Réponses correctes : {correctAnswersCount}
+                </span>
+              </div>
+
               {/* Loading state */}
               {loadingExplanations && (
                 <div className="flex items-center justify-center py-8">
@@ -354,42 +372,68 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
               {/* Current User Explanation */}
               {!loadingExplanations && currentUserExplanation ? (
-                <div className="border border-gray-200 rounded-lg bg-gradient-to-br from-purple-50/50 to-white p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-medium text-purple-700">
-                      {currentUserExplanation.author || "Étudiant anonyme"}
+                <div className="border border-purple-200 rounded-lg bg-gradient-to-br from-purple-50/30 to-white p-5 space-y-4">
+                  {/* Author Info */}
+                  <div className="flex items-center gap-2 pb-3 border-b">
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm">
+                        {currentUserExplanation.author?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {currentUserExplanation.author || 'Utilisateur'}
+                        </p>
+                        {currentUserExplanation.verified && (
+                          <Badge variant="outline" className="mt-0.5 text-xs border-green-500 text-green-700 bg-green-50">
+                            <Check className="h-3 w-3 mr-1" />
+                            Vérifié
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {currentUserExplanation.createdAt 
+                        ? new Date(currentUserExplanation.createdAt).toLocaleDateString('fr-FR')
+                        : ''}
                     </span>
-                    {currentUserExplanation.verified && (
-                      <Badge className="bg-green-100 text-green-700 text-xs">Vérifié</Badge>
-                    )}
                   </div>
-                  <p className="text-gray-800 text-base whitespace-pre-line leading-relaxed">
-                    {currentUserExplanation.text}
-                  </p>
+
+                  {/* Explanation Text */}
+                  {currentUserExplanation.text && (
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                        {currentUserExplanation.text}
+                      </p>
+                    </div>
+                  )}
                   
                   {/* Display images if any */}
                   {currentUserExplanation.images?.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
-                      {currentUserExplanation.images.map((imgUrl, idx) => {
-                        const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${imgUrl}`;
-                        return (
-                        <button
-                          key={idx}
-                          type="button"
-                          className="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                          onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
-                          title="Ouvrir l'image"
-                        >
-                          <img
-                            src={fullImgUrl}
-                            alt={`Image ${idx + 1}`}
-                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-                            loading="lazy"
-                          />
-                        </button>
-                        );
-                      })}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">Il doit etre comme ça :</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {currentUserExplanation.images.map((imgUrl, idx) => {
+                          const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${imgUrl}`;
+                          return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="group relative aspect-video w-full overflow-hidden rounded-xl border-2 border-gray-200 bg-gray-50 hover:border-purple-400 transition-all shadow-sm hover:shadow-md"
+                            onClick={() => window.open(fullImgUrl, "_blank", "noopener,noreferrer")}
+                            title="Lors de la click d'image : agrandir"
+                          >
+                            <img
+                              src={fullImgUrl}
+                              alt={`Image ${idx + 1}`}
+                              className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                          </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-500 italic">💡 Lors de la click d'image : ouvrir en plein écran</p>
                     </div>
                   )}
                   

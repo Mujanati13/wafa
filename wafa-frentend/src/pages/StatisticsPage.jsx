@@ -788,14 +788,26 @@ const StatisticsPage = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                {/* Correct Answer Points */}
+                <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+                    <Award className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">Réponse correcte</p>
+                    <p className="text-sm text-emerald-600 font-medium">+2 points</p>
+                    <p className="text-xs text-slate-500">Chaque bonne réponse</p>
+                  </div>
+                </div>
+
                 {/* Report Problem Points */}
                 <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg">
                     <MessageCircle className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-800">Report de problème</p>
-                    <p className="text-sm text-green-600 font-medium">= 30 points</p>
+                    <p className="font-semibold text-slate-800">Report approuvé</p>
+                    <p className="text-sm text-green-600 font-medium">+1 point vert = 30 pts</p>
                     <p className="text-xs text-slate-500">Ballon vert</p>
                   </div>
                 </div>
@@ -806,21 +818,9 @@ const StatisticsPage = () => {
                     <Lightbulb className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-800">Explications</p>
-                    <p className="text-sm text-blue-600 font-medium">= 40 points</p>
+                    <p className="font-semibold text-slate-800">Explication approuvée</p>
+                    <p className="text-sm text-blue-600 font-medium">+1 point bleu = 40 pts</p>
                     <p className="text-xs text-slate-500">Ballon bleu/gold</p>
-                  </div>
-                </div>
-
-                {/* Points per Question */}
-                <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Award className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-800">Questions correctes</p>
-                    <p className="text-sm text-purple-600 font-medium">1 point = 1 question</p>
-                    <p className="text-xs text-slate-500">Chaque bonne réponse</p>
                   </div>
                 </div>
 
@@ -831,8 +831,8 @@ const StatisticsPage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-slate-800">Système de niveau</p>
-                    <p className="text-sm text-amber-600 font-medium">1% = 1 level</p>
-                    <p className="text-xs text-slate-500">35% = Level 35</p>
+                    <p className="text-sm text-amber-600 font-medium">1 niveau = 50 pts</p>
+                    <p className="text-xs text-slate-500">1% = 1% des questions</p>
                   </div>
                 </div>
               </div>

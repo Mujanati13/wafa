@@ -44,7 +44,9 @@ const NotesPage = () => {
   // Filter states
   const [filterType, setFilterType] = useState("recent"); // recent, module, date
   const [selectedModule, setSelectedModule] = useState("all");
-  const [selectedReference, setSelectedReference] = useState("all");
+  const [selectedExamType, setSelectedExamType] = useState("all");
+  const [selectedExamName, setSelectedExamName] = useState("all");
+  const [selectedQuestionNumber, setSelectedQuestionNumber] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
 
   // Modal states
@@ -283,8 +285,22 @@ const NotesPage = () => {
     }
   };
 
-  // Get unique references (exam names) from notes for a module
-  const getReferencesForModule = (moduleId) => {
+  // Get unique exam types from notes
+  const getExamTypes = () => {
+    const types = new Set();
+    notes.forEach(note => {
+      if (note.examType) {
+        types.add(note.examType);
+      } else if (note.questionId?.examId) {
+        // Infer type from exam structure
+        types.add('exam'); // Default to exam
+      }
+    });
+    return ['exam', 'course', 'qcm'];
+  };
+
+  // Get unique exam names from notes for selected module
+  const getExamNamesForModule = (moduleId) => {
     if (moduleId === "all") return [];
     
     const moduleNotes = notes.filter(n => {
@@ -292,14 +308,27 @@ const NotesPage = () => {
       return noteModuleId === moduleId;
     });
     
-    const references = new Set();
+    const names = new Set();
     moduleNotes.forEach(note => {
       if (note.questionId?.examId?.name) {
-        references.add(note.questionId.examId.name);
+        names.add(note.questionId.examId.name);
+      } else if (note.questionId?.examId?.year) {
+        names.add(`Examen ${note.questionId.examId.year}`);
       }
     });
     
-    return Array.from(references);
+    return Array.from(names);
+  };
+
+  // Get unique question numbers from notes
+  const getQuestionNumbers = () => {
+    const numbers = new Set();
+    notes.forEach(note => {
+      if (note.questionId?.questionNumber) {
+        numbers.add(note.questionId.questionNumber);
+      }
+    });
+    return Array.from(numbers).sort((a, b) => a - b);
   };
 
   // Filter notes
@@ -313,14 +342,27 @@ const NotesPage = () => {
     }
 
     // Module filter
-    if (filterType === "module" && selectedModule !== "all") {
+    if (selectedModule !== "all") {
       const noteModuleId = note.moduleId?._id || note.moduleId;
       if (noteModuleId !== selectedModule) return false;
+    }
 
-      // Reference filter (only when module is selected)
-      if (selectedReference !== "all") {
-        if (note.questionId?.examId?.name !== selectedReference) return false;
-      }
+    // Exam Type filter
+    if (selectedExamType !== "all") {
+      const noteExamType = note.examType || 'exam';
+      if (noteExamType !== selectedExamType) return false;
+    }
+
+    // Exam Name filter
+    if (selectedExamName !== "all") {
+      const examName = note.questionId?.examId?.name || `Examen ${note.questionId?.examId?.year}`;
+      if (examName !== selectedExamName) return false;
+    }
+
+    // Question Number filter
+    if (selectedQuestionNumber && selectedQuestionNumber !== "all") {
+      const qNumber = note.questionId?.questionNumber;
+      if (!qNumber || qNumber.toString() !== selectedQuestionNumber) return false;
     }
 
     // Date filter
@@ -391,7 +433,9 @@ const NotesPage = () => {
                     onClick={() => {
                       setFilterType("recent");
                       setSelectedModule("all");
-                      setSelectedReference("all");
+                      setSelectedExamType("all");
+                      setSelectedExamName("all");
+                      setSelectedQuestionNumber("all");
                     }}
                     className={cn(
                       "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
@@ -417,7 +461,9 @@ const NotesPage = () => {
                     onClick={() => {
                       setFilterType("date");
                       setSelectedModule("all");
-                      setSelectedReference("all");
+                      setSelectedExamType("all");
+                      setSelectedExamName("all");
+                      setSelectedQuestionNumber("all");
                     }}
                     className={cn(
                       "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1",
@@ -434,44 +480,75 @@ const NotesPage = () => {
                 {/* Divider */}
                 <div className="h-8 w-px bg-slate-200" />
 
-                {/* Module Filter */}
-                {filterType === "module" && (
-                  <>
-                    <Select value={selectedModule} onValueChange={(v) => {
-                      setSelectedModule(v);
-                      setSelectedReference("all");
-                    }}>
-                      <SelectTrigger className="w-[180px] bg-white">
-                        <SelectValue placeholder="Module" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les parties</SelectItem>
-                        {modules.map((module) => (
-                          <SelectItem key={module._id} value={module._id}>
-                            {module.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Filter Button */}
+                <Badge variant="outline" className="text-slate-600 h-8 px-3">
+                  <Filter className="h-3 w-3 mr-1" />
+                  Filter
+                </Badge>
+              </div>
 
-                    {/* Reference Filter - Only shown when module is selected */}
-                    {selectedModule !== "all" && (
-                      <Select value={selectedReference} onValueChange={setSelectedReference}>
-                        <SelectTrigger className="w-[180px] bg-white">
-                          <SelectValue placeholder="Référence" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Toutes les références</SelectItem>
-                          {getReferencesForModule(selectedModule).map((ref) => (
-                            <SelectItem key={ref} value={ref}>
-                              {ref}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </>
-                )}
+              {/* Second Row - Dropdowns */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Module Filter */}
+                <Select value={selectedModule} onValueChange={(v) => {
+                  setSelectedModule(v);
+                  setSelectedExamName("all");
+                }}>
+                  <SelectTrigger className="w-[160px] bg-white">
+                    <SelectValue placeholder="Module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous modules</SelectItem>
+                    {modules.map((module) => (
+                      <SelectItem key={module._id} value={module._id}>
+                        {module.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Exam Type Filter */}
+                <Select value={selectedExamType} onValueChange={setSelectedExamType}>
+                  <SelectTrigger className="w-[140px] bg-white">
+                    <SelectValue placeholder="Exam Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    <SelectItem value="exam">Exam Years</SelectItem>
+                    <SelectItem value="course">Par Cours</SelectItem>
+                    <SelectItem value="qcm">QCM Banque</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Exam Name Filter */}
+                <Select value={selectedExamName} onValueChange={setSelectedExamName}>
+                  <SelectTrigger className="w-[160px] bg-white">
+                    <SelectValue placeholder="Exam Name" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All exams</SelectItem>
+                    {getExamNamesForModule(selectedModule).map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Number of Question Filter */}
+                <Select value={selectedQuestionNumber} onValueChange={setSelectedQuestionNumber}>
+                  <SelectTrigger className="w-[180px] bg-white">
+                    <SelectValue placeholder="Number of Question" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All questions</SelectItem>
+                    {getQuestionNumbers().map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        Question {num}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Date Filter */}
                 {filterType === "date" && (
@@ -479,14 +556,13 @@ const NotesPage = () => {
                     type="date"
                     value={dateFilter}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-[180px] bg-white"
+                    className="w-[160px] bg-white"
                   />
                 )}
 
                 {/* Filter indicator */}
                 <div className="ml-auto">
                   <Badge variant="outline" className="text-slate-600">
-                    <Filter className="h-3 w-3 mr-1" />
                     {sortedNotes.length} résultat{sortedNotes.length !== 1 ? 's' : ''}
                   </Badge>
                 </div>

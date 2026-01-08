@@ -474,7 +474,7 @@ const LeaderboardClient = () => {
           <CardTitle className="text-lg">Système de points</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Réponse correcte: <span className="font-semibold text-green-600">+1 point</span></p>
+          <p>• Réponse correcte: <span className="font-semibold text-green-600">+2 points</span></p>
           <p>• Réponse incorrecte: <span className="font-semibold text-gray-500">+0 point</span></p>
           <p>• Réessayer: <span className="font-semibold text-red-600">-1 point</span></p>
           <p>• Report approuvé: <span className="font-semibold text-green-600">+1 point vert (= 30 pts)</span></p>

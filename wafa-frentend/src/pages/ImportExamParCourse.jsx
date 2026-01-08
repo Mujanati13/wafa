@@ -57,6 +57,9 @@ const ImportExamParCourse = () => {
   const [examCourses, setExamCourses] = useState([]);
   const [examYears, setExamYears] = useState([]);
   const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
+  const [selectedSemester, setSelectedSemester] = useState("");
+  
+  const semesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
 
   // Loading states
   const [loadingModules, setLoadingModules] = useState(true);
@@ -69,6 +72,11 @@ const ImportExamParCourse = () => {
   // Selection state
   const [selectedModule, setSelectedModule] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+
+  // Filter modules by selected semester
+  const filteredModules = selectedSemester
+    ? modules.filter(m => m.semester === selectedSemester)
+    : modules;
 
   // Dialog for viewing questions
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
@@ -358,7 +366,33 @@ const ImportExamParCourse = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Semester Select */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
+                    <span className="text-blue-600">●</span> Semestre
+                  </Label>
+                  <Select
+                    value={selectedSemester}
+                    onValueChange={(value) => {
+                      setSelectedSemester(value);
+                      setSelectedModule("");
+                      setSelectedCourse("");
+                    }}
+                  >
+                    <SelectTrigger className="border-rose-200">
+                      <SelectValue placeholder="Choisir un semestre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {semesters.map((sem) => (
+                        <SelectItem key={sem} value={sem}>
+                          {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Module Select */}
                 <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-1">
@@ -367,13 +401,13 @@ const ImportExamParCourse = () => {
                   <Select
                     value={selectedModule}
                     onValueChange={setSelectedModule}
-                    disabled={loadingModules}
+                    disabled={!selectedSemester || loadingModules}
                   >
                     <SelectTrigger className="border-rose-200">
                       <SelectValue placeholder={loadingModules ? "Chargement..." : "Choisir un module"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {modules.map((m) => (
+                      {filteredModules.map((m) => (
                         <SelectItem key={m._id} value={m._id}>
                           {m.name}
                         </SelectItem>
