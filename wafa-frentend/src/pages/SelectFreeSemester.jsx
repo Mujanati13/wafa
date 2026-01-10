@@ -8,17 +8,13 @@ import { toast } from 'sonner';
 import { userService } from '@/services/userService';
 import logo from '@/assets/logo.png';
 
+// Free plan semesters only: S1, S3, S5, S7, S9
 const semesters = [
-  { id: 'S1', name: 'Semestre 1', year: '1ère année', description: 'Anatomie, Chimie, Biophysique...' },
-  { id: 'S2', name: 'Semestre 2', year: '1ère année', description: 'Histologie, Embryologie...' },
-  { id: 'S3', name: 'Semestre 3', year: '2ème année', description: 'Physiologie, Biochimie...' },
-  { id: 'S4', name: 'Semestre 4', year: '2ème année', description: 'Microbiologie, Immunologie...' },
-  { id: 'S5', name: 'Semestre 5', year: '3ème année', description: 'Pathologie, Pharmacologie...' },
-  { id: 'S6', name: 'Semestre 6', year: '3ème année', description: 'Sémiologie, Clinique...' },
-  { id: 'S7', name: 'Semestre 7', year: '4ème année', description: 'Spécialités médicales...' },
-  { id: 'S8', name: 'Semestre 8', year: '4ème année', description: 'Spécialités chirurgicales...' },
-  { id: 'S9', name: 'Semestre 9', year: '5ème année', description: 'Stages cliniques...' },
-  { id: 'S10', name: 'Semestre 10', year: '5ème année', description: 'Préparation résidanat...' },
+  { id: 'S1', name: 'Semestre 1', year: '1ère année', description: 'Anatomie 1', module: 'Anatomie 1' },
+  { id: 'S3', name: 'Semestre 3', year: '2ème année', description: 'Anatomie 3', module: 'Anatomie 3' },
+  { id: 'S5', name: 'Semestre 5', year: '3ème année', description: 'Parasitologie / Infection', module: 'Parasitologie' },
+  { id: 'S7', name: 'Semestre 7', year: '4ème année', description: 'Maladies de l\'enfant', module: 'Maladies de l\'enfant' },
+  { id: 'S9', name: 'Semestre 9', year: '5ème année', description: 'Réanimation urgence douleur / Soins palliatifs', module: 'Réanimation' },
 ];
 
 const SelectFreeSemester = () => {
@@ -117,7 +113,7 @@ const SelectFreeSemester = () => {
         >
           <img
             src={logo}
-            alt="WAFA Logo"
+            alt="Imrs-Qcma Logo"
             className="h-16 w-auto mx-auto mb-6"
           />
           
@@ -130,7 +126,7 @@ const SelectFreeSemester = () => {
             Choisissez votre semestre gratuit
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            En tant que nouvel utilisateur, vous bénéficiez d'un accès gratuit à <span className="font-semibold text-blue-600">un semestre de votre choix</span>. 
+            En tant que nouvel utilisateur, vous bénéficiez d'un accès gratuit à <span className="font-semibold text-blue-600">un semestre de votre choix</span> avec un module dédié. 
             Sélectionnez celui qui correspond à votre niveau actuel.
           </p>
         </motion.div>
@@ -249,11 +245,11 @@ const SelectFreeSemester = () => {
               <ul className="space-y-2 text-slate-600">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  Accès complet à tous les modules du semestre choisi
+                  Accès complet à un module du semestre choisi
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  QCM et exercices illimités
+                  QCM et exercices illimités pour ce module
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />

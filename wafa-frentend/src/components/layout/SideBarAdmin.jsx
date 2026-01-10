@@ -27,6 +27,7 @@ import {
   Shield,
   Layout,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -71,6 +72,7 @@ const ITEM_PERMISSIONS = {
   importQCMBanque: 'content',
   importResumes: 'content',
   importExplications: 'content',
+  generateExplanationsAI: 'content',
   importImages: 'content',
   
   // Payments
@@ -271,6 +273,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           path: "/admin/importExplications",
         },
         {
+          id: "generateExplanationsAI",
+          label: t('admin:generate_ai_explications', 'Générer Explications AI'),
+          icon: Sparkles,
+          path: "/admin/generateExplanationsAI",
+        },
+        {
           id: "importImages",
           label: t('admin:import_images'),
           icon: Image,
@@ -399,7 +407,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           </div>
           {sidebarOpen && (
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">WAFA</h2>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Imrs-Qcma</h2>
               <p className="text-[10px] sm:text-xs text-slate-500">{t('admin:admin_panel')}</p>
             </div>
           )}

@@ -899,7 +899,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     className="p-4 rounded-lg border-2 border-blue-100 bg-white hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => window.open('https://facebook.com/wafa_app', '_blank')}
+                    onClick={() => window.open('https://facebook.com/imrs_qcma', '_blank')}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
@@ -919,7 +919,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     className="p-4 rounded-lg border-2 border-blue-100 bg-white hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => window.location.href = 'mailto:contact@wafa.com'}
+                    onClick={() => window.location.href = 'mailto:contact@imrs-qcma.com'}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
@@ -929,7 +929,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       </div>
                       <div>
                         <h3 className="font-bold text-sm text-slate-900">Email</h3>
-                        <p className="text-xs text-slate-500">contact@wafa.com</p>
+                        <p className="text-xs text-slate-500">contact@imrs-qcma.com</p>
                       </div>
                     </div>
                   </motion.div>
@@ -939,7 +939,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     className="p-4 rounded-lg border-2 border-pink-100 bg-white hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => window.open('https://instagram.com/wafa_app', '_blank')}
+                    onClick={() => window.open('https://instagram.com/imrs_qcma', '_blank')}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
@@ -949,7 +949,7 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       </div>
                       <div>
                         <h3 className="font-bold text-sm text-slate-900">Instagram</h3>
-                        <p className="text-xs text-slate-500">@wafa_app</p>
+                        <p className="text-xs text-slate-500">@imrs_qcma</p>
                       </div>
                     </div>
                   </motion.div>

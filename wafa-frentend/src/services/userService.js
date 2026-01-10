@@ -214,9 +214,9 @@ export const userService = {
     },
 
     // Get leaderboard
-    getLeaderboard: async (limit = 20, sortBy = 'totalPoints', userId = null) => {
+    getLeaderboard: async (limit = 20, sortBy = 'totalPoints', userId = null, segmented = false) => {
         try {
-            const params = { limit, sortBy };
+            const params = { limit, sortBy, segmented: segmented ? 'true' : 'false' };
             if (userId) params.userId = userId;
             const response = await api.get(`/users/leaderboard`, { params });
             return response.data;

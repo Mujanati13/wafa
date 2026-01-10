@@ -43,6 +43,7 @@ import ImportResumes from "./pages/ImportResumes";
 import AddQuestions from "./pages/AddQuestions";
 import ImportImages from "./pages/ImportImages";
 import ImportExplications from "./pages/ImportExplications";
+import GenerateExplanationsAI from "./pages/GenerateExplanationsAI";
 import CreateCategoriesForCourses from "./pages/CreateCategoriesForCourses";
 import Myplaylist from "./pages/Myplaylist";
 import LeaderboardClient from "./pages/LeaderboardClient";
@@ -143,6 +144,7 @@ export default function App() {
           <Route path="importQCMBanque" element={<ImportQCMBanque />} />
           <Route path="addQuestions" element={<AddQuestions />} />
           <Route path="importExplications" element={<ImportExplications />} />
+          <Route path="generateExplanationsAI" element={<GenerateExplanationsAI />} />
           <Route
             path="createCategoriesForCourses"
             element={<CreateCategoriesForCourses />}

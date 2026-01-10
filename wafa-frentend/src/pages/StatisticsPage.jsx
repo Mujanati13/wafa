@@ -37,17 +37,18 @@ import { dashboardService } from "@/services/dashboardService";
 import { moduleService } from "@/services/moduleService";
 import { api } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useSemester } from "@/context/SemesterContext";
 
 const StatisticsPage = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
+  const { selectedSemester: contextSemester } = useSemester();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [modules, setModules] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("modules");
-  const [selectedSemester, setSelectedSemester] = useState("all");
-  const [userSemesters, setUserSemesters] = useState([]);
+  const [showIncorrectPopup, setShowIncorrectPopup] = useState(false);
   
   // Selected module state for showing exams
   const [selectedModule, setSelectedModule] = useState(null);
@@ -72,9 +73,7 @@ const StatisticsPage = () => {
         ]);
 
         const user = profileData.data?.user || profileData.data;
-        const userSems = user?.semesters || [];
         setUserProfile(user);
-        setUserSemesters(userSems);
         setStats(statsData.data?.stats || statsData.data);
         
         // Process modules data - API returns { success, count, data: [...modules] }
@@ -189,12 +188,13 @@ const StatisticsPage = () => {
 
   const getModuleColor = (index) => moduleColors[index % moduleColors.length];
 
-  // Filter and group modules by semester
+  // Filter and group modules by semester from context
   const filteredAndGroupedModules = useMemo(() => {
     let filtered = modules;
     
-    if (selectedSemester !== "all") {
-      filtered = modules.filter(m => m.semester === selectedSemester);
+    // Filter by selected semester from context (not "all")
+    if (contextSemester) {
+      filtered = modules.filter(m => m.semester === contextSemester);
     }
     
     // Group by semester
@@ -207,11 +207,11 @@ const StatisticsPage = () => {
     });
     
     return grouped;
-  }, [modules, selectedSemester]);
+  }, [modules, contextSemester]);
 
   // Calculate overall statistics based on filtered modules
   const overallStats = useMemo(() => {
-    const modulesToCount = selectedSemester === "all" ? modules : Object.values(filteredAndGroupedModules).flat();
+    const modulesToCount = Object.values(filteredAndGroupedModules).flat();
     
     const totalQuestions = modulesToCount.reduce((sum, m) => sum + (m.questionsAnswered || 0), 0);
     const totalCorrect = modulesToCount.reduce((sum, m) => sum + (m.correctAnswers || 0), 0);
@@ -226,7 +226,7 @@ const StatisticsPage = () => {
       totalModules,
       avgSuccess: Math.round(avgSuccess)
     };
-  }, [modules, selectedSemester, filteredAndGroupedModules]);
+  }, [filteredAndGroupedModules]);
 
   // Module Stats Card Component
   const ModuleStatsCard = ({ module, index, onClick, isSelected }) => {
@@ -234,9 +234,13 @@ const StatisticsPage = () => {
       ? Math.round((module.questionsAnswered / module.totalQuestions) * 100) 
       : 0;
     
-    const total = module.correctAnswers + module.incorrectAnswers;
-    const correctPercent = total > 0 ? (module.correctAnswers / total) * 100 : 0;
-    const incorrectPercent = total > 0 ? (module.incorrectAnswers / total) * 100 : 0;
+    // Calculate percentages based on TOTAL questions, not just answered ones
+    const correctPercent = module.totalQuestions > 0 
+      ? (module.correctAnswers / module.totalQuestions) * 100 
+      : 0;
+    const incorrectPercent = module.totalQuestions > 0 
+      ? (module.incorrectAnswers / module.totalQuestions) * 100 
+      : 0;
     const color = module.color || getModuleColor(index);
 
     return (
@@ -273,7 +277,7 @@ const StatisticsPage = () => {
               {module.questionsAnswered} sur {module.totalQuestions}
             </p>
 
-            {/* Progress Bar (Green/Red) */}
+            {/* Progress Bar (Green for correct, Red for incorrect, gray for remaining) */}
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
               {correctPercent > 0 && (
                 <div 
@@ -283,7 +287,7 @@ const StatisticsPage = () => {
               )}
               {incorrectPercent > 0 && (
                 <div 
-                  className="h-full bg-red-400 transition-all duration-300"
+                  className="h-full bg-red-500 transition-all duration-300"
                   style={{ width: `${incorrectPercent}%` }}
                 />
               )}
@@ -300,6 +304,15 @@ const StatisticsPage = () => {
   // Exam Card Component for displaying individual exams
   const ExamCard = ({ exam, type, moduleId }) => {
     const questionCount = exam.questions?.length || exam.questionCount || exam.linkedQuestions?.length || 0;
+    
+    // Calculate progress percentages
+    const questionsAnswered = exam.questionsAnswered || 0;
+    const correctAnswers = exam.correctAnswers || 0;
+    const incorrectAnswers = exam.incorrectAnswers || 0;
+    
+    const correctPercent = questionCount > 0 ? (correctAnswers / questionCount) * 100 : 0;
+    const incorrectPercent = questionCount > 0 ? (incorrectAnswers / questionCount) * 100 : 0;
+    const percentage = questionCount > 0 ? Math.round((questionsAnswered / questionCount) * 100) : 0;
     
     // Get the appropriate route based on exam type
     const getExamRoute = () => {
@@ -325,32 +338,135 @@ const StatisticsPage = () => {
     return (
       <motion.div
         whileHover={{ scale: 1.01, x: 4 }}
-        className="bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+        className="bg-white rounded-xl p-3 md:p-4 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
         onClick={() => navigate(getExamRoute())}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+        {/* Mobile Layout */}
+        <div className="flex flex-col sm:hidden gap-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                {type === "exam-years" && <Calendar className="h-4 w-4 text-blue-600" />}
+                {type === "par-cours" && <FileText className="h-4 w-4 text-blue-600" />}
+                {type === "qcm-banque" && <Database className="h-4 w-4 text-blue-600" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-slate-800 text-sm truncate">{getExamTitle()}</h4>
+                <p className="text-xs text-slate-500">
+                  {questionCount} question{questionCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+            <button
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(getExamRoute());
+              }}
+            >
+              <Play className="h-3 w-3" />
+              <span>Start</span>
+            </button>
+          </div>
+
+          {/* Progress */}
+          {questionsAnswered > 0 && (
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-slate-600">Progression: {percentage}%</span>
+                <span className="text-slate-500">{questionsAnswered}/{questionCount}</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                {correctPercent > 0 && (
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${correctPercent}%` }}
+                  />
+                )}
+                {incorrectPercent > 0 && (
+                  <div 
+                    className="h-full bg-red-500 transition-all duration-300"
+                    style={{ width: `${incorrectPercent}%` }}
+                  />
+                )}
+              </div>
+              {(correctAnswers > 0 || incorrectAnswers > 0) && (
+                <div className="flex items-center justify-between mt-1 text-xs">
+                  <span className="text-emerald-600 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    {correctAnswers} correct
+                  </span>
+                  <span className="text-red-600 flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    {incorrectAnswers} incorrect
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
               {type === "exam-years" && <Calendar className="h-5 w-5 text-blue-600" />}
               {type === "par-cours" && <FileText className="h-5 w-5 text-blue-600" />}
               {type === "qcm-banque" && <Database className="h-5 w-5 text-blue-600" />}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-slate-800">{getExamTitle()}</h4>
               <p className="text-sm text-slate-500">
                 {questionCount} question{questionCount !== 1 ? 's' : ''}
               </p>
+              
+              {/* Progress for Desktop */}
+              {questionsAnswered > 0 && (
+                <div className="mt-2 max-w-xs">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-slate-600">Progression: {percentage}%</span>
+                    <span className="text-slate-500">{questionsAnswered}/{questionCount}</span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                    {correctPercent > 0 && (
+                      <div 
+                        className="h-full bg-emerald-500 transition-all duration-300"
+                        style={{ width: `${correctPercent}%` }}
+                      />
+                    )}
+                    {incorrectPercent > 0 && (
+                      <div 
+                        className="h-full bg-red-500 transition-all duration-300"
+                        style={{ width: `${incorrectPercent}%` }}
+                      />
+                    )}
+                  </div>
+                  {(correctAnswers > 0 || incorrectAnswers > 0) && (
+                    <div className="flex items-center gap-4 mt-1 text-xs">
+                      <span className="text-emerald-600 flex items-center gap-1">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                        {correctAnswers} correct
+                      </span>
+                      <span className="text-red-600 flex items-center gap-1">
+                        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                        {incorrectAnswers} incorrect
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               navigate(getExamRoute());
             }}
           >
             <Play className="h-4 w-4" />
-            <span className="hidden sm:inline">Commencer</span>
+            <span>Commencer</span>
           </button>
         </div>
       </motion.div>
@@ -469,7 +585,10 @@ const StatisticsPage = () => {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-red-100 bg-gradient-to-br from-red-50 to-white">
+              <Card 
+                className="border-red-100 bg-gradient-to-br from-red-50 to-white cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => setShowIncorrectPopup(true)}
+              >
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -498,29 +617,9 @@ const StatisticsPage = () => {
           </motion.div>
         )}
 
-        {/* Filter and Semester Selection */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-slate-700 whitespace-nowrap">Filtrer:</span>
-          </div>
-          <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Tous les semestres" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les semestres</SelectItem>
-              {userSemesters.map((sem) => (
-                <SelectItem key={sem} value={sem}>
-                  {sem}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </motion.div>
+        {/* Module Statistics - No additional filters needed, uses context semester */}
         <motion.div variants={itemVariants}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Scrollable tabs container for mobile */}
             <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0">
               <TabsList className="inline-flex w-auto min-w-full sm:min-w-0 sm:w-auto lg:inline-flex bg-white border shadow-sm">
                 <TabsTrigger 
@@ -530,30 +629,20 @@ const StatisticsPage = () => {
                   <BookOpen className="h-4 w-4 mr-1 sm:mr-2 hidden xs:block" />
                   MODULES
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="exam-years"
-                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                >
-                  Exam years
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="par-cours"
-                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                >
-                  Par cours
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="qcm-banque"
-                  className="flex-1 sm:flex-initial text-xs sm:text-sm px-3 sm:px-4 data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                >
-                  QCM banque
-                </TabsTrigger>
               </TabsList>
             </div>
 
             {/* Modules Tab Content */}
             <TabsContent value="modules" className="mt-6">
-              {Object.keys(filteredAndGroupedModules).length > 0 ? (
+              {!contextSemester ? (
+                <div className="text-center py-12 text-slate-500">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Aucun semestre sélectionné</p>
+                  <p className="text-sm mt-2">
+                    Sélectionnez un semestre dans le menu principal pour voir les statistiques
+                  </p>
+                </div>
+              ) : Object.keys(filteredAndGroupedModules).length > 0 ? (
                 Object.keys(filteredAndGroupedModules)
                   .sort()
                   .map((semester) => (
@@ -579,15 +668,151 @@ const StatisticsPage = () => {
                         animate="visible"
                       >
                         {filteredAndGroupedModules[semester].map((module, index) => (
-                          <ModuleStatsCard 
-                            key={module._id || index}
-                            module={module}
-                            index={index}
-                            onClick={() => handleModuleClick(module)}
-                            isSelected={selectedModule?._id === module._id}
-                          />
+                          <React.Fragment key={module._id || index}>
+                            <ModuleStatsCard 
+                              module={module}
+                              index={index}
+                              onClick={() => handleModuleClick(module)}
+                              isSelected={selectedModule?._id === module._id}
+                            />
+                          </React.Fragment>
                         ))}
                       </motion.div>
+
+                      {/* Module Detail Section - Shows inline below selected module */}
+                      <AnimatePresence>
+                        {selectedModule && selectedModule.semester === semester && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-6"
+                          >
+                            <Card className="border-blue-200 shadow-lg">
+                              <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={handleCloseModuleDetail}
+                                      className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                    >
+                                      <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <div>
+                                      <CardTitle className="text-lg">{selectedModule.name}</CardTitle>
+                                      <CardDescription className="text-blue-100">
+                                        {selectedModule.semester} • {selectedModule.totalQuestions || 0} questions
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={handleCloseModuleDetail}
+                                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                  >
+                                    <X className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="p-4">
+                                {/* Exam Type Tabs */}
+                                <Tabs value={moduleExamTab} onValueChange={setModuleExamTab} className="w-full">
+                                  <TabsList className="w-full grid grid-cols-3 bg-slate-100">
+                                    <TabsTrigger 
+                                      value="exam-years"
+                                      className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                                    >
+                                      <Calendar className="h-4 w-4" />
+                                      <span className="hidden sm:inline">Exam par année</span>
+                                      <span className="sm:hidden">Année</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger 
+                                      value="par-cours"
+                                      className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                      <span className="hidden sm:inline">Par cours</span>
+                                      <span className="sm:hidden">Cours</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger 
+                                      value="qcm-banque"
+                                      className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
+                                    >
+                                      <Database className="h-4 w-4" />
+                                      <span className="hidden sm:inline">QCM banque</span>
+                                      <span className="sm:hidden">QCM</span>
+                                    </TabsTrigger>
+                                  </TabsList>
+
+                                  {/* Loading State */}
+                                  {loadingExams ? (
+                                    <div className="mt-6 space-y-3">
+                                      {[1, 2, 3].map((i) => (
+                                        <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {/* Exam Years Content */}
+                                      <TabsContent value="exam-years" className="mt-4">
+                                        {moduleExams.examYears.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {moduleExams.examYears.map((exam) => (
+                                              <ExamCard 
+                                                key={exam._id} 
+                                                exam={exam} 
+                                                type="exam-years"
+                                                moduleId={selectedModule._id}
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <EmptyExamState type="exam-years" />
+                                        )}
+                                      </TabsContent>
+
+                                      {/* Par Cours Content */}
+                                      <TabsContent value="par-cours" className="mt-4">
+                                        {moduleExams.parCours.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {moduleExams.parCours.map((exam) => (
+                                              <ExamCard 
+                                                key={exam._id} 
+                                                exam={exam} 
+                                                type="par-cours"
+                                                moduleId={selectedModule._id}
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <EmptyExamState type="par-cours" />
+                                        )}
+                                      </TabsContent>
+
+                                      {/* QCM Banque Content */}
+                                      <TabsContent value="qcm-banque" className="mt-4">
+                                        {moduleExams.qcmBanque.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {moduleExams.qcmBanque.map((exam) => (
+                                              <ExamCard 
+                                                key={exam._id} 
+                                                exam={exam} 
+                                                type="qcm-banque"
+                                                moduleId={selectedModule._id}
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <EmptyExamState type="qcm-banque" />
+                                        )}
+                                      </TabsContent>
+                                    </>
+                                  )}
+                                </Tabs>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ))
               ) : (
@@ -608,171 +833,138 @@ const StatisticsPage = () => {
                   </button>
                 </div>
               )}
-
-              {/* Module Detail Section - Shows when a module is selected */}
-              <AnimatePresence>
-                {selectedModule && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="mt-8"
-                  >
-                    <Card className="border-blue-200 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={handleCloseModuleDetail}
-                              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                            >
-                              <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <div>
-                              <CardTitle className="text-lg">{selectedModule.name}</CardTitle>
-                              <CardDescription className="text-blue-100">
-                                {selectedModule.semester} • {selectedModule.totalQuestions || 0} questions
-                              </CardDescription>
-                            </div>
-                          </div>
-                          <button
-                            onClick={handleCloseModuleDetail}
-                            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        {/* Exam Type Tabs */}
-                        <Tabs value={moduleExamTab} onValueChange={setModuleExamTab} className="w-full">
-                          <TabsList className="w-full grid grid-cols-3 bg-slate-100">
-                            <TabsTrigger 
-                              value="exam-years"
-                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
-                            >
-                              <Calendar className="h-4 w-4" />
-                              <span className="hidden sm:inline">Exam par année</span>
-                              <span className="sm:hidden">Année</span>
-                            </TabsTrigger>
-                            <TabsTrigger 
-                              value="par-cours"
-                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
-                            >
-                              <FileText className="h-4 w-4" />
-                              <span className="hidden sm:inline">Par cours</span>
-                              <span className="sm:hidden">Cours</span>
-                            </TabsTrigger>
-                            <TabsTrigger 
-                              value="qcm-banque"
-                              className="flex items-center gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs sm:text-sm"
-                            >
-                              <Database className="h-4 w-4" />
-                              <span className="hidden sm:inline">QCM banque</span>
-                              <span className="sm:hidden">QCM</span>
-                            </TabsTrigger>
-                          </TabsList>
-
-                          {/* Loading State */}
-                          {loadingExams ? (
-                            <div className="mt-6 space-y-3">
-                              {[1, 2, 3].map((i) => (
-                                <Skeleton key={i} className="h-20 w-full rounded-xl" />
-                              ))}
-                            </div>
-                          ) : (
-                            <>
-                              {/* Exam Years Content */}
-                              <TabsContent value="exam-years" className="mt-4">
-                                {moduleExams.examYears.length > 0 ? (
-                                  <div className="space-y-3">
-                                    {moduleExams.examYears.map((exam) => (
-                                      <ExamCard 
-                                        key={exam._id} 
-                                        exam={exam} 
-                                        type="exam-years"
-                                        moduleId={selectedModule._id}
-                                      />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <EmptyExamState type="exam-years" />
-                                )}
-                              </TabsContent>
-
-                              {/* Par Cours Content */}
-                              <TabsContent value="par-cours" className="mt-4">
-                                {moduleExams.parCours.length > 0 ? (
-                                  <div className="space-y-3">
-                                    {moduleExams.parCours.map((exam) => (
-                                      <ExamCard 
-                                        key={exam._id} 
-                                        exam={exam} 
-                                        type="par-cours"
-                                        moduleId={selectedModule._id}
-                                      />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <EmptyExamState type="par-cours" />
-                                )}
-                              </TabsContent>
-
-                              {/* QCM Banque Content */}
-                              <TabsContent value="qcm-banque" className="mt-4">
-                                {moduleExams.qcmBanque.length > 0 ? (
-                                  <div className="space-y-3">
-                                    {moduleExams.qcmBanque.map((exam) => (
-                                      <ExamCard 
-                                        key={exam._id} 
-                                        exam={exam} 
-                                        type="qcm-banque"
-                                        moduleId={selectedModule._id}
-                                      />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <EmptyExamState type="qcm-banque" />
-                                )}
-                              </TabsContent>
-                            </>
-                          )}
-                        </Tabs>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </TabsContent>
-
-            {/* Exam Years Tab */}
-            <TabsContent value="exam-years" className="mt-6">
-              <div className="text-center py-12 text-slate-500">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Statistiques par année d'examen</p>
-                <p className="text-sm mt-2">Bientôt disponible</p>
-              </div>
-            </TabsContent>
-
-            {/* Par Cours Tab */}
-            <TabsContent value="par-cours" className="mt-6">
-              <div className="text-center py-12 text-slate-500">
-                <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Statistiques par cours</p>
-                <p className="text-sm mt-2">Bientôt disponible</p>
-              </div>
-            </TabsContent>
-
-            {/* QCM Banque Tab */}
-            <TabsContent value="qcm-banque" className="mt-6">
-              <div className="text-center py-12 text-slate-500">
-                <HelpCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Statistiques QCM Banque</p>
-                <p className="text-sm mt-2">Bientôt disponible</p>
-              </div>
             </TabsContent>
           </Tabs>
         </motion.div>
+
+        {/* Incorrect Answers Popup */}
+        <AnimatePresence>
+          {showIncorrectPopup && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+                onClick={() => setShowIncorrectPopup(false)}
+              >
+                {/* Modal */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                >
+                  <div className="sticky top-0 bg-gradient-to-r from-red-600 to-rose-600 text-white p-6 rounded-t-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-3">
+                          <TrendingUp className="h-6 w-6" />
+                          Réponses Incorrectes
+                        </h2>
+                        <p className="text-red-100 mt-1">
+                          Détails de vos erreurs par module
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowIncorrectPopup(false)}
+                        className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    {/* Summary */}
+                    <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">Total d'erreurs</p>
+                          <p className="text-3xl font-bold text-red-600">{overallStats.totalIncorrect}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-slate-600">Taux d'erreur</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            {overallStats.totalQuestions > 0 
+                              ? Math.round((overallStats.totalIncorrect / overallStats.totalQuestions) * 100)
+                              : 0}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Modules with incorrect answers */}
+                    <div className="space-y-3">
+                      {Object.values(filteredAndGroupedModules)
+                        .flat()
+                        .filter(m => m.incorrectAnswers > 0)
+                        .sort((a, b) => b.incorrectAnswers - a.incorrectAnswers)
+                        .map((module, index) => {
+                          const errorRate = module.questionsAnswered > 0
+                            ? Math.round((module.incorrectAnswers / module.questionsAnswered) * 100)
+                            : 0;
+                          
+                          return (
+                            <div 
+                              key={module._id || index}
+                              className="p-4 bg-white border border-slate-200 rounded-lg hover:shadow-md transition-shadow"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-slate-800">{module.name}</h3>
+                                  <p className="text-xs text-slate-500 mt-1">{module.semester}</p>
+                                </div>
+                                <Badge className="bg-red-100 text-red-700 border-red-200">
+                                  {module.incorrectAnswers} erreurs
+                                </Badge>
+                              </div>
+                              
+                              {/* Progress bar */}
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-xs text-slate-600">
+                                  <span>{module.correctAnswers} correctes</span>
+                                  <span>{errorRate}% d'erreurs</span>
+                                </div>
+                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden flex">
+                                  <div 
+                                    className="h-full bg-emerald-500"
+                                    style={{ 
+                                      width: `${module.questionsAnswered > 0 
+                                        ? (module.correctAnswers / module.questionsAnswered) * 100 
+                                        : 0}%` 
+                                    }}
+                                  />
+                                  <div 
+                                    className="h-full bg-red-500"
+                                    style={{ 
+                                      width: `${module.questionsAnswered > 0 
+                                        ? (module.incorrectAnswers / module.questionsAnswered) * 100 
+                                        : 0}%` 
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      
+                      {Object.values(filteredAndGroupedModules).flat().filter(m => m.incorrectAnswers > 0).length === 0 && (
+                        <div className="text-center py-8 text-slate-500">
+                          <Award className="h-12 w-12 mx-auto mb-4 text-emerald-400" />
+                          <p className="font-medium">Aucune erreur trouvée!</p>
+                          <p className="text-sm mt-2">Vous n'avez pas encore de réponses incorrectes</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Classement / Points System Info */}
         <motion.div variants={itemVariants}>

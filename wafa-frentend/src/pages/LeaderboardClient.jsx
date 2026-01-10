@@ -74,6 +74,7 @@ const LeaderboardClient = () => {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("totalPoints"); // totalPoints, bluePoints, greenPoints, level, percentage
   const [totalQuestionsInSystem, setTotalQuestionsInSystem] = useState(0);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -95,7 +96,7 @@ const LeaderboardClient = () => {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await userService.getLeaderboard(20, sortBy, user?._id);
+      const response = await userService.getLeaderboard(20, sortBy, user?._id, true); // Enable segmented mode
       setLeaderboardData(response.data.leaderboard || []);
       setUserContext(response.data.userContext || null);
       setTotalQuestionsInSystem(response.data.totalQuestionsInSystem || 0);
@@ -141,8 +142,8 @@ const LeaderboardClient = () => {
         </p>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      {/* Filter Buttons - Hidden on mobile */}
+      <div className="hidden sm:flex mb-6 flex-wrap gap-2">
         {filterButtons.map(({ key, label, icon, color }) => (
           <Button
             key={key}
@@ -217,9 +218,9 @@ const LeaderboardClient = () => {
                         Nv.{levelInfo.level}
                       </Badge>
                     </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-muted">
+                    <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
                       <div
-                        className="h-2 rounded-full bg-gradient-to-r from-primary to-primary/60"
+                        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
                         style={{
                           width: `${Math.round((user.totalPoints / maxScore) * 100)}%`,
                         }}
@@ -236,11 +237,11 @@ const LeaderboardClient = () => {
       {/* Top 20 List */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 20</CardTitle>
+          <CardTitle>Classement par Segments</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Table Header */}
-          <div className="hidden md:grid md:grid-cols-8 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
+          {/* Table Header - Desktop only */}
+          <div className="hidden lg:grid lg:grid-cols-8 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
             <div className="col-span-2">Étudiant</div>
             <div className="text-center">Points</div>
             <div className="text-center">
@@ -260,112 +261,227 @@ const LeaderboardClient = () => {
             <div className="text-center">Progression</div>
           </div>
 
-          <div className="divide-y">
+          <div className="space-y-2 lg:space-y-0 lg:divide-y">
             {sorted.map((userData, idx) => {
               const rank = userData.rank || idx + 1;
               const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
               const levelInfo = getUserLevel(userData.totalPoints);
               const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
+              const dropdownId = `top20-${userData._id || idx}`;
+              const isDropdownOpen = openDropdownId === dropdownId;
+              
+              // Check if we need a separator (after rank 10, and between segments)
+              const previousRank = idx > 0 ? (sorted[idx - 1]?.rank || idx) : 0;
+              const showSeparator = rank > 10 && rank - previousRank > 10;
               
               return (
-                <div
-                  key={userData._id || userData.odUserId || idx}
-                  className={`flex md:grid md:grid-cols-8 items-center justify-between gap-4 py-3 ${
-                    isCurrentUser ? "bg-blue-50 rounded-lg" : ""
-                  } ${rank <= 3 ? rank === 1 ? "bg-yellow-50/50" : rank === 2 ? "bg-slate-50/50" : "bg-orange-50/50" : ""}`}
-                >
-                  {/* User Info */}
-                  <div className="flex items-center gap-3 min-w-0 col-span-2">
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold ${
-                        rank === 1
-                          ? "text-amber-700 border-amber-300"
-                          : rank === 2
-                          ? "text-slate-700 border-slate-300"
-                          : rank === 3
-                          ? "text-amber-800 border-amber-200"
-                          : "text-foreground/70 border-muted"
-                      }`}
-                    >
-                      #{rank}
-                    </span>
-                    <div
-                      className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        rank === 1
-                          ? "bg-amber-100 text-amber-800"
-                          : rank === 2
-                          ? "bg-slate-100 text-slate-700"
-                          : rank === 3
-                          ? "bg-orange-100 text-orange-800"
-                          : "bg-muted text-foreground/80"
-                      }`}
-                    >
-                      {getInitials(userData.name)}
+                <React.Fragment key={userData._id || userData.odUserId || idx}>
+                  {showSeparator && (
+                    <div className="py-4 flex items-center justify-center">
+                      <div className="flex items-center gap-3 text-muted-foreground">
+                        <div className="h-px w-12 sm:w-20 bg-gray-300"></div>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                        </div>
+                        <div className="h-px w-12 sm:w-20 bg-gray-300"></div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700" : ""}`}>
-                        {userData.name}
-                        {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Total Points */}
-                  <div className="hidden md:flex justify-center">
-                    <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                      {userData.totalPoints} pts
-                    </span>
-                  </div>
-
-                  {/* Blue Points */}
-                  <div className="hidden md:flex items-center justify-center gap-1">
-                    <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  </div>
-
-                  {/* Green Points */}
-                  <div className="hidden md:flex items-center justify-center gap-1">
-                    <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  </div>
-
-                  {/* Level */}
-                  <div className="hidden md:flex justify-center">
-                    <Badge className={`${levelInfo.color} text-white text-xs`}>
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      {levelInfo.level}
-                    </Badge>
-                  </div>
-
-                  {/* Percentage */}
-                  <div className="hidden md:flex justify-center">
-                    <span className="text-sm font-medium text-cyan-600">
-                      {userData.percentageAnswered || 0}%
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="hidden md:block">
-                    <div className="h-2 w-full rounded-full bg-muted">
+                  )}
+                  <div
+                    className={`p-3 lg:p-0 rounded-lg lg:rounded-none lg:py-3 ${
+                      isCurrentUser ? "bg-blue-50 border-2 border-blue-300 lg:bg-blue-50/50 lg:border-0" : "bg-white lg:bg-transparent border lg:border-0"
+                    } ${rank <= 3 ? rank === 1 ? "lg:bg-yellow-50/50" : rank === 2 ? "lg:bg-slate-50/50" : "lg:bg-orange-50/50" : ""}`}
+                  >
+                  {/* Mobile Layout */}
+                  <div className="flex lg:hidden items-start justify-between gap-2">
+                    {/* Left: Rank + Avatar + Name */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs bg-accent font-semibold flex-shrink-0 ${
+                          rank === 1
+                            ? "text-amber-700 border-amber-300 bg-amber-50"
+                            : rank === 2
+                            ? "text-slate-700 border-slate-300 bg-slate-50"
+                            : rank === 3
+                            ? "text-amber-800 border-amber-200 bg-orange-50"
+                            : "text-foreground/70 border-muted"
+                        }`}
+                      >
+                        #{rank}
+                      </span>
                       <div
-                        className="h-2 rounded-full bg-primary/80"
-                        style={{
-                          width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
-                        }}
-                      />
+                        className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${
+                          rank === 1
+                            ? "bg-amber-100 text-amber-800"
+                            : rank === 2
+                            ? "bg-slate-100 text-slate-700"
+                            : rank === 3
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-muted text-foreground/80"
+                        }`}
+                      >
+                        {getInitials(userData.name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
+                          {userData.name}
+                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
+                            {userData.totalPoints} pts
+                          </span>
+                          <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
+                            Nv.{levelInfo.level}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: 3-dot menu */}
+                    <div className="relative flex-shrink-0">
+                      <button 
+                        onClick={() => setOpenDropdownId(isDropdownOpen ? null : dropdownId)}
+                        className="p-1.5 hover:bg-gray-100 rounded-md transition"
+                      >
+                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                      </button>
+                      {isDropdownOpen && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setOpenDropdownId(null)}
+                          />
+                          {/* Dropdown */}
+                          <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
+                            <div className="p-3 space-y-2 text-sm">
+                              <div className="flex items-center justify-between pb-2 border-b">
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                  Points Bleus
+                                </span>
+                                <span className="font-semibold text-blue-600">{userData.bluePoints}</span>
+                              </div>
+                              <div className="flex items-center justify-between pb-2 border-b">
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                  Points Verts
+                                </span>
+                                <span className="font-semibold text-green-600">{userData.greenPoints}</span>
+                              </div>
+                              <div className="flex items-center justify-between pb-2 border-b">
+                                <span className="text-muted-foreground">Niveau</span>
+                                <Badge className={`${levelInfo.color} text-white text-xs`}>
+                                  <TrendingUp className="h-3 w-3 mr-1" />
+                                  {levelInfo.level}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between pb-2 border-b">
+                                <span className="text-muted-foreground">Pourcentage</span>
+                                <span className="font-semibold text-cyan-600">{userData.percentageAnswered || 0}%</span>
+                              </div>
+                              <div className="pt-1">
+                                <div className="text-xs text-muted-foreground mb-1">Progression</div>
+                                <div className="h-2 w-full rounded-full bg-gray-200">
+                                  <div
+                                    className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                                    style={{
+                                      width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  {/* Mobile: Show only main stats */}
-                  <div className="md:hidden flex items-center gap-2">
-                    <Badge className={`${levelInfo.color} text-white text-xs`}>
-                      Nv. {levelInfo.level}
-                    </Badge>
-                    <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                      {userData.totalPoints} pts
-                    </span>
+                  {/* Desktop Layout */}
+                  <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4">
+                    {/* Rank and User Info */}
+                    <div className="flex items-center gap-3 min-w-0 col-span-2">
+                      <span
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm bg-accent font-semibold ${
+                          rank === 1
+                            ? "text-amber-700 border-amber-300"
+                            : rank === 2
+                            ? "text-slate-700 border-slate-300"
+                            : rank === 3
+                            ? "text-amber-800 border-amber-200"
+                            : "text-foreground/70 border-muted"
+                        }`}
+                      >
+                        #{rank}
+                      </span>
+                      <div
+                        className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold ${
+                          rank === 1
+                            ? "bg-amber-100 text-amber-800"
+                            : rank === 2
+                            ? "bg-slate-100 text-slate-700"
+                            : rank === 3
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-muted text-foreground/80"
+                        }`}
+                      >
+                        {getInitials(userData.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700" : ""}`}>
+                          {userData.name}
+                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Desktop: All stats */}
+                    <div className="flex justify-center">
+                      <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                        {userData.totalPoints} pts
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <Badge className={`${levelInfo.color} text-white text-xs`}>
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {levelInfo.level}
+                      </Badge>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <span className="text-sm font-medium text-cyan-600">
+                        {userData.percentageAnswered || 0}%
+                      </span>
+                    </div>
+
+                    <div className="block">
+                      <div className="h-2 w-full rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                          style={{
+                            width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </React.Fragment>
               );
             })}
           </div>
@@ -391,74 +507,150 @@ const LeaderboardClient = () => {
               </div>
             </div>
 
-            <div className="divide-y">
+            <div className="divide-y space-y-2 lg:space-y-0 lg:divide-y">
               {userContext.nearbyUsers.map((userData, idx) => {
                 const levelInfo = getUserLevel(userData.totalPoints);
                 const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
                 const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
+                const dropdownId = `context-${userData._id || idx}`;
+                const isDropdownOpen = openDropdownId === dropdownId;
                 
                 return (
                   <div
                     key={userData._id || userData.odUserId || idx}
-                    className={`flex md:grid md:grid-cols-8 items-center justify-between gap-4 py-3 ${
-                      isCurrentUser ? "bg-blue-100 rounded-lg border-2 border-blue-300" : ""
+                    className={`p-3 lg:p-0 rounded-lg lg:rounded-none lg:py-3 ${
+                      isCurrentUser ? "bg-blue-100 border-2 border-blue-300 rounded-lg" : "bg-white lg:bg-transparent border lg:border-0"
                     }`}
                   >
-                    {/* User Info */}
-                    <div className="flex items-center gap-3 min-w-0 col-span-2">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-foreground/70 border-muted">
-                        #{userData.rank}
-                      </span>
-                      <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80">
-                        {getInitials(userData.name)}
+                    {/* Mobile Layout */}
+                    <div className="flex lg:hidden items-start justify-between gap-2">
+                      {/* Left: Rank + Avatar + Name */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-xs text-foreground/70 border-muted flex-shrink-0">
+                          #{userData.rank}
+                        </span>
+                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80 flex-shrink-0">
+                          {getInitials(userData.name)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
+                            {userData.name}
+                            {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
+                              {userData.totalPoints} pts
+                            </span>
+                            <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
+                              Nv.{levelInfo.level}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
-                          {userData.name}
-                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                        </p>
+
+                      {/* Right: 3-dot menu */}
+                      <div className="relative flex-shrink-0">
+                        <button 
+                          onClick={() => setOpenDropdownId(isDropdownOpen ? null : dropdownId)}
+                          className="p-1.5 hover:bg-gray-100 rounded-md transition"
+                        >
+                          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                        </button>
+                        {isDropdownOpen && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10" 
+                              onClick={() => setOpenDropdownId(null)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
+                              <div className="p-3 space-y-2 text-sm">
+                                <div className="flex items-center justify-between pb-2 border-b">
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    Points Bleus
+                                  </span>
+                                  <span className="font-semibold text-blue-600">{userData.bluePoints}</span>
+                                </div>
+                                <div className="flex items-center justify-between pb-2 border-b">
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                    Points Verts
+                                  </span>
+                                  <span className="font-semibold text-green-600">{userData.greenPoints}</span>
+                                </div>
+                                <div className="flex items-center justify-between pb-2 border-b">
+                                  <span className="text-muted-foreground">Niveau</span>
+                                  <Badge className={`${levelInfo.color} text-white text-xs`}>
+                                    <TrendingUp className="h-3 w-3 mr-1" />
+                                    {levelInfo.level}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between pb-2 border-b">
+                                  <span className="text-muted-foreground">Pourcentage</span>
+                                  <span className="font-semibold text-cyan-600">{userData.percentageAnswered || 0}%</span>
+                                </div>
+                                <div className="pt-1">
+                                  <div className="text-xs text-muted-foreground mb-1">Progression</div>
+                                  <div className="h-2 w-full rounded-full bg-gray-200">
+                                    <div
+                                      className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                                      style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="hidden md:flex justify-center">
-                      <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                        {userData.totalPoints} pts
-                      </span>
-                    </div>
-                    <div className="hidden md:flex items-center justify-center gap-1">
-                      <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
-                    </div>
-                    <div className="hidden md:flex items-center justify-center gap-1">
-                      <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
-                    </div>
-                    <div className="hidden md:flex justify-center">
-                      <Badge className={`${levelInfo.color} text-white text-xs`}>
-                        {levelInfo.level}
-                      </Badge>
-                    </div>
-                    <div className="hidden md:flex justify-center">
-                      <span className="text-sm font-medium text-cyan-600">
-                        {userData.percentageAnswered || 0}%
-                      </span>
-                    </div>
-                    <div className="hidden md:block">
-                      <div className="h-2 w-full rounded-full bg-muted">
-                        <div
-                          className="h-2 rounded-full bg-primary/80"
-                          style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
-                        />
+                    {/* Desktop Layout */}
+                    <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4">
+                      <div className="flex items-center gap-3 min-w-0 col-span-2">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-sm text-foreground/70 border-muted">
+                          #{userData.rank}
+                        </span>
+                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80">
+                          {getInitials(userData.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
+                            {userData.name}
+                            {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Mobile */}
-                    <div className="md:hidden flex items-center gap-2">
-                      <Badge className={`${levelInfo.color} text-white text-xs`}>
-                        Nv. {levelInfo.level}
-                      </Badge>
-                      <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                        {userData.totalPoints} pts
-                      </span>
+                      <div className="flex justify-center">
+                        <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                          {userData.totalPoints} pts
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <Badge className={`${levelInfo.color} text-white text-xs`}>
+                          {levelInfo.level}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className="text-sm font-medium text-cyan-600">
+                          {userData.percentageAnswered || 0}%
+                        </span>
+                      </div>
+                      <div className="block">
+                        <div className="h-2 w-full rounded-full bg-gray-200">
+                          <div
+                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                            style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

@@ -180,6 +180,7 @@ const SubjectsPage = () => {
   const [hasAccess, setHasAccess] = useState(true);
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
+  const [userFreeModules, setUserFreeModules] = useState([]);
   const [moduleStats, setModuleStats] = useState(null);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [selectedHelpExam, setSelectedHelpExam] = useState(null);
@@ -211,8 +212,10 @@ const SubjectsPage = () => {
         const userProfile = await userService.getUserProfile();
         const semesters = userProfile.semesters || [];
         const plan = userProfile.plan || "Free";
+        const freeModules = userProfile.freeModules || [];
         setUserSemesters(semesters);
         setUserPlan(plan);
+        setUserFreeModules(freeModules);
         localStorage.setItem("user", JSON.stringify(userProfile));
       } catch (error) {
         console.error("Error fetching user profile:", error);
@@ -221,20 +224,39 @@ const SubjectsPage = () => {
           const user = JSON.parse(storedUser);
           setUserSemesters(user.semesters || []);
           setUserPlan(user.plan || "Free");
+          setUserFreeModules(user.freeModules || []);
         }
       }
     };
     checkAccess();
   }, []);
 
-  // Helper function to check if user has access to a semester
-  const hasAccessToSemester = (semester) => {
+  // Helper function to check if user has access to a semester and module
+  const hasAccessToSemester = (semester, moduleName = null) => {
+    // Premium users have access to all semesters
+    if (userPlan && userPlan !== "Free") {
+      return true;
+    }
+    
+    // Free users: check semester and module
     if (userSemesters && userSemesters.length > 0) {
-      return userSemesters.includes(semester);
+      const hasSemester = userSemesters.includes(semester);
+      
+      // If no module name provided, just check semester
+      if (!moduleName) return hasSemester;
+      
+      // Check if module is in allowed free modules
+      if (userFreeModules && userFreeModules.length > 0) {
+        // Check if module name matches or contains any of the free modules
+        return hasSemester && userFreeModules.some(freeModule => 
+          moduleName.toLowerCase().includes(freeModule.toLowerCase()) ||
+          freeModule.toLowerCase().includes(moduleName.toLowerCase())
+        );
+      }
+      
+      return hasSemester;
     }
-    if (userPlan === "Free" || !userPlan) {
-      return semester === "S1";
-    }
+    
     return false;
   };
 
@@ -248,8 +270,8 @@ const SubjectsPage = () => {
 
         if (!moduleData) return;
 
-        // Check access
-        if (!hasAccessToSemester(moduleData.semester)) {
+        // Check access with module name
+        if (!hasAccessToSemester(moduleData.semester, moduleData.name)) {
           setHasAccess(false);
           setModule({ name: moduleData.name, semester: moduleData.semester });
           setIsLoading(false);

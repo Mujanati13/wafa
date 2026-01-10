@@ -20,12 +20,17 @@ import {
   Link,
   BookOpen,
   ChevronRight,
+  ChevronDown,
   Loader2,
   CheckCircle,
   AlertCircle,
   Eye,
   Upload,
-  ImageIcon
+  ImageIcon,
+  FileText,
+  Layers,
+  Search,
+  Filter
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -45,6 +50,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -58,6 +65,11 @@ const ImportExamParCourse = () => {
   const [examYears, setExamYears] = useState([]);
   const [selectedExamQuestions, setSelectedExamQuestions] = useState([]);
   const [selectedSemester, setSelectedSemester] = useState("");
+  
+  // Search and filter for courses
+  const [courseSearch, setCourseSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [expandedCourses, setExpandedCourses] = useState(new Set());
   
   const semesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
 
@@ -77,6 +89,26 @@ const ImportExamParCourse = () => {
   const filteredModules = selectedSemester
     ? modules.filter(m => m.semester === selectedSemester)
     : modules;
+
+  // Get unique categories from courses
+  const courseCategories = [...new Set(examCourses.map(c => c.category).filter(Boolean))];
+  
+  // Filter courses by search and category
+  const filteredCourses = examCourses.filter(course => {
+    const matchesSearch = !courseSearch || 
+      course.name?.toLowerCase().includes(courseSearch.toLowerCase()) ||
+      course.category?.toLowerCase().includes(courseSearch.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Group filtered courses by category
+  const coursesByCategory = filteredCourses.reduce((acc, course) => {
+    const category = course.category || "Sans catégorie";
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(course);
+    return acc;
+  }, {});
 
   // Dialog for viewing questions
   const [showQuestionsDialog, setShowQuestionsDialog] = useState(false);
@@ -175,6 +207,9 @@ const ImportExamParCourse = () => {
       setExamYears([]);
     }
     setSelectedCourse("");
+    setCourseSearch("");
+    setSelectedCategory("all");
+    setExpandedCourses(new Set());
   }, [selectedModule]);
 
   const fetchModules = async () => {
@@ -366,7 +401,7 @@ const ImportExamParCourse = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Semester Select */}
                 <div className="space-y-2">
                   <Label className="font-semibold text-gray-700 flex items-center gap-1">
@@ -415,50 +450,170 @@ const ImportExamParCourse = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Course Select */}
-                <div className="space-y-2">
-                  <Label className="font-semibold text-gray-700 flex items-center gap-1">
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-orange-600">●</span> Cours
-                  </Label>
-                  <Select
-                    value={selectedCourse}
-                    onValueChange={setSelectedCourse}
-                    disabled={!selectedModule || loadingCourses}
-                  >
-                    <SelectTrigger className="border-rose-200">
-                      <SelectValue
-                        placeholder={
-                          !selectedModule
-                            ? "Sélectionnez d'abord un module"
-                            : loadingCourses
-                              ? "Chargement..."
-                              : examCourses.length === 0
-                                ? "Aucun cours disponible"
-                                : "Choisir un cours"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {examCourses.map((c) => (
-                        <SelectItem key={c._id} value={c._id}>
-                          {c.name} - {c.category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              {examCourses.length === 0 && selectedModule && !loadingCourses && (
-                <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <div className="flex items-center gap-2 text-amber-800">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="text-sm">
-                      Aucun cours trouvé pour ce module. Créez d'abord des cours dans la section "Examens par Cours".
-                    </span>
+              {/* Enhanced Sous-Modules / Courses Display */}
+              {selectedModule && (
+                <div className="mt-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <Label className="font-semibold text-gray-700 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-orange-600" />
+                      Sous-modules / Cours ({filteredCourses.length})
+                    </Label>
+                    
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                      {/* Search Input */}
+                      <div className="relative flex-1 sm:flex-none">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          placeholder="Rechercher..."
+                          value={courseSearch}
+                          onChange={(e) => setCourseSearch(e.target.value)}
+                          className="pl-8 w-full sm:w-48 h-9 text-sm"
+                        />
+                      </div>
+                      
+                      {/* Category Filter */}
+                      {courseCategories.length > 0 && (
+                        <Select
+                          value={selectedCategory}
+                          onValueChange={setSelectedCategory}
+                        >
+                          <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
+                            <Filter className="w-3 h-3 mr-1" />
+                            <SelectValue placeholder="Catégorie" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Toutes catégories</SelectItem>
+                            {courseCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
                   </div>
+
+                  {loadingCourses ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-rose-500" />
+                      <span className="ml-2 text-gray-500">Chargement des cours...</span>
+                    </div>
+                  ) : filteredCourses.length === 0 ? (
+                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="flex items-center gap-2 text-amber-800">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-sm">
+                          {examCourses.length === 0 
+                            ? "Aucun cours trouvé pour ce module. Créez d'abord des cours dans la section \"Examens par Cours\"."
+                            : "Aucun cours ne correspond à votre recherche."}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                      {Object.entries(coursesByCategory).map(([category, courses]) => (
+                        <div key={category} className="border rounded-lg overflow-hidden">
+                          {/* Category Header */}
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedCourses);
+                              if (newExpanded.has(category)) {
+                                newExpanded.delete(category);
+                              } else {
+                                newExpanded.add(category);
+                              }
+                              setExpandedCourses(newExpanded);
+                            }}
+                            className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChevronDown className={cn(
+                                "w-4 h-4 text-gray-500 transition-transform",
+                                !expandedCourses.has(category) && "-rotate-90"
+                              )} />
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              <span className="font-medium text-gray-700">{category}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {courses.length}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {courses.reduce((sum, c) => sum + (c.totalQuestions || 0), 0)} questions
+                            </div>
+                          </button>
+                          
+                          {/* Courses List */}
+                          <AnimatePresence>
+                            {expandedCourses.has(category) && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="divide-y divide-gray-100">
+                                  {courses.map((course) => (
+                                    <button
+                                      key={course._id}
+                                      onClick={() => setSelectedCourse(course._id)}
+                                      className={cn(
+                                        "w-full flex items-center justify-between p-3 text-left transition-all",
+                                        selectedCourse === course._id
+                                          ? "bg-rose-50 border-l-4 border-rose-500"
+                                          : "hover:bg-gray-50 border-l-4 border-transparent"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                          "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold",
+                                          selectedCourse === course._id
+                                            ? "bg-rose-500 text-white"
+                                            : "bg-gray-100 text-gray-600"
+                                        )}>
+                                          {course.name?.charAt(0)?.toUpperCase() || "C"}
+                                        </div>
+                                        <div>
+                                          <p className={cn(
+                                            "font-medium text-sm",
+                                            selectedCourse === course._id ? "text-rose-700" : "text-gray-700"
+                                          )}>
+                                            {course.name}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            {course.totalQuestions || 0} questions liées
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge 
+                                          variant={course.status === "active" ? "default" : "secondary"}
+                                          className={cn(
+                                            "text-xs",
+                                            course.status === "active" 
+                                              ? "bg-emerald-100 text-emerald-700" 
+                                              : ""
+                                          )}
+                                        >
+                                          {course.status === "active" ? "Actif" : "Brouillon"}
+                                        </Badge>
+                                        {selectedCourse === course._id && (
+                                          <CheckCircle className="w-4 h-4 text-rose-500" />
+                                        )}
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

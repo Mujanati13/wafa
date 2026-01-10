@@ -24,6 +24,7 @@ const ROUTE_PERMISSIONS = {
   '/admin/importQCMBanque': 'content',
   '/admin/importResumes': 'content',
   '/admin/importExplications': 'content',
+  '/admin/generateExplanationsAI': 'content',
   '/admin/importImages': 'content',
   
   // Reports - requires reports permission

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Play, Pencil, Trash2, ListPlus, HelpCircle, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import { playlistService } from '@/services/playlistService';
 
 const Myplaylist = () => {
   const { t } = useTranslation(['dashboard', 'common']);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -41,8 +43,11 @@ const Myplaylist = () => {
   const fetchPlaylists = async () => {
     try {
       setLoading(true);
+      console.log('Fetching playlists...');
       const response = await playlistService.getAll();
+      console.log('Playlists response:', response);
       setPlaylists(response.data || []);
+      console.log('Playlists set:', response.data?.length || 0);
     } catch (error) {
       console.error('Error fetching playlists:', error);
       toast.error('Erreur', {
@@ -99,12 +104,24 @@ const Myplaylist = () => {
   };
 
   const handlePlayPlaylist = (playlist) => {
+    console.log('=== PLAY PLAYLIST CLICKED ===');
+    console.log('Playlist:', playlist);
+    console.log('Playlist ID:', playlist._id);
+    
     const questionsCount = playlist.questionIds?.length || 0;
+    console.log('Questions count:', questionsCount);
+    
     if (questionsCount === 0) {
+      console.log('Playlist is empty, showing toast');
       toast.error(t('dashboard:playlist_is_empty'));
       return;
     }
-    toast.info(t('dashboard:launching_playlist', { title: playlist.title }));
+    
+    const targetUrl = `/exam/${playlist._id}?type=playlist`;
+    console.log('Navigating to:', targetUrl);
+    
+    navigate(targetUrl);
+    console.log('Navigation triggered');
   };
 
   const handleEditPlaylist = (playlist) => {

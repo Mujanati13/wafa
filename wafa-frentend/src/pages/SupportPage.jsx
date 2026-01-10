@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HelpCircle,
@@ -41,6 +42,7 @@ import { userService } from '@/services/userService';
 
 const SupportPage = () => {
   const { t } = useTranslation(['common', 'dashboard']);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('faq');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,6 +162,15 @@ const SupportPage = () => {
       fetchTickets();
     }
   }, [activeTab, currentUser]);
+
+  // Check if URL has tab query param
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, []);
 
   // Filter FAQs based on search
   const filteredFAQs = faqCategories.map(category => ({
@@ -281,13 +292,16 @@ const SupportPage = () => {
 
         <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
           <CardContent className="pt-6 text-center">
-            <a href="mailto:contact@wafa.com" className="block">
+            <button
+              onClick={() => navigate('/dashboard/support?tab=contact')}
+              className="block w-full"
+            >
               <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                 <Mail className="w-6 h-6 text-purple-600" />
               </div>
               <h3 className="font-semibold mb-1">Email</h3>
-              <p className="text-sm text-muted-foreground">contact@wafa.com</p>
-            </a>
+              <p className="text-sm text-muted-foreground">Envoyez-nous un message</p>
+            </button>
           </CardContent>
         </Card>
 
@@ -309,63 +323,178 @@ const SupportPage = () => {
         </Card>
       </motion.div>
 
-      {/* FAQ Section */}
+      {/* Tabs Navigation */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="space-y-6"
+        transition={{ delay: 0.3 }}
+        className="mt-8"
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-primary" />
-              Questions Fréquentes
-            </CardTitle>
-            <CardDescription>
-              Trouvez rapidement des réponses à vos questions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher dans la FAQ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="faq" className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">FAQ</span>
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              <span className="hidden sm:inline">Nous Contacter</span>
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="flex items-center gap-2">
+              <Ticket className="w-4 h-4" />
+              <span className="hidden sm:inline">Mes Tickets</span>
+            </TabsTrigger>
+          </TabsList>
 
-            {/* FAQ Categories */}
-            <div className="grid gap-6 mt-4">
-              {filteredFAQs.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucun résultat trouvé pour "{searchQuery}"</p>
-                  <p className="text-sm mt-2">
-                    Contactez-nous via WhatsApp ou Email pour plus d'aide
-                  </p>
-                </div>
-              ) : (
-                filteredFAQs.map((category) => (
-                  <div key={category.id} className="border rounded-lg p-4">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold mb-3">
-                      <category.icon className="w-5 h-5 text-primary" />
-                      {category.title}
-                    </h3>
+          {/* Contact Form Tab */}
+          <TabsContent value="contact">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="w-5 h-5 text-primary" />
+                  Formulaire de Contact
+                </CardTitle>
+                <CardDescription>
+                  Envoyez-nous votre message et nous vous répondrons dans les plus brefs délais
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmitTicket} className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      {category.faqs.map((faq, index) => (
-                        <FAQItem key={index} question={faq.question} answer={faq.answer} />
-                      ))}
+                      <Label htmlFor="name">Nom *</Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Votre nom"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="Votre email"
+                        required
+                      />
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Sujet *</Label>
+                    <Input
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      placeholder="Sujet de votre message"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message *</Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      placeholder="Décrivez votre problème ou question..."
+                      rows={6}
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Envoyer le message
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tickets Tab */}
+          <TabsContent value="tickets">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-primary" />
+                  Mes Tickets de Support
+                </CardTitle>
+                <CardDescription>
+                  Suivi de vos demandes d'assistance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingTickets ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : tickets.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Ticket className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Vous n'avez pas encore de tickets</p>
+                    <p className="text-sm mt-2">
+                      Créez un nouveau ticket en utilisant le formulaire ci-dessus
+                    </p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-4">
+                      {tickets.map((ticket) => (
+                        <Card key={ticket._id} className="overflow-hidden">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div className="flex-1">
+                                <h4 className="font-semibold">{ticket.subject}</h4>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {formatDate(ticket.createdAt)}
+                                </p>
+                              </div>
+                              {getStatusBadge(ticket.status)}
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {ticket.message}
+                            </p>
+                            {ticket.reply && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-sm font-medium text-green-700">Réponse:</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {ticket.reply}
+                                </p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </motion.div>
     </div>
   );

@@ -379,7 +379,7 @@ const LandingPageAdmin = () => {
                   <Label htmlFor="siteName">Nom du Site</Label>
                   <Input
                     id="siteName"
-                    placeholder="WAFA"
+                    placeholder="Imrs-Qcma"
                     value={settings.siteName}
                     onChange={(e) => handleChange("siteName", e.target.value)}
                   />
@@ -418,7 +418,7 @@ const LandingPageAdmin = () => {
                       className="h-12 w-12 object-contain rounded-lg"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
-                    <span className="text-lg font-bold">{settings.siteName || "WAFA"}</span>
+                    <span className="text-lg font-bold">{settings.siteName || "Imrs-Qcma"}</span>
                     <span className="text-sm text-muted-foreground">{settings.siteVersion || "v1.1"}</span>
                   </div>
                 </div>
@@ -450,7 +450,7 @@ const LandingPageAdmin = () => {
                 <Label htmlFor="heroTitle">Titre Principal</Label>
                 <Input
                   id="heroTitle"
-                  placeholder="Préparez vos examens avec WAFA"
+                  placeholder="Préparez vos examens avec Imrs-Qcma"
                   value={settings.heroTitle}
                   onChange={(e) => handleChange("heroTitle", e.target.value)}
                 />
@@ -817,7 +817,7 @@ const LandingPageAdmin = () => {
                   <Input
                     id="contactEmail"
                     type="email"
-                    placeholder="contact@wafa.ma"
+                    placeholder="contact@imrs-qcma.ma"
                     value={settings.contactEmail}
                     onChange={(e) => handleChange("contactEmail", e.target.value)}
                   />
@@ -859,7 +859,7 @@ const LandingPageAdmin = () => {
                     </Label>
                     <Input
                       id="facebookUrl"
-                      placeholder="https://facebook.com/wafa"
+                      placeholder="https://facebook.com/imrs_qcma"
                       value={settings.facebookUrl}
                       onChange={(e) => handleChange("facebookUrl", e.target.value)}
                     />
@@ -871,7 +871,7 @@ const LandingPageAdmin = () => {
                     </Label>
                     <Input
                       id="instagramUrl"
-                      placeholder="https://instagram.com/wafa"
+                      placeholder="https://instagram.com/imrs_qcma"
                       value={settings.instagramUrl}
                       onChange={(e) => handleChange("instagramUrl", e.target.value)}
                     />
@@ -883,7 +883,7 @@ const LandingPageAdmin = () => {
                     </Label>
                     <Input
                       id="youtubeUrl"
-                      placeholder="https://youtube.com/@wafa"
+                      placeholder="https://youtube.com/@imrs_qcma"
                       value={settings.youtubeUrl}
                       onChange={(e) => handleChange("youtubeUrl", e.target.value)}
                     />

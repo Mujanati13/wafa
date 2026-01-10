@@ -34,7 +34,8 @@ import {
   BarChart3,
   RefreshCcw,
   Settings2,
-  Timer
+  Timer,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -603,11 +604,14 @@ const PricingSection = ({ settings }) => {
               { text: "tous les modules", included: true },
               { text: "tous les exams", included: true },
               { text: "Mobile-friendly interface", included: true },
-              { text: "fonctionalités", included: true },
+              { text: "fonctionalités principales", included: true },
               { text: "Access to Boards", included: true },
               { text: "access to statistiques", included: true },
               { text: "Ai companion access", included: true },
-              { text: "Early features access", included: true }
+              { text: "Early features access", included: true },
+              { text: "Community access", included: false },
+              { text: "Playlist creation", included: false },
+              { text: "Notes personnalisées", included: false }
             ]
           },
           {
@@ -621,11 +625,15 @@ const PricingSection = ({ settings }) => {
               { text: "tous les modules", included: true },
               { text: "tous les exams", included: true },
               { text: "Mobile-friendly interface", included: true },
-              { text: "fonctionalités", included: true },
+              { text: "toutes les fonctionalités", included: true },
               { text: "Access to Boards", included: true },
               { text: "access to statistiques", included: true },
               { text: "Ai companion access", included: true },
-              { text: "Early features access", included: true }
+              { text: "Early features access", included: true },
+              { text: "Community access", included: true },
+              { text: "Playlist creation", included: true },
+              { text: "Notes personnalisées", included: true },
+              { text: "Support prioritaire", included: true }
             ]
           }
         ]);
@@ -1174,9 +1182,29 @@ const FeedbackSection = ({ settings }) => {
           </h2>
 
           <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
-            Aidez-nous à améliorer WAFA en partageant vos pensées et suggestions.
+            Aidez-nous à améliorer Imrs-Qcma en partageant vos pensées et suggestions.
             Votre contribution alimente notre innovation.
           </p>
+
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              onClick={() => navigate('/dashboard/support?tab=contact')}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-base font-semibold py-6 px-8"
+              size="lg"
+            >
+              <Send className="w-5 h-5 mr-2" />
+              Nous envoyer un message
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/')}
+              className="text-base font-semibold py-6 px-8"
+              size="lg"
+            >
+              <Home className="w-5 h-5 mr-2" />
+              Retour à l'accueil
+            </Button>
+          </div>
         </motion.div>
 
         <motion.div

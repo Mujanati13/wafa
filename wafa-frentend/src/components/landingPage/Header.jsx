@@ -5,7 +5,6 @@ import { Menu, X, LogIn, UserPlus, LayoutDashboard, User, GraduationCap } from '
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
 const Header = ({ settings }) => {
   const { t } = useTranslation(['common', 'landing']);
@@ -106,7 +105,7 @@ const Header = ({ settings }) => {
             {settings?.logoUrl ? (
               <img
                 src={settings.logoUrl}
-                alt={settings?.siteName || "WAFA"}
+                alt={settings?.siteName || "Imrs-Qcma"}
                 className="h-10 w-10 object-contain rounded-lg shadow-lg"
               />
             ) : (
@@ -115,7 +114,7 @@ const Header = ({ settings }) => {
               </div>
             )}
             <div className="hidden sm:flex flex-col">
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-none">{settings?.siteName || "WAFA"}</span>
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-none">{settings?.siteName || "Imrs-Qcma"}</span>
               <span className="text-xs text-gray-500">{settings?.siteVersion || "v1.1"}</span>
             </div>
           </Link>
@@ -134,9 +133,8 @@ const Header = ({ settings }) => {
             ))}
           </nav>
 
-          {/* Desktop CTA Buttons & Language Switcher */}
+          {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher />
             {isLoggedIn ? (
               <>
                 <Button variant="outline" asChild>
@@ -183,7 +181,7 @@ const Header = ({ settings }) => {
                   {settings?.logoUrl ? (
                     <img
                       src={settings.logoUrl}
-                      alt={settings?.siteName || "WAFA"}
+                      alt={settings?.siteName || "Imrs-Qcma"}
                       className="h-10 w-10 object-contain rounded-lg shadow-lg"
                     />
                   ) : (
@@ -192,14 +190,10 @@ const Header = ({ settings }) => {
                     </div>
                   )}
                   <div className="flex flex-col">
-                    <span className="text-lg font-bold text-gray-900 leading-none">{settings?.siteName || "WAFA"}</span>
+                    <span className="text-lg font-bold text-gray-900 leading-none">{settings?.siteName || "Imrs-Qcma"}</span>
                     <span className="text-xs text-gray-500">{settings?.siteVersion || "v1.1"}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="px-6 pb-4">
-                <LanguageSwitcher />
               </div>
 
               <Separator />

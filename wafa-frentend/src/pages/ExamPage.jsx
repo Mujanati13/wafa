@@ -195,6 +195,7 @@ const ExamPage = () => {
 
   // User profile state for header
   const [userProfile, setUserProfile] = useState(null);
+  const [userPlan, setUserPlan] = useState("Free");
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showFontPopup, setShowFontPopup] = useState(false);
 
@@ -222,12 +223,15 @@ const ExamPage = () => {
       try {
         const profile = await userService.getUserProfile();
         setUserProfile(profile);
+        setUserPlan(profile.plan || "Free");
       } catch (error) {
         console.error('Error fetching user profile:', error);
         // Try to get from localStorage
         const cached = localStorage.getItem('user');
         if (cached) {
-          setUserProfile(JSON.parse(cached));
+          const user = JSON.parse(cached);
+          setUserProfile(user);
+          setUserPlan(user.plan || "Free");
         }
       }
     };
@@ -263,6 +267,25 @@ const ExamPage = () => {
 
   const userLevelInfo = userProfile ? calculateLevel(userProfile.points || 0) : null;
 
+  // Check if user has access to premium annual features
+  const hasPremiumAnnualAccess = userPlan === "Premium Annuel";
+
+  // Helper to handle feature access with upgrade prompt
+  const handlePremiumFeature = (featureName, action) => {
+    if (!hasPremiumAnnualAccess) {
+      toast.error('Fonctionnalité Premium Annuel', {
+        description: `${featureName} est disponible uniquement pour les abonnés Premium Annuel.`,
+        action: {
+          label: 'Mettre à niveau',
+          onClick: () => navigate('/dashboard/subscription')
+        },
+        duration: 5000,
+      });
+      return;
+    }
+    action();
+  };
+
   // Get the API endpoint based on exam type
   const getExamEndpoint = useCallback(() => {
     switch (examType) {
@@ -270,6 +293,8 @@ const ExamPage = () => {
         return `/exam-courses/${examId}`;
       case 'qcm':
         return `/qcm-banque/${examId}`;
+      case 'playlist':
+        return `/playlists/${examId}`;
       default:
         return `/exams/all/${examId}`;
     }
@@ -305,6 +330,20 @@ const ExamPage = () => {
           "Session principale": questions
         }
       };
+    } else if (type === 'playlist') {
+      // Playlist has questions array
+      const questions = data.questions || [];
+      return {
+        ...data,
+        name: data.name || data.title,
+        moduleId: null,
+        moduleName: 'Playlist',
+        moduleColor: '#8b5cf6',
+        totalQuestions: questions.length,
+        questions: {
+          "Session principale": questions
+        }
+      };
     }
     // Default exam-years format - already in correct format
     return data;
@@ -316,8 +355,17 @@ const ExamPage = () => {
       try {
         setLoading(true);
         const endpoint = getExamEndpoint();
+        console.log('=== FETCHING EXAM DATA ===');
+        console.log('Exam ID:', examId);
+        console.log('Exam Type:', examType);
+        console.log('Endpoint:', endpoint);
+        
         const response = await api.get(endpoint);
+        console.log('API Response:', response);
+        console.log('Response data:', response.data);
+        
         const transformedData = transformExamData(response.data.data, examType);
+        console.log('Transformed data:', transformedData);
         setExamData(transformedData);
 
         // Restore progress from localStorage
@@ -373,6 +421,10 @@ const ExamPage = () => {
           console.log('Could not fetch server answers:', serverErr);
         }
       } catch (err) {
+        console.error('=== ERROR FETCHING EXAM ===');
+        console.error('Error:', err);
+        console.error('Error response:', err.response);
+        console.error('Error message:', err.message);
         setError(t('dashboard:failed_load_exam') || 'Failed to load exam');
         toast.error(t('dashboard:failed_load_exam') || 'Failed to load exam');
       } finally {
@@ -437,12 +489,13 @@ const ExamPage = () => {
     return () => clearInterval(timeUpdateTimer);
   }, [examData, showResults, examType, examId, timeElapsed]);
 
-  // Warn before leaving
+  // Warn before leaving - only if there are actual unsaved changes
   useEffect(() => {
     if (!examData || showResults) return;
 
     const handleBeforeUnload = (e) => {
-      if (Object.keys(selectedAnswers).length > 0) {
+      // Only warn if there are unsaved changes that haven't been saved to localStorage
+      if (hasUnsavedChanges && Object.keys(selectedAnswers).length > 0) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -450,7 +503,7 @@ const ExamPage = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [selectedAnswers, showResults, examData]);
+  }, [hasUnsavedChanges, showResults, examData, selectedAnswers]);
 
   // Get all questions - sorted by questionNumber, with displayNumber assigned
   const questions = useMemo(() => {
@@ -788,20 +841,24 @@ const ExamPage = () => {
 
   const score = useMemo(() => calculateScore(), [calculateScore]);
   
-  // Count only questions with actual answers (not empty arrays)
-  const answeredCount = useMemo(() => {
-    return Object.entries(selectedAnswers).filter(([_, answers]) => answers && answers.length > 0).length;
+  // Convert selectedAnswers to a string for dependency tracking (ensures re-render on changes)
+  const selectedAnswersString = useMemo(() => {
+    return JSON.stringify(selectedAnswers);
   }, [selectedAnswers]);
   
-  const progress = useMemo(() =>
-    (answeredCount / Math.max(questions.length, 1)) * 100,
-    [answeredCount, questions.length]
-  );
+  // Count only questions with actual answers (not empty arrays)
+  const answeredCount = useMemo(() => {
+    // Parse the stringified answers to ensure fresh calculation
+    const answers = JSON.parse(selectedAnswersString);
+    return Object.entries(answers).filter(([_, ans]) => ans && ans.length > 0).length;
+  }, [selectedAnswersString]);
+  
+  const progress = useMemo(() => {
+    const total = Math.max(questions.length, 1);
+    return (answeredCount / total) * 100;
+  }, [answeredCount, questions.length]);
 
   // Get question status with enhanced colors
-  // Convert selectedAnswers keys to a string for dependency tracking
-  const selectedAnswersKeys = Object.keys(selectedAnswers).join(',');
-  
   const getQuestionStatus = useCallback((index) => {
     const hasAnswer = selectedAnswers[index]?.length > 0;
     const isVerified = verifiedQuestions[index];
@@ -837,7 +894,8 @@ const ExamPage = () => {
     }
 
     return { status: 'unanswered', isFlagged, isVisited: false };
-  }, [selectedAnswers, selectedAnswersKeys, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
+  // Use selectedAnswersString for dependency tracking to ensure updates when answers change
+  }, [selectedAnswers, selectedAnswersString, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1660,17 +1718,25 @@ const ExamPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setShowPlaylistModal(true)}
-                          className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
+                          onClick={() => handlePremiumFeature('Playlist', () => setShowPlaylistModal(true))}
+                          className={cn(
+                            "h-6 w-6 sm:h-8 sm:w-8",
+                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                          )}
+                          disabled={!hasPremiumAnnualAccess}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = moduleColor;
-                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = moduleColor;
+                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '';
-                            e.currentTarget.style.backgroundColor = '';
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = '';
+                              e.currentTarget.style.backgroundColor = '';
+                            }
                           }}
-                          title="Playlist"
+                          title={hasPremiumAnnualAccess ? "Playlist" : "Playlist (Premium Annuel requis)"}
                         >
                           <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -1696,17 +1762,25 @@ const ExamPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setShowCommunityModal(true)}
-                          className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
+                          onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
+                          className={cn(
+                            "h-6 w-6 sm:h-8 sm:w-8",
+                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                          )}
+                          disabled={!hasPremiumAnnualAccess}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = moduleColor;
-                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = moduleColor;
+                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '';
-                            e.currentTarget.style.backgroundColor = '';
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = '';
+                              e.currentTarget.style.backgroundColor = '';
+                            }
                           }}
-                          title="Communauté"
+                          title={hasPremiumAnnualAccess ? "Communauté" : "Communauté (Premium Annuel requis)"}
                         >
                           <Users className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -1733,17 +1807,25 @@ const ExamPage = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setShowNoteModal(true)}
-                          className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
+                          onClick={() => handlePremiumFeature('Notes', () => setShowNoteModal(true))}
+                          className={cn(
+                            "h-6 w-6 sm:h-8 sm:w-8",
+                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                          )}
+                          disabled={!hasPremiumAnnualAccess}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = moduleColor;
-                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = moduleColor;
+                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '';
-                            e.currentTarget.style.backgroundColor = '';
+                            if (hasPremiumAnnualAccess) {
+                              e.currentTarget.style.color = '';
+                              e.currentTarget.style.backgroundColor = '';
+                            }
                           }}
-                          title="Note"
+                          title={hasPremiumAnnualAccess ? "Note" : "Note (Premium Annuel requis)"}
                         >
                           <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -2254,15 +2336,32 @@ const ExamPage = () => {
                 <button
                   onClick={() => {
                     setShowMobileMenu(false);
-                    setShowCommunityModal(true);
+                    handlePremiumFeature('Communauté', () => setShowCommunityModal(true));
                   }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  disabled={!hasPremiumAnnualAccess}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-3 rounded-xl transition-colors",
+                    hasPremiumAnnualAccess 
+                      ? "bg-gray-50 hover:bg-gray-100" 
+                      : "bg-gray-50 opacity-50 cursor-not-allowed"
+                  )}
                 >
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-purple-600" />
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center",
+                    hasPremiumAnnualAccess ? "bg-purple-100" : "bg-gray-200"
+                  )}>
+                    <Users className={cn(
+                      "h-5 w-5",
+                      hasPremiumAnnualAccess ? "text-purple-600" : "text-gray-400"
+                    )} />
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Communauté</p>
+                  <div className="text-left flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900">Communauté</p>
+                      {!hasPremiumAnnualAccess && (
+                        <Badge variant="outline" className="text-xs">Premium Annuel</Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">Discussions et aide</p>
                   </div>
                 </button>

@@ -33,7 +33,8 @@ const PlaylistsPage = () => {
         `${import.meta.env.VITE_API_URL}/playlists`,
         { withCredentials: true }
       );
-      setPlaylists(data.playlists || []);
+      console.log('Playlists response:', data);
+      setPlaylists(data.data || data.playlists || []);
     } catch (error) {
       console.error("Error fetching playlists:", error);
       toast.error(t('common:error_loading'));
@@ -186,7 +187,16 @@ const PlaylistsPage = () => {
                       {playlist.description || "Aucune description"}
                     </p>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" className="flex-1 gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Navigating to playlist:', playlist._id);
+                          navigate(`/exam/${playlist._id}?type=playlist`);
+                        }}
+                      >
                         <Play className="h-4 w-4" />
                         Jouer
                       </Button>

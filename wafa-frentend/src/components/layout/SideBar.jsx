@@ -48,6 +48,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
   const [loading, setLoading] = useState(true);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [userPlan, setUserPlan] = useState("Free");
 
   // Use shared semester context - only show modules for the selected semester
   const { selectedSemester, userSemesters } = useSemester();
@@ -83,6 +84,19 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
   const toggleGroup = (groupKey) =>
     setOpenGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
+
+  // Load user plan from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserPlan(user.plan || "Free");
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -200,12 +214,14 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:my_playlists'),
       icon: SquareLibrary,
       path: "/dashboard/playlist",
+      requiresPremiumAnnual: true, // Only available for Premium Annuel
     },
     {
       id: "note",
       label: t('dashboard:my_notes'),
       icon: NotebookPen,
       path: "/dashboard/note",
+      requiresPremiumAnnual: true, // Only available for Premium Annuel
     },
     {
       id: "subscription",
@@ -219,7 +235,13 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       icon: HelpCircle,
       path: "/dashboard/support",
     },
-  ];
+  ].filter(item => {
+    // Filter out premium annual features for non-premium-annual users
+    if (item.requiresPremiumAnnual && userPlan !== "Premium Annuel") {
+      return false;
+    }
+    return true;
+  });
 
   const navigate = useNavigate();
   return (
@@ -440,7 +462,7 @@ const SidebarItem = ({
         "w-full flex items-center min-h-[44px] py-3 rounded-lg transition-all duration-200 group relative",
         sidebarOpen ? "space-x-3 justify-start px-4" : "justify-center px-2",
         isActive
-          ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
+          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25"
           : "text-muted-foreground hover:text-foreground hover:bg-accent/70 hover:shadow-sm active:bg-accent",
         extraClassName
       )}

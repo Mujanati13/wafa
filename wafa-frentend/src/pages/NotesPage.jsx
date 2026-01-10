@@ -289,11 +289,8 @@ const NotesPage = () => {
   const getExamTypes = () => {
     const types = new Set();
     notes.forEach(note => {
-      if (note.examType) {
-        types.add(note.examType);
-      } else if (note.questionId?.examId) {
-        // Infer type from exam structure
-        types.add('exam'); // Default to exam
+      if (note.questionId?.examId?.type) {
+        types.add(note.questionId.examId.type);
       }
     });
     return ['exam', 'course', 'qcm'];
@@ -301,7 +298,18 @@ const NotesPage = () => {
 
   // Get unique exam names from notes for selected module
   const getExamNamesForModule = (moduleId) => {
-    if (moduleId === "all") return [];
+    if (moduleId === "all") {
+      const names = new Set();
+      notes.forEach(note => {
+        if (note.questionId?.examId) {
+          const examName = note.questionId.examId.name || 
+                          note.questionId.examId.title || 
+                          (note.questionId.examId.year ? `Examen ${note.questionId.examId.year}` : null);
+          if (examName) names.add(examName);
+        }
+      });
+      return Array.from(names);
+    }
     
     const moduleNotes = notes.filter(n => {
       const noteModuleId = n.moduleId?._id || n.moduleId;
@@ -310,10 +318,11 @@ const NotesPage = () => {
     
     const names = new Set();
     moduleNotes.forEach(note => {
-      if (note.questionId?.examId?.name) {
-        names.add(note.questionId.examId.name);
-      } else if (note.questionId?.examId?.year) {
-        names.add(`Examen ${note.questionId.examId.year}`);
+      if (note.questionId?.examId) {
+        const examName = note.questionId.examId.name || 
+                        note.questionId.examId.title || 
+                        (note.questionId.examId.year ? `Examen ${note.questionId.examId.year}` : null);
+        if (examName) names.add(examName);
       }
     });
     
@@ -349,14 +358,16 @@ const NotesPage = () => {
 
     // Exam Type filter
     if (selectedExamType !== "all") {
-      const noteExamType = note.examType || 'exam';
-      if (noteExamType !== selectedExamType) return false;
+      const noteExamType = note.questionId?.examId?.type;
+      if (!noteExamType || noteExamType !== selectedExamType) return false;
     }
 
     // Exam Name filter
     if (selectedExamName !== "all") {
-      const examName = note.questionId?.examId?.name || `Examen ${note.questionId?.examId?.year}`;
-      if (examName !== selectedExamName) return false;
+      const examName = note.questionId?.examId?.name || 
+                      note.questionId?.examId?.title || 
+                      (note.questionId?.examId?.year ? `Examen ${note.questionId.examId.year}` : null);
+      if (!examName || examName !== selectedExamName) return false;
     }
 
     // Question Number filter
@@ -492,7 +503,12 @@ const NotesPage = () => {
                 {/* Module Filter */}
                 <Select value={selectedModule} onValueChange={(v) => {
                   setSelectedModule(v);
-                  setSelectedExamName("all");
+                  if (v === "all") {
+                    setSelectedExamName("all");
+                    setSelectedQuestionNumber("all");
+                  } else {
+                    setSelectedExamName("all");
+                  }
                 }}>
                   <SelectTrigger className="w-[160px] bg-white">
                     <SelectValue placeholder="Module" />
@@ -521,7 +537,11 @@ const NotesPage = () => {
                 </Select>
 
                 {/* Exam Name Filter */}
-                <Select value={selectedExamName} onValueChange={setSelectedExamName}>
+                <Select 
+                  value={selectedExamName} 
+                  onValueChange={setSelectedExamName}
+                  disabled={selectedModule === "all"}
+                >
                   <SelectTrigger className="w-[160px] bg-white">
                     <SelectValue placeholder="Exam Name" />
                   </SelectTrigger>
@@ -759,8 +779,9 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
   const [showReference, setShowReference] = useState(false);
 
   const getReference = () => {
-    if (note.questionId?.examId?.name) {
-      return note.questionId.examId.name;
+    if (note.questionId?.examId) {
+      const exam = note.questionId.examId;
+      return exam.name || exam.title || (exam.year ? `Examen ${exam.year}` : null);
     }
     if (note.moduleId?.name) {
       return note.moduleId.name;
@@ -806,10 +827,10 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
 
       {/* Note Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-sm text-slate-900 mb-2 line-clamp-1">
+        <h3 className="font-bold text-base text-slate-900 mb-3 line-clamp-2">
           {note.title || "Sans titre"}
         </h3>
-        <p className="text-xs text-slate-600 line-clamp-3 min-h-[3rem]">
+        <p className="text-sm text-slate-700 line-clamp-4 min-h-[4rem] leading-relaxed">
           {note.content || "Aucun contenu"}
         </p>
       </div>
