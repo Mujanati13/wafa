@@ -62,8 +62,15 @@ export const noteController = {
     }
 
     const notes = await Note.find(query)
-      .populate("moduleId", "name")
-      .populate("questionId", "text")
+      .populate("moduleId", "name semester")
+      .populate({
+        path: "questionId",
+        select: "text questionNumber options",
+        populate: {
+          path: "examId",
+          select: "name year title type"
+        }
+      })
       .sort({ isPinned: -1, createdAt: -1 });
 
     res.status(200).json({
@@ -78,8 +85,15 @@ export const noteController = {
     const userId = req.user._id;
 
     const note = await Note.findOne({ _id: id, userId })
-      .populate("moduleId", "name")
-      .populate("questionId", "text");
+      .populate("moduleId", "name semester")
+      .populate({
+        path: "questionId",
+        select: "text questionNumber options",
+        populate: {
+          path: "examId",
+          select: "name year title type"
+        }
+      });
 
     if (!note) {
       return res.status(404).json({
@@ -177,7 +191,14 @@ export const noteController = {
     const userId = req.user._id;
 
     const notes = await Note.find({ userId, moduleId })
-      .populate("questionId", "text")
+      .populate({
+        path: "questionId",
+        select: "text questionNumber options",
+        populate: {
+          path: "examId",
+          select: "name year title type"
+        }
+      })
       .sort({ isPinned: -1, createdAt: -1 });
 
     res.status(200).json({

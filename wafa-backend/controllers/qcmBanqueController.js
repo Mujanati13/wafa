@@ -92,7 +92,9 @@ export const qcmBanqueController = {
             });
         }
 
-        const questions = await QuestionModel.find({ qcmBanqueId: id }).lean();
+        const questions = await QuestionModel.find({ qcmBanqueId: id })
+            .sort({ questionNumber: 1, createdAt: 1 })
+            .lean();
 
         res.status(200).json({
             success: true,

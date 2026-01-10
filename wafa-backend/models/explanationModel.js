@@ -44,7 +44,7 @@ const explanation = new mongoose.Schema(
         },
         aiProvider: {
             type: String,
-            enum: ["deepseek", "openai", "manual", null],
+            enum: ["gemini", "deepseek", "openai", "manual", null],
             default: null
         },
         // Community voting

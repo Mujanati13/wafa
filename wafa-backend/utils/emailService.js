@@ -43,9 +43,16 @@ export const sendVerificationEmail = async (email, username, token) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
   
   const mailOptions = {
-    from: `"WAFA Medical" <${process.env.EMAIL_USER}>`,
+    from: `"WAFA - Ne pas répondre" <${process.env.EMAIL_USER}>`,
+    replyTo: 'noreply@wafa.ma',
     to: email,
     subject: 'Vérifiez votre adresse email - WAFA',
+    headers: {
+      'X-Priority': '3',
+      'X-Mailer': 'WAFA Medical Platform',
+      'List-Unsubscribe': `<mailto:unsubscribe@wafa.ma?subject=unsubscribe>`,
+    },
+    text: `Bonjour ${username},\n\nMerci de vous être inscrit sur WAFA ! Pour activer votre compte, veuillez vérifier votre adresse email en cliquant sur ce lien :\n\n${verificationUrl}\n\nCe lien expirera dans 24 heures. Si vous n'avez pas créé de compte, ignorez cet email.\n\n© ${new Date().getFullYear()} WAFA. Tous droits réservés.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
@@ -119,9 +126,16 @@ export const sendPasswordResetEmail = async (email, username, token, firebaseRes
   const isFirebaseReset = !!firebaseResetLink;
   
   const mailOptions = {
-    from: `"WAFA Medical" <${process.env.EMAIL_USER}>`,
+    from: `"WAFA - Ne pas répondre" <${process.env.EMAIL_USER}>`,
+    replyTo: 'noreply@wafa.ma',
     to: email,
     subject: 'Réinitialisation de votre mot de passe - WAFA',
+    headers: {
+      'X-Priority': '1',
+      'X-Mailer': 'WAFA Medical Platform',
+      'List-Unsubscribe': `<mailto:unsubscribe@wafa.ma?subject=unsubscribe>`,
+    },
+    text: `Bonjour ${username},\n\nVous avez demandé à réinitialiser votre mot de passe. Cliquez sur ce lien pour créer un nouveau mot de passe :\n\n${resetUrl}\n\n⚠️ Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe restera inchangé.\n\nCe lien expirera dans ${isFirebaseReset ? '1 heure' : '1 heure'}.\n\n© ${new Date().getFullYear()} WAFA. Tous droits réservés.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
@@ -196,8 +210,14 @@ export const sendContactNotification = async (contactData) => {
 
   const mailOptions = {
     from: `"WAFA Contact Form" <${process.env.EMAIL_USER}>`,
+    replyTo: contactData.email,
     to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
     subject: `Nouveau message de contact: ${contactData.subject}`,
+    headers: {
+      'X-Priority': '1',
+      'X-Mailer': 'WAFA Medical Platform',
+    },
+    text: `Nouveau message de contact\n\nNom: ${contactData.name}\nEmail: ${contactData.email}\nSujet: ${contactData.subject}\n\nMessage:\n${contactData.message}\n\n© ${new Date().getFullYear()} WAFA Admin Panel`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px;">
@@ -257,9 +277,16 @@ export const sendWelcomeEmail = async (email, username) => {
   }
 
   const mailOptions = {
-    from: `"WAFA Medical" <${process.env.EMAIL_USER}>`,
+    from: `"WAFA - Ne pas répondre" <${process.env.EMAIL_USER}>`,
+    replyTo: 'noreply@wafa.ma',
     to: email,
     subject: 'Bienvenue sur WAFA ! 🎉',
+    headers: {
+      'X-Priority': '3',
+      'X-Mailer': 'WAFA Medical Platform',
+      'List-Unsubscribe': `<mailto:unsubscribe@wafa.ma?subject=unsubscribe>`,
+    },
+    text: `Félicitations ${username} !\n\nVotre compte a été vérifié avec succès. Vous pouvez maintenant profiter de toutes les fonctionnalités de notre plateforme d'apprentissage médical.\n\nCe que vous pouvez faire :\n✅ Accéder à des milliers de QCM médicaux\n📚 Consulter des résumés de cours\n📊 Suivre vos progrès en temps réel\n🏆 Participer au classement des meilleurs étudiants\n📝 Créer vos playlists et notes personnalisées\n\nCommencez maintenant: ${process.env.FRONTEND_URL}/dashboard\n\nBesoin d'aide ? N'hésitez pas à nous contacter !\n\n© ${new Date().getFullYear()} WAFA. Tous droits réservés.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
@@ -329,9 +356,15 @@ export const sendProfileVerificationEmail = async (email, name, code) => {
   }
 
   const mailOptions = {
-    from: `"WAFA Medical" <${process.env.EMAIL_USER}>`,
+    from: `"WAFA - Ne pas répondre" <${process.env.EMAIL_USER}>`,
+    replyTo: 'noreply@wafa.ma',
     to: email,
     subject: 'Code de vérification de profil - WAFA',
+    headers: {
+      'X-Priority': '1',
+      'X-Mailer': 'WAFA Medical Platform',
+    },
+    text: `Bonjour ${name || 'Utilisateur'},\n\nVous avez demandé à modifier vos informations personnelles sur WAFA. Voici votre code de vérification :\n\n${code}\n\nCe code expire dans 15 minutes.\n\nSi vous n'avez pas demandé cette modification, vous pouvez ignorer cet email.\n\n© ${new Date().getFullYear()} WAFA. Tous droits réservés.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">

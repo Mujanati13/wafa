@@ -54,20 +54,51 @@ export const playlistController = {
     const { id } = req.params;
     const userId = req.user._id;
 
+    console.log('=== GET PLAYLIST BY ID ===');
+    console.log('Playlist ID:', id);
+    console.log('User ID:', userId);
+
     const playlist = await Playlist.findOne({ _id: id, userId })
       .populate("moduleId", "name")
-      .populate("questionIds");
+      .populate({
+        path: "questionIds",
+        select: "text options note images questionNumber sessionLabel"
+      });
+
+    console.log('Playlist found:', !!playlist);
+    if (playlist) {
+      console.log('Playlist title:', playlist.title);
+      console.log('Questions count:', playlist.questionIds?.length);
+    }
 
     if (!playlist) {
+      console.log('Playlist not found - returning 404');
       return res.status(404).json({
         success: false,
         message: "Playlist not found",
       });
     }
 
+    // Format response to match ExamPage expectations
+    const formattedPlaylist = {
+      _id: playlist._id,
+      name: playlist.title,
+      title: playlist.title,
+      description: playlist.description,
+      moduleId: playlist.moduleId,
+      color: playlist.color,
+      questions: playlist.questionIds || [],
+      totalQuestions: playlist.questionIds?.length || 0,
+      createdAt: playlist.createdAt,
+      updatedAt: playlist.updatedAt
+    };
+
+    console.log('Formatted playlist:', formattedPlaylist);
+    console.log('Returning success response');
+
     res.status(200).json({
       success: true,
-      data: playlist,
+      data: formattedPlaylist,
     });
   }),
 

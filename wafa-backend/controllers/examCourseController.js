@@ -158,12 +158,29 @@ export const examCourseController = {
             // Parse question numbers (e.g., "1-5,7,10-12" -> [1,2,3,4,5,7,10,11,12])
             const parsedNumbers = parseQuestionNumbers(questionNumbers);
 
-            // Get all questions from this exam
-            const questions = await Question.find({ examId: examParYearId });
+            // Get all questions from this exam, sorted by questionNumber then createdAt
+            const questions = await Question.find({ examId: examParYearId })
+                .sort({ questionNumber: 1, createdAt: 1 });
+
+            // Build a map of questionNumber -> question for efficient lookup
+            const questionsByNumber = new Map();
+            questions.forEach((q, idx) => {
+                // Use stored questionNumber if available, otherwise use position (1-indexed)
+                const qNum = q.questionNumber || (idx + 1);
+                questionsByNumber.set(qNum, q);
+            });
 
             for (const num of parsedNumbers) {
-                // Find question by index (assuming questions are ordered)
-                const question = questions[num - 1];
+                // First try to find by questionNumber, then fall back to position
+                let question = questionsByNumber.get(num);
+                if (!question) {
+                    // Fallback: use array position (0-indexed)
+                    const index = num - 1;
+                    if (index >= 0 && index < questions.length) {
+                        question = questions[index];
+                    }
+                }
+                
                 if (question && !course.linkedQuestions.includes(question._id)) {
                     course.linkedQuestions.push(question._id);
                     newSources.push({

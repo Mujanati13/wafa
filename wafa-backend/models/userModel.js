@@ -155,6 +155,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Free plan allowed modules (for restricted access)
+    freeModules: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

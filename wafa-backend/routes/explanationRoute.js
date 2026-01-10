@@ -70,16 +70,25 @@ router.post("/upload-pdf", isAuthenticated, isAdmin, multer({
     const pdfUrl = `/uploads/explanations/${req.file.filename}`;
     res.json({ success: true, data: { url: pdfUrl, filename: req.file.filename } });
 });
+
+// Gemini AI generation endpoints - MUST come before /:id routes
+router.get("/test-gemini", isAuthenticated, isAdmin, explanationController.testGeminiConnection);
+router.post("/generate-gemini", isAuthenticated, isAdmin, explanationController.generateWithGemini);
+router.post("/batch-generate-gemini", isAuthenticated, isAdmin, explanationController.batchGenerateWithGemini);
+
+// Specific routes before parameterized routes
+router.get("/question/:questionId", explanationController.getByQuestionId);
+router.get("/slots/:questionId", explanationController.getSlotsInfo);
+router.post("/ai/create", isAuthenticated, isAdmin, explanationController.createAiExplanation);
+
+// General CRUD routes
 router.get("/", explanationController.getAll);
 router.get("/:id", explanationController.getById);
 router.put("/:id", isAuthenticated, validate(explanationSchema), explanationController.update);
 router.delete("/:id", isAuthenticated, explanationController.delete);
-router.get("/question/:questionId", explanationController.getByQuestionId);
 router.patch("/:id/status", isAuthenticated, isAdmin, explanationController.updateStatus);
 
-// New voting endpoints
+// Voting endpoints
 router.post("/:id/vote", isAuthenticated, explanationController.vote);
-router.get("/slots/:questionId", explanationController.getSlotsInfo);
-router.post("/ai/create", isAuthenticated, isAdmin, explanationController.createAiExplanation);
 
 export default router;

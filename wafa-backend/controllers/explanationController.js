@@ -2,6 +2,7 @@ import explanationModel from "../models/explanationModel.js";
 import asyncHandler from '../handlers/asyncHandler.js';
 import Point from "../models/pointModel.js";
 import UserStats from "../models/userStatsModel.js";
+import geminiService from '../services/geminiService.js';
 
 // Constants
 const MAX_EXPLANATIONS_PER_QUESTION = 3;
@@ -425,7 +426,7 @@ export const explanationController = {
             title: title || "Explication IA",
             contentText,
             isAiGenerated: true,
-            aiProvider: aiProvider || 'deepseek',
+            aiProvider: aiProvider || 'gemini',
             status: 'approved' // AI explanations are auto-approved
         });
 
@@ -433,6 +434,268 @@ export const explanationController = {
             success: true,
             data: aiExplanation
         });
+    }),
+
+    // Generate explanation using Gemini AI
+    generateWithGemini: asyncHandler(async (req, res) => {
+        const { questionId, language } = req.body;
+
+        if (!questionId) {
+            return res.status(400).json({
+                success: false,
+                message: "Question ID est requis"
+            });
+        }
+
+        // Check if AI explanation already exists
+        const existingAi = await explanationModel.findOne({
+            questionId,
+            isAiGenerated: true
+        });
+
+        if (existingAi) {
+            return res.status(400).json({
+                success: false,
+                message: "Une explication IA existe déjà pour cette question.",
+                data: existingAi
+            });
+        }
+
+        // Get question data
+        const Question = (await import('../models/questionModule.js')).default;
+        const question = await Question.findById(questionId).lean();
+
+        if (!question) {
+            return res.status(404).json({
+                success: false,
+                message: "Question non trouvée"
+            });
+        }
+
+        // Get correct answer indices
+        const correctAnswers = question.options
+            .map((opt, idx) => opt.isCorrect ? idx : null)
+            .filter(idx => idx !== null);
+
+        // Prepare question data for Gemini
+        const questionData = {
+            _id: question._id,
+            text: question.text,
+            options: question.options,
+            correctAnswers
+        };
+
+        try {
+            // Generate explanation using Gemini
+            const generatedText = await geminiService.generateExplanation(
+                questionData,
+                language || 'fr'
+            );
+
+            // Save the AI explanation
+            const aiExplanation = await explanationModel.create({
+                userId: req.user._id,
+                questionId,
+                title: "Explication générée par IA",
+                contentText: generatedText,
+                isAiGenerated: true,
+                aiProvider: 'gemini',
+                status: 'approved'
+            });
+
+            res.status(201).json({
+                success: true,
+                message: "Explication générée avec succès",
+                data: aiExplanation
+            });
+        } catch (error) {
+            console.error('Gemini generation error:', error);
+            res.status(500).json({
+                success: false,
+                message: "Erreur lors de la génération de l'explication: " + error.message
+            });
+        }
+    }),
+
+    // Batch generate explanations for multiple questions
+    batchGenerateWithGemini: asyncHandler(async (req, res) => {
+        const { examId, questionNumbers, language } = req.body;
+
+        if (!examId) {
+            return res.status(400).json({
+                success: false,
+                message: "Exam ID est requis"
+            });
+        }
+
+        // Helper to parse question numbers
+        const parseQuestionNumbers = (input) => {
+            if (Array.isArray(input)) return input.map(n => parseInt(n));
+            if (typeof input !== 'string') return [];
+            
+            const numbers = [];
+            const parts = input.split(',').map(p => p.trim());
+            
+            for (const part of parts) {
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+                    if (!isNaN(start) && !isNaN(end)) {
+                        for (let i = start; i <= end; i++) {
+                            numbers.push(i);
+                        }
+                    }
+                } else {
+                    const num = parseInt(part);
+                    if (!isNaN(num)) numbers.push(num);
+                }
+            }
+            
+            return [...new Set(numbers)];
+        };
+
+        const parsedNumbers = parseQuestionNumbers(questionNumbers);
+
+        if (parsedNumbers.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Veuillez spécifier au moins un numéro de question"
+            });
+        }
+
+        // Get questions
+        const Question = (await import('../models/questionModule.js')).default;
+        const allQuestions = await Question.find({ examId })
+            .sort({ questionNumber: 1, createdAt: 1 })
+            .lean();
+
+        if (allQuestions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucune question trouvée pour cet examen"
+            });
+        }
+
+        // Build question number map
+        const questionsByNumber = new Map();
+        allQuestions.forEach((q, idx) => {
+            const qNum = q.questionNumber || (idx + 1);
+            questionsByNumber.set(qNum, q);
+        });
+
+        // Get target questions
+        const targetQuestions = parsedNumbers
+            .map(num => questionsByNumber.get(num) || allQuestions[num - 1])
+            .filter(q => q);
+
+        if (targetQuestions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucune question trouvée pour les numéros spécifiés"
+            });
+        }
+
+        // Prepare questions for batch generation
+        const questionsData = targetQuestions.map(q => ({
+            _id: q._id,
+            text: q.text,
+            options: q.options,
+            correctAnswers: q.options
+                .map((opt, idx) => opt.isCorrect ? idx : null)
+                .filter(idx => idx !== null)
+        }));
+
+        try {
+            // Generate explanations in batch
+            const results = await geminiService.generateBatchExplanations(
+                questionsData,
+                language || 'fr'
+            );
+
+            // Save successful explanations
+            const saved = [];
+            const failed = [];
+
+            for (const result of results) {
+                if (result.success) {
+                    try {
+                        // Check if already exists
+                        const existing = await explanationModel.findOne({
+                            questionId: result.questionId,
+                            isAiGenerated: true
+                        });
+
+                        if (!existing) {
+                            const explanation = await explanationModel.create({
+                                userId: req.user._id,
+                                questionId: result.questionId,
+                                title: "Explication générée par IA",
+                                contentText: result.explanation,
+                                isAiGenerated: true,
+                                aiProvider: 'gemini',
+                                status: 'approved'
+                            });
+                            saved.push(explanation);
+                        } else {
+                            failed.push({
+                                questionId: result.questionId,
+                                reason: "Explication déjà existante"
+                            });
+                        }
+                    } catch (error) {
+                        failed.push({
+                            questionId: result.questionId,
+                            reason: error.message
+                        });
+                    }
+                } else {
+                    failed.push({
+                        questionId: result.questionId,
+                        reason: result.error
+                    });
+                }
+            }
+
+            res.status(201).json({
+                success: true,
+                message: `${saved.length} explication(s) générée(s) avec succès`,
+                data: {
+                    saved: saved.length,
+                    failed: failed.length,
+                    explanations: saved,
+                    errors: failed
+                }
+            });
+        } catch (error) {
+            console.error('Batch generation error:', error);
+            res.status(500).json({
+                success: false,
+                message: "Erreur lors de la génération des explications: " + error.message
+            });
+        }
+    }),
+
+    // Test Gemini connection
+    testGeminiConnection: asyncHandler(async (req, res) => {
+        try {
+            const isConnected = await geminiService.testGeminiConnection();
+            
+            if (isConnected) {
+                res.status(200).json({
+                    success: true,
+                    message: "Connexion à Gemini AI réussie"
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: "Échec de la connexion à Gemini AI. Vérifiez votre clé API."
+                });
+            }
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: "Erreur lors du test de connexion: " + error.message
+            });
+        }
     }),
 
     // Admin bulk create explanations (with file upload)

@@ -306,9 +306,9 @@ export const questionController = {
 
         const numbers = parseNumbers(questionNumbers);
 
-        // Get questions for this exam or qcm banque
+        // Get questions for this exam or qcm banque, sorted by questionNumber then createdAt
         const filter = examId ? { examId } : { qcmBanqueId };
-        const questions = await QuestionModel.find(filter).sort({ createdAt: 1 });
+        const questions = await QuestionModel.find(filter).sort({ questionNumber: 1, createdAt: 1 });
 
         if (questions.length === 0) {
             return res.status(404).json({
@@ -317,12 +317,28 @@ export const questionController = {
             });
         }
 
+        // Build a map of questionNumber -> question for efficient lookup
+        const questionsByNumber = new Map();
+        questions.forEach((q, idx) => {
+            // Use stored questionNumber if available, otherwise use position (1-indexed)
+            const qNum = q.questionNumber || (idx + 1);
+            questionsByNumber.set(qNum, q);
+        });
+
         // Attach images to specified questions (1-indexed)
         let updatedCount = 0;
         for (const num of numbers) {
-            const index = num - 1; // Convert to 0-indexed
-            if (index >= 0 && index < questions.length) {
-                const question = questions[index];
+            // First try to find by questionNumber, then fall back to position
+            let question = questionsByNumber.get(num);
+            if (!question) {
+                // Fallback: use array position (0-indexed)
+                const index = num - 1;
+                if (index >= 0 && index < questions.length) {
+                    question = questions[index];
+                }
+            }
+            
+            if (question) {
                 const currentImages = question.images || [];
                 const newImages = [...currentImages, ...imageUrls];
 
@@ -713,9 +729,9 @@ export const questionController = {
             return [...new Set(result)].sort((a, b) => a - b);
         };
 
-        // Get questions for this exam or qcm banque
+        // Get questions for this exam or qcm banque, sorted by questionNumber then createdAt
         const filter = examId ? { examId } : { qcmBanqueId };
-        const questions = await QuestionModel.find(filter).sort({ createdAt: 1 });
+        const questions = await QuestionModel.find(filter).sort({ questionNumber: 1, createdAt: 1 });
 
         if (questions.length === 0) {
             return res.status(404).json({
@@ -723,6 +739,14 @@ export const questionController = {
                 message: "Aucune question trouvée"
             });
         }
+
+        // Build a map of questionNumber -> question for efficient lookup
+        const questionsByNumber = new Map();
+        questions.forEach((q, idx) => {
+            // Use stored questionNumber if available, otherwise use position (1-indexed)
+            const qNum = q.questionNumber || (idx + 1);
+            questionsByNumber.set(qNum, q);
+        });
 
         let updatedCount = 0;
 
@@ -733,9 +757,18 @@ export const questionController = {
             const numbers = parseNumbers(questionNumbers);
 
             for (const num of numbers) {
-                const index = num - 1; // Convert to 0-indexed
-                if (index >= 0 && index < questions.length) {
-                    await QuestionModel.findByIdAndUpdate(questions[index]._id, {
+                // First try to find by questionNumber, then fall back to position
+                let question = questionsByNumber.get(num);
+                if (!question) {
+                    // Fallback: use array position (0-indexed)
+                    const index = num - 1;
+                    if (index >= 0 && index < questions.length) {
+                        question = questions[index];
+                    }
+                }
+                
+                if (question) {
+                    await QuestionModel.findByIdAndUpdate(question._id, {
                         sessionLabel: name
                     });
                     updatedCount++;

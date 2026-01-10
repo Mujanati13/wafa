@@ -13,7 +13,8 @@ router.delete("/delete/:id", isAuthenticated, isAdmin, questionController.delete
 router.get("/all", questionController.getAll);
 router.get("/by-exam/:examId", questionController.getByExamId);
 router.get("/exam/:examId", questionController.getByExamId); // Alias for frontend compatibility
-router.get("/all/:id", questionController.getById);
+router.get("/:id", questionController.getById); // Direct ID access
+router.get("/all/:id", questionController.getById); // Legacy route
 
 // New filtered and bulk endpoints
 router.get("/filtered", isAuthenticated, questionController.getFiltered);

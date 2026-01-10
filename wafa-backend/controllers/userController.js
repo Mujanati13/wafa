@@ -769,12 +769,21 @@ export const UserController = {
         const userId = req.user._id;
         const { semester } = req.body;
 
-        // Validate semester
-        const validSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
-        if (!semester || !validSemesters.includes(semester)) {
+        // Define free plan semesters and their allowed modules
+        const freeSemesterModules = {
+            "S1": ["Anatomie 1"],
+            "S3": ["Anatomie 3"],
+            "S5": ["Parasitologie", "Infection"],
+            "S7": ["Maladies de l'enfant"],
+            "S9": ["Réanimation urgence douleur", "Soins palliatifs", "Réanimation"]
+        };
+
+        // Validate semester (only S1, S3, S5, S7, S9 for free plan)
+        const validFreeSemesters = ["S1", "S3", "S5", "S7", "S9"];
+        if (!semester || !validFreeSemesters.includes(semester)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid semester. Please select a valid semester (S1-S10)"
+                message: "Invalid semester. Free plan only allows: S1, S3, S5, S7, S9"
             });
         }
 
@@ -807,6 +816,7 @@ export const UserController = {
 
         // Grant the free semester
         user.semesters = [semester];
+        user.freeModules = freeSemesterModules[semester];
         user.hasUsedFreeSemester = true;
         user.freeSemesterSelectedAt = new Date();
         await user.save();
@@ -909,7 +919,7 @@ export const UserController = {
 
     // Get leaderboard for public display
     getLeaderboard: asyncHandler(async (req, res) => {
-        const { limit = 20, sortBy = 'totalPoints', userId } = req.query;
+        const { limit = 20, sortBy = 'totalPoints', userId, segmented = 'false' } = req.query;
 
         try {
             // Get total questions count for percentage calculation
@@ -1015,13 +1025,30 @@ export const UserController = {
                 }
             }
 
-            // Return top 20 + user context
-            const top20 = rankedLeaderboard.slice(0, parseInt(limit));
+            // If segmented mode, return first 10, then jump by 50 and get next 10, repeat
+            let displayLeaderboard = [];
+            if (segmented === 'true') {
+                // Get first 10
+                displayLeaderboard = rankedLeaderboard.slice(0, 10);
+                
+                // Get segments: 70-80, 130-140, 190-200, etc.
+                let currentStart = 70; // Start at rank 70 (index 69)
+                while (currentStart <= rankedLeaderboard.length) {
+                    const segmentStart = currentStart - 1; // Convert rank to index
+                    const segmentEnd = Math.min(currentStart + 9, rankedLeaderboard.length); // Get 10 users or remaining
+                    const segment = rankedLeaderboard.slice(segmentStart, segmentEnd);
+                    displayLeaderboard = displayLeaderboard.concat(segment);
+                    currentStart += 60; // Jump to next segment (70 -> 130 -> 190, etc.)
+                }
+            } else {
+                // Return top N users as before
+                displayLeaderboard = rankedLeaderboard.slice(0, parseInt(limit));
+            }
 
             res.status(200).json({
                 success: true,
                 data: {
-                    leaderboard: top20,
+                    leaderboard: displayLeaderboard,
                     userContext,
                     totalUsers: rankedLeaderboard.length,
                     totalQuestionsInSystem
