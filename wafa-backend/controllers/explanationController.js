@@ -244,29 +244,46 @@ export const explanationController = {
             });
         }
 
-        const updatedExplanation = await explanationModel.findByIdAndUpdate(
-            id,
-            { status },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedExplanation) {
+        // Get current explanation to check previous status
+        const currentExplanation = await explanationModel.findById(id);
+        if (!currentExplanation) {
             return res.status(404).json({
                 success: false,
                 message: "Explanation not found"
             });
         }
 
-        // If explanation is approved, award blue points to the user
-        if (status === 'approved') {
+        const previousStatus = currentExplanation.status;
+
+        const updatedExplanation = await explanationModel.findByIdAndUpdate(
+            id,
+            { status },
+            { new: true, runValidators: true }
+        );
+
+        // Only award points if status changed from non-approved to approved
+        if (status === 'approved' && previousStatus !== 'approved') {
             try {
+                // Create point record
                 await Point.create({
                     userId: updatedExplanation.userId,
                     type: 'bluePoints',
-                    amount: 1,
+                    amount: 40, // +40 pts for approved explanation
                     questionId: updatedExplanation.questionId,
                     description: 'Explication approuvée'
                 });
+                
+                // Update user stats - increment bluePoints count and add 40 to totalPoints
+                await UserStats.findOneAndUpdate(
+                    { userId: updatedExplanation.userId },
+                    { 
+                        $inc: { 
+                            bluePoints: 1,      // Count of approved explanations
+                            totalPoints: 40     // +40 pts per approved explanation
+                        } 
+                    },
+                    { upsert: true }
+                );
             } catch (error) {
                 console.error('Error awarding blue points:', error);
             }

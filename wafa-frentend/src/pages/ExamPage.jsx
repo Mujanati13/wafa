@@ -179,6 +179,7 @@ const ExamPage = () => {
   // Verification state - per question
   const [verifiedQuestions, setVerifiedQuestions] = useState({});
   const [validationError, setValidationError] = useState(null);
+  const [communityStats, setCommunityStats] = useState({}); // Store community voting stats per question
 
   // UI preferences
   const [fontSize, setFontSize] = useState(() => {
@@ -274,7 +275,7 @@ const ExamPage = () => {
     };
   };
 
-  const userLevelInfo = userProfile ? calculateLevel(userProfile.points || 0) : null;
+  const userLevelInfo = userProfile ? calculateLevel(userProfile.totalPoints || 0) : null;
 
   // Check if user has access to premium annual features
   const hasPremiumAnnualAccess = userPlan === "Premium Annuel";
@@ -312,18 +313,24 @@ const ExamPage = () => {
   // Transform data to unified format
   const transformExamData = useCallback((data, type) => {
     if (type === 'course') {
-      // ExamCourse has linkedQuestions populated
-      const questions = data.linkedQuestions || [];
+      // ExamCourse now returns questions grouped by session (same as exam-years)
+      // Check if questions are already grouped or if they're in linkedQuestions array
+      const questionsData = data.questions || {};
+      
+      // If questions is an object with sessions, use it directly
+      // Otherwise, fall back to linkedQuestions array
+      const questions = Object.keys(questionsData).length > 0 
+        ? questionsData 
+        : { "Session principale": data.linkedQuestions || [] };
+      
       return {
         ...data,
         name: data.name,
         moduleId: data.moduleId?._id || data.moduleId,
-        moduleName: data.moduleId?.name || data.moduleName,
-        moduleColor: data.moduleId?.color || data.color || '#6366f1',
-        totalQuestions: questions.length,
-        questions: {
-          "Session principale": questions
-        }
+        moduleName: data.moduleName || data.moduleId?.name,
+        moduleColor: data.moduleColor || data.moduleId?.color || data.color || '#6366f1',
+        totalQuestions: data.totalQuestions || Object.values(questions).flat().length,
+        questions: questions
       };
     } else if (type === 'qcm') {
       // QCMBanque has questions array
@@ -388,12 +395,10 @@ const ExamPage = () => {
           if (verified) {
             setVerifiedQuestions(verified);
           }
-          toast.success(t('dashboard:progress_restored') || 'Progress restored', {
-            icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
-          });
+          
         }
 
-        // Also try to restore from server
+        // Also try to restore from server - this is the source of truth for verified questions
         try {
           const serverAnswers = await api.get(`/questions/user-answers/${examId}`);
           if (serverAnswers.data?.data && Object.keys(serverAnswers.data.data).length > 0) {
@@ -412,17 +417,31 @@ const ExamPage = () => {
               if (qIndex !== -1) {
                 restoredAnswers[qIndex] = answerData.selectedAnswers;
                 if (answerData.isVerified) {
-                  restoredVerified[qIndex] = true;
+                  // Store both verified status and isCorrect for proper display
+                  restoredVerified[qIndex] = {
+                    verified: true,
+                    isCorrect: answerData.isCorrect
+                  };
                 }
               }
             });
 
-            // Only update if we got server data and no local data
-            if (Object.keys(restoredAnswers).length > 0 && !savedProgress) {
-              setSelectedAnswers(restoredAnswers);
+            // Always update verified state from server as it's the source of truth
+            if (Object.keys(restoredVerified).length > 0) {
               setVerifiedQuestions(restoredVerified);
-              toast.info("Réponses restaurées depuis le serveur", {
-                icon: <CheckCircle2 className="h-4 w-4 text-blue-500" />
+            }
+            
+            // Merge server answers with local answers (local takes precedence for non-verified)
+            if (Object.keys(restoredAnswers).length > 0) {
+              setSelectedAnswers(prev => {
+                const merged = { ...restoredAnswers };
+                // Keep local answers for non-verified questions
+                Object.keys(prev).forEach(key => {
+                  if (!restoredVerified[key]) {
+                    merged[key] = prev[key];
+                  }
+                });
+                return merged;
               });
             }
           }
@@ -582,7 +601,9 @@ const ExamPage = () => {
     if (!question || showResults) return;
 
     // Check if question is already verified - don't allow changes
-    if (verifiedQuestions[questionIndex]) return;
+    const verifiedData = verifiedQuestions[questionIndex];
+    const isVerified = verifiedData?.verified || verifiedData === true;
+    if (isVerified) return;
 
     setAnswerAnimation({ questionIndex, optionIndex });
     setTimeout(() => setAnswerAnimation(null), 300);
@@ -622,24 +643,47 @@ const ExamPage = () => {
   }, [flaggedQuestions, playSound, t]);
 
   // Verify current question - show answer and award points
+  // Points: +2 for correct, +0 for wrong (no toast messages for points)
   const handleVerifyQuestion = useCallback(async () => {
-    const hasAnswer = selectedAnswers[currentQuestion]?.length > 0;
-    if (!hasAnswer) {
-      setValidationError("Sélectionnez une réponse");
-      toast.error("Sélectionnez une réponse", {
-        icon: <AlertCircle className="h-4 w-4 text-red-500" />
-      });
-      setTimeout(() => setValidationError(null), 3000);
-      return;
-    }
-
     const questionData = questions[currentQuestion];
     
-    // Call backend to verify answer and award points
+    // Calculate if answer is correct locally for immediate visual feedback
+    const userAnswers = selectedAnswers[currentQuestion] || [];
+    const correctIndices = questionData.options
+      .map((opt, idx) => opt.isCorrect ? idx : null)
+      .filter(idx => idx !== null);
+    const isCorrectAnswer = userAnswers.length === correctIndices.length &&
+      userAnswers.every(ans => correctIndices.includes(ans));
+
+    // Immediately mark as verified with isCorrect status for visual feedback
+    playSound(isCorrectAnswer ? 'correct' : 'incorrect');
+    
+    setVerifiedQuestions(prev => ({
+      ...prev,
+      [currentQuestion]: {
+        verified: true,
+        isCorrect: isCorrectAnswer
+      }
+    }));
+
+    // Fetch community voting stats for this question
+    try {
+      const statsResponse = await api.get(`questions/community-votes/${questionData._id}`);
+      if (statsResponse.data.success) {
+        setCommunityStats(prev => ({
+          ...prev,
+          [currentQuestion]: statsResponse.data.data.voteStats
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch community stats:', error);
+    }
+
+    // Call backend to verify answer and award points (no toast messages)
     try {
       const response = await api.post('/questions/verify-answer', {
         questionId: questionData._id,
-        selectedAnswers: selectedAnswers[currentQuestion],
+        selectedAnswers: selectedAnswers[currentQuestion] || [],
         examId: examId,
         moduleId: examData?.moduleId,
         isRetry: false
@@ -647,24 +691,18 @@ const ExamPage = () => {
 
       const { isCorrect, pointsAwarded, totalPoints } = response.data.data;
 
-      // Update verified state
-      setVerifiedQuestions(prev => ({
-        ...prev,
-        [currentQuestion]: true
-      }));
-
-      // Update user profile points in state
-      if (userProfile && pointsAwarded !== 0) {
+      // Update user profile points in state silently (no toast)
+      if (userProfile) {
         setUserProfile(prev => ({
           ...prev,
-          points: totalPoints
+          totalPoints: totalPoints // Use totalPoints for consistency with TopBar
         }));
       }
 
       // Save answer for persistence
       await api.post('/questions/save-answer', {
         questionId: questionData._id,
-        selectedAnswers: selectedAnswers[currentQuestion],
+        selectedAnswers: selectedAnswers[currentQuestion] || [],
         isVerified: true,
         isCorrect,
         examId: examId,
@@ -673,11 +711,7 @@ const ExamPage = () => {
 
     } catch (error) {
       console.error('Error verifying answer:', error);
-      // Still mark as verified locally even if API fails
-      setVerifiedQuestions(prev => ({
-        ...prev,
-        [currentQuestion]: true
-      }));
+      // Still marked as verified locally even if API fails
     }
 
     playSound('select');
@@ -703,7 +737,7 @@ const ExamPage = () => {
       if (userProfile) {
         setUserProfile(prev => ({
           ...prev,
-          points: totalPoints
+          totalPoints: totalPoints // Use totalPoints for consistency with TopBar
         }));
       }
 
@@ -726,8 +760,8 @@ const ExamPage = () => {
     });
   }, [currentQuestion, questions, examId, examData, userProfile]);
 
-  // Check if current question is verified
-  const isQuestionVerified = verifiedQuestions[currentQuestion] || false;
+  // Check if current question is verified (now verifiedQuestions stores object with verified and isCorrect)
+  const isQuestionVerified = verifiedQuestions[currentQuestion]?.verified || verifiedQuestions[currentQuestion] === true || false;
 
   // Font size controls
   const adjustFontSize = useCallback((delta) => {
@@ -859,19 +893,26 @@ const ExamPage = () => {
   // Get question status with enhanced colors
   const getQuestionStatus = useCallback((index) => {
     const hasAnswer = selectedAnswers[index]?.length > 0;
-    const isVerified = verifiedQuestions[index];
+    const verifiedData = verifiedQuestions[index];
+    const isVerified = verifiedData?.verified || verifiedData === true;
     const isFlagged = flaggedQuestions.has(index);
     const isVisited = visitedQuestions.has(index);
 
     if (showResults || isVerified) {
-      const question = questions[index];
-      const userAnswers = selectedAnswers[index] || [];
-      const correctAnswers = question.options
-        .map((opt, i) => opt.isCorrect ? i : -1)
-        .filter(i => i !== -1);
+      // Use stored isCorrect if available, otherwise calculate
+      let isCorrect;
+      if (verifiedData?.isCorrect !== undefined) {
+        isCorrect = verifiedData.isCorrect;
+      } else {
+        const question = questions[index];
+        const userAnswers = selectedAnswers[index] || [];
+        const correctAnswers = question.options
+          .map((opt, i) => opt.isCorrect ? i : -1)
+          .filter(i => i !== -1);
 
-      const isCorrect = userAnswers.length === correctAnswers.length &&
-        userAnswers.every(ans => correctAnswers.includes(ans));
+        isCorrect = userAnswers.length === correctAnswers.length &&
+          userAnswers.every(ans => correctAnswers.includes(ans));
+      }
 
       return { status: isCorrect ? 'correct' : 'incorrect', isFlagged, isVisited };
     }
@@ -912,7 +953,9 @@ const ExamPage = () => {
           toggleFlag(currentQuestion);
           break;
         case 'Enter':
-          if (!showResults && !verifiedQuestions[currentQuestion]) {
+          const verifiedData = verifiedQuestions[currentQuestion];
+          const isAlreadyVerified = verifiedData?.verified || verifiedData === true;
+          if (!showResults && !isAlreadyVerified) {
             handleVerifyQuestion();
           }
           break;
@@ -1050,9 +1093,21 @@ const ExamPage = () => {
   const flaggedCount = flaggedQuestions.size;
 
   // Calculate verified stats for mobile header
-  const verifiedCount = Object.keys(verifiedQuestions).length;
+  const verifiedCount = Object.keys(verifiedQuestions).filter(key => {
+    const v = verifiedQuestions[key];
+    return v?.verified || v === true;
+  }).length;
   const correctCount = questions.filter((_, i) => {
-    if (!verifiedQuestions[i]) return false;
+    const verifiedData = verifiedQuestions[i];
+    const isVerified = verifiedData?.verified || verifiedData === true;
+    if (!isVerified) return false;
+    
+    // Use stored isCorrect if available
+    if (verifiedData?.isCorrect !== undefined) {
+      return verifiedData.isCorrect;
+    }
+    
+    // Fallback to calculation
     const selected = selectedAnswers[i] || [];
     const correctIndices = questions[i].options
       .map((opt, idx) => opt.isCorrect ? idx : null)
@@ -1210,7 +1265,7 @@ const ExamPage = () => {
                           <div className="flex items-center gap-2">
                             <span className="flex items-center gap-1 text-xs">
                               <Zap className="h-3.5 w-3.5 text-yellow-500" />
-                              <span className="font-semibold">{userProfile?.points || 0}</span>
+                              <span className="font-semibold">{userProfile?.totalPoints || 0}</span>
                             </span>
                             <span className="flex items-center gap-1 text-xs">
                               <Star className="h-3.5 w-3.5 text-amber-500" />
@@ -1218,7 +1273,7 @@ const ExamPage = () => {
                             </span>
                           </div>
                           <Badge className="bg-blue-100 text-blue-700 text-[10px]">
-                            {userProfile?.points || 0} pts
+                            {userProfile?.totalPoints || 0} pts
                           </Badge>
                         </div>
                       </div>
@@ -1344,7 +1399,7 @@ const ExamPage = () => {
               </Badge>
             </div>
 
-            {/* Right Section - Font controls + Profile */}
+            {/* Right Section - Font controls + Verify Shortcut + Profile */}
             <div className="flex items-center gap-2 md:gap-3">
               {/* Font Size Controls Popup */}
               <div className="relative">
@@ -1372,6 +1427,47 @@ const ExamPage = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Verify Shortcut Button (Enter key) */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={!isQuestionVerified && !showResults ? { scale: 1.05 } : {}}
+                whileTap={!isQuestionVerified && !showResults ? { scale: 0.95 } : {}}
+              >
+                <Button
+                  onClick={handleVerifyQuestion}
+                  disabled={isQuestionVerified || showResults}
+                  className={cn(
+                    "gap-2 shadow-md transition-all",
+                    isQuestionVerified || showResults
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white hover:shadow-lg"
+                  )}
+                  title={isQuestionVerified ? "Question déjà vérifiée" : "Appuyez sur Entrée ou cliquez pour vérifier"}
+                >
+                  <Keyboard className="h-4 w-4" />
+                  <span className="text-xs font-semibold">↵ Enter</span>
+                </Button>
+              </motion.div>
+
+              {/* Vue d'ensemble Button */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  onClick={() => setShowVueEnsemble(true)}
+                  className="gap-2 bg-blue-50 text-blue-600 border border-blue-300 hover:bg-blue-100 hover:border-blue-400 shadow-sm transition-all"
+                  variant="outline"
+                  title="Voir l'aperçu des questions"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="text-xs font-semibold">Vue d'ensemble</span>
+                </Button>
+              </motion.div>
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -1428,7 +1524,7 @@ const ExamPage = () => {
                             <div className="flex items-center gap-3">
                               <span className="flex items-center gap-1 text-sm">
                                 <Zap className="h-4 w-4 text-yellow-500" />
-                                <span className="font-semibold">{userProfile?.points || 0}</span>
+                                <span className="font-semibold">{userProfile?.totalPoints || 0}</span>
                               </span>
                               <span className="flex items-center gap-1 text-sm">
                                 <Star className="h-4 w-4 text-amber-500" />
@@ -1436,7 +1532,7 @@ const ExamPage = () => {
                               </span>
                             </div>
                             <Badge className="bg-blue-100 text-blue-700 text-xs">
-                              {userProfile?.points || 0} pts
+                              {userProfile?.totalPoints || 0} pts
                             </Badge>
                           </div>
                         </div>
@@ -1624,7 +1720,13 @@ const ExamPage = () => {
                         <div className="flex h-2 rounded-full overflow-hidden bg-gray-100">
                           {(() => {
                             const correctCount = questions.filter((_, i) => {
-                              if (!verifiedQuestions[i]) return false;
+                              const verifiedData = verifiedQuestions[i];
+                              const isVerified = verifiedData?.verified || verifiedData === true;
+                              if (!isVerified) return false;
+                              // Use stored isCorrect if available
+                              if (verifiedData?.isCorrect !== undefined) {
+                                return verifiedData.isCorrect;
+                              }
                               const selected = selectedAnswers[i] || [];
                               const correctIndices = questions[i].options
                                 .map((opt, idx) => opt.isCorrect ? idx : null)
@@ -1633,7 +1735,11 @@ const ExamPage = () => {
                                 selected.every(s => correctIndices.includes(s));
                             }).length;
 
-                            const incorrectCount = Object.keys(verifiedQuestions).length - correctCount;
+                            const verifiedCount = Object.keys(verifiedQuestions).filter(key => {
+                              const v = verifiedQuestions[key];
+                              return v?.verified || v === true;
+                            }).length;
+                            const incorrectCount = verifiedCount - correctCount;
 
                             const correctPct = (correctCount / questions.length) * 100;
                             const incorrectPct = (incorrectCount / questions.length) * 100;
@@ -2109,7 +2215,10 @@ const ExamPage = () => {
                         return (
                           <motion.button
                             key={index}
-                            whileHover={{ scale: showCorrectness ? 1 : 1.01 }}
+                            whileHover={{ 
+                              scale: showCorrectness ? 1.02 : 1.01,
+                              transition: { duration: 0.2 }
+                            }}
                             whileTap={{ scale: showCorrectness ? 1 : 0.99 }}
                             animate={isAnimating ? { scale: [1, 1.02, 1] } : {}}
                             className={cn(
@@ -2121,10 +2230,10 @@ const ExamPage = () => {
                               !isSelected && !showCorrectness && "border-gray-200 hover:border-gray-300 bg-white",
                               // Selected but not verified yet
                               isSelected && !showCorrectness && "border-2 bg-white",
-                              // After verification - correct answer (green background)
-                              showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50",
+                              // After verification - correct answer (green background + hover effect)
+                              showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-600",
                               // After verification - wrong answer selected (red border)
-                              showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50",
+                              showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50 hover:bg-red-100 hover:border-red-600",
                               // After verification - not selected and not correct (gray)
                               showCorrectness && !isCorrect && !isSelected && "border-gray-200 opacity-60 bg-white"
                             )}
@@ -2146,7 +2255,7 @@ const ExamPage = () => {
                                   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all",
                                   !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
                                   isSelected && !showCorrectness && "text-white",
-                                  showCorrectness && isCorrect && "bg-emerald-500 text-white",
+                                  showCorrectness && isCorrect && "bg-emerald-500 text-white group-hover:bg-emerald-600",
                                   showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white",
                                   showCorrectness && !isCorrect && !isSelected && "bg-gray-100 text-gray-400"
                                 )}
@@ -2172,18 +2281,34 @@ const ExamPage = () => {
                                 {option.text}
                               </span>
 
-                              {/* Small indicator icon on right */}
-                              {showCorrectness && (isCorrect || isSelected) && (
-                                <div className="shrink-0">
-                                  {isCorrect ? (
-                                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                                      <Check className="h-4 w-4 text-emerald-600" />
-                                    </div>
-                                  ) : isSelected ? (
-                                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
-                                      <X className="h-4 w-4 text-red-600" />
-                                    </div>
-                                  ) : null}
+                              {/* Community vote percentage and indicator icon on right */}
+                              {showCorrectness && (
+                                <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+                                  {/* Show community vote percentage */}
+                                  {communityStats[currentQuestion] && (() => {
+                                    const letter = String.fromCharCode(65 + index);
+                                    const voteCount = communityStats[currentQuestion].optionVotes?.[letter] || 0;
+                                    const totalVoters = communityStats[currentQuestion].totalVoters || 1;
+                                    const percentage = Math.round((voteCount / totalVoters) * 1000) / 10;
+                                    return (
+                                      <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-gray-100 text-gray-700 whitespace-nowrap">
+                                        {percentage}%
+                                      </span>
+                                    );
+                                  })()}
+                                  
+                                  {/* Correct/Incorrect icon */}
+                                  {(isCorrect || isSelected) && (
+                                    isCorrect ? (
+                                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200">
+                                        <Check className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
+                                      </div>
+                                    ) : isSelected ? (
+                                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-red-100 flex items-center justify-center">
+                                        <X className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                                      </div>
+                                    ) : null
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -2256,8 +2381,8 @@ const ExamPage = () => {
                             })()}
                           </div>
 
-                          {/* Action Buttons Grid */}
-                          <div className="grid grid-cols-2 gap-2">
+                          {/* Action Buttons Grid - Mobile Only */}
+                          <div className="lg:hidden grid grid-cols-2 gap-2">
                             <Button
                               variant="outline"
                               onClick={handleResetQuestion}
@@ -3025,7 +3150,8 @@ const ExamPage = () => {
                   {questions.map((q, index) => {
                     const { status } = getQuestionStatus(index);
                     const selectedOpts = selectedAnswers[index] || [];
-                    const isVerified = verifiedQuestions[index] || showResults;
+                    const verifiedData = verifiedQuestions[index];
+                    const isVerified = (verifiedData?.verified || verifiedData === true) || showResults;
 
                     return (
                       <div

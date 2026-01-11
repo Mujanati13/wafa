@@ -1,6 +1,7 @@
 import asyncHandler from "../handlers/asyncHandler.js";
 import ReportQuestions from "../models/reportQuestions.js";
 import Question from "../models/questionModule.js";
+import Point from "../models/pointModel.js";
 
 export const reportQuestionsController = {
     create: asyncHandler(async (req, res) => {
@@ -172,6 +173,15 @@ export const reportQuestionsController = {
 
     approve: asyncHandler(async (req, res) => {
         const { id } = req.params;
+        
+        // Get current report to check previous status
+        const currentReport = await ReportQuestions.findById(id);
+        if (!currentReport) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+        
+        const previousStatus = currentReport.status;
+        
         const updated = await ReportQuestions.findByIdAndUpdate(
             id,
             { status: "resolved" },
@@ -183,6 +193,35 @@ export const reportQuestionsController = {
 
         if (!updated) {
             return res.status(404).json({ success: false, message: "Report not found" });
+        }
+
+        // Award green points only if status changed from non-resolved to resolved
+        if (updated.userId?._id && previousStatus !== "resolved") {
+            try {
+                // Create point record
+                await Point.create({
+                    userId: updated.userId._id,
+                    type: 'greenPoints',
+                    amount: 30, // +30 pts for approved report
+                    questionId: updated.questionId?._id,
+                    description: 'Rapport approuvé'
+                });
+                
+                // Update user stats - increment greenPoints count and add 30 to totalPoints
+                const UserStats = (await import("../models/userStatsModel.js")).default;
+                await UserStats.findOneAndUpdate(
+                    { userId: updated.userId._id },
+                    { 
+                        $inc: { 
+                            greenPoints: 1,     // Count of approved reports
+                            totalPoints: 30     // +30 pts per approved report
+                        } 
+                    },
+                    { upsert: true }
+                );
+            } catch (error) {
+                console.error('Error awarding green points:', error);
+            }
         }
 
         res.status(200).json({

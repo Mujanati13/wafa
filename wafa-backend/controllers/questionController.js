@@ -848,16 +848,18 @@ export const questionController = {
                 }
             });
 
-            // Update user's total points
-            await UserModel.findByIdAndUpdate(
-                userId,
-                { $inc: { points: pointsAwarded } },
-                { new: true }
+            // Update user's total points in UserStatsModel (this is the source of truth)
+            const UserStatsModel = (await import("../models/userStatsModel.js")).default;
+            await UserStatsModel.findOneAndUpdate(
+                { userId },
+                { $inc: { totalPoints: pointsAwarded } },
+                { upsert: true, new: true }
             );
         }
 
-        // Get updated user points
-        const user = await UserModel.findById(userId).select('points');
+        // Get updated user points from UserStatsModel
+        const UserStatsModel = (await import("../models/userStatsModel.js")).default;
+        const userStats = await UserStatsModel.findOne({ userId });
 
         res.status(200).json({
             success: true,
@@ -865,7 +867,7 @@ export const questionController = {
                 isCorrect,
                 correctAnswers: correctIndices,
                 pointsAwarded,
-                totalPoints: user?.points || 0
+                totalPoints: userStats?.totalPoints || 0
             }
         });
     }),

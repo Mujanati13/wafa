@@ -226,8 +226,9 @@ const CommunityModal = ({
                       const isSelected = selectedOptions.includes(index);
                       const letter = String.fromCharCode(65 + index);
                       const voteCount = stats.optionVotes[letter] || 0;
-                      const percentage = stats.totalVotes > 0 
-                        ? Math.round((voteCount / stats.totalVotes) * 1000) / 10 
+                      // Calculate percentage based on total voters (users), not total votes
+                      const percentage = stats.totalVoters > 0 
+                        ? Math.round((voteCount / stats.totalVoters) * 1000) / 10 
                         : 0;
                       const isHighestVoted = hasVoted && voteCount > 0 && 
                         voteCount === Math.max(...Object.values(stats.optionVotes));

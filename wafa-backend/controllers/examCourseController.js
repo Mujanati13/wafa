@@ -56,7 +56,13 @@ export const examCourseController = {
     getById: asyncHandler(async (req, res) => {
         const { id } = req.params;
 
-        const course = await ExamCourse.getWithQuestions(id);
+        const course = await ExamCourse.findById(id)
+            .populate("moduleId", "name color")
+            .populate({
+                path: "linkedQuestions",
+                options: { sort: { questionNumber: 1, createdAt: 1 } }
+            })
+            .lean();
 
         if (!course) {
             return res.status(404).json({
@@ -65,9 +71,37 @@ export const examCourseController = {
             });
         }
 
+        const questions = course.linkedQuestions || [];
+        const questionSources = course.questionSources || [];
+        
+        // Create a map of questionId to source info (yearName)
+        const sourceMap = {};
+        questionSources.forEach(source => {
+            sourceMap[source.questionId?.toString()] = source;
+        });
+
+        // Group questions by yearName from questionSources or by sessionLabel
+        const groupedQuestions = questions.reduce((acc, q) => {
+            const qId = q._id?.toString();
+            const source = sourceMap[qId];
+            
+            // Use yearName from questionSources, then sessionLabel, then default
+            const session = source?.yearName || q.sessionLabel || course.name || "Session principale";
+            
+            if (!acc[session]) acc[session] = [];
+            acc[session].push(q);
+            return acc;
+        }, {});
+
         res.status(200).json({
             success: true,
-            data: course,
+            data: {
+                ...course,
+                moduleName: course.moduleId?.name,
+                moduleColor: course.moduleId?.color || course.color || '#6366f1',
+                totalQuestions: questions.length,
+                questions: groupedQuestions,
+            },
         });
     }),
 
