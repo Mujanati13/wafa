@@ -25,6 +25,10 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   const [fetchedExplanations, setFetchedExplanations] = useState([]);
   const [loadingExplanations, setLoadingExplanations] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  
+  // State for AI generation
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiExplanationData, setAiExplanationData] = useState(null);
 
   // Fetch user explanations from API
   useEffect(() => {
@@ -35,9 +39,16 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
       try {
         const response = await api.get(`/explanations/question/${question._id}`);
         const explanations = response.data?.data || [];
-        // Filter to only approved explanations and map to proper format
+        
+        // Filter AI explanation separately
+        const aiExplanation = explanations.find(e => e.isAiGenerated && e.status === 'approved');
+        if (aiExplanation) {
+          setAiExplanationData(aiExplanation);
+        }
+        
+        // Filter to only approved user explanations and map to proper format
         const approvedExplanations = explanations
-          .filter(e => e.status === 'approved')
+          .filter(e => e.status === 'approved' && !e.isAiGenerated)
           .map(e => ({
             id: e._id,
             text: e.contentText || "",
@@ -77,7 +88,7 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
   // AI explanation (always slot 0)
   const aiExplanation = {
-    text: question?.explanation || null,
+    text: aiExplanationData?.contentText || question?.explanation || null,
     images: (() => {
       const images = Array.isArray(question?.explanationImages)
         ? question.explanationImages
@@ -91,6 +102,56 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   };
 
   const hasAIExplanation = aiExplanation.text || aiExplanation.images.length > 0;
+  
+  // Function to generate AI explanation with Gemini
+  const handleGenerateAIExplanation = async () => {
+    if (!question?._id) {
+      toast.error("ID de question invalide");
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const response = await api.post('/explanations/generate-gemini', {
+        questionId: question._id,
+        language: 'fr'
+      });
+
+      if (response.data?.success && response.data?.data) {
+        setAiExplanationData(response.data.data);
+        toast.success("Explication IA générée avec succès !", {
+          description: "L'explication a été sauvegardée pour cette question.",
+          duration: 4000
+        });
+      }
+    } catch (error) {
+      console.error("Error generating AI explanation:", error);
+      
+      const errorMessage = error.response?.data?.message;
+      if (errorMessage?.includes("existe déjà")) {
+        toast.info("Explication IA déjà disponible", {
+          description: "Une explication existe déjà pour cette question."
+        });
+        // Try to fetch the existing one
+        try {
+          const existingResponse = await api.get(`/explanations/question/${question._id}`);
+          const aiExplanation = existingResponse.data?.data?.find(e => e.isAiGenerated);
+          if (aiExplanation) {
+            setAiExplanationData(aiExplanation);
+          }
+        } catch (fetchError) {
+          console.error("Error fetching existing AI explanation:", fetchError);
+        }
+      } else {
+        toast.error("Erreur lors de la génération", {
+          description: errorMessage || "Impossible de générer l'explication IA.",
+          duration: 5000
+        });
+      }
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const handleSubmitClick = () => {
     // At least one content type required: text, images, or PDF
@@ -136,7 +197,31 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
       setShowSubmitForm(false);
     } catch (error) {
       console.error("Error submitting explanation:", error);
-      toast.error(error.response?.data?.message || "Erreur lors de la soumission");
+      
+      // Handle specific error cases
+      const errorMessage = error.response?.data?.message;
+      let userFriendlyMessage = "Erreur lors de la soumission";
+      let description = "";
+
+      if (errorMessage?.includes("déjà soumis")) {
+        userFriendlyMessage = "Explication déjà soumise";
+        description = "Vous avez déjà proposé une explication pour cette question. Une personne ne peut soumettre qu'une seule explication par question.";
+      } else if (errorMessage?.includes("maximum") || errorMessage?.includes("limité")) {
+        userFriendlyMessage = "Limite atteinte";
+        description = errorMessage;
+      } else if (errorMessage?.includes("authentif")) {
+        userFriendlyMessage = "Session expirée";
+        description = "Veuillez vous reconnecter pour soumettre une explication.";
+      } else if (errorMessage) {
+        description = errorMessage;
+      } else {
+        description = "Veuillez vérifier votre connexion et réessayer.";
+      }
+
+      toast.error(userFriendlyMessage, {
+        description: description,
+        duration: 5000
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -314,10 +399,27 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
                   <h4 className="text-lg font-medium text-gray-700 mb-2">
                     Pas d'explication IA disponible
                   </h4>
-                  <p className="text-gray-500 text-sm">
-                    Notre système génère automatiquement des explications.<br />
-                    Celle-ci sera bientôt disponible.
+                  <p className="text-gray-500 text-sm mb-4">
+                    Cliquez sur le bouton ci-dessous pour générer une explication<br />
+                    avec l'intelligence artificielle Gemini.
                   </p>
+                  <Button
+                    onClick={handleGenerateAIExplanation}
+                    disabled={isGeneratingAI}
+                    className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  >
+                    {isGeneratingAI ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Génération en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Générer avec Gemini AI
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
             </div>

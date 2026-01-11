@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Sparkles, Loader2, CheckCircle, XCircle, AlertCircle, Zap } from "lucide-react";
+import { Sparkles, Loader2, CheckCircle, XCircle, AlertCircle, Zap, FileText, Upload, X, ChevronDown, ChevronUp, Copy, Download } from "lucide-react";
 import { api } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -41,8 +42,17 @@ const GenerateExplanationsAI = () => {
   const [language, setLanguage] = useState("fr");
   const [mode, setMode] = useState("single"); // single or batch
 
+  // Advanced options
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [pdfContext, setPdfContext] = useState("");
+  const [uploadedPdf, setUploadedPdf] = useState(null);
+  const [extractingPdf, setExtractingPdf] = useState(false);
+  const pdfInputRef = useRef(null);
+
   // Results state
   const [results, setResults] = useState(null);
+  const [expandedResults, setExpandedResults] = useState(new Set());
+  const [detailedResults, setDetailedResults] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -89,6 +99,54 @@ const GenerateExplanationsAI = () => {
     }
   };
 
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error("Seuls les fichiers PDF sont acceptés");
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Le PDF ne doit pas dépasser 20 Mo");
+      return;
+    }
+
+    setUploadedPdf(file);
+    setExtractingPdf(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      const { data } = await api.post('/explanations/upload-pdf-context', formData);
+
+      if (data.success) {
+        setPdfContext(data.data.text);
+        toast.success(`✓ Texte extrait: ${data.data.length} caractères`);
+      }
+    } catch (error) {
+      console.error("PDF extraction error:", error);
+      toast.error("Erreur lors de l'extraction du PDF");
+      setUploadedPdf(null);
+    } finally {
+      setExtractingPdf(false);
+      if (pdfInputRef.current) {
+        pdfInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removePdfContext = () => {
+    setUploadedPdf(null);
+    setPdfContext("");
+    if (pdfInputRef.current) {
+      pdfInputRef.current.value = '';
+    }
+    toast.info("Contexte PDF supprimé");
+  };
+
   const handleGenerate = async () => {
     if (!selectedExam || !questionNumbers.trim()) {
       toast.error("Veuillez sélectionner un examen et spécifier les numéros de questions");
@@ -121,7 +179,9 @@ const GenerateExplanationsAI = () => {
         // Generate single explanation
         const { data } = await api.post("/explanations/generate-gemini", {
           questionId: targetQuestion._id,
-          language
+          language,
+          customPrompt: customPrompt.trim() || undefined,
+          pdfContext: (pdfContext && typeof pdfContext === 'string' ? pdfContext.trim() : '') || undefined
         });
 
         if (data.success) {
@@ -137,7 +197,9 @@ const GenerateExplanationsAI = () => {
         const { data } = await api.post("/explanations/batch-generate-gemini", {
           examId: selectedExam,
           questionNumbers,
-          language
+          language,
+          customPrompt: customPrompt.trim() || undefined,
+          pdfContext: (pdfContext && typeof pdfContext === 'string' ? pdfContext.trim() : '') || undefined
         });
 
         if (data.success) {
@@ -168,6 +230,49 @@ const GenerateExplanationsAI = () => {
   const examsForModule = selectedModule ? getExamsForModule(selectedModule) : [];
 
   const canGenerate = selectedExam && questionNumbers.trim() && !generating;
+
+  const toggleExpandResult = (index) => {
+    const newExpanded = new Set(expandedResults);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedResults(newExpanded);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copié dans le presse-papiers");
+  };
+
+  const downloadResults = () => {
+    if (!results) return;
+    
+    let content = "Résultats de la Génération d'Explications IA\n";
+    content += "=" .repeat(50) + "\n\n";
+    
+    if (results.mode === 'single' && results.explanation) {
+      content += `Question: ${results.explanation.questionId}\n`;
+      content += `Explication:\n${results.explanation.contentText}\n`;
+    } else if (results.mode === 'batch' && detailedResults.length > 0) {
+      detailedResults.forEach((result, idx) => {
+        content += `\nQuestion ${idx + 1}:\n`;
+        content += `${result.explanation || 'Erreur: ' + result.error}\n`;
+        content += "-".repeat(40) + "\n";
+      });
+    }
+    
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+    element.setAttribute('download', 'explanations_ai.txt');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    toast.success("Téléchargement commencé");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
@@ -336,6 +441,80 @@ const GenerateExplanationsAI = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Divider */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  Options avancées (optionnel)
+                </h3>
+
+                {/* Custom Prompt */}
+                <div className="space-y-2 mb-4">
+                  <Label className="font-semibold text-gray-700">Prompt personnalisé</Label>
+                  <Textarea
+                    placeholder="Entrez votre propre prompt pour personnaliser les explications. Utilisez {questionText}, {options}, {correctAnswers} comme variables."
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="min-h-[100px] font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500">
+                    💡 Variables disponibles: {"{questionText}"}, {"{options}"}, {"{correctAnswers}"}
+                  </p>
+                </div>
+
+                {/* PDF Context Upload */}
+                <div className="space-y-2">
+                  <Label className="font-semibold text-gray-700">Contexte PDF</Label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={pdfInputRef}
+                      onChange={handlePdfUpload}
+                      accept=".pdf"
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => pdfInputRef.current?.click()}
+                      disabled={extractingPdf || !!uploadedPdf}
+                      className="gap-2"
+                    >
+                      {extractingPdf ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Extraction...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Télécharger PDF
+                        </>
+                      )}
+                    </Button>
+                    {uploadedPdf && (
+                      <div className="flex items-center gap-2 flex-1 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                        <FileText className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-700 flex-1 truncate">
+                          {uploadedPdf.name} ({pdfContext.length} caractères)
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={removePdfContext}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    📄 Téléchargez un PDF pour que l'IA apprenne du contexte et améliore les explications
+                  </p>
+                </div>
+              </div>
             </CardContent>
 
             <CardFooter className="bg-gray-50 border-t flex justify-end gap-3">
@@ -345,6 +524,8 @@ const GenerateExplanationsAI = () => {
                   setSelectedModule("");
                   setSelectedExam("");
                   setQuestionNumbers("");
+                  setCustomPrompt("");
+                  removePdfContext();
                   setResults(null);
                 }}
               >
@@ -423,29 +604,191 @@ const GenerateExplanationsAI = () => {
                 )}
 
                 {results.mode === 'batch' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-6">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <div className="text-2xl font-bold text-blue-600">{results.saved + (results.failed || 0)}</div>
+                        <div className="text-sm text-gray-600">Total traité</div>
+                      </div>
                       <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                         <div className="text-2xl font-bold text-green-600">{results.saved}</div>
                         <div className="text-sm text-gray-600">Réussi</div>
                       </div>
                       <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                        <div className="text-2xl font-bold text-red-600">{results.failed}</div>
+                        <div className="text-2xl font-bold text-red-600">{results.failed || 0}</div>
                         <div className="text-sm text-gray-600">Échoué</div>
                       </div>
                     </div>
 
+                    {/* Download and Copy All Buttons */}
+                    {results.saved > 0 && (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={downloadResults}
+                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Download className="w-4 h-4" />
+                          Télécharger tous les résultats
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            const allText = results.explanations?.map(exp => 
+                              `Question: ${exp.questionNumber}\n${exp.contentText || exp.title}\n\n`
+                            ).join('---\n\n') || '';
+                            copyToClipboard(allText);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copier tout
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Detailed Results */}
+                    {results.explanations && results.explanations.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-yellow-500" />
+                          Explications générées
+                        </h4>
+                        <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                          {results.explanations.map((explanation, idx) => (
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.1 }}
+                            >
+                              <div
+                                className={`rounded-lg border-2 transition-all cursor-pointer ${
+                                  expandedResults.has(idx)
+                                    ? 'border-purple-400 bg-purple-50'
+                                    : 'border-gray-200 bg-white hover:border-purple-300'
+                                }`}
+                              >
+                                {/* Result Header */}
+                                <div
+                                  className="p-4 flex items-center justify-between"
+                                  onClick={() => toggleExpandResult(idx)}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 font-bold text-purple-700">
+                                      {idx + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="font-semibold text-gray-800">
+                                        Question {explanation.questionNumber || `${idx + 1}`}
+                                      </h3>
+                                      <p className="text-sm text-gray-600 line-clamp-1">
+                                        {explanation.title || explanation.contentText?.substring(0, 80) + '...'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge className="bg-green-100 text-green-800">
+                                      Approuvé
+                                    </Badge>
+                                    {expandedResults.has(idx) ? (
+                                      <ChevronUp className="w-5 h-5 text-purple-600" />
+                                    ) : (
+                                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Expanded Content */}
+                                <AnimatePresence>
+                                  {expandedResults.has(idx) && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="border-t border-purple-200"
+                                    >
+                                      <CardContent className="pt-4 space-y-4">
+                                        {/* Explanation Content */}
+                                        <div>
+                                          <h4 className="font-medium text-gray-800 mb-2">Explication générée</h4>
+                                          <div className="bg-white rounded border border-purple-100 p-4">
+                                            <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                              {explanation.contentText || explanation.title}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Metadata */}
+                                        <div className="flex flex-wrap gap-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            ID: {explanation.questionId || explanation._id}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs">
+                                            Provider: {explanation.aiProvider || 'Gemini'}
+                                          </Badge>
+                                          {explanation.language && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {explanation.language}
+                                            </Badge>
+                                          )}
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-2 pt-2">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => copyToClipboard(explanation.contentText || explanation.title)}
+                                            className="flex items-center gap-2"
+                                          >
+                                            <Copy className="w-4 h-4" />
+                                            Copier
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                              const text = `Question ${explanation.questionNumber}:\n${explanation.contentText || explanation.title}`;
+                                              const element = document.createElement('a');
+                                              element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                                              element.setAttribute('download', `explication_q${explanation.questionNumber}.txt`);
+                                              element.style.display = 'none';
+                                              document.body.appendChild(element);
+                                              element.click();
+                                              document.body.removeChild(element);
+                                              toast.success('Fichier téléchargé');
+                                            }}
+                                            className="flex items-center gap-2"
+                                          >
+                                            <Download className="w-4 h-4" />
+                                            Télécharger
+                                          </Button>
+                                        </div>
+                                      </CardContent>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Details */}
                     {results.errors && results.errors.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-orange-500" />
-                          Erreurs détaillées
+                          Erreurs détaillées ({results.errors.length})
                         </h4>
                         <div className="space-y-2 max-h-64 overflow-y-auto">
                           {results.errors.map((err, idx) => (
                             <div key={idx} className="bg-red-50 rounded p-3 text-sm border border-red-200">
-                              <div className="font-medium text-red-700">Question: {err.questionId}</div>
-                              <div className="text-red-600">{err.reason}</div>
+                              <div className="font-medium text-red-700">Question #{err.questionId || idx + 1}</div>
+                              <div className="text-red-600 text-xs mt-1">{err.reason || err.message}</div>
                             </div>
                           ))}
                         </div>
@@ -480,9 +823,12 @@ const GenerateExplanationsAI = () => {
                 <div className="text-sm text-blue-900 space-y-1">
                   <p className="font-medium">Note importante:</p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Les explications sont générées automatiquement en se connectant à MongoDB</li>
                     <li>Les explications générées par AI sont automatiquement approuvées</li>
                     <li>Le mode batch respecte les limites de l'API (délai de 1s entre chaque génération)</li>
                     <li>Si une explication AI existe déjà pour une question, elle ne sera pas régénérée</li>
+                    <li>Vous pouvez télécharger un PDF pour fournir du contexte médical supplémentaire</li>
+                    <li>Les prompts personnalisés permettent de contrôler le style des explications</li>
                     <li>Assurez-vous que votre clé API Gemini est configurée dans le fichier .env</li>
                   </ul>
                 </div>

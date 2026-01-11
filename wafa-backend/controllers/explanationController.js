@@ -438,7 +438,7 @@ export const explanationController = {
 
     // Generate explanation using Gemini AI
     generateWithGemini: asyncHandler(async (req, res) => {
-        const { questionId, language } = req.body;
+        const { questionId, language, customPrompt, pdfContext } = req.body;
 
         if (!questionId) {
             return res.status(400).json({
@@ -486,10 +486,12 @@ export const explanationController = {
         };
 
         try {
-            // Generate explanation using Gemini
+            // Generate explanation using Gemini with optional custom prompt and context
             const generatedText = await geminiService.generateExplanation(
                 questionData,
-                language || 'fr'
+                language || 'fr',
+                customPrompt || null,
+                pdfContext || null
             );
 
             // Save the AI explanation
@@ -519,7 +521,7 @@ export const explanationController = {
 
     // Batch generate explanations for multiple questions
     batchGenerateWithGemini: asyncHandler(async (req, res) => {
-        const { examId, questionNumbers, language } = req.body;
+        const { examId, questionNumbers, language, customPrompt, pdfContext } = req.body;
 
         if (!examId) {
             return res.status(400).json({
@@ -605,10 +607,12 @@ export const explanationController = {
         }));
 
         try {
-            // Generate explanations in batch
+            // Generate explanations in batch with optional custom prompt and context
             const results = await geminiService.generateBatchExplanations(
                 questionsData,
-                language || 'fr'
+                language || 'fr',
+                customPrompt || null,
+                pdfContext || null
             );
 
             // Save successful explanations
@@ -694,6 +698,40 @@ export const explanationController = {
             res.status(500).json({
                 success: false,
                 message: "Erreur lors du test de connexion: " + error.message
+            });
+        }
+    }),
+
+    // Extract text from uploaded PDF for context
+    extractPdfContext: asyncHandler(async (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Aucun fichier PDF fourni"
+            });
+        }
+
+        try {
+            const pdfPath = req.file.path;
+            const extractedText = await geminiService.extractTextFromPDF(pdfPath);
+            
+            // Clean up the uploaded file
+            const fs = await import('fs');
+            fs.unlinkSync(pdfPath);
+            
+            res.json({
+                success: true,
+                data: {
+                    text: extractedText,
+                    length: extractedText.length
+                },
+                message: "Texte extrait avec succès"
+            });
+        } catch (error) {
+            console.error('PDF extraction error:', error);
+            res.status(500).json({
+                success: false,
+                message: "Erreur lors de l'extraction du PDF: " + error.message
             });
         }
     }),

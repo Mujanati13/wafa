@@ -76,6 +76,19 @@ router.get("/test-gemini", isAuthenticated, isAdmin, explanationController.testG
 router.post("/generate-gemini", isAuthenticated, isAdmin, explanationController.generateWithGemini);
 router.post("/batch-generate-gemini", isAuthenticated, isAdmin, explanationController.batchGenerateWithGemini);
 
+// Upload PDF for context extraction
+router.post("/upload-pdf-context", isAuthenticated, isAdmin, multer({
+    storage: storage,
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error("Seuls les fichiers PDF sont acceptés"), false);
+        }
+    }
+}).single('pdf'), explanationController.extractPdfContext);
+
 // Specific routes before parameterized routes
 router.get("/question/:questionId", explanationController.getByQuestionId);
 router.get("/slots/:questionId", explanationController.getSlotsInfo);

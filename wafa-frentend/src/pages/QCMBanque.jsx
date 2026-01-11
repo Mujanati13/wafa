@@ -93,6 +93,16 @@ const QCMBanque = () => {
 
     const handleFormChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+        
+        // When module is changed, validate it matches the current semester filter
+        if (field === "moduleId" && value && formSemesterFilter !== "all") {
+            const selectedModule = modules.find(m => m._id === value);
+            if (selectedModule && selectedModule.semester !== formSemesterFilter) {
+                // Module doesn't match the semester filter, reset it
+                setFormData((prev) => ({ ...prev, moduleId: "" }));
+                toast.warning(`Le module sélectionné n'appartient pas au semestre ${formSemesterFilter}`);
+            }
+        }
     };
 
     // Handle file selection

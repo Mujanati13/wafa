@@ -383,7 +383,12 @@ const SubjectsPage = () => {
             const userStatsResponse = await api.get('/users/my-stats');
             const userStats = userStatsResponse.data?.data;
             
-            if (userStats && userStats.answeredQuestions) {
+            // Check if user has answered questions (not just empty object)
+            const hasAnsweredQuestions = userStats && 
+                                        userStats.answeredQuestions && 
+                                        Object.keys(userStats.answeredQuestions).length > 0;
+            
+            if (hasAnsweredQuestions) {
               const answeredQuestionsMap = userStats.answeredQuestions;
               
               // Helper function to calculate progress for an exam
@@ -403,18 +408,9 @@ const SubjectsPage = () => {
                     return answer && answer.isVerified === true;
                   }).length;
                   
-                  // Also check localStorage for additional progress (in case server sync failed)
-                  try {
-                    const localProgress = localStorage.getItem(`exam_progress_${examTypeKey}_${exam.id}`);
-                    if (localProgress) {
-                      const { verified } = JSON.parse(localProgress);
-                      if (verified && Object.keys(verified).length > answeredCount) {
-                        answeredCount = Object.keys(verified).length;
-                      }
-                    }
-                  } catch (localErr) {
-                    // Ignore localStorage errors
-                  }
+                  // Note: We trust server data over localStorage to avoid showing stale data
+                  // for new accounts. localStorage is only used as a visual indicator during
+                  // active exam sessions, but final progress should always come from the server.
                   
                   const progress = Math.round((answeredCount / totalQuestions) * 100);
                   

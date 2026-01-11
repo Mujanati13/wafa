@@ -48,6 +48,7 @@ const ExamCourses = () => {
   const [examCourses, setExamCourses] = useState([]);
   const [modules, setModules] = useState([]);
   const [courseCategories, setCourseCategories] = useState([]); // Categories from /course-categories
+  const [moduleCategoriesData, setModuleCategoriesData] = useState([]); // Categories filtered by selected module
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const placeholderImage = DEFAULT_COURSE_IMAGE;
@@ -73,6 +74,20 @@ const ExamCourses = () => {
       setCourseCategories(data?.data || []);
     } catch (err) {
       console.error("Error fetching course categories:", err);
+    }
+  };
+
+  const fetchCategoriesForModule = async (moduleId) => {
+    if (!moduleId) {
+      setModuleCategoriesData([]);
+      return;
+    }
+    try {
+      const { data } = await api.get(`/exam-courses/module/${moduleId}/categories`);
+      setModuleCategoriesData(data?.data || []);
+    } catch (err) {
+      console.error("Error fetching module categories:", err);
+      setModuleCategoriesData([]);
     }
   };
 
@@ -276,6 +291,14 @@ const ExamCourses = () => {
 
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // When module is changed, fetch categories for that module
+    if (field === "moduleName" && value) {
+      const selectedModule = modules.find(m => m.name === value);
+      if (selectedModule) {
+        fetchCategoriesForModule(selectedModule._id);
+      }
+    }
   };
 
   const handleEditCourse = (course) => {
@@ -283,10 +306,12 @@ const ExamCourses = () => {
     const module = modules.find(m => m.name === course.moduleName);
     if (module && module.semester) {
       setFormSemesterFilter(module.semester);
+      // Fetch categories for this module
+      fetchCategoriesForModule(module._id);
     }
     
     // Check if category is in the existing list
-    const categoryExists = allCategories.includes(course.category);
+    const categoryExists = moduleCategoriesData.includes(course.category);
     setUseCustomCategory(!categoryExists);
     
     setFormData({
@@ -618,8 +643,8 @@ const ExamCourses = () => {
                   {/* Category selection with toggle for custom */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-black font-medium">Catégorie {allCategories.length === 0 ? "*" : "(optionnel si existante)"}</Label>
-                      {allCategories.length > 0 && (
+                      <Label className="text-black font-medium">Catégorie {moduleCategoriesData.length === 0 ? "*" : "(optionnel si existante)"}</Label>
+                      {moduleCategoriesData.length > 0 && (
                         <button
                           type="button"
                           className="text-xs text-purple-600 hover:text-purple-700 underline"
@@ -630,14 +655,20 @@ const ExamCourses = () => {
                       )}
                     </div>
                     
-                    {!useCustomCategory && allCategories.length > 0 ? (
+                    {!formData.moduleName && (
+                      <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                        Veuillez d'abord sélectionner un module pour voir les catégories disponibles
+                      </p>
+                    )}
+                    
+                    {formData.moduleName && !useCustomCategory && moduleCategoriesData.length > 0 ? (
                       <>
                         <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
                           <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
                             <SelectValue placeholder="Sélectionner une catégorie" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border-gray-200">
-                            {allCategories.map((cat) => (
+                            {moduleCategoriesData.map((cat) => (
                               <SelectItem key={cat} value={cat} className="text-black">
                                 {cat}
                               </SelectItem>
@@ -645,16 +676,18 @@ const ExamCourses = () => {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-gray-500">
-                          {allCategories.length} catégorie(s) existante(s)
+                          {moduleCategoriesData.length} catégorie(s) existante(s) pour ce module
                         </p>
                       </>
                     ) : (
-                      <Input
-                        placeholder="Entrez le nom de la nouvelle catégorie..."
-                        value={formData.customCategory}
-                        onChange={(e) => handleFormChange("customCategory", e.target.value)}
-                        className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
-                      />
+                      formData.moduleName && (
+                        <Input
+                          placeholder="Entrez le nom de la nouvelle catégorie..."
+                          value={formData.customCategory}
+                          onChange={(e) => handleFormChange("customCategory", e.target.value)}
+                          className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                        />
+                      )
                     )}
                   </div>
 

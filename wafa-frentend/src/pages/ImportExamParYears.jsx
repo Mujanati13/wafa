@@ -55,6 +55,7 @@ const ImportExamParYears = () => {
   const [selectedModule, setSelectedModule] = useState("");
   const [selectedExam, setSelectedExam] = useState("");
   const [excelFile, setExcelFile] = useState(null);
+  const [sessionName, setSessionName] = useState("");
 
   // Filter modules by selected semester
   const filteredModules = selectedSemester
@@ -110,12 +111,16 @@ const ImportExamParYears = () => {
       formData.append('examId', selectedExam);
       formData.append('file', excelFile);
       formData.append('type', 'exam-par-year');
+      if (sessionName.trim()) {
+        formData.append('sessionName', sessionName.trim());
+      }
 
       // Don't set Content-Type manually - axios handles it for FormData
       await api.post('/questions/import', formData);
 
       toast.success("Questions importées avec succès");
       setExcelFile(null);
+      setSessionName("");
     } catch (error) {
       console.error("Error importing Excel:", error);
       toast.error(error.response?.data?.message || "Erreur lors de l'import");
@@ -370,6 +375,30 @@ const ImportExamParYears = () => {
                   </div>
                 </motion.div>
               </div>
+
+              {/* Session Name Input */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+                className="mt-4 space-y-2"
+              >
+                <Label className="font-semibold text-gray-700">
+                  Nom de la session (optionnel)
+                </Label>
+                <Input
+                  type="text"
+                  value={sessionName}
+                  onChange={(e) => setSessionName(e.target.value)}
+                  placeholder="Ex: Session Principale, Rattrapage 2024, etc."
+                  className="border-indigo-200"
+                  disabled={!selectedExam}
+                />
+                <p className="text-xs text-gray-500">
+                  Si spécifié, toutes les questions importées seront groupées sous ce nom de session. 
+                  Sinon, elles seront groupées sous le nom de l'examen par défaut.
+                </p>
+              </motion.div>
             </CardContent>
             <CardFooter className="bg-gray-50 border-t flex justify-end">
               <Button

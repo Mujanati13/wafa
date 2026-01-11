@@ -63,6 +63,14 @@ import {
   CloudOff
 } from "lucide-react";
 import { userService } from "@/services/userService";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -198,6 +206,7 @@ const ExamPage = () => {
   const [userPlan, setUserPlan] = useState("Free");
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showFontPopup, setShowFontPopup] = useState(false);
+  const [showMobileProfileDropdown, setShowMobileProfileDropdown] = useState(false);
 
   // Swipe detection threshold
   const minSwipeDistance = 50;
@@ -650,17 +659,6 @@ const ExamPage = () => {
           ...prev,
           points: totalPoints
         }));
-      }
-
-      // Show toast based on result
-      if (isCorrect) {
-        toast.success(`Correct! +${pointsAwarded} points`, {
-          icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-        });
-      } else {
-        toast.error("Incorrect", {
-          icon: <XCircle className="h-4 w-4 text-red-500" />
-        });
       }
 
       // Save answer for persistence
@@ -1158,8 +1156,121 @@ const ExamPage = () => {
               <CheckCircle2 className="h-3 w-3" />
               {verifiedCount}
             </span>
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-semibold">
-              {userProfile?.name?.charAt(0) || userProfile?.firstName?.charAt(0) || 'U'}
+            
+            {/* Avatar with Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMobileProfileDropdown(!showMobileProfileDropdown)}
+                className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-semibold hover:from-purple-600 hover:to-indigo-700 transition-colors"
+              >
+                M
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              <AnimatePresence>
+                {showMobileProfileDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowMobileProfileDropdown(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border overflow-hidden z-50"
+                    >
+                      {/* User info header */}
+                      <div className="p-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {userProfile?.name || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'Utilisateur'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{userProfile?.email || ''}</p>
+                        
+                        {/* Level Bar */}
+                        {userLevelInfo && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-[10px] mb-1">
+                              <span className="font-medium text-purple-600">Level {userLevelInfo.level}</span>
+                              <span className="text-gray-500">{userLevelInfo.name}</span>
+                            </div>
+                            <div className="h-1.5 bg-purple-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all"
+                                style={{ width: `${userLevelInfo.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stats */}
+                      <div className="p-2 border-b">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1 text-xs">
+                              <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                              <span className="font-semibold">{userProfile?.points || 0}</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-xs">
+                              <Star className="h-3.5 w-3.5 text-amber-500" />
+                              <span className="font-semibold">{userProfile?.stars || 0}</span>
+                            </span>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                            {userProfile?.points || 0} pts
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="p-1.5">
+                        <button
+                          onClick={() => {
+                            setShowMobileProfileDropdown(false);
+                            navigate('/dashboard/profile');
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                        >
+                          <User className="h-3.5 w-3.5 text-gray-500" />
+                          <span className="text-xs">Profile</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowMobileProfileDropdown(false);
+                            navigate('/dashboard/settings');
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                        >
+                          <Settings className="h-3.5 w-3.5 text-gray-500" />
+                          <span className="text-xs">Settings</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowMobileProfileDropdown(false);
+                            navigate('/dashboard/subscription');
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                        >
+                          <CreditCard className="h-3.5 w-3.5 text-gray-500" />
+                          <span className="text-xs">Subscription</span>
+                        </button>
+                        <hr className="my-1.5" />
+                        <button
+                          onClick={() => {
+                            setShowMobileProfileDropdown(false);
+                            // Logout logic would go here
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
+                        >
+                          <LogOut className="h-3.5 w-3.5" />
+                          <span className="text-xs">Se déconnecter</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -1261,13 +1372,6 @@ const ExamPage = () => {
                   </Button>
                 </div>
               </div>
-
-              {/* YA Button (Font icon) */}
-              <button
-                className="h-9 w-9 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center text-sm font-bold"
-              >
-                YA
-              </button>
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -1712,149 +1816,259 @@ const ExamPage = () => {
                         </div>
                       </div>
                       
-                      {/* Right: Compact action buttons */}
+                      {/* Right: Desktop action buttons + Mobile 3-dot menu */}
                       <div className="flex items-center gap-0.5 shrink-0">
-                        {/* Playlist */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePremiumFeature('Playlist', () => setShowPlaylistModal(true))}
-                          className={cn(
-                            "h-6 w-6 sm:h-8 sm:w-8",
-                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
-                          )}
-                          disabled={!hasPremiumAnnualAccess}
-                          onMouseEnter={(e) => {
-                            if (hasPremiumAnnualAccess) {
-                              e.currentTarget.style.color = moduleColor;
-                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (hasPremiumAnnualAccess) {
-                              e.currentTarget.style.color = '';
-                              e.currentTarget.style.backgroundColor = '';
-                            }
-                          }}
-                          title={hasPremiumAnnualAccess ? "Playlist" : "Playlist (Premium Annuel requis)"}
-                        >
-                          <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        {/* Résumés */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowResumesModal(true)}
-                          className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = moduleColor;
-                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '';
-                            e.currentTarget.style.backgroundColor = '';
-                          }}
-                          title="Résumés"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        {/* Community */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
-                          className={cn(
-                            "h-6 w-6 sm:h-8 sm:w-8",
-                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
-                          )}
-                          disabled={!hasPremiumAnnualAccess}
-                          onMouseEnter={(e) => {
-                            if (hasPremiumAnnualAccess) {
-                              e.currentTarget.style.color = moduleColor;
-                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (hasPremiumAnnualAccess) {
-                              e.currentTarget.style.color = '';
-                              e.currentTarget.style.backgroundColor = '';
-                            }
-                          }}
-                          title={hasPremiumAnnualAccess ? "Communauté" : "Communauté (Premium Annuel requis)"}
-                        >
-                          <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        {/* Images */}
-                        {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                        {/* DESKTOP: Show all buttons */}
+                        <div className="hidden sm:flex items-center gap-0.5">
+                          {/* Playlist */}
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setShowImageGallery(true)}
-                            className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8 lg:flex"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = moduleColor;
-                            e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = '';
-                            e.currentTarget.style.backgroundColor = '';
-                          }}
-                            title="Images"
+                            onClick={() => handlePremiumFeature('Playlist', () => setShowPlaylistModal(true))}
+                            className={cn(
+                              "h-6 w-6 sm:h-8 sm:w-8",
+                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                            )}
+                            disabled={!hasPremiumAnnualAccess}
+                            onMouseEnter={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = moduleColor;
+                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = '';
+                                e.currentTarget.style.backgroundColor = '';
+                              }
+                            }}
+                            title={hasPremiumAnnualAccess ? "Playlist" : "Playlist (Premium Annuel requis)"}
                           >
-                            <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePremiumFeature('Notes', () => setShowNoteModal(true))}
-                          className={cn(
-                            "h-6 w-6 sm:h-8 sm:w-8",
-                            hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
-                          )}
-                          disabled={!hasPremiumAnnualAccess}
-                          onMouseEnter={(e) => {
-                            if (hasPremiumAnnualAccess) {
+                          {/* Résumés */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowResumesModal(true)}
+                            className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
+                            onMouseEnter={(e) => {
                               e.currentTarget.style.color = moduleColor;
                               e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (hasPremiumAnnualAccess) {
+                            }}
+                            onMouseLeave={(e) => {
                               e.currentTarget.style.color = '';
                               e.currentTarget.style.backgroundColor = '';
-                            }
-                          }}
-                          title={hasPremiumAnnualAccess ? "Note" : "Note (Premium Annuel requis)"}
-                        >
-                          <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowReportModal(true)}
-                          className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-6 w-6 sm:h-8 sm:w-8 hidden sm:flex"
-                          title="Signaler"
-                        >
-                          <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleFlag(currentQuestion)}
-                          className={cn(
-                            "transition-all h-6 w-6 sm:h-8 sm:w-8",
-                            flaggedQuestions.has(currentQuestion)
-                              ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-                              : "text-gray-400 hover:text-gray-600"
+                            }}
+                            title="Résumés"
+                          >
+                            <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          {/* Community */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
+                            className={cn(
+                              "h-6 w-6 sm:h-8 sm:w-8",
+                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                            )}
+                            disabled={!hasPremiumAnnualAccess}
+                            onMouseEnter={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = moduleColor;
+                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = '';
+                                e.currentTarget.style.backgroundColor = '';
+                              }
+                            }}
+                            title={hasPremiumAnnualAccess ? "Communauté" : "Communauté (Premium Annuel requis)"}
+                          >
+                            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          {/* Images */}
+                          {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowImageGallery(true)}
+                              className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = moduleColor;
+                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '';
+                                e.currentTarget.style.backgroundColor = '';
+                              }}
+                              title="Images"
+                            >
+                              <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
                           )}
-                          title="Surligner"
-                        >
-                          <Flag className={cn(
-                            "h-3 w-3 sm:h-4 sm:w-4 transition-transform",
-                            flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
-                          )} />
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePremiumFeature('Notes', () => setShowNoteModal(true))}
+                            className={cn(
+                              "h-6 w-6 sm:h-8 sm:w-8",
+                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                            )}
+                            disabled={!hasPremiumAnnualAccess}
+                            onMouseEnter={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = moduleColor;
+                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (hasPremiumAnnualAccess) {
+                                e.currentTarget.style.color = '';
+                                e.currentTarget.style.backgroundColor = '';
+                              }
+                            }}
+                            title={hasPremiumAnnualAccess ? "Note" : "Note (Premium Annuel requis)"}
+                          >
+                            <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowReportModal(true)}
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-6 w-6 sm:h-8 sm:w-8"
+                            title="Signaler"
+                          >
+                            <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleFlag(currentQuestion)}
+                            className={cn(
+                              "transition-all h-6 w-6 sm:h-8 sm:w-8",
+                              flaggedQuestions.has(currentQuestion)
+                                ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                : "text-gray-400 hover:text-gray-600"
+                            )}
+                            title="Surligner"
+                          >
+                            <Flag className={cn(
+                              "h-3 w-3 sm:h-4 sm:w-4 transition-transform",
+                              flaggedQuestions.has(currentQuestion) && "fill-current scale-110"
+                            )} />
+                          </Button>
+                        </div>
+
+                        {/* MOBILE: 3-dot menu */}
+                        <div className="sm:hidden flex items-center">
+                          <DropdownMenu open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-gray-400"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              {/* Playlist */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  handlePremiumFeature('Playlist', () => setShowPlaylistModal(true));
+                                  setShowMobileMenu(false);
+                                }}
+                                disabled={!hasPremiumAnnualAccess}
+                              >
+                                <ListMusic className="h-4 w-4 mr-2" />
+                                <span>Playlist</span>
+                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
+                              </DropdownMenuItem>
+
+                              {/* Résumés */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setShowResumesModal(true);
+                                  setShowMobileMenu(false);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                <span>Résumés</span>
+                              </DropdownMenuItem>
+
+                              {/* Community */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  handlePremiumFeature('Communauté', () => setShowCommunityModal(true));
+                                  setShowMobileMenu(false);
+                                }}
+                                disabled={!hasPremiumAnnualAccess}
+                              >
+                                <Users className="h-4 w-4 mr-2" />
+                                <span>Communauté</span>
+                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
+                              </DropdownMenuItem>
+
+                              {/* Images */}
+                              {currentQuestionData.images && currentQuestionData.images.length > 0 && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setShowImageGallery(true);
+                                      setShowMobileMenu(false);
+                                    }}
+                                  >
+                                    <Image className="h-4 w-4 mr-2" />
+                                    <span>Images ({currentQuestionData.images.length})</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {/* Notes */}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  handlePremiumFeature('Notes', () => setShowNoteModal(true));
+                                  setShowMobileMenu(false);
+                                }}
+                                disabled={!hasPremiumAnnualAccess}
+                              >
+                                <NotebookPen className="h-4 w-4 mr-2" />
+                                <span>Notes</span>
+                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
+                              </DropdownMenuItem>
+
+                              {/* Report & Flag */}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setShowReportModal(true);
+                                  setShowMobileMenu(false);
+                                }}
+                              >
+                                <TriangleAlert className="h-4 w-4 mr-2 text-red-600" />
+                                <span>Signaler</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  toggleFlag(currentQuestion);
+                                  setShowMobileMenu(false);
+                                }}
+                              >
+                                <Flag className={cn(
+                                  "h-4 w-4 mr-2 transition-all",
+                                  flaggedQuestions.has(currentQuestion) && "fill-current text-amber-500"
+                                )} />
+                                <span>{flaggedQuestions.has(currentQuestion) ? "Surligner (activé)" : "Surligner"}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1976,6 +2190,110 @@ const ExamPage = () => {
                           </motion.button>
                         );
                       })}
+                    </div>
+
+                    {/* Action Buttons - Below Answer Options */}
+                    <div className="pt-4 border-t">
+                      {!isQuestionVerified && !showResults ? (
+                        /* Before Verification: Show Vérifier + Vue d'ensemble */
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={handleVerifyQuestion}
+                            disabled={!selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0}
+                            className="flex-1 gap-2 text-white"
+                            style={{
+                              background: !selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0
+                                ? '#d1d5db'
+                                : `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                            }}
+                          >
+                            <Check className="h-4 w-4" />
+                            Vérifier
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowVueEnsemble(true)}
+                            className="gap-2"
+                          >
+                            <LayoutGrid className="h-4 w-4" />
+                            <span className="hidden sm:inline">Vue d'ensemble</span>
+                          </Button>
+                        </div>
+                      ) : (
+                        /* After Verification: Show result + action buttons */
+                        <div className="space-y-3">
+                          {/* Result Status */}
+                          <div className="flex items-center justify-center gap-2 p-3 rounded-lg" style={{
+                            backgroundColor: (() => {
+                              const selected = selectedAnswers[currentQuestion] || [];
+                              const correctIndices = currentQuestionData.options
+                                .map((opt, idx) => opt.isCorrect ? idx : null)
+                                .filter(idx => idx !== null);
+                              const isCorrect = selected.length === correctIndices.length &&
+                                selected.every(s => correctIndices.includes(s));
+                              return isCorrect ? '#dcfce7' : '#fee2e2';
+                            })()
+                          }}>
+                            {(() => {
+                              const selected = selectedAnswers[currentQuestion] || [];
+                              const correctIndices = currentQuestionData.options
+                                .map((opt, idx) => opt.isCorrect ? idx : null)
+                                .filter(idx => idx !== null);
+                              const isCorrect = selected.length === correctIndices.length &&
+                                selected.every(s => correctIndices.includes(s));
+                              
+                              return isCorrect ? (
+                                <>
+                                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                                  <span className="font-semibold text-emerald-700">Correct</span>
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-5 w-5 text-red-600" />
+                                  <span className="font-semibold text-red-700">Incorrect</span>
+                                </>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Action Buttons Grid */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={handleResetQuestion}
+                              className="gap-2 border-gray-300 hover:bg-gray-50"
+                            >
+                              <RefreshCcw className="h-4 w-4" />
+                              Ressayer
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowExplanation(true)}
+                              className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+                            >
+                              <Lightbulb className="h-4 w-4" />
+                              Explication
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
+                              disabled={!hasPremiumAnnualAccess}
+                              className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
+                            >
+                              <Users className="h-4 w-4" />
+                              Community
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowVueEnsemble(true)}
+                              className="gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+                            >
+                              <LayoutGrid className="h-4 w-4" />
+                              Vue d'ensemble
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -2276,171 +2594,6 @@ const ExamPage = () => {
                   >
                     <span className="flex items-center justify-center gap-2">
                       <Send className="h-5 w-5" />
-                      Terminer l'examen
-                    </span>
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ============== MOBILE MENU DRAWER ============== */}
-      <AnimatePresence>
-        {showMobileMenu && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            onClick={() => setShowMobileMenu(false)}
-          >
-            <motion.div
-              initial={{ y: '-100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute top-0 left-0 right-0 bg-white rounded-b-3xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <h3 className="font-bold text-lg">Options</h3>
-                <button
-                  onClick={() => setShowMobileMenu(false)}
-                  className="p-2 rounded-full bg-gray-100"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Menu items */}
-              <div className="p-4 space-y-2">
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowResumesModal(true);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Résumés & Cours</p>
-                    <p className="text-xs text-gray-500">Consultez les ressources</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    handlePremiumFeature('Communauté', () => setShowCommunityModal(true));
-                  }}
-                  disabled={!hasPremiumAnnualAccess}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-3 rounded-xl transition-colors",
-                    hasPremiumAnnualAccess 
-                      ? "bg-gray-50 hover:bg-gray-100" 
-                      : "bg-gray-50 opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    hasPremiumAnnualAccess ? "bg-purple-100" : "bg-gray-200"
-                  )}>
-                    <Users className={cn(
-                      "h-5 w-5",
-                      hasPremiumAnnualAccess ? "text-purple-600" : "text-gray-400"
-                    )} />
-                  </div>
-                  <div className="text-left flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-900">Communauté</p>
-                      {!hasPremiumAnnualAccess && (
-                        <Badge variant="outline" className="text-xs">Premium Annuel</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500">Discussions et aide</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowImageGallery(true);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
-                    <Image className="h-5 w-5 text-pink-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Galerie d'images</p>
-                    <p className="text-xs text-gray-500">Toutes les images de l'examen</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowVueEnsemble(true);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <LayoutGrid className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Vue d'ensemble</p>
-                    <p className="text-xs text-gray-500">Toutes les questions et réponses</p>
-                  </div>
-                </button>
-
-                {/* Font size control */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-600 font-bold text-sm">Aa</span>
-                    </div>
-                    <span className="font-medium text-gray-900">Taille du texte</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white rounded-lg border p-1">
-                    <button
-                      onClick={() => adjustFontSize(-2)}
-                      disabled={fontSize <= 12}
-                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="px-2 text-sm font-medium">{fontSize}</span>
-                    <button
-                      onClick={() => adjustFontSize(2)}
-                      disabled={fontSize >= 24}
-                      className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit button */}
-              {!showResults && (
-                <div className="p-4 border-t">
-                  <button
-                    onClick={() => {
-                      setShowMobileMenu(false);
-                      setShowConfirmSubmit(true);
-                    }}
-                    className="w-full py-3 rounded-xl font-semibold text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
-                    }}
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <CheckCircle className="h-5 w-5" />
                       Terminer l'examen
                     </span>
                   </button>

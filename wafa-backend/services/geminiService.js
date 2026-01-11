@@ -1,5 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
+import fs from 'fs';
+import { createRequire } from 'module';
+
+// Import CommonJS PDF helper
+const require = createRequire(import.meta.url);
+const { extractPdfText } = require('./pdfHelper.cjs');
 
 dotenv.config();
 
@@ -15,19 +21,41 @@ if (GEMINI_API_KEY) {
  * Generate explanation for a question using Google Gemini AI
  * @param {Object} questionData - Question data including text and options
  * @param {string} language - Language for explanation (default: 'fr')
+ * @param {string} customPrompt - Optional custom prompt to override default
+ * @param {string} contextData - Optional additional context (e.g., from PDF)
  * @returns {Promise<string>} - Generated explanation text
  */
-export const generateExplanation = async (questionData, language = 'fr') => {
+export const generateExplanation = async (questionData, language = 'fr', customPrompt = null, contextData = null) => {
     if (!GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY is not configured in environment variables');
     }
 
     const { text, options, correctAnswers } = questionData;
 
-    // Build the prompt
-    const prompt = language === 'fr' 
-        ? buildFrenchPrompt(text, options, correctAnswers)
-        : buildEnglishPrompt(text, options, correctAnswers);
+    // Build the prompt - use custom if provided, otherwise use default
+    let prompt;
+    if (customPrompt) {
+        // Use custom prompt with question data injected
+        const optionsText = options.map((opt, idx) => {
+            const letter = String.fromCharCode(65 + idx);
+            const isCorrect = correctAnswers.includes(idx) ? ' ✓' : '';
+            return `${letter}. ${opt.text}${isCorrect}`;
+        }).join('\n');
+        
+        prompt = customPrompt
+            .replace('{questionText}', text)
+            .replace('{options}', optionsText)
+            .replace('{correctAnswers}', correctAnswers.map(i => String.fromCharCode(65 + i)).join(', '));
+        
+        // Add context data if provided
+        if (contextData) {
+            prompt = `Context from uploaded documents:\n${contextData}\n\n${prompt}`;
+        }
+    } else {
+        prompt = language === 'fr' 
+            ? buildFrenchPrompt(text, options, correctAnswers, contextData)
+            : buildEnglishPrompt(text, options, correctAnswers, contextData);
+    }
 
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
@@ -51,14 +79,20 @@ export const generateExplanation = async (questionData, language = 'fr') => {
 /**
  * Build French prompt for Gemini
  */
-function buildFrenchPrompt(questionText, options, correctAnswers) {
+function buildFrenchPrompt(questionText, options, correctAnswers, contextData = null) {
     const optionsText = options.map((opt, idx) => {
         const letter = String.fromCharCode(65 + idx); // A, B, C, D...
         const isCorrect = correctAnswers.includes(idx) ? ' ✓' : '';
         return `${letter}. ${opt.text}${isCorrect}`;
     }).join('\n');
 
-    return `Tu es un assistant médical expert qui aide les étudiants en médecine à comprendre les questions d'examen.
+    let basePrompt = `Tu es un assistant médical expert qui aide les étudiants en médecine à comprendre les questions d'examen.`;
+    
+    if (contextData) {
+        basePrompt += `\n\nContexte additionnel fourni:\n${contextData}\n`;
+    }
+    
+    return `${basePrompt}
 
 Question:
 ${questionText}
@@ -72,6 +106,7 @@ Instructions:
 3. Fournis un contexte médical pertinent
 4. Utilise un langage clair et pédagogique
 5. Structure ta réponse avec des paragraphes et des points clés
+${contextData ? '6. Utilise le contexte fourni ci-dessus pour enrichir ton explication' : ''}
 
 Génère une explication complète et détaillée:`;
 }
@@ -79,14 +114,20 @@ Génère une explication complète et détaillée:`;
 /**
  * Build English prompt for Gemini
  */
-function buildEnglishPrompt(questionText, options, correctAnswers) {
+function buildEnglishPrompt(questionText, options, correctAnswers, contextData = null) {
     const optionsText = options.map((opt, idx) => {
         const letter = String.fromCharCode(65 + idx);
         const isCorrect = correctAnswers.includes(idx) ? ' ✓' : '';
         return `${letter}. ${opt.text}${isCorrect}`;
     }).join('\n');
 
-    return `You are an expert medical assistant helping medical students understand exam questions.
+    let basePrompt = `You are an expert medical assistant helping medical students understand exam questions.`;
+    
+    if (contextData) {
+        basePrompt += `\n\nAdditional context provided:\n${contextData}\n`;
+    }
+    
+    return `${basePrompt}
 
 Question:
 ${questionText}
@@ -100,6 +141,7 @@ Instructions:
 3. Provide relevant medical context
 4. Use clear and pedagogical language
 5. Structure your response with paragraphs and key points
+${contextData ? '6. Use the provided context above to enrich your explanation' : ''}
 
 Generate a complete and detailed explanation:`;
 }
@@ -108,14 +150,16 @@ Generate a complete and detailed explanation:`;
  * Generate multiple explanations in batch
  * @param {Array} questions - Array of question objects
  * @param {string} language - Language for explanations
+ * @param {string} customPrompt - Optional custom prompt
+ * @param {string} contextData - Optional context data
  * @returns {Promise<Array>} - Array of generated explanations
  */
-export const generateBatchExplanations = async (questions, language = 'fr') => {
+export const generateBatchExplanations = async (questions, language = 'fr', customPrompt = null, contextData = null) => {
     const results = [];
     
     for (const question of questions) {
         try {
-            const explanation = await generateExplanation(question, language);
+            const explanation = await generateExplanation(question, language, customPrompt, contextData);
             results.push({
                 questionId: question._id,
                 success: true,
@@ -160,8 +204,24 @@ export const testGeminiConnection = async () => {
     }
 };
 
+/**
+ * Extract text content from PDF file
+ * @param {string} pdfPath - Path to PDF file
+ * @returns {Promise<string>} - Extracted text content
+ */
+export const extractTextFromPDF = async (pdfPath) => {
+    try {
+        const text = await extractPdfText(pdfPath);
+        return text;
+    } catch (error) {
+        console.error('Error extracting text from PDF:', error);
+        throw new Error(`Failed to extract PDF text: ${error.message}`);
+    }
+};
+
 export default {
     generateExplanation,
     generateBatchExplanations,
-    testGeminiConnection
+    testGeminiConnection,
+    extractTextFromPDF
 };

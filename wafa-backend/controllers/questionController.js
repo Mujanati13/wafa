@@ -565,7 +565,7 @@ export const questionController = {
             });
         }
 
-        const { examId, moduleId, qcmBanqueId, type } = req.body;
+        const { examId, moduleId, qcmBanqueId, type, sessionName } = req.body;
 
         // Determine target ID based on type
         let targetId = examId || qcmBanqueId;
@@ -654,7 +654,7 @@ export const questionController = {
                 const questionData = {
                     text: questionText.trim(),
                     options,
-                    sessionLabel: row['Session'] || row['session'] || '',
+                    sessionLabel: sessionName || row['Session'] || row['session'] || '',
                     note: row['Note'] || row['note'] || '',
                     images: []
                 };
