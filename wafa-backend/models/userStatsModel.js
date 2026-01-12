@@ -76,6 +76,11 @@ const userStatsSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    // Normal points (from correct answers: +1 pt each)
+    normalPoints: {
+      type: Number,
+      default: 0
+    },
     // Blue points (from approved explanations: +40 pts each)
     bluePoints: {
       type: Number,
@@ -96,6 +101,11 @@ const userStatsSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    // Wrong answers count
+    wrongAnswers: {
+      type: Number,
+      default: 0
+    },
     // Module-specific progress
     moduleProgress: [
       {
@@ -109,6 +119,10 @@ const userStatsSchema = new mongoose.Schema(
           default: 0,
         },
         correctAnswers: {
+          type: Number,
+          default: 0,
+        },
+        wrongAnswers: {
           type: Number,
           default: 0,
         },

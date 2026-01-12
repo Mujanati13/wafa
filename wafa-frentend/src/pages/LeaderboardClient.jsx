@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter } from "lucide-react";
+import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { userService } from "@/services/userService";
@@ -68,6 +69,7 @@ function getUserLevel(points) {
 
 const LeaderboardClient = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [userContext, setUserContext] = useState(null);
@@ -82,12 +84,27 @@ const LeaderboardClient = () => {
       try {
         const userData = await userService.getUserProfile();
         setUser(userData);
+        
+        // Check if user has premium access - redirect free users
+        const userPlan = userData?.plan || 'Free';
+        if (userPlan === 'Free') {
+          toast.error('Cette fonctionnalité est réservée aux abonnés Premium', {
+            description: 'Mettez à niveau votre plan pour accéder au classement.',
+            action: {
+              label: 'Voir les plans',
+              onClick: () => navigate('/dashboard/subscription')
+            },
+            duration: 5000,
+          });
+          navigate('/dashboard/subscription');
+          return;
+        }
       } catch (error) {
         console.error('Error fetching user:', error);
       }
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -666,9 +683,9 @@ const LeaderboardClient = () => {
           <CardTitle className="text-lg">Système de points</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Réponse correcte: <span className="font-semibold text-green-600">+2 points</span></p>
+          <p>• Réponse correcte: <span className="font-semibold text-green-600">+1 point</span></p>
           <p>• Réponse incorrecte: <span className="font-semibold text-gray-500">+0 point</span></p>
-          <p>• Réessayer: <span className="font-semibold text-red-600">-1 point</span></p>
+          <p>• Réessayer: <span className="font-semibold text-gray-500">0 point</span></p>
           <p>• Report approuvé: <span className="font-semibold text-green-600">+1 point vert (= 30 pts)</span></p>
           <p>• Explication approuvée: <span className="font-semibold text-blue-600">+1 point bleu (= 40 pts)</span></p>
           <p>• 1 niveau = 50 points</p>

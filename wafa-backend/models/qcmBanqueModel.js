@@ -22,4 +22,7 @@ const qcmBanqueSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Add index for moduleId to improve query performance
+qcmBanqueSchema.index({ moduleId: 1 });
+
 export default mongoose.model("QCMBanque", qcmBanqueSchema);

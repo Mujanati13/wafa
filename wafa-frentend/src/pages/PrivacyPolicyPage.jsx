@@ -114,7 +114,7 @@ Vous pouvez gérer vos préférences de cookies dans les paramètres de votre na
           <Card className="mb-8">
             <CardContent className="pt-6">
               <p className="text-gray-700 leading-relaxed">
-                Chez <strong>WAFA</strong>, nous accordons une importance primordiale à la protection de vos données 
+                Chez <strong>Imrs-Qcm</strong>, nous accordons une importance primordiale à la protection de vos données 
                 personnelles. Cette politique de confidentialité explique comment nous collectons, utilisons, 
                 stockons et protégeons vos informations lorsque vous utilisez notre plateforme d'apprentissage 
                 médical.
@@ -162,23 +162,6 @@ Vous pouvez gérer vos préférences de cookies dans les paramètres de votre na
           transition={{ delay: 0.5 }}
           className="mt-8"
         >
-          <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Mail className="w-6 h-6 mt-1" />
-                <div>
-                  <h3 className="font-bold text-lg mb-2">Des questions ?</h3>
-                  <p className="text-blue-100">
-                    Si vous avez des questions concernant cette politique de confidentialité ou 
-                    vos données personnelles, contactez notre équipe à{' '}
-                    <a href="mailto:privacy@wafa.com" className="underline font-semibold text-white">
-                      privacy@wafa.com
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </motion.div>
 
         {/* Footer */}
@@ -188,7 +171,7 @@ Vous pouvez gérer vos préférences de cookies dans les paramètres de votre na
           transition={{ delay: 0.6 }}
           className="text-center text-sm text-gray-500 mt-8"
         >
-          © {new Date().getFullYear()} WAFA. Tous droits réservés.
+          © {new Date().getFullYear()} Imrs-Qcm. Tous droits réservés.
         </motion.p>
       </div>
     </div>

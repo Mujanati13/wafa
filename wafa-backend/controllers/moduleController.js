@@ -161,20 +161,20 @@ export const moduleController = {
             });
         }
 
-        // Get all ExamParYears for this module
-        const examParYears = await examParYearModel.find({ moduleId: id }).lean();
+        // Get all ExamParYears for this module - only select necessary fields
+        const examParYears = await examParYearModel.find({ moduleId: id })
+            .select('name year imageUrl infoText')
+            .lean();
         const examParYearIds = examParYears.map(epy => epy._id);
 
-        // Get count of questions for these examParYears
-        const questions = await questionModule.find({ examId: { $in: examParYearIds } }).lean();
-        const questionCount = questions.length;
+        // Only count questions, don't fetch them all (huge performance improvement)
+        const questionCount = await questionModule.countDocuments({ examId: { $in: examParYearIds } });
 
         res.status(200).json({
             success: true,
             data: {
                 ...module,
                 exams: examParYears,
-                questions,
                 totalQuestions: questionCount
             }
         });

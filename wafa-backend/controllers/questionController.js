@@ -90,20 +90,13 @@ export const questionController = {
 
     getByExamId: asyncHandler(async (req, res) => {
         const { examId } = req.params;
+        // Use lean() for better performance, skip populate unless needed by frontend
         const questions = await QuestionModel.find({ 
             $or: [{ examId }, { qcmBanqueId: examId }] 
         })
-            .populate({
-                path: 'examId',
-                select: 'name year moduleId',
-                populate: { path: 'moduleId', select: 'name semester' }
-            })
-            .populate({
-                path: 'qcmBanqueId',
-                select: 'name moduleId',
-                populate: { path: 'moduleId', select: 'name semester' }
-            })
-            .sort({ createdAt: -1 });
+            .select('text options note images sessionLabel questionNumber')
+            .lean()
+            .sort({ questionNumber: 1, createdAt: 1 });
         res.status(200).json({ success: true, data: questions });
     }),
 
@@ -818,12 +811,12 @@ export const questionController = {
         let pointType = "normal";
 
         if (isRetry) {
-            // -1 point for retry
-            pointsAwarded = -1;
+            // 0 points for retry (no penalty)
+            pointsAwarded = 0;
             pointType = "normal";
         } else if (isCorrect) {
-            // +2 points for correct answer
-            pointsAwarded = 2;
+            // +1 point for correct answer
+            pointsAwarded = 1;
             pointType = "normal";
         }
         // 0 points for wrong answer (no point record needed)
@@ -857,7 +850,7 @@ export const questionController = {
             );
         }
 
-        // Get updated user points from UserStatsModel
+        // Get updated user stats (don't update moduleProgress here - let saveAnswer handle it)
         const UserStatsModel = (await import("../models/userStatsModel.js")).default;
         const userStats = await UserStatsModel.findOne({ userId });
 

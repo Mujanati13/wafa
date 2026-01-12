@@ -42,13 +42,21 @@ export const examCourseController = {
             ];
         }
 
+        // Use lean() and only select necessary fields for better performance
         const courses = await ExamCourse.find(filter)
-            .populate("moduleId", "name")
+            .select('name moduleId category subCategory description difficulty color imageUrl status totalQuestions')
+            .lean()
             .sort({ createdAt: -1 });
+
+        // Add question count from totalQuestions field (updated by pre-save hook)
+        const coursesWithCount = courses.map(course => ({
+            ...course,
+            questionCount: course.totalQuestions || 0
+        }));
 
         res.status(200).json({
             success: true,
-            data: courses,
+            data: coursesWithCount,
         });
     }),
 

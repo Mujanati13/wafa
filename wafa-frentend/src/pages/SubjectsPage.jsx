@@ -178,6 +178,7 @@ const SubjectsPage = () => {
   const [module, setModule] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [userSemesters, setUserSemesters] = useState([]);
   const [userPlan, setUserPlan] = useState("Free");
   const [userFreeModules, setUserFreeModules] = useState([]);
@@ -265,20 +266,16 @@ const SubjectsPage = () => {
     const fetchData = async (id) => {
       setIsLoading(true);
       try {
+        // First, fetch only module data to check access quickly
         const { data } = await moduleService.getModuleById(id);
         const moduleData = data?.data;
 
-        if (!moduleData) return;
-
-        // Check access with module name
-        if (!hasAccessToSemester(moduleData.semester, moduleData.name)) {
-          setHasAccess(false);
-          setModule({ name: moduleData.name, semester: moduleData.semester });
+        if (!moduleData) {
           setIsLoading(false);
           return;
         }
-        setHasAccess(true);
 
+        // Set module data immediately
         setModule({
           id: moduleData._id,
           name: moduleData.name,
@@ -286,14 +283,24 @@ const SubjectsPage = () => {
           color: moduleData.color,
         });
 
-        // Fetch exam-courses for this module from API
-        try {
-          // Fetch from all 3 sources: exam-courses, exams (par années), and qcm-banque
-          const [examCoursesResponse, examsResponse, qcmResponse] = await Promise.all([
-            api.get(`/exam-courses?moduleId=${id}`),
-            api.get(`/exams/all`).catch(() => ({ data: { data: [] } })),
-            api.get(`/qcm-banque/all`).catch(() => ({ data: { data: [] } }))
-          ]);
+        // Check access with module name
+        if (!hasAccessToSemester(moduleData.semester, moduleData.name)) {
+          setHasAccess(false);
+          setCheckingAccess(false);
+          return;
+        }
+        setHasAccess(true);
+        setCheckingAccess(false);
+
+        // Show module data while loading exams
+        setIsLoading(false);
+
+        // Fetch exams in parallel but don't block the UI
+        Promise.all([
+          api.get(`/exam-courses?moduleId=${id}`),
+          api.get(`/exams/all`).catch(() => ({ data: { data: [] } })),
+          api.get(`/qcm-banque/all`).catch(() => ({ data: { data: [] } }))
+        ]).then(([examCoursesResponse, examsResponse, qcmResponse]) => {
 
           const examCourses = examCoursesResponse.data?.data || [];
           const allExams = examsResponse.data?.data || [];
@@ -378,9 +385,22 @@ const SubjectsPage = () => {
           const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
           const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
 
-          // Fetch user statistics for each exam to get progress
-          try {
-            const userStatsResponse = await api.get('/users/my-stats');
+          // Set exams immediately to show UI faster
+          setExamsParYear(yearExams);
+          setExamsParCours(courseExams);
+          setQcmBanque(qcmExams);
+
+          // Extract unique categories
+          const uniqueCategories = [...new Set(
+            courseExams.map(exam => exam.category).filter(Boolean)
+          )];
+          setCategories([
+            { id: "all", name: t('dashboard:all_categories') || "Toutes les catégories" },
+            ...uniqueCategories.map(cat => ({ id: cat, name: cat }))
+          ]);
+
+          // Fetch user statistics asynchronously without blocking UI
+          api.get('/users/my-stats').then(async (userStatsResponse) => {
             const userStats = userStatsResponse.data?.data;
             
             // Check if user has answered questions (not just empty object)
@@ -431,25 +451,13 @@ const SubjectsPage = () => {
               setExamsParYear(updatedYearExams);
               setExamsParCours(updatedCourseExams);
               setQcmBanque(updatedQcmExams);
-            } else {
-              setExamsParYear(yearExams);
-              setExamsParCours(courseExams);
-              setQcmBanque(qcmExams);
             }
-          } catch (statsError) {
+          }).catch(statsError => {
             console.error('Error fetching user stats:', statsError);
-            setExamsParYear(yearExams);
-            setExamsParCours(courseExams);
-            setQcmBanque(qcmExams);
-          }
+            // Keep the initial exams that were already set
+          });
 
-          // Extract unique categories from course exams
-          const uniqueCategories = [...new Set(courseExams.map(e => e.category))];
-          setCategories([
-            { id: "all", name: t('common:all', 'Tous') },
-            ...uniqueCategories.map(cat => ({ id: cat, name: cat }))
-          ]);
-        } catch (examError) {
+        }).catch(examError => {
           console.error("Error fetching exam-courses:", examError);
           // Fallback to module.exams if exam-courses API fails
           const allExams = (moduleData.exams || []).map((e) => ({
@@ -462,23 +470,21 @@ const SubjectsPage = () => {
           setExamsParYear(allExams);
           setExamsParCours([]);
           setQcmBanque([]);
-        }
+          setIsLoading(false);
+        });
 
-        // Fetch module stats for the current user
-        try {
-          const statsResponse = await api.get(`/modules/${id}/stats`);
+        // Fetch module stats in background (non-critical)
+        api.get(`/modules/${id}/stats`).then(statsResponse => {
           if (statsResponse.data?.success) {
             setModuleStats(statsResponse.data.data);
           }
-        } catch (statsError) {
+        }).catch(statsError => {
           console.error("Error fetching module stats:", statsError);
-          // Continue without stats - not critical
-        }
+        });
 
       } catch (error) {
         console.error(error);
         toast.error(t('dashboard:error_loading_module'));
-      } finally {
         setIsLoading(false);
       }
     };
@@ -562,7 +568,7 @@ const SubjectsPage = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!hasAccess && !checkingAccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">

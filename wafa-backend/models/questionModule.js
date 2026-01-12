@@ -89,6 +89,12 @@ const questionSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Add indexes for frequently queried fields to improve performance
+questionSchema.index({ examId: 1 });
+questionSchema.index({ qcmBanqueId: 1 });
+questionSchema.index({ examId: 1, questionNumber: 1 });
+questionSchema.index({ qcmBanqueId: 1, questionNumber: 1 });
+
 export default mongoose.model("Question", questionSchema);
 
 

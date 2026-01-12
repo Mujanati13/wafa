@@ -66,29 +66,33 @@ export const examController = {
     }),
     getAll: asyncHandler(async (req, res) => {
         // Get all exams and populate related module name and color
-        const exams = await examModel.find().populate('moduleId', 'name color').lean();
-        // For each exam, get its related questions
-        const examIds = exams.map(e => e._id);
-        // Get questions sorted by questionNumber
-        const questions = await QuestionModel.find({ examId: { $in: examIds } })
-            .sort({ questionNumber: 1, createdAt: 1 })
+        const exams = await examModel.find()
+            .select('name moduleId year imageUrl infoText courseCategoryId')
+            .populate('moduleId', 'name color')
             .lean();
-
-        // Group questions by examId
-        const questionsByExam = {};
-        questions.forEach(q => {
-            const key = q.examId?.toString();
-            if (!questionsByExam[key]) questionsByExam[key] = [];
-            questionsByExam[key].push(q);
+        
+        // For each exam, count questions instead of fetching all (much faster)
+        const examIds = exams.map(e => e._id);
+        
+        // Use aggregation to count questions per exam efficiently
+        const questionCounts = await QuestionModel.aggregate([
+            { $match: { examId: { $in: examIds } } },
+            { $group: { _id: '$examId', count: { $sum: 1 } } }
+        ]);
+        
+        // Create a map for quick lookup
+        const countMap = {};
+        questionCounts.forEach(item => {
+            countMap[item._id.toString()] = item.count;
         });
 
-        // Attach questions and moduleName to each exam
+        // Attach question count and moduleName to each exam
         const examsWithQuestions = exams.map(exam => ({
             ...exam,
             moduleName: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.name : undefined,
             moduleColor: typeof exam.moduleId === 'object' && exam.moduleId !== null ? exam.moduleId.color : '#6366f1',
             courseCategoryId: exam.courseCategoryId || null,
-            questions: questionsByExam[exam._id.toString()] || []
+            totalQuestions: countMap[exam._id.toString()] || 0
         }));
 
         res.status(200).json({

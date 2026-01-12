@@ -717,6 +717,44 @@ export const UserController = {
             });
         }
 
+        // Consolidate duplicate moduleProgress entries (handle data inconsistencies gracefully)
+        const moduleProgressMap = new Map();
+        (userStats.moduleProgress || []).forEach(mp => {
+            const moduleId = mp.moduleId?.toString();
+            if (!moduleId) return;
+            
+            if (!moduleProgressMap.has(moduleId)) {
+                moduleProgressMap.set(moduleId, {
+                    moduleId: mp.moduleId,
+                    moduleName: mp.moduleName,
+                    questionsAttempted: mp.questionsAttempted || 0,
+                    correctAnswers: mp.correctAnswers || 0,
+                    incorrectAnswers: mp.incorrectAnswers || 0,
+                    timeSpent: mp.timeSpent || 0,
+                    lastAttempted: mp.lastAttempted
+                });
+            } else {
+                // Merge with existing entry
+                const existing = moduleProgressMap.get(moduleId);
+                existing.questionsAttempted += mp.questionsAttempted || 0;
+                existing.correctAnswers += mp.correctAnswers || 0;
+                existing.incorrectAnswers += mp.incorrectAnswers || 0;
+                existing.timeSpent += mp.timeSpent || 0;
+                if (mp.lastAttempted > existing.lastAttempted) {
+                    existing.lastAttempted = mp.lastAttempted;
+                }
+            }
+        });
+        
+        // Convert map to array and calculate averageScore
+        const consolidatedProgress = Array.from(moduleProgressMap.values()).map(mp => ({
+            ...mp,
+            averageScore: mp.questionsAttempted > 0 
+                ? Math.round((mp.correctAnswers / mp.questionsAttempted) * 100)
+                : 0,
+            completionPercentage: 0 // Will be calculated by frontend based on total questions
+        }));
+
         // Calculate additional stats
         const stats = {
             examsCompleted: userStats.totalExams || userStats.totalExamsCompleted || 0,
@@ -724,7 +762,7 @@ export const UserController = {
             studyHours: userStats.studyHours || Math.round((userStats.totalTimeSpent || 0) / 3600),
             rank: userStats.rank || 0,
             achievements: userStats.achievements || [],
-            moduleProgress: userStats.moduleProgress || [],
+            moduleProgress: consolidatedProgress,
             questionsAnswered: userStats.questionsAnswered || 0,
             correctAnswers: userStats.correctAnswers || 0,
             totalQuestionsAttempted: userStats.totalQuestionsAttempted || 0,

@@ -74,6 +74,22 @@ const StatisticsPage = () => {
 
         const user = profileData.data?.user || profileData.data;
         setUserProfile(user);
+        
+        // Check if user has premium access - redirect free users
+        const userPlan = user?.plan || 'Free';
+        if (userPlan === 'Free') {
+          toast.error('Cette fonctionnalité est réservée aux abonnés Premium', {
+            description: 'Mettez à niveau votre plan pour accéder aux statistiques détaillées.',
+            action: {
+              label: 'Voir les plans',
+              onClick: () => navigate('/dashboard/subscription')
+            },
+            duration: 5000,
+          });
+          navigate('/dashboard/subscription');
+          return;
+        }
+        
         setStats(statsData.data?.stats || statsData.data);
         
         // Process modules data - API returns { success, count, data: [...modules] }
@@ -85,7 +101,6 @@ const StatisticsPage = () => {
         
         // Get user's subscribed semesters
         const userSemesters = user?.semesters || [];
-        const userPlan = user?.plan || 'Free';
         
         // Filter modules based on user's subscription
         const filteredModules = modulesArray.filter(module => {

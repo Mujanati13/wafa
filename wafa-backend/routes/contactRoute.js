@@ -10,10 +10,10 @@ router.post("/", contactController.create);
 // Protected routes (requires authentication)
 router.get("/my-messages", isAuthenticated, contactController.getMyMessages);
 
-// Admin routes
-router.get("/", isAdmin, contactController.getAll);
-router.get("/:id", isAdmin, contactController.getById);
-router.patch("/:id/status", isAdmin, contactController.updateStatus);
-router.delete("/:id", isAdmin, contactController.delete);
+// Admin routes - must authenticate first, then check admin role
+router.get("/", isAuthenticated, isAdmin, contactController.getAll);
+router.get("/:id", isAuthenticated, isAdmin, contactController.getById);
+router.patch("/:id/status", isAuthenticated, isAdmin, contactController.updateStatus);
+router.delete("/:id", isAuthenticated, isAdmin, contactController.delete);
 
 export default router;

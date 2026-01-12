@@ -72,6 +72,12 @@ const examCourseSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Add indexes for frequently queried fields
+examCourseSchema.index({ moduleId: 1 });
+examCourseSchema.index({ category: 1 });
+examCourseSchema.index({ status: 1 });
+examCourseSchema.index({ moduleId: 1, status: 1 });
+
 // Update totalQuestions when linkedQuestions changes
 examCourseSchema.pre("save", function(next) {
     this.totalQuestions = this.linkedQuestions.length;

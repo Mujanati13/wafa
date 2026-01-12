@@ -54,26 +54,30 @@ export const qcmBanqueController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        const qcmList = await QCMBanque.find().populate('moduleId', 'name').lean();
+        const qcmList = await QCMBanque.find()
+            .select('name moduleId imageUrl infoText')
+            .populate('moduleId', 'name color')
+            .lean();
         const qcmIds = qcmList.map(q => q._id);
 
-        // Get questions related to these QCM banques (assuming examId field is used)
-        const questions = await QuestionModel.find({ qcmBanqueId: { $in: qcmIds } }).lean();
-
-        // Group questions by qcmBanqueId
-        const questionsByQCM = {};
-        questions.forEach(q => {
-            const key = q.qcmBanqueId?.toString();
-            if (!questionsByQCM[key]) questionsByQCM[key] = [];
-            questionsByQCM[key].push(q);
+        // Use aggregation to count questions efficiently
+        const questionCounts = await QuestionModel.aggregate([
+            { $match: { qcmBanqueId: { $in: qcmIds } } },
+            { $group: { _id: '$qcmBanqueId', count: { $sum: 1 } } }
+        ]);
+        
+        // Create a map for quick lookup
+        const countMap = {};
+        questionCounts.forEach(item => {
+            countMap[item._id.toString()] = item.count;
         });
 
-        // Attach questions and moduleName to each QCM
+        // Attach question count and moduleName to each QCM
         const qcmWithQuestions = qcmList.map(qcm => ({
             ...qcm,
             moduleName: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.name : undefined,
-            questions: questionsByQCM[qcm._id.toString()] || [],
-            totalQuestions: (questionsByQCM[qcm._id.toString()] || []).length
+            moduleColor: typeof qcm.moduleId === 'object' && qcm.moduleId !== null ? qcm.moduleId.color : '#6366f1',
+            totalQuestions: countMap[qcm._id.toString()] || 0
         }));
 
         res.status(200).json({

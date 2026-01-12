@@ -31,4 +31,7 @@ const examParYearSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Add index for moduleId to improve query performance
+examParYearSchema.index({ moduleId: 1 });
+
 export default mongoose.model("ExamParYear", examParYearSchema);

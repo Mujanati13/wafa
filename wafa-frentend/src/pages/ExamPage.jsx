@@ -333,8 +333,19 @@ const ExamPage = () => {
         questions: questions
       };
     } else if (type === 'qcm') {
-      // QCMBanque has questions array
+      // QCMBanque has questions array - group by session
       const questions = data.questions || [];
+      
+      // Group questions by sessionLabel (same logic as exam-years)
+      const questionsBySession = {};
+      questions.forEach(q => {
+        const sessionName = q.sessionLabel || 'Session principale';
+        if (!questionsBySession[sessionName]) {
+          questionsBySession[sessionName] = [];
+        }
+        questionsBySession[sessionName].push(q);
+      });
+      
       return {
         ...data,
         name: data.name,
@@ -342,9 +353,7 @@ const ExamPage = () => {
         moduleName: data.moduleId?.name || data.moduleName,
         moduleColor: data.moduleId?.color || '#6366f1',
         totalQuestions: questions.length,
-        questions: {
-          "Session principale": questions
-        }
+        questions: questionsBySession
       };
     } else if (type === 'playlist') {
       // Playlist has questions array
@@ -2665,7 +2674,7 @@ const ExamPage = () => {
               </div>
 
               {/* Questions grid */}
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="flex-1 p-4 overflow-y-auto min-h-0">
                 <div className="grid grid-cols-6 gap-2">
                   {questions.map((q, index) => {
                     const { status, isFlagged } = getQuestionStatus(index);

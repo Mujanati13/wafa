@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -17,6 +18,7 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { adminAnalyticsService } from "@/services/adminAnalyticsService";
 
 ChartJS.register(
   ArcElement,
@@ -159,6 +161,38 @@ const pieOptions = {
 };
 
 export function SubscrptionChart() {
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubscriptionData = async () => {
+      try {
+        const response = await adminAnalyticsService.getSubscriptionAnalytics();
+        const data = response.data;
+        
+        setSubscriptionData({
+          labels: ["Free Plan", "Premium Plan"],
+          datasets: [
+            {
+              label: "Subscriptions",
+              data: [data.free || 0, data.premium || 0],
+              backgroundColor: ["#2563eb", "#22c55e"],
+              borderWidth: 1,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error('Error fetching subscription data:', error);
+        // Fallback to static data
+        setSubscriptionData(doughnutData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubscriptionData();
+  }, []);
+
   return (
     <Card className="h-auto sm:h-[400px] md:h-[450px] lg:h-[500px] flex flex-col">
       <CardHeader className="p-3 sm:p-4 md:p-6">
@@ -168,15 +202,68 @@ export function SubscrptionChart() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 items-center justify-center p-2 sm:p-4 md:p-6">
-        <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
-          <Doughnut data={doughnutData} options={doughnutOptions} />
-        </div>
+        {loading ? (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        ) : (
+          <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
+            <Doughnut data={subscriptionData || doughnutData} options={doughnutOptions} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
 export function UserGrowChart() {
+  const [userGrowthData, setUserGrowthData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserGrowth = async () => {
+      try {
+        const response = await adminAnalyticsService.getUserGrowth('30d');
+        const data = response.data;
+        
+        // Format the data for the chart
+        const labels = data.map(item => {
+          const date = new Date(item._id.year, item._id.month - 1, item._id.day);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        
+        const counts = data.map(item => item.count);
+        
+        // Calculate cumulative counts
+        const cumulativeCounts = counts.reduce((acc, count, index) => {
+          const prevTotal = index > 0 ? acc[index - 1] : 0;
+          acc.push(prevTotal + count);
+          return acc;
+        }, []);
+        
+        setUserGrowthData({
+          labels,
+          datasets: [
+            {
+              label: "Total Users",
+              data: cumulativeCounts,
+              borderColor: "#2563eb",
+              backgroundColor: "rgba(37, 99, 235, 0.2)",
+              tension: 0.4,
+              fill: true,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error('Error fetching user growth:', error);
+        // Fallback to static data
+        setUserGrowthData(userGrowthChartData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserGrowth();
+  }, []);
+
   return (
     <Card>
       <CardHeader className="p-3 sm:p-4 md:p-6">
@@ -184,11 +271,17 @@ export function UserGrowChart() {
         <CardDescription className="text-xs sm:text-sm">Total users over time</CardDescription>
       </CardHeader>
       <CardContent className="p-2 sm:p-4 md:p-6">
-        <Line
-          key={JSON.stringify(userGrowthChartData)}
-          data={userGrowthChartData}
-          options={options}
-        />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <Line
+            key={JSON.stringify(userGrowthData)}
+            data={userGrowthData || userGrowthChartData}
+            options={options}
+          />
+        )}
       </CardContent>
     </Card>
   );
@@ -223,16 +316,68 @@ export function ExamAttemptsChart() {
 }
 
 export function UserDemographicsChart() {
+  const [demographicsData, setDemographicsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDemographics = async () => {
+      try {
+        const response = await adminAnalyticsService.getUserDemographics();
+        const data = response.data;
+        
+        // Take top 5 demographics
+        const topDemographics = data.slice(0, 5);
+        
+        setDemographicsData({
+          labels: topDemographics.map(d => d._id || 'N/A'),
+          datasets: [
+            {
+              label: "Users",
+              data: topDemographics.map(d => d.count),
+              backgroundColor: [
+                "rgba(37, 99, 235, 0.8)",
+                "rgba(34, 197, 94, 0.8)",
+                "rgba(249, 115, 22, 0.8)",
+                "rgba(168, 85, 247, 0.8)",
+                "rgba(236, 72, 153, 0.8)",
+              ],
+              borderColor: [
+                "rgba(37, 99, 235, 1)",
+                "rgba(34, 197, 94, 1)",
+                "rgba(249, 115, 22, 1)",
+                "rgba(168, 85, 247, 1)",
+                "rgba(236, 72, 153, 1)",
+              ],
+              borderWidth: 2,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error('Error fetching demographics:', error);
+        // Fallback to static data
+        setDemographicsData(userDemographicsData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDemographics();
+  }, []);
+
   return (
     <Card className="h-auto sm:h-[400px] md:h-[450px] lg:h-[500px] flex flex-col">
       <CardHeader className="p-3 sm:p-4 md:p-6">
         <CardTitle className="text-sm sm:text-base md:text-lg">User Demographics</CardTitle>
-        <CardDescription className="text-xs sm:text-sm">User distribution by education level</CardDescription>
+        <CardDescription className="text-xs sm:text-sm">User distribution by semester</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 items-center justify-center p-2 sm:p-4 md:p-6">
-        <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
-          <Pie data={userDemographicsData} options={pieOptions} />
-        </div>
+        {loading ? (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        ) : (
+          <div className="w-full max-w-[200px] sm:max-w-xs h-full flex items-center justify-center">
+            <Pie data={demographicsData || userDemographicsData} options={pieOptions} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

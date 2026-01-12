@@ -619,7 +619,7 @@ const PricingSection = ({ settings }) => {
             name: "Premium Annuel",
             price: 120,
             oldPrice: 200,
-            period: "Annee",
+            period: "Semester",
             isPopular: true,
             features: [
               { text: "tous les modules", included: true },
@@ -795,7 +795,7 @@ const PricingSection = ({ settings }) => {
                               <span className="text-base sm:text-lg md:text-xl text-muted-foreground line-through ml-1 sm:ml-2">{plan.oldPrice} dh</span>
                             )}
                           </div>
-                          <p className="text-muted-foreground text-sm sm:text-base mt-1 sm:mt-2 font-medium">par {plan.period}</p>
+                          <p className="text-muted-foreground text-sm sm:text-base mt-1 sm:mt-2 font-medium">par {plan.period === 'Annee' ? 'Semester' : plan.period}</p>
                         </div>
                       </CardHeader>
                       <CardContent className="flex-grow pt-4">
@@ -1155,11 +1155,54 @@ const ContactSection = () => {
 const FeedbackSection = ({ settings }) => {
   const { t } = useTranslation("landing");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
 
-  const handleSubmitFeedback = (e) => {
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitFeedback = async (e) => {
     e.preventDefault();
-    setFeedbackSubmitted(true);
-    setTimeout(() => setFeedbackSubmitted(false), 3000);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFeedbackSubmitted(true);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+        toast.success('Message envoyé avec succès!', {
+          description: 'Nous vous répondrons sous 24h.'
+        });
+        setTimeout(() => setFeedbackSubmitted(false), 5000);
+      } else {
+        toast.error('Erreur', {
+          description: data.message || 'Impossible d\'envoyer le message'
+        });
+      }
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      toast.error('Erreur', {
+        description: 'Impossible d\'envoyer le message. Veuillez réessayer.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -1234,18 +1277,26 @@ const FeedbackSection = ({ settings }) => {
                       <label className="text-sm font-medium text-slate-700">Nom complet</label>
                       <Input
                         type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
                         placeholder="Votre nom"
                         required
                         className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                        disabled={isLoading}
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700">Email</label>
                       <Input
                         type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
                         placeholder="votre.email@exemple.com"
                         required
                         className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -1254,19 +1305,27 @@ const FeedbackSection = ({ settings }) => {
                     <label className="text-sm font-medium text-slate-700">Sujet</label>
                     <Input
                       type="text"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
                       placeholder="De quoi voulez-vous parler?"
                       required
                       className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                      disabled={isLoading}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Message</label>
                     <Textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
                       placeholder="Partagez vos pensées, suggestions ou rapports de bugs..."
                       rows={6}
                       required
                       className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -1274,9 +1333,10 @@ const FeedbackSection = ({ settings }) => {
                     type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-base font-semibold py-6"
                     size="lg"
+                    disabled={isLoading}
                   >
                     <Send className="w-5 h-5 mr-2" />
-                    Envoyer votre avis
+                    {isLoading ? 'Envoi en cours...' : 'Envoyer votre avis'}
                   </Button>
                 </form>
               )}
@@ -1327,7 +1387,7 @@ const Footer = ({ settings }) => {
   return (
     <footer className="bg-slate-900 text-white py-10 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8" role="contentinfo">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-8">
           <div className="col-span-2 sm:col-span-1">
             <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
               <GraduationCap className="h-5 w-5 md:h-6 md:w-6" />
@@ -1338,16 +1398,10 @@ const Footer = ({ settings }) => {
             </p>
             {/* Contact info from admin settings */}
             <div className="mt-4 space-y-2 text-xs md:text-sm text-slate-400">
-              {contactEmail && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <a href={`mailto:${contactEmail}`} className="hover:text-white transition-colors">{contactEmail}</a>
-                </div>
-              )}
               {contactPhone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  <a href={`tel:${contactPhone}`} className="hover:text-white transition-colors">{contactPhone}</a>
+                  <span>{contactPhone}</span>
                 </div>
               )}
               {whatsappNumber && (
@@ -1360,20 +1414,9 @@ const Footer = ({ settings }) => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">{t("footer_product_title")}</h4>
-            <ul className="space-y-2 text-xs md:text-sm text-slate-400">
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_product_link_1")}</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_product_link_2")}</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_product_link_3")}</a></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">{t("footer_support_title")}</h4>
             <ul className="space-y-2 text-xs md:text-sm text-slate-400">
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_support_link_1")}</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_support_link_2")}</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">{t("footer_support_link_3")}</a></li>
+              <li><a href="#contact" className="hover:text-white transition-colors">{t("footer_support_link_2")}</a></li>
             </ul>
           </div>
 
@@ -1415,10 +1458,10 @@ const Footer = ({ settings }) => {
         <Separator className="bg-slate-800 mb-8" />
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs md:text-sm text-slate-400">
-          <p>{t("footer_copyright")}</p>
+          <p>© 2026 Imrs-Qcma. Tous les droits réservés.</p>
           <div className="flex gap-4 md:gap-6">
-            <a href="#" className="hover:text-white transition-colors">{t("footer_terms")}</a>
-            <a href="#" className="hover:text-white transition-colors">{t("footer_privacy")}</a>
+            <a href="/privacy-policy" className="hover:text-white transition-colors">{t("footer_terms")}</a>
+            <a href="/privacy-policy" className="hover:text-white transition-colors">{t("footer_privacy")}</a>
           </div>
         </div>
       </div>

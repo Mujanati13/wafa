@@ -169,40 +169,10 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
           {course.name}
         </h3>
 
-        {/* Progress Bar */}
-        <div className="relative mb-3 sm:mb-4">
-          <div className="flex items-center justify-between mb-1 sm:mb-1.5">
-            <span className="text-xs sm:text-sm font-medium text-gray-600">Progression</span>
-            <span className="text-xs sm:text-sm font-bold text-gray-700">{progress}%</span>
-          </div>
-          <div className="relative w-full bg-gray-200 rounded-full h-2 sm:h-2.5 overflow-hidden">
-            <motion.div
-              className={`absolute h-full rounded-full ${!customStyle ? `bg-gradient-to-r ${colorScheme.gradient}` : ''}`}
-              style={customStyle || undefined}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, ease: "easeOut", delay: index * 0.1 }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-            </motion.div>
-          </div>
-        </div>
-
         {/* Course Stats */}
         <div className="relative flex flex-col xs:flex-row items-stretch xs:items-center justify-between pt-2 sm:pt-3 border-t border-gray-200 gap-2">
-          <div className="flex items-center gap-2 flex-wrap justify-center xs:justify-start w-full xs:w-auto">
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-green-600">{correctAnswers}</span>
-              <span className="text-xs text-gray-400">/</span>
-              <span className="text-xs font-bold text-red-500">{wrongAnswers}</span>
-              <span className="text-xs text-gray-400">/</span>
-              <span className="text-xs text-gray-600">{totalQuestions}</span>
-            </div>
-            <span className="text-xs text-gray-500">Questions</span>
-          </div>
-
           <motion.button
-            className={`w-full xs:w-auto px-3 py-1.5 rounded-md text-white text-xs font-semibold shadow-md hover:shadow-lg transition-all whitespace-nowrap ${!customStyle ? `bg-gradient-to-r ${colorScheme.gradient}` : ''}`}
+            className={`w-full px-3 py-1.5 rounded-md text-white text-xs font-semibold shadow-md hover:shadow-lg transition-all whitespace-nowrap ${!customStyle ? `bg-gradient-to-r ${colorScheme.gradient}` : ''}`}
             style={customStyle || undefined}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

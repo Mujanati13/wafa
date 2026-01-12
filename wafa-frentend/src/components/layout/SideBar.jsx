@@ -21,6 +21,7 @@ import {
   CreditCard,
   BarChart3,
   GraduationCap,
+  Crown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,9 +132,9 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     if (userSemesters && userSemesters.length > 0) {
       return userSemesters.includes(module.semester);
     }
-    // Default: show S1 for free users
+    // Default: show only S1 for free users (and only the first module)
     return module.semester === "S1";
-  });
+  }).slice(0, userPlan === "Free" ? 1 : undefined); // Free users see only 1 module
 
   // Group modules by semester
   const modulesBySemester = filteredModules.reduce((acc, module) => {
@@ -199,14 +200,24 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:ranking'),
       icon: Trophy,
       path: "/dashboard/leaderboard",
+      requiresPremium: true, // Premium or Premium Annuel required
+      isPremiumFeature: true,
     },
     {
       id: "statistics",
       label: t('dashboard:statistics', 'Statistiques'),
       icon: BarChart3,
       path: "/dashboard/statistics",
+      requiresPremium: true, // Premium or Premium Annuel required
+      isPremiumFeature: true,
     },
-  ];
+  ].filter(item => {
+    // Filter out premium features for free users
+    if (item.requiresPremium && userPlan === "Free") {
+      return false;
+    }
+    return true;
+  });
 
   const libraryItems = [
     {
@@ -444,6 +455,7 @@ const SidebarItem = ({
 }) => {
   const Icon = item.icon;
   const isActive = activeTab === item.id;
+  const isPremiumFeature = item.isPremiumFeature || false;
 
   const button = (
     <motion.button
@@ -494,7 +506,7 @@ const SidebarItem = ({
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "font-medium text-left text-sm transition-colors",
+              "font-medium text-left text-sm transition-colors flex-1",
               isActive && "font-semibold"
             )}
           >
@@ -502,6 +514,13 @@ const SidebarItem = ({
           </motion.span>
         )}
       </AnimatePresence>
+      {/* Premium Badge */}
+      {isPremiumFeature && sidebarOpen && (
+        <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 font-semibold">
+          <Crown className="h-2.5 w-2.5 mr-0.5" />
+          Premium
+        </Badge>
+      )}
       {/* Active indicator line */}
       {isActive && (
         <motion.div
