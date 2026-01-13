@@ -301,10 +301,25 @@ const Dashboard = () => {
         course.semester === semester && userSemesters.includes(course.semester)
       );
       
-      // Free users see only 1 module
+      // Free users: Show only 1 module total (not per semester)
       const userPlan = user?.plan || 'Free';
       if (userPlan === 'Free') {
-        filtered = filtered.slice(0, 1);
+        // Get all modules across all subscribed semesters
+        const allSubscribedModules = coursesData.filter(course =>
+          userSemesters.includes(course.semester)
+        );
+        
+        // If we already have 1 or more modules in any semester, limit to first one overall
+        if (allSubscribedModules.length > 0) {
+          // Check if current filtered semester contains the first module
+          const firstModule = allSubscribedModules[0];
+          if (firstModule.semester === semester) {
+            filtered = [firstModule];
+          } else {
+            // Current semester doesn't have the free module
+            filtered = [];
+          }
+        }
       }
       
       setFilteredCourses(filtered);
@@ -661,252 +676,6 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
               )}
             </motion.div>
           )}
-        </motion.div>
-
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-              Mes Statistiques
-            </h2>
-            <div className="h-1 w-16 bg-gradient-to-r from-blue-600 to-teal-500 mt-2 rounded-full" />
-          </div>
-
-          {loading ? (
-            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
-                <Card key={i}>
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-4 w-24" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-20 mb-2" />
-                    <Skeleton className="h-3 w-32" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                title={t('dashboard:exams_completed')}
-                value={stats.examsCompleted}
-                icon={<Award className="h-4 w-4" />}
-                description={t('dashboard:in_total')}
-              />
-              <StatCard
-                title={t('dashboard:average_score')}
-                value={`${Math.round(stats.averageScore)}%`}
-                icon={<TrendingUp className="h-4 w-4" />}
-                description={t('dashboard:last_exam')}
-              />
-              <StatCard
-                title={t('dashboard:study_hours')}
-                value={Math.round(stats.studyHours)}
-                icon={<Clock className="h-4 w-4" />}
-                description={t('dashboard:total_time')}
-              />
-              <StatCard
-                title={t('dashboard:ranking')}
-                value={`#${stats.rank}`}
-                icon={<Award className="h-4 w-4" />}
-                description={t('dashboard:global_rank')}
-              />
-            </div>
-          )}
-        </motion.div>
-
-        {/* Statistics Charts Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Activity className="h-5 w-5 text-purple-600" />
-              Analyse de Performance
-            </h2>
-            <div className="h-1 w-16 bg-gradient-to-r from-purple-600 to-pink-500 mt-2 rounded-full" />
-          </div>
-
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-              <TabsTrigger value="detailed">Détails</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                {/* Module Progress Chart */}
-                <Card className="border-blue-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <BarChart3 className="h-5 w-5 text-blue-600" />
-                      Progrès par Module
-                    </CardTitle>
-                    <CardDescription>Top 6 modules actifs</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {moduleProgress.length > 0 ? (
-                      <div className="w-full h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={moduleProgress} margin={{ top: 10, right: 20, left: 0, bottom: 50 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis dataKey="name" fontSize={11} angle={-45} textAnchor="end" height={70} />
-                            <YAxis fontSize={11} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                              cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                            />
-                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                            <Bar dataKey="completed" fill="#3b82f6" name="Complétées" radius={[6, 6, 0, 0]} />
-                            <Bar dataKey="pending" fill="#fbbf24" name="En attente" radius={[6, 6, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64 text-slate-400">
-                        <p>Aucune donnée disponible</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Performance Trend Chart */}
-                <Card className="border-green-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <LineChartIcon className="h-5 w-5 text-green-600" />
-                      Évolution du Score
-                    </CardTitle>
-                    <CardDescription>Progression sur 6 mois</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {performanceTrend.length > 0 ? (
-                      <div className="w-full h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={performanceTrend}
-                            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis dataKey="month" fontSize={11} />
-                            <YAxis fontSize={11} domain={[0, 100]} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                              cursor={{ stroke: '#10b981', strokeWidth: 2 }}
-                            />
-                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                            <Line
-                              type="monotone"
-                              dataKey="score"
-                              stroke="#10b981"
-                              strokeWidth={3}
-                              dot={{ fill: '#10b981', r: 4 }}
-                              activeDot={{ r: 6 }}
-                              name="Score (%)"
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64 text-slate-400">
-                        <p>Aucune donnée historique</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="detailed" className="space-y-4 sm:space-y-6">
-              <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                {/* Completion Rate Pie Chart */}
-                <Card className="border-purple-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Activity className="h-5 w-5 text-purple-600" />
-                      Taux de Complétion
-                    </CardTitle>
-                    <CardDescription>Répartition QCM</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 flex items-center justify-center">
-                    {completionData.length > 0 ? (
-                      <div className="w-full h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={completionData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={40}
-                              outerRadius={80}
-                              paddingAngle={3}
-                              dataKey="value"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {completionData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64 text-slate-400">
-                        <p>Aucune donnée disponible</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Study Time Distribution */}
-                <Card className="border-amber-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Clock className="h-5 w-5 text-amber-600" />
-                      Temps d'Étude
-                    </CardTitle>
-                    <CardDescription>Heures par jour (7 jours)</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {weeklyActivity.length > 0 ? (
-                      <div className="w-full h-[280px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={weeklyActivity}
-                            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                            <XAxis dataKey="day" fontSize={11} />
-                            <YAxis fontSize={11} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                              formatter={(value) => `${value}h`}
-                              cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
-                            />
-                            <Bar dataKey="hours" fill="#f59e0b" name="Heures" radius={[6, 6, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-64 text-slate-400">
-                        <p>Aucune donnée d'étude</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
         </motion.div>
 
         {/* Module Preview Modal */}

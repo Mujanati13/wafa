@@ -35,7 +35,8 @@ import {
   RefreshCcw,
   Settings2,
   Timer,
-  Home
+  Home,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -497,7 +498,7 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section id="apropos" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("features_title")}>
+    <section id="features" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8" aria-label={t("features_title")}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -696,7 +697,7 @@ const PricingSection = ({ settings }) => {
   }, [settings]);
 
   return (
-    <section id="tarifs" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
+    <section id="pricing" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50" aria-label={t("pricing_title")}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -986,7 +987,7 @@ const FAQSection = ({ settings }) => {
   ];
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white" aria-label={t("faq_title")}>
+    <section id="faq" className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white" aria-label={t("faq_title")}>
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1329,6 +1330,19 @@ const FeedbackSection = ({ settings }) => {
                     />
                   </div>
 
+                  {/* Warning Alert */}
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-amber-900 mb-1">Important</h4>
+                        <p className="text-sm text-amber-800">
+                          Veuillez envoyer un message clair et approprié. Les messages contenant du contenu offensant, des insultes ou du spam seront rejetés et votre compte pourrait être suspendu.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-base font-semibold py-6"
@@ -1414,9 +1428,19 @@ const Footer = ({ settings }) => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">{t("footer_support_title")}</h4>
+            <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">Produit</h4>
             <ul className="space-y-2 text-xs md:text-sm text-slate-400">
-              <li><a href="#contact" className="hover:text-white transition-colors">{t("footer_support_link_2")}</a></li>
+              <li><a href="#features" className="hover:text-white transition-colors">Fonctionnalités</a></li>
+              <li><a href="#pricing" className="hover:text-white transition-colors">Tarification</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-3 md:mb-4 text-sm md:text-base">Support</h4>
+            <ul className="space-y-2 text-xs md:text-sm text-slate-400">
+              <li><a href="#faq" className="hover:text-white transition-colors">Centre d'aide</a></li>
+              <li><a href="#contact" className="hover:text-white transition-colors">Nous Contacter</a></li>
+              <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
             </ul>
           </div>
 

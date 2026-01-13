@@ -480,7 +480,7 @@ export const explanationController = {
 
         // Get question data
         const Question = (await import('../models/questionModule.js')).default;
-        const question = await Question.findById(questionId).lean();
+        const question = await Question.findById(questionId).populate('examId').lean();
 
         if (!question) {
             return res.status(404).json({
@@ -488,6 +488,49 @@ export const explanationController = {
                 message: "Question non trouvée"
             });
         }
+
+        // Get module ID from the exam
+        let moduleId = null;
+        if (question.examId?.moduleId) {
+            moduleId = question.examId.moduleId;
+        } else if (question.qcmBanqueId) {
+            const QcmBanque = (await import('../models/qcmBanqueModel.js')).default;
+            const qcmBanque = await QcmBanque.findById(question.qcmBanqueId).select('moduleId').lean();
+            moduleId = qcmBanque?.moduleId;
+        }
+
+        // Fetch module's AI context files if available
+        let moduleContextText = '';
+        if (moduleId) {
+            const Module = (await import('../models/moduleModel.js')).default;
+            const module = await Module.findById(moduleId).select('aiContextFiles').lean();
+            
+            if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
+                // Extract text from all saved PDFs
+                const geminiService = (await import('../services/geminiService.js')).default;
+                const path = await import('path');
+                
+                const contextTexts = [];
+                for (const file of module.aiContextFiles) {
+                    try {
+                        const filePath = path.join(process.cwd(), file.url.replace(/^\//, ''));
+                        const extractedText = await geminiService.extractTextFromPDF(filePath);
+                        contextTexts.push(`\n--- Contexte de ${file.filename} ---\n${extractedText}`);
+                    } catch (error) {
+                        console.error(`Error extracting PDF ${file.filename}:`, error);
+                    }
+                }
+                
+                if (contextTexts.length > 0) {
+                    moduleContextText = contextTexts.join('\n\n');
+                }
+            }
+        }
+
+        // Combine uploaded PDF context with module's saved context
+        const combinedContext = [pdfContext, moduleContextText]
+            .filter(ctx => ctx && ctx.trim())
+            .join('\n\n=== CONTEXTE ADDITIONNEL ===\n\n');
 
         // Get correct answer indices
         const correctAnswers = question.options
@@ -503,12 +546,12 @@ export const explanationController = {
         };
 
         try {
-            // Generate explanation using Gemini with optional custom prompt and context
+            // Generate explanation using Gemini with combined context
             const generatedText = await geminiService.generateExplanation(
                 questionData,
                 language || 'fr',
                 customPrompt || null,
-                pdfContext || null
+                combinedContext || null
             );
 
             // Save the AI explanation
@@ -594,6 +637,61 @@ export const explanationController = {
             });
         }
 
+        // Get module ID from the first question's exam
+        let moduleId = null;
+        if (allQuestions.length > 0 && allQuestions[0].examId) {
+            const ExamParYear = (await import('../models/examParYearModel.js')).default;
+            const exam = await ExamParYear.findById(examId).select('moduleId').lean();
+            if (exam) {
+                moduleId = exam.moduleId;
+            } else {
+                // Try exam course
+                const ExamCourse = (await import('../models/examCourseModel.js')).default;
+                const examCourse = await ExamCourse.findById(examId).select('moduleId').lean();
+                if (examCourse) {
+                    moduleId = examCourse.moduleId;
+                } else {
+                    // Try QCM Banque
+                    const QcmBanque = (await import('../models/qcmBanqueModel.js')).default;
+                    const qcmBanque = await QcmBanque.findById(examId).select('moduleId').lean();
+                    moduleId = qcmBanque?.moduleId;
+                }
+            }
+        }
+
+        // Fetch module's AI context files if available
+        let moduleContextText = '';
+        if (moduleId) {
+            const Module = (await import('../models/moduleModel.js')).default;
+            const module = await Module.findById(moduleId).select('aiContextFiles').lean();
+            
+            if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
+                // Extract text from all saved PDFs
+                const geminiService = (await import('../services/geminiService.js')).default;
+                const path = await import('path');
+                
+                const contextTexts = [];
+                for (const file of module.aiContextFiles) {
+                    try {
+                        const filePath = path.join(process.cwd(), file.url.replace(/^\//, ''));
+                        const extractedText = await geminiService.extractTextFromPDF(filePath);
+                        contextTexts.push(`\n--- Contexte de ${file.filename} ---\n${extractedText}`);
+                    } catch (error) {
+                        console.error(`Error extracting PDF ${file.filename}:`, error);
+                    }
+                }
+                
+                if (contextTexts.length > 0) {
+                    moduleContextText = contextTexts.join('\n\n');
+                }
+            }
+        }
+
+        // Combine uploaded PDF context with module's saved context
+        const combinedContext = [pdfContext, moduleContextText]
+            .filter(ctx => ctx && ctx.trim())
+            .join('\n\n=== CONTEXTE ADDITIONNEL ===\n\n');
+
         // Build question number map
         const questionsByNumber = new Map();
         allQuestions.forEach((q, idx) => {
@@ -624,12 +722,12 @@ export const explanationController = {
         }));
 
         try {
-            // Generate explanations in batch with optional custom prompt and context
+            // Generate explanations in batch with combined context
             const results = await geminiService.generateBatchExplanations(
                 questionsData,
                 language || 'fr',
                 customPrompt || null,
-                pdfContext || null
+                combinedContext || null
             );
 
             // Save successful explanations
@@ -683,7 +781,8 @@ export const explanationController = {
                     saved: saved.length,
                     failed: failed.length,
                     explanations: saved,
-                    errors: failed
+                    errors: failed,
+                    usedModuleContext: !!moduleContextText
                 }
             });
         } catch (error) {

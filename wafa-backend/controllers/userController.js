@@ -657,6 +657,7 @@ export const UserController = {
         const userData = user.toObject();
         if (userStats) {
             userData.totalPoints = userStats.totalPoints || 0;
+            userData.normalPoints = userStats.normalPoints || 0;
             userData.bluePoints = userStats.bluePoints || 0;
             userData.greenPoints = userStats.greenPoints || 0;
             userData.questionsAnswered = userStats.questionsAnswered || 0;
@@ -666,6 +667,7 @@ export const UserController = {
             userData.xpToNextLevel = (userStats.totalPoints || 0) % 50;
         } else {
             userData.totalPoints = 0;
+            userData.normalPoints = 0;
             userData.bluePoints = 0;
             userData.greenPoints = 0;
             userData.questionsAnswered = 0;

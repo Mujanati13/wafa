@@ -255,10 +255,6 @@ const SelectFreeSemester = () => {
                   <Check className="h-4 w-4 text-green-500" />
                   Suivi de votre progression
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  Accès au classement (Leaderboard)
-                </li>
               </ul>
             </CardContent>
           </Card>

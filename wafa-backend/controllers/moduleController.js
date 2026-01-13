@@ -253,5 +253,124 @@ export const moduleController = {
                 percentage
             }
         });
+    }),
+
+    // Upload AI context files to a module
+    uploadAiContextFiles: asyncHandler(async (req, res) => {
+        const { id } = req.params; // module ID
+        
+        const module = await moduleSchema.findById(id);
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module non trouvé"
+            });
+        }
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Aucun fichier fourni"
+            });
+        }
+
+        // Process uploaded files
+        const newFiles = req.files.map(file => ({
+            filename: file.originalname,
+            url: `/uploads/ai-context/${file.filename}`,
+            size: file.size,
+            uploadedAt: new Date(),
+            uploadedBy: req.user._id
+        }));
+
+        // Add to module's aiContextFiles array
+        module.aiContextFiles = [...(module.aiContextFiles || []), ...newFiles];
+        await module.save();
+
+        res.status(200).json({
+            success: true,
+            message: `${newFiles.length} fichier(s) ajouté(s) avec succès`,
+            data: {
+                moduleId: module._id,
+                aiContextFiles: module.aiContextFiles
+            }
+        });
+    }),
+
+    // Get AI context files for a module
+    getAiContextFiles: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        
+        const module = await moduleSchema.findById(id).select('aiContextFiles name').lean();
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module non trouvé"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                moduleId: module._id,
+                moduleName: module.name,
+                aiContextFiles: module.aiContextFiles || []
+            }
+        });
+    }),
+
+    // Delete an AI context file from a module
+    deleteAiContextFile: asyncHandler(async (req, res) => {
+        const { id, fileId } = req.params; // module ID and file _id
+        
+        const module = await moduleSchema.findById(id);
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module non trouvé"
+            });
+        }
+
+        // Find and remove the file from the array
+        const fileIndex = module.aiContextFiles.findIndex(
+            f => f._id.toString() === fileId
+        );
+
+        if (fileIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: "Fichier non trouvé"
+            });
+        }
+
+        // Get file info before removing
+        const fileToDelete = module.aiContextFiles[fileIndex];
+        
+        // Remove from array
+        module.aiContextFiles.splice(fileIndex, 1);
+        await module.save();
+
+        // Optionally delete the physical file from disk
+        try {
+            const fs = await import('fs');
+            const path = await import('path');
+            const filePath = path.join(process.cwd(), 'uploads', 'ai-context', path.basename(fileToDelete.url));
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch (error) {
+            console.error('Error deleting physical file:', error);
+            // Continue even if physical file deletion fails
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Fichier supprimé avec succès",
+            data: {
+                moduleId: module._id,
+                deletedFile: fileToDelete,
+                remainingFiles: module.aiContextFiles
+            }
+        });
     })
 };

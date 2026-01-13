@@ -19,6 +19,12 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true })
 }
 
+// Ensure AI context uploads directory exists
+const aiContextDir = path.join(__dirname, "..", "uploads", "ai-context")
+if (!fs.existsSync(aiContextDir)) {
+    fs.mkdirSync(aiContextDir, { recursive: true })
+}
+
 // Configure multer for local disk storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -47,6 +53,31 @@ const uploadModuleImage = multer({
     { name: "helpImage", maxCount: 1 },
     { name: "helpPdf", maxCount: 1 }
 ])
+
+// Configure multer for AI context files (multiple PDFs)
+const aiContextStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, aiContextDir)
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9)
+        const ext = path.extname(file.originalname)
+        cb(null, "ai-context-" + uniqueSuffix + ext)
+    }
+})
+
+const uploadAiContextFiles = multer({
+    storage: aiContextStorage,
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB per file
+    fileFilter: (req, file, cb) => {
+        // Accept only PDFs for AI context
+        if (file.mimetype === "application/pdf") {
+            cb(null, true)
+        } else {
+            cb(new Error("Seuls les fichiers PDF sont acceptés"), false)
+        }
+    }
+}).array('contextFiles', 10) // Max 10 files at once
 
 // Create a new module with image upload
 router.post("/create-with-image", uploadModuleImage, async (req, res) => {
@@ -113,6 +144,16 @@ router.post("/create", validate(moduleSchema), moduleController.create)
 
 // Get all modules
 router.get("/", moduleController.getAll)
+
+// AI Context Files Management (must be before /:id routes)
+// Upload AI context files to a module
+router.post("/:id/ai-context", uploadAiContextFiles, moduleController.uploadAiContextFiles)
+
+// Get AI context files for a module
+router.get("/:id/ai-context", moduleController.getAiContextFiles)
+
+// Delete an AI context file from a module
+router.delete("/:id/ai-context/:fileId", moduleController.deleteAiContextFile)
 
 // Get a single module by ID
 router.get("/:id", moduleController.getById)

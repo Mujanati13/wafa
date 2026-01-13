@@ -19,8 +19,12 @@ import {
   FileText,
   Database,
   X,
-  Play
+  Play,
+  Clock,
+  Activity,
+  LineChart as LineChartIcon
 } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CircularProgress } from "@/components/ui/circular-progress";
+import { StatCard } from "@/components/shared";
 import { dashboardService } from "@/services/dashboardService";
 import { moduleService } from "@/services/moduleService";
 import { api } from "@/lib/utils";
@@ -49,6 +54,12 @@ const StatisticsPage = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("modules");
   const [showIncorrectPopup, setShowIncorrectPopup] = useState(false);
+  
+  // Chart data states
+  const [moduleProgressChart, setModuleProgressChart] = useState([]);
+  const [weeklyActivity, setWeeklyActivity] = useState([]);
+  const [performanceTrend, setPerformanceTrend] = useState([]);
+  const [completionData, setCompletionData] = useState([]);
   
   // Selected module state for showing exams
   const [selectedModule, setSelectedModule] = useState(null);
@@ -91,6 +102,100 @@ const StatisticsPage = () => {
         }
         
         setStats(statsData.data?.stats || statsData.data);
+        
+        // Transform module progress data for charts
+        if (statsData.data?.stats?.moduleProgress && statsData.data.stats.moduleProgress.length > 0) {
+          const progressByModule = statsData.data.stats.moduleProgress.slice(0, 6).map(mp => ({
+            name: mp.moduleName.substring(0, 12),
+            completed: mp.correctAnswers || 0,
+            pending: (mp.questionsAttempted || 0) - (mp.correctAnswers || 0)
+          }));
+          setModuleProgressChart(progressByModule);
+        } else {
+          setModuleProgressChart([]);
+        }
+        
+        // Transform weekly activity for study time chart
+        if (statsData.data?.stats?.weeklyActivity && statsData.data.stats.weeklyActivity.length > 0) {
+          const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+          const last7Days = statsData.data.stats.weeklyActivity.slice(-7);
+          const studyTimeData = last7Days.map(activity => {
+            const date = new Date(activity.date);
+            return {
+              day: days[date.getDay()],
+              hours: Math.round((activity.timeSpent || 0) / 60 * 10) / 10
+            };
+          });
+          setWeeklyActivity(studyTimeData);
+        } else {
+          setWeeklyActivity([
+            { day: 'Lun', hours: 0 },
+            { day: 'Mar', hours: 0 },
+            { day: 'Mer', hours: 0 },
+            { day: 'Jeu', hours: 0 },
+            { day: 'Ven', hours: 0 },
+            { day: 'Sam', hours: 0 },
+            { day: 'Dim', hours: 0 }
+          ]);
+        }
+        
+        // Calculate performance trend (last 6 months)
+        if (statsData.data?.stats?.weeklyActivity && statsData.data.stats.weeklyActivity.length > 0) {
+          const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+          const monthlyData = {};
+
+          statsData.data.stats.weeklyActivity.forEach(activity => {
+            const date = new Date(activity.date);
+            const monthKey = `${months[date.getMonth()]}`;
+
+            if (!monthlyData[monthKey]) {
+              monthlyData[monthKey] = { total: 0, correct: 0 };
+            }
+
+            monthlyData[monthKey].total += activity.questionsAttempted || 0;
+            monthlyData[monthKey].correct += activity.correctAnswers || 0;
+          });
+
+          const trendData = Object.keys(monthlyData).slice(-6).map(month => ({
+            month,
+            score: monthlyData[month].total > 0
+              ? Math.round((monthlyData[month].correct / monthlyData[month].total) * 100)
+              : 0
+          }));
+          setPerformanceTrend(trendData.length > 0 ? trendData : [
+            { month: 'Jan', score: 0 },
+            { month: 'Fév', score: 0 },
+            { month: 'Mar', score: 0 },
+            { month: 'Avr', score: 0 },
+            { month: 'Mai', score: 0 },
+            { month: 'Juin', score: 0 }
+          ]);
+        } else {
+          setPerformanceTrend([
+            { month: 'Jan', score: 0 },
+            { month: 'Fév', score: 0 },
+            { month: 'Mar', score: 0 },
+            { month: 'Avr', score: 0 },
+            { month: 'Mai', score: 0 },
+            { month: 'Juin', score: 0 }
+          ]);
+        }
+        
+        // Calculate completion rate from stats
+        const totalQuestions = statsData.data?.stats?.totalQuestionsAttempted || 0;
+        const correctAnswers = statsData.data?.stats?.totalCorrectAnswers || 0;
+        const incorrectAnswers = statsData.data?.stats?.totalIncorrectAnswers || 0;
+
+        if (totalQuestions > 0) {
+          setCompletionData([
+            { name: 'Correct', value: correctAnswers, fill: '#4ade80' },
+            { name: 'Incorrect', value: incorrectAnswers, fill: '#f87171' }
+          ]);
+        } else {
+          setCompletionData([
+            { name: 'Aucune donnée', value: 1, fill: '#94a3b8' }
+          ]);
+        }
         
         // Process modules data - API returns { success, count, data: [...modules] }
         const modulesList = modulesData.data?.data || modulesData.data || [];
@@ -171,9 +276,8 @@ const StatisticsPage = () => {
 
   // Handle module selection
   const handleModuleClick = (module) => {
-    setSelectedModule(module);
-    setModuleExamTab("exam-years");
-    fetchModuleExams(module._id);
+    // Navigate to the module's questions page
+    navigate(`/dashboard/subjects/${module._id}`);
   };
 
   // Close module detail
@@ -561,6 +665,246 @@ const StatisticsPage = () => {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Stats Grid - Mes Statistiques */}
+        <motion.div
+          variants={itemVariants}
+        >
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              Mes Statistiques
+            </h2>
+            <div className="h-1 w-16 bg-gradient-to-r from-blue-600 to-teal-500 mt-2 rounded-full" />
+          </div>
+
+          {loading ? (
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-2">
+                    <Skeleton className="h-4 w-24" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-20 mb-2" />
+                    <Skeleton className="h-3 w-32" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Examens complétés"
+                value={stats?.examsCompleted || 0}
+                icon={<Award className="h-4 w-4" />}
+                description="Au total"
+              />
+              <StatCard
+                title="Score moyen"
+                value={`${Math.round(stats?.averageScore || 0)}%`}
+                icon={<TrendingUp className="h-4 w-4" />}
+                description="Dernier examen"
+              />
+              <StatCard
+                title="Heures d'étude"
+                value={Math.round(stats?.studyHours || 0)}
+                icon={<Clock className="h-4 w-4" />}
+                description="Temps total"
+              />
+              <StatCard
+                title="Classement"
+                value={`#${stats?.rank || 0}`}
+                icon={<Award className="h-4 w-4" />}
+                description="Rang global"
+              />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Statistics Charts Section */}
+        <motion.div variants={itemVariants}>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-purple-600" />
+              Analyse de Performance
+            </h2>
+            <div className="h-1 w-16 bg-gradient-to-r from-purple-600 to-pink-500 mt-2 rounded-full" />
+          </div>
+
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+              <TabsTrigger value="detailed">Détails</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+                {/* Module Progress Chart */}
+                <Card className="border-blue-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <BarChart3 className="h-5 w-5 text-blue-600" />
+                      Progrès par Module
+                    </CardTitle>
+                    <CardDescription>Top 6 modules actifs</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {moduleProgressChart.length > 0 ? (
+                      <div className="w-full h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={moduleProgressChart} margin={{ top: 10, right: 20, left: 0, bottom: 50 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" fontSize={11} angle={-45} textAnchor="end" height={70} />
+                            <YAxis fontSize={11} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                              cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                            <Bar dataKey="completed" fill="#3b82f6" name="Complétées" radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="pending" fill="#fbbf24" name="En attente" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 text-slate-400">
+                        <p>Aucune donnée disponible</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Performance Trend Chart */}
+                <Card className="border-green-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <LineChartIcon className="h-5 w-5 text-green-600" />
+                      Évolution du Score
+                    </CardTitle>
+                    <CardDescription>Progression sur 6 mois</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {performanceTrend.length > 0 ? (
+                      <div className="w-full h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={performanceTrend}
+                            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="month" fontSize={11} />
+                            <YAxis fontSize={11} domain={[0, 100]} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                              cursor={{ stroke: '#10b981', strokeWidth: 2 }}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                            <Line
+                              type="monotone"
+                              dataKey="score"
+                              stroke="#10b981"
+                              strokeWidth={3}
+                              dot={{ fill: '#10b981', r: 4 }}
+                              activeDot={{ r: 6 }}
+                              name="Score (%)"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 text-slate-400">
+                        <p>Aucune donnée historique</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="detailed" className="space-y-4 sm:space-y-6">
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+                {/* Completion Rate Pie Chart */}
+                <Card className="border-purple-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Activity className="h-5 w-5 text-purple-600" />
+                      Taux de Complétion
+                    </CardTitle>
+                    <CardDescription>Répartition QCM</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 flex items-center justify-center">
+                    {completionData.length > 0 ? (
+                      <div className="w-full h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={completionData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={80}
+                              paddingAngle={3}
+                              dataKey="value"
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {completionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 text-slate-400">
+                        <p>Aucune donnée disponible</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Study Time Distribution */}
+                <Card className="border-amber-100 bg-white shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                      Temps d'Étude
+                    </CardTitle>
+                    <CardDescription>Heures par jour (7 jours)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {weeklyActivity.length > 0 ? (
+                      <div className="w-full h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={weeklyActivity}
+                            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="day" fontSize={11} />
+                            <YAxis fontSize={11} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                              formatter={(value) => `${value}h`}
+                              cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }}
+                            />
+                            <Bar dataKey="hours" fill="#f59e0b" name="Heures" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-64 text-slate-400">
+                        <p>Aucune donnée d'étude</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </motion.div>
 
         {/* Overall Statistics Cards */}
@@ -981,71 +1325,6 @@ const StatisticsPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Classement / Points System Info */}
-        <motion.div variants={itemVariants}>
-          <Card className="border-slate-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-600">
-                <Trophy className="h-5 w-5" />
-                Classement - Système de Points
-              </CardTitle>
-              <CardDescription>
-                Comment gagner des points et monter dans le classement
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                {/* Correct Answer Points */}
-                <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
-                    <Award className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-800">Réponse correcte</p>
-                    <p className="text-sm text-emerald-600 font-medium">+2 points</p>
-                    <p className="text-xs text-slate-500">Chaque bonne réponse</p>
-                  </div>
-                </div>
-
-                {/* Report Problem Points */}
-                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg">
-                    <MessageCircle className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-800">Report approuvé</p>
-                    <p className="text-sm text-green-600 font-medium">+1 point vert = 30 pts</p>
-                    <p className="text-xs text-slate-500">Ballon vert</p>
-                  </div>
-                </div>
-
-                {/* Explanation Points */}
-                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <Lightbulb className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-800">Explication approuvée</p>
-                    <p className="text-sm text-blue-600 font-medium">+1 point bleu = 40 pts</p>
-                    <p className="text-xs text-slate-500">Ballon bleu/gold</p>
-                  </div>
-                </div>
-
-                {/* Level System */}
-                <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg">
-                    <TrendingUp className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-800">Système de niveau</p>
-                    <p className="text-sm text-amber-600 font-medium">1 niveau = 50 pts</p>
-                    <p className="text-xs text-slate-500">1% = 1% des questions</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </motion.div>
     </div>
   );

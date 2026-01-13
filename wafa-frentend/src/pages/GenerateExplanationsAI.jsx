@@ -49,6 +49,13 @@ const GenerateExplanationsAI = () => {
   const [extractingPdf, setExtractingPdf] = useState(false);
   const pdfInputRef = useRef(null);
 
+  // Module context files management
+  const [moduleContextFiles, setModuleContextFiles] = useState([]);
+  const [loadingModuleContext, setLoadingModuleContext] = useState(false);
+  const [uploadingToModule, setUploadingToModule] = useState(false);
+  const [showModuleContextSection, setShowModuleContextSection] = useState(false);
+  const moduleContextInputRef = useRef(null);
+
   // Results state
   const [results, setResults] = useState(null);
   const [expandedResults, setExpandedResults] = useState(new Set());
@@ -57,6 +64,15 @@ const GenerateExplanationsAI = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fetch module context files when module is selected
+  useEffect(() => {
+    if (selectedModule) {
+      fetchModuleContextFiles(selectedModule);
+    } else {
+      setModuleContextFiles([]);
+    }
+  }, [selectedModule]);
 
   const fetchData = async () => {
     try {
@@ -77,6 +93,89 @@ const GenerateExplanationsAI = () => {
 
   const getExamsForModule = (moduleId) => {
     return exams.filter(e => (e.moduleId?._id || e.moduleId) === moduleId);
+  };
+
+  const fetchModuleContextFiles = async (moduleId) => {
+    if (!moduleId) return;
+    
+    try {
+      setLoadingModuleContext(true);
+      const { data } = await api.get(`/modules/${moduleId}/ai-context`);
+      if (data.success) {
+        setModuleContextFiles(data.data.aiContextFiles || []);
+      }
+    } catch (error) {
+      console.error('Error fetching module context files:', error);
+      setModuleContextFiles([]);
+    } finally {
+      setLoadingModuleContext(false);
+    }
+  };
+
+  const handleModuleContextUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Validate all files are PDFs
+    const invalidFiles = files.filter(f => f.type !== 'application/pdf');
+    if (invalidFiles.length > 0) {
+      toast.error("Tous les fichiers doivent être des PDFs");
+      return;
+    }
+
+    // Validate file sizes (max 20MB each)
+    const oversizedFiles = files.filter(f => f.size > 20 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast.error("Chaque PDF ne doit pas dépasser 20 Mo");
+      return;
+    }
+
+    if (!selectedModule) {
+      toast.error("Veuillez sélectionner un module d'abord");
+      return;
+    }
+
+    setUploadingToModule(true);
+
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('contextFiles', file);
+      });
+
+      const { data } = await api.post(`/modules/${selectedModule}/ai-context`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (data.success) {
+        setModuleContextFiles(data.data.aiContextFiles || []);
+        toast.success(`✓ ${files.length} fichier(s) ajouté(s) au module`);
+      }
+    } catch (error) {
+      console.error("Module context upload error:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de l'upload");
+    } finally {
+      setUploadingToModule(false);
+      if (moduleContextInputRef.current) {
+        moduleContextInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteModuleContextFile = async (fileId) => {
+    if (!selectedModule || !fileId) return;
+
+    try {
+      const { data } = await api.delete(`/modules/${selectedModule}/ai-context/${fileId}`);
+      
+      if (data.success) {
+        setModuleContextFiles(data.data.remainingFiles || []);
+        toast.success("✓ Fichier supprimé du module");
+      }
+    } catch (error) {
+      console.error("Error deleting module context file:", error);
+      toast.error("Erreur lors de la suppression");
+    }
   };
 
   const testConnection = async () => {
@@ -449,6 +548,113 @@ const GenerateExplanationsAI = () => {
                   Options avancées (optionnel)
                 </h3>
 
+                {/* Module Context Files Section */}
+                {selectedModule && (
+                  <div className="space-y-3 mb-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-purple-600" />
+                        <h4 className="font-semibold text-gray-800">
+                          Fichiers de contexte du module ({moduleContextFiles.length})
+                        </h4>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowModuleContextSection(!showModuleContextSection)}
+                        className="text-purple-600"
+                      >
+                        {showModuleContextSection ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                    </div>
+
+                    <p className="text-xs text-gray-600">
+                      📚 Ces fichiers sont sauvegardés dans le module et seront automatiquement utilisés pour toutes les générations futures
+                    </p>
+
+                    <AnimatePresence>
+                      {showModuleContextSection && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-3"
+                        >
+                          {/* Upload button */}
+                          <div className="flex gap-2">
+                            <input
+                              type="file"
+                              ref={moduleContextInputRef}
+                              onChange={handleModuleContextUpload}
+                              accept=".pdf"
+                              multiple
+                              className="hidden"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => moduleContextInputRef.current?.click()}
+                              disabled={uploadingToModule || loadingModuleContext}
+                              className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                              {uploadingToModule ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Upload...
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="w-4 h-4" />
+                                  Ajouter des PDFs au module
+                                </>
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* List of module context files */}
+                          {loadingModuleContext ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                            </div>
+                          ) : moduleContextFiles.length > 0 ? (
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {moduleContextFiles.map((file, idx) => (
+                                <div
+                                  key={file._id || idx}
+                                  className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2"
+                                >
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm text-gray-700 truncate">{file.filename}</p>
+                                      <p className="text-xs text-gray-500">
+                                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                                        {file.uploadedAt && ` • ${new Date(file.uploadedAt).toLocaleDateString('fr-FR')}`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteModuleContextFile(file._id)}
+                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 text-center py-3">
+                              Aucun fichier de contexte. Ajoutez des PDFs pour améliorer les explications IA.
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
                 {/* Custom Prompt */}
                 <div className="space-y-2 mb-4">
                   <Label className="font-semibold text-gray-700">Prompt personnalisé</Label>
@@ -465,7 +671,7 @@ const GenerateExplanationsAI = () => {
 
                 {/* PDF Context Upload */}
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-700">Contexte PDF</Label>
+                  <Label className="font-semibold text-gray-700">Contexte PDF temporaire</Label>
                   <div className="flex items-center gap-2">
                     <input
                       type="file"
@@ -511,7 +717,7 @@ const GenerateExplanationsAI = () => {
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    📄 Téléchargez un PDF pour que l'IA apprenne du contexte et améliore les explications
+                    📄 Contexte temporaire pour cette génération uniquement (non sauvegardé dans le module)
                   </p>
                 </div>
               </div>
@@ -827,7 +1033,8 @@ const GenerateExplanationsAI = () => {
                     <li>Les explications générées par AI sont automatiquement approuvées</li>
                     <li>Le mode batch respecte les limites de l'API (délai de 1s entre chaque génération)</li>
                     <li>Si une explication AI existe déjà pour une question, elle ne sera pas régénérée</li>
-                    <li>Vous pouvez télécharger un PDF pour fournir du contexte médical supplémentaire</li>
+                    <li className="font-semibold text-blue-700">📚 Les fichiers de contexte ajoutés au module sont sauvegardés et utilisés automatiquement pour toutes les futures générations</li>
+                    <li>Vous pouvez aussi télécharger un PDF temporaire pour fournir du contexte supplémentaire</li>
                     <li>Les prompts personnalisés permettent de contrôler le style des explications</li>
                     <li>Assurez-vous que votre clé API Gemini est configurée dans le fichier .env</li>
                   </ul>

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
 import { userService } from "@/services/userService";
+import { api } from "@/lib/utils";
 
 const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const { t } = useTranslation(['dashboard', 'common']);
@@ -23,7 +24,28 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     const cached = localStorage.getItem('userProfile');
     return cached ? JSON.parse(cached) : null;
   });
+  const [landingSettings, setLandingSettings] = useState(() => {
+    // Initialize from localStorage for instant display
+    const cached = localStorage.getItem('landingSettings');
+    return cached ? JSON.parse(cached) : { siteName: 'WAFA', siteVersion: 'v1.1', logoUrl: '' };
+  });
   const navigate = useNavigate();
+
+  // Fetch landing settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await api.get('/landing-settings');
+        if (data.success && data.data) {
+          setLandingSettings(data.data);
+          localStorage.setItem('landingSettings', JSON.stringify(data.data));
+        }
+      } catch (error) {
+        console.error('Failed to fetch landing settings:', error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Fetch user profile on mount (force refresh to get latest data)
   useEffect(() => {
@@ -76,12 +98,20 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
 
           {/* Logo - Hidden on mobile, visible on sm and up */}
           <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-white" />
-            </div>
+            {landingSettings.logoUrl ? (
+              <img 
+                src={landingSettings.logoUrl} 
+                alt={landingSettings.siteName || 'WAFA'} 
+                className="h-8 w-8 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="h-8 w-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-5 w-5 text-white" />
+              </div>
+            )}
             <div className="hidden sm:flex flex-col">
-              <span className="text-sm font-bold text-gray-900 leading-none">WAFA</span>
-              <span className="text-xs text-gray-500">v1.1</span>
+              <span className="text-sm font-bold text-gray-900 leading-none">{landingSettings.siteName || 'WAFA'}</span>
+              <span className="text-xs text-gray-500">{landingSettings.siteVersion || 'v1.1'}</span>
             </div>
           </div>
         </div>
@@ -103,7 +133,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-60 sm:w-64 max-h-[400px] overflow-y-auto" align="end" forceMount>
+            <DropdownMenuContent className="w-72 sm:w-80 max-h-[500px] overflow-y-auto" align="end" forceMount>
               <DropdownMenuLabel className="font-normal p-3 sm:p-4">
                 <div className="flex flex-col space-y-2">
                   <p className="text-sm sm:text-base font-semibold leading-none">{user?.name || t('common:user')}</p>
@@ -112,31 +142,100 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                   </p>
                   {/* User Stats Row */}
                   <div className="flex items-center gap-2 sm:gap-3 pt-2 text-xs">
-                    <div className="flex items-center gap-1">
-                      <span className="text-slate-500">⚡</span>
-                      <span className="font-medium">{user?.totalPoints || 0}</span>
+                    <div className="flex items-center gap-1" title="Points Questions">
+                      <span className="text-yellow-500">⚡</span>
+                      <span className="font-medium">{user?.normalPoints || 0}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-slate-500">⭐</span>
-                      <span className="font-medium">{user?.stars || 0}</span>
+                    <div className="flex items-center gap-1" title="Reports approuvés">
+                      <span className="text-green-500">🟢</span>
+                      <span className="font-medium">{user?.greenPoints || 0}</span>
                     </div>
-                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 flex-shrink-0">
+                    <div className="flex items-center gap-1" title="Explications approuvées">
+                      <span className="text-blue-500">🔵</span>
+                      <span className="font-medium">{user?.bluePoints || 0}</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 flex-shrink-0 ml-auto">
                       {user?.totalPoints || 0} pts
                     </Badge>
                   </div>
+                  
                   {/* Level and Progress */}
-                  <div className="pt-2 space-y-1.5">
+                  <div className="pt-2 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-600 font-medium">Niveau {Math.floor((user?.totalPoints || 0) / 50)}</span>
                       <span className="text-slate-500">{((user?.totalPoints || 0) % 50)}/50 XP</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-teal-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(((user?.totalPoints || 0) % 50) / 50) * 100}%` }}
-                      />
+                    
+                    {/* Detailed Progress Bar */}
+                    <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden relative">
+                      {/* Calculate widths for each segment */}
+                      {(() => {
+                        const totalPoints = user?.totalPoints || 0;
+                        const currentLevelPoints = totalPoints % 50;
+                        const normalPoints = user?.normalPoints || 0;
+                        const greenPointsValue = (user?.greenPoints || 0) * 30;
+                        const bluePointsValue = (user?.bluePoints || 0) * 40;
+                        const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
+                        
+                        // Calculate proportions for current level progress
+                        const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
+                        const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
+                        const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
+                        
+                        const progressPercent = (currentLevelPoints / 50) * 100;
+                        const normalWidth = normalRatio * progressPercent;
+                        const greenWidth = greenRatio * progressPercent;
+                        const blueWidth = blueRatio * progressPercent;
+                        
+                        return (
+                          <div className="flex h-full">
+                            {normalWidth > 0 && (
+                              <div 
+                                className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
+                                style={{ width: `${normalWidth}%` }}
+                                title={`Questions: ${normalPoints} pts`}
+                              />
+                            )}
+                            {greenWidth > 0 && (
+                              <div 
+                                className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
+                                style={{ width: `${greenWidth}%` }}
+                                title={`Reports: ${greenPointsValue} pts`}
+                              />
+                            )}
+                            {blueWidth > 0 && (
+                              <div 
+                                className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
+                                style={{ width: `${blueWidth}%` }}
+                                title={`Explications: ${bluePointsValue} pts`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    
+                    {/* Legend */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                        <span>Questions ({user?.normalPoints || 0})</span>
+                      </div>
+                      {(user?.greenPoints || 0) > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                          <span>Reports ({(user?.greenPoints || 0) * 30})</span>
+                        </div>
+                      )}
+                      {(user?.bluePoints || 0) > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                          <span>Explic. ({(user?.bluePoints || 0) * 40})</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-slate-500 pt-1">
                       {user?.percentageAnswered ? `${user.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
                     </div>
                   </div>

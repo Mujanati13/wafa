@@ -60,6 +60,14 @@ const moduleSchema = new mongoose.Schema(
                 type: String,
                 default: "",
         },
+        // AI Context Files - Multiple PDF files that provide context for AI explanation generation
+        aiContextFiles: [{
+                filename: { type: String, required: true },
+                url: { type: String, required: true },
+                size: { type: Number }, // in bytes
+                uploadedAt: { type: Date, default: Date.now },
+                uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+        }],
         // Difficulty level
         difficulty: {
                 type: String,
