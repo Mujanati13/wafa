@@ -291,6 +291,12 @@ const ProfilePage = () => {
   // Calculate stats from user data
   const stats = [
     { 
+      label: 'Points Totaux', 
+      value: user?.totalPoints || 0, 
+      icon: <Trophy className="h-4 w-4 text-yellow-600" />,
+      description: `Niveau ${user?.level || 0} (${user?.xpToNextLevel || 0}/50 XP)`
+    },
+    { 
       label: t('dashboard:exams_taken'), 
       value: userStats?.examsCompleted || 0, 
       icon: <BookOpen className="h-4 w-4" /> 
@@ -610,7 +616,8 @@ const ProfilePage = () => {
               </CardContent>
             </Card>
 
-            {/* Achievements */}
+            {/* Achievements - Hidden */}
+            <div style={{ display: 'none' }}>
             <Card>
               <CardHeader>
                 <CardTitle>{t('dashboard:achievements')}</CardTitle>
@@ -651,6 +658,7 @@ const ProfilePage = () => {
                 )}
               </CardContent>
             </Card>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -708,13 +716,114 @@ const ProfilePage = () => {
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {stat.icon}
-                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-muted-foreground">{stat.label}</span>
+                        {stat.description && (
+                          <span className="text-xs text-muted-foreground">{stat.description}</span>
+                        )}
+                      </div>
                     </div>
                     <span className="font-semibold">{stat.value}</span>
                   </div>
                 ))}
               </CardContent>
             </Card>
+
+            {/* Questions Statistics Card - Hidden */}
+            <div style={{ display: 'none' }}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Statistiques Questions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Questions Répondues</span>
+                  <span className="font-semibold">{user?.questionsAnswered || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Réponses Correctes</span>
+                  <span className="font-semibold text-green-600">{user?.correctAnswers || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Taux de Réussite</span>
+                  <span className="font-semibold">
+                    {user?.questionsAnswered > 0 
+                      ? `${Math.round((user.correctAnswers / user.questionsAnswered) * 100)}%`
+                      : '0%'
+                    }
+                  </span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Progression Globale</span>
+                  <span className="font-semibold">{user?.percentageAnswered?.toFixed(1) || 0}%</span>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${user?.percentageAnswered || 0}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            </div>
+
+            {/* Points Breakdown Card - Hidden */}
+            <div style={{ display: 'none' }}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Détail des Points</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-yellow-50">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                    <span className="text-sm text-muted-foreground">Questions</span>
+                  </div>
+                  <span className="font-semibold text-yellow-700">{user?.normalPoints || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-green-50">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    <span className="text-sm text-muted-foreground">Signalements (×30)</span>
+                  </div>
+                  <span className="font-semibold text-green-700">{user?.greenPoints || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                    <span className="text-sm text-muted-foreground">Explications (×40)</span>
+                  </div>
+                  <span className="font-semibold text-blue-700">{user?.bluePoints || 0}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex items-center justify-between font-semibold">
+                  <span className="text-sm">Total des Points</span>
+                  <span className="text-lg">{user?.totalPoints || 0}</span>
+                </div>
+                
+                {/* Progress bar to next level */}
+                <div className="mt-3 space-y-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Niveau {user?.level || 0}</span>
+                    <span>{user?.xpToNextLevel || 0}/50 XP</span>
+                  </div>
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((user?.xpToNextLevel || 0) / 50) * 100}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            </div>
           </div>
         </div>
       </div>

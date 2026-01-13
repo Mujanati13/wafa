@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, Image } from "lucide-react";
+import { BookOpen, Search, Filter, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, Image, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import NewModuleForm from "@/components/admin/NewModuleForm";
 import EditModuleForm from "@/components/admin/EditModuleForm";
 import { api } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Module = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -26,6 +27,10 @@ const Module = () => {
   const [error, setError] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
+  
+  // Multi-selection state
+  const [selectedModules, setSelectedModules] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchModules();
@@ -93,12 +98,65 @@ const Module = () => {
     if (!confirm(t('admin:confirm_delete_module'))) return;
 
     try {
-      api.delete(`/modules/${id}`);
+      await api.delete(`/modules/${id}`);
       toast.success(t('admin:module_deleted'));
       fetchModules();
     } catch (error) {
       console.error("Error deleting module:", error);
       toast.error(t('admin:failed_delete'));
+    }
+  };
+
+  // Multi-selection handlers
+  const toggleSelectModule = (moduleId) => {
+    setSelectedModules(prev => 
+      prev.includes(moduleId) 
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedModules.length === currentModules.length) {
+      setSelectedModules([]);
+    } else {
+      setSelectedModules(currentModules.map(m => m.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedModules.length === 0) {
+      toast.warning('Veuillez sélectionner au moins un module');
+      return;
+    }
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedModules.length} module(s) ?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedModules.map(id => api.delete(`/modules/${id}`))
+      );
+      
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const failCount = results.filter(r => r.status === 'rejected').length;
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} module(s) supprimé(s) avec succès`);
+      }
+      if (failCount > 0) {
+        toast.warning(`${failCount} module(s) non trouvé(s) ou déjà supprimé(s)`);
+      }
+      
+      setSelectedModules([]);
+      fetchModules();
+    } catch (error) {
+      console.error("Error bulk deleting modules:", error);
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -199,10 +257,27 @@ const Module = () => {
             <p className="text-gray-600">{t('admin:manage_modules_by_semester')}</p>
           </div>
 
-          <Button onClick={() => setShowNewModuleForm(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
-            <Plus className="h-4 w-4" />
-            {t('admin:add_module')}
-          </Button>
+          <div className="flex items-center gap-2">
+            {selectedModules.length > 0 && (
+              <Button 
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                variant="destructive"
+                className="gap-2"
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Supprimer ({selectedModules.length})
+              </Button>
+            )}
+            <Button onClick={() => setShowNewModuleForm(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
+              <Plus className="h-4 w-4" />
+              {t('admin:add_module')}
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -252,6 +327,12 @@ const Module = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedModules.length === currentModules.length && currentModules.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>{t('admin:semester')}</TableHead>
                     <TableHead>{t('admin:module')}</TableHead>
@@ -266,13 +347,19 @@ const Module = () => {
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                         {t('admin:no_modules_found')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     currentModules.map((m) => (
                       <TableRow key={m.id}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedModules.includes(m.id)}
+                            onCheckedChange={() => toggleSelectModule(m.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-sm">{m.id.slice(-6)}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{m.semester}</Badge>

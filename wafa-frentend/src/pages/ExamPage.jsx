@@ -1178,12 +1178,6 @@ const ExamPage = () => {
           {/* Left: Menu + Exit */}
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setShowSidebar(true)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
-            >
-              <Menu className="h-5 w-5 text-gray-700" />
-            </button>
-            <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors text-gray-700"
             >
@@ -1251,39 +1245,99 @@ const ExamPage = () => {
                         </p>
                         <p className="text-xs text-gray-500 truncate">{userProfile?.email || ''}</p>
                         
-                        {/* Level Bar */}
-                        {userLevelInfo && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between text-[10px] mb-1">
-                              <span className="font-medium text-purple-600">Level {userLevelInfo.level}</span>
-                              <span className="text-gray-500">{userLevelInfo.name}</span>
-                            </div>
-                            <div className="h-1.5 bg-purple-100 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all"
-                                style={{ width: `${userLevelInfo.progress}%` }}
-                              />
-                            </div>
+                        {/* User Stats Row */}
+                        <div className="flex items-center gap-2 pt-2 text-xs">
+                          <div className="flex items-center gap-1" title="Points Questions">
+                            <span className="text-yellow-500">⚡</span>
+                            <span className="font-medium">{userProfile?.normalPoints || 0}</span>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Stats */}
-                      <div className="p-2 border-b">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-xs">
-                              <Zap className="h-3.5 w-3.5 text-yellow-500" />
-                              <span className="font-semibold">{userProfile?.totalPoints || 0}</span>
-                            </span>
-                            <span className="flex items-center gap-1 text-xs">
-                              <Star className="h-3.5 w-3.5 text-amber-500" />
-                              <span className="font-semibold">{userProfile?.stars || 0}</span>
-                            </span>
+                          <div className="flex items-center gap-1" title="Reports approuvés">
+                            <span className="text-green-500">🟢</span>
+                            <span className="font-medium">{userProfile?.greenPoints || 0}</span>
                           </div>
-                          <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                          <div className="flex items-center gap-1" title="Explications approuvées">
+                            <span className="text-blue-500">🔵</span>
+                            <span className="font-medium">{userProfile?.bluePoints || 0}</span>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 ml-auto">
                             {userProfile?.totalPoints || 0} pts
                           </Badge>
+                        </div>
+                        
+                        {/* Level and Progress */}
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-medium text-slate-600">Niveau {Math.floor((userProfile?.totalPoints || 0) / 50)}</span>
+                            <span className="text-slate-500">{((userProfile?.totalPoints || 0) % 50)}/50 XP</span>
+                          </div>
+                          
+                          {/* Detailed Progress Bar */}
+                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden relative">
+                            {(() => {
+                              const totalPoints = userProfile?.totalPoints || 0;
+                              const currentLevelPoints = totalPoints % 50;
+                              const normalPoints = userProfile?.normalPoints || 0;
+                              const greenPointsValue = (userProfile?.greenPoints || 0) * 30;
+                              const bluePointsValue = (userProfile?.bluePoints || 0) * 40;
+                              const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
+                              
+                              const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
+                              const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
+                              const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
+                              
+                              const progressPercent = (currentLevelPoints / 50) * 100;
+                              const normalWidth = normalRatio * progressPercent;
+                              const greenWidth = greenRatio * progressPercent;
+                              const blueWidth = blueRatio * progressPercent;
+                              
+                              return (
+                                <div className="flex h-full">
+                                  {normalWidth > 0 && (
+                                    <div 
+                                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
+                                      style={{ width: `${normalWidth}%` }}
+                                    />
+                                  )}
+                                  {greenWidth > 0 && (
+                                    <div 
+                                      className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
+                                      style={{ width: `${greenWidth}%` }}
+                                    />
+                                  )}
+                                  {blueWidth > 0 && (
+                                    <div 
+                                      className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
+                                      style={{ width: `${blueWidth}%` }}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          
+                          {/* Legend */}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] text-slate-500">
+                            <div className="flex items-center gap-1">
+                              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+                              <span>Questions ({userProfile?.normalPoints || 0})</span>
+                            </div>
+                            {(userProfile?.greenPoints || 0) > 0 && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                                <span>Reports ({(userProfile?.greenPoints || 0) * 30})</span>
+                              </div>
+                            )}
+                            {(userProfile?.bluePoints || 0) > 0 && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                <span>Explic. ({(userProfile?.bluePoints || 0) * 40})</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="text-[10px] text-slate-500 pt-1">
+                            {userProfile?.percentageAnswered ? `${userProfile.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
+                          </div>
                         </div>
                       </div>
 
@@ -1359,15 +1413,6 @@ const ExamPage = () => {
           <div className="flex items-center justify-between h-12 sm:h-14 md:h-16">
             {/* Left Section - Menu button far left */}
             <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSidebar(!showSidebar)}
-                className="shrink-0 hover:bg-gray-100 h-8 w-8 sm:h-9 sm:w-9"
-              >
-                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-
               {/* Exit Button */}
               <Button
                 variant="outline"
@@ -1438,25 +1483,21 @@ const ExamPage = () => {
               </div>
 
               {/* Verify Shortcut Button (Enter key) */}
+              {/* Keyboard Shortcuts Button */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                whileHover={!isQuestionVerified && !showResults ? { scale: 1.05 } : {}}
-                whileTap={!isQuestionVerified && !showResults ? { scale: 0.95 } : {}}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <Button
-                  onClick={handleVerifyQuestion}
-                  disabled={isQuestionVerified || showResults}
-                  className={cn(
-                    "gap-2 shadow-md transition-all",
-                    isQuestionVerified || showResults
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white hover:shadow-lg"
-                  )}
-                  title={isQuestionVerified ? "Question déjà vérifiée" : "Appuyez sur Entrée ou cliquez pour vérifier"}
+                  onClick={() => setShowKeyboardShortcuts(true)}
+                  className="gap-2 bg-purple-50 text-purple-600 border border-purple-300 hover:bg-purple-100 hover:border-purple-400 shadow-sm transition-all"
+                  variant="outline"
+                  title="Voir tous les raccourcis clavier"
                 >
                   <Keyboard className="h-4 w-4" />
-                  <span className="text-xs font-semibold">↵ Enter</span>
+                  <span className="text-xs font-semibold">Raccourcis</span>
                 </Button>
               </motion.div>
 
@@ -1510,39 +1551,99 @@ const ExamPage = () => {
                           </p>
                           <p className="text-sm text-gray-500 truncate">{userProfile?.email || ''}</p>
                           
-                          {/* Level Bar */}
-                          {userLevelInfo && (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="font-medium text-purple-600">Level {userLevelInfo.level}</span>
-                                <span className="text-gray-500">{userLevelInfo.name}</span>
-                              </div>
-                              <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all"
-                                  style={{ width: `${userLevelInfo.progress}%` }}
-                                />
-                              </div>
+                          {/* User Stats Row */}
+                          <div className="flex items-center gap-3 pt-2 text-xs">
+                            <div className="flex items-center gap-1" title="Points Questions">
+                              <span className="text-yellow-500">⚡</span>
+                              <span className="font-medium">{userProfile?.normalPoints || 0}</span>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Stats */}
-                        <div className="p-3 border-b">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="flex items-center gap-1 text-sm">
-                                <Zap className="h-4 w-4 text-yellow-500" />
-                                <span className="font-semibold">{userProfile?.totalPoints || 0}</span>
-                              </span>
-                              <span className="flex items-center gap-1 text-sm">
-                                <Star className="h-4 w-4 text-amber-500" />
-                                <span className="font-semibold">{userProfile?.stars || 0}</span>
-                              </span>
+                            <div className="flex items-center gap-1" title="Reports approuvés">
+                              <span className="text-green-500">🟢</span>
+                              <span className="font-medium">{userProfile?.greenPoints || 0}</span>
                             </div>
-                            <Badge className="bg-blue-100 text-blue-700 text-xs">
+                            <div className="flex items-center gap-1" title="Explications approuvées">
+                              <span className="text-blue-500">🔵</span>
+                              <span className="font-medium">{userProfile?.bluePoints || 0}</span>
+                            </div>
+                            <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 ml-auto">
                               {userProfile?.totalPoints || 0} pts
                             </Badge>
+                          </div>
+                          
+                          {/* Level and Progress */}
+                          <div className="mt-3 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-medium text-slate-600">Niveau {Math.floor((userProfile?.totalPoints || 0) / 50)}</span>
+                              <span className="text-slate-500">{((userProfile?.totalPoints || 0) % 50)}/50 XP</span>
+                            </div>
+                            
+                            {/* Detailed Progress Bar */}
+                            <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden relative">
+                              {(() => {
+                                const totalPoints = userProfile?.totalPoints || 0;
+                                const currentLevelPoints = totalPoints % 50;
+                                const normalPoints = userProfile?.normalPoints || 0;
+                                const greenPointsValue = (userProfile?.greenPoints || 0) * 30;
+                                const bluePointsValue = (userProfile?.bluePoints || 0) * 40;
+                                const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
+                                
+                                const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
+                                const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
+                                const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
+                                
+                                const progressPercent = (currentLevelPoints / 50) * 100;
+                                const normalWidth = normalRatio * progressPercent;
+                                const greenWidth = greenRatio * progressPercent;
+                                const blueWidth = blueRatio * progressPercent;
+                                
+                                return (
+                                  <div className="flex h-full">
+                                    {normalWidth > 0 && (
+                                      <div 
+                                        className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
+                                        style={{ width: `${normalWidth}%` }}
+                                      />
+                                    )}
+                                    {greenWidth > 0 && (
+                                      <div 
+                                        className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
+                                        style={{ width: `${greenWidth}%` }}
+                                      />
+                                    )}
+                                    {blueWidth > 0 && (
+                                      <div 
+                                        className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
+                                        style={{ width: `${blueWidth}%` }}
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Legend */}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                                <span>Questions ({userProfile?.normalPoints || 0})</span>
+                              </div>
+                              {(userProfile?.greenPoints || 0) > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                                  <span>Reports ({(userProfile?.greenPoints || 0) * 30})</span>
+                                </div>
+                              )}
+                              {(userProfile?.bluePoints || 0) > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                                  <span>Explic. ({(userProfile?.bluePoints || 0) * 40})</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="text-xs text-slate-500 pt-1">
+                              {userProfile?.percentageAnswered ? `${userProfile.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
+                            </div>
                           </div>
                         </div>
 
@@ -1871,26 +1972,6 @@ const ExamPage = () => {
                                   </div>
                                 );
                               })()}
-                              {/* Ressayer button */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleResetQuestion}
-                                className="gap-1 h-8"
-                              >
-                                <RefreshCcw className="h-3 w-3" />
-                                <span className="hidden xl:inline">Ressayer</span>
-                              </Button>
-                              {/* Explication button */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowExplanation(true)}
-                                className="gap-1 text-amber-600 border-amber-300 hover:bg-amber-50 h-8"
-                              >
-                                <Lightbulb className="h-3 w-3" />
-                                <span className="hidden xl:inline">Explication</span>
-                              </Button>
                             </div>
                           ) : (
                             <Button
@@ -1932,7 +2013,7 @@ const ExamPage = () => {
                       </div>
                       
                       {/* Right: Desktop action buttons + Mobile 3-dot menu */}
-                      <div className="flex items-center gap-0.5 shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0 bg-blue-50 rounded-lg px-2 py-1.5">
                         {/* DESKTOP: Show all buttons */}
                         <div className="hidden sm:flex items-center gap-0.5">
                           {/* Playlist */}
@@ -2329,7 +2410,7 @@ const ExamPage = () => {
                     {/* Action Buttons - Below Answer Options */}
                     <div className="pt-4 border-t">
                       {!isQuestionVerified && !showResults ? (
-                        /* Before Verification: Show Vérifier + Vue d'ensemble */
+                        /* Before Verification: Show Vérifier only */
                         <div className="flex items-center gap-2">
                           <Button
                             onClick={handleVerifyQuestion}
@@ -2344,52 +2425,10 @@ const ExamPage = () => {
                             <Check className="h-4 w-4" />
                             Vérifier
                           </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowVueEnsemble(true)}
-                            className="gap-2"
-                          >
-                            <LayoutGrid className="h-4 w-4" />
-                            <span className="hidden sm:inline">Vue d'ensemble</span>
-                          </Button>
                         </div>
                       ) : (
-                        /* After Verification: Show result + action buttons */
+                        /* After Verification: Show action buttons only */
                         <div className="space-y-3">
-                          {/* Result Status */}
-                          <div className="flex items-center justify-center gap-2 p-3 rounded-lg" style={{
-                            backgroundColor: (() => {
-                              const selected = selectedAnswers[currentQuestion] || [];
-                              const correctIndices = currentQuestionData.options
-                                .map((opt, idx) => opt.isCorrect ? idx : null)
-                                .filter(idx => idx !== null);
-                              const isCorrect = selected.length === correctIndices.length &&
-                                selected.every(s => correctIndices.includes(s));
-                              return isCorrect ? '#dcfce7' : '#fee2e2';
-                            })()
-                          }}>
-                            {(() => {
-                              const selected = selectedAnswers[currentQuestion] || [];
-                              const correctIndices = currentQuestionData.options
-                                .map((opt, idx) => opt.isCorrect ? idx : null)
-                                .filter(idx => idx !== null);
-                              const isCorrect = selected.length === correctIndices.length &&
-                                selected.every(s => correctIndices.includes(s));
-                              
-                              return isCorrect ? (
-                                <>
-                                  <CheckCircle className="h-5 w-5 text-emerald-600" />
-                                  <span className="font-semibold text-emerald-700">Correct</span>
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="h-5 w-5 text-red-600" />
-                                  <span className="font-semibold text-red-700">Incorrect</span>
-                                </>
-                              );
-                            })()}
-                          </div>
-
                           {/* Action Buttons Grid - Mobile Only */}
                           <div className="lg:hidden grid grid-cols-2 gap-2">
                             <Button
@@ -2446,31 +2485,56 @@ const ExamPage = () => {
                 <span className="hidden sm:inline">{t('dashboard:previous') || 'Previous'}</span>
               </Button>
 
-              <div className="flex items-center gap-1.5">
-                {questions.slice(
-                  Math.max(0, currentQuestion - 2),
-                  Math.min(questions.length, currentQuestion + 3)
-                ).map((_, i) => {
-                  const actualIndex = Math.max(0, currentQuestion - 2) + i;
-                  return (
-                    <button
-                      key={actualIndex}
-                      onClick={() => goToQuestion(actualIndex)}
-                      className={cn(
-                        "w-2 h-2 rounded-full transition-all",
-                        actualIndex === currentQuestion
-                          ? "w-6"
-                          : "bg-gray-300 hover:bg-gray-400"
-                      )}
-                      style={
-                        actualIndex === currentQuestion
-                          ? { backgroundColor: moduleColor }
-                          : {}
-                      }
-                    />
-                  );
-                })}
-              </div>
+              {/* Center: Action buttons when answer is verified */}
+              {isQuestionVerified && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleResetQuestion}
+                    className="gap-2 border-gray-300 hover:bg-gray-50"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    Ressayer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowExplanation(true)}
+                    className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    Explication
+                  </Button>
+                </div>
+              )}
+
+              {/* Center: Question dots when not verified */}
+              {!isQuestionVerified && (
+                <div className="flex items-center gap-1.5">
+                  {questions.slice(
+                    Math.max(0, currentQuestion - 2),
+                    Math.min(questions.length, currentQuestion + 3)
+                  ).map((_, i) => {
+                    const actualIndex = Math.max(0, currentQuestion - 2) + i;
+                    return (
+                      <button
+                        key={actualIndex}
+                        onClick={() => goToQuestion(actualIndex)}
+                        className={cn(
+                          "w-2 h-2 rounded-full transition-all",
+                          actualIndex === currentQuestion
+                            ? "w-6"
+                            : "bg-gray-300 hover:bg-gray-400"
+                        )}
+                        style={
+                          actualIndex === currentQuestion
+                            ? { backgroundColor: moduleColor }
+                            : {}
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
 
               <Button
                 onClick={goToNext}

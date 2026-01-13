@@ -288,6 +288,7 @@ export const AdminAnalyticsController = {
           username: '$user.username',
           name: '$user.name',
           email: '$user.email',
+          photoURL: '$user.profilePicture',
           normalPoints: { $ifNull: ['$totalPoints', 0] },
           points: { $ifNull: ['$totalPoints', 0] },
           bluePoints: { $ifNull: ['$bluePoints', 0] },

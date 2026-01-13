@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
 
@@ -217,11 +218,20 @@ const LeaderboardClient = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  <div
-                    className={`h-14 w-14 rounded-full ring-4 ${styles.ring} flex items-center justify-center font-semibold text-lg bg-white`}
-                  >
-                    {getInitials(user.name)}
-                  </div>
+                  <Avatar className="h-14 w-14 ring-4 ring-white">
+                    <AvatarImage 
+                      src={user.profilePicture?.startsWith('http') 
+                        ? user.profilePicture 
+                        : user.profilePicture 
+                          ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.profilePicture}` 
+                          : undefined
+                      } 
+                      alt={user.name} 
+                    />
+                    <AvatarFallback className="text-lg font-semibold bg-white">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold truncate">{user.name}</p>
                     <div className="flex items-center gap-2 mt-1 text-xs">
@@ -328,8 +338,17 @@ const LeaderboardClient = () => {
                       >
                         #{rank}
                       </span>
-                      <div
-                        className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${
+                      <Avatar className="h-9 w-9 flex-shrink-0">
+                        <AvatarImage 
+                          src={userData.profilePicture?.startsWith('http') 
+                            ? userData.profilePicture 
+                            : userData.profilePicture 
+                              ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
+                              : undefined
+                          } 
+                          alt={userData.name} 
+                        />
+                        <AvatarFallback className={`text-sm font-semibold ${
                           rank === 1
                             ? "bg-amber-100 text-amber-800"
                             : rank === 2
@@ -337,10 +356,10 @@ const LeaderboardClient = () => {
                             : rank === 3
                             ? "bg-orange-100 text-orange-800"
                             : "bg-muted text-foreground/80"
-                        }`}
-                      >
-                        {getInitials(userData.name)}
-                      </div>
+                        }`}>
+                          {getInitials(userData.name)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="min-w-0 flex-1">
                         <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
                           {userData.name}
@@ -435,8 +454,17 @@ const LeaderboardClient = () => {
                       >
                         #{rank}
                       </span>
-                      <div
-                        className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold ${
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage 
+                          src={userData.profilePicture?.startsWith('http') 
+                            ? userData.profilePicture 
+                            : userData.profilePicture 
+                              ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
+                              : undefined
+                          } 
+                          alt={userData.name} 
+                        />
+                        <AvatarFallback className={`text-sm font-semibold ${
                           rank === 1
                             ? "bg-amber-100 text-amber-800"
                             : rank === 2
@@ -444,10 +472,10 @@ const LeaderboardClient = () => {
                             : rank === 3
                             ? "bg-orange-100 text-orange-800"
                             : "bg-muted text-foreground/80"
-                        }`}
-                      >
-                        {getInitials(userData.name)}
-                      </div>
+                        }`}>
+                          {getInitials(userData.name)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="min-w-0">
                         <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700" : ""}`}>
                           {userData.name}
@@ -546,9 +574,20 @@ const LeaderboardClient = () => {
                         <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-xs text-foreground/70 border-muted flex-shrink-0">
                           #{userData.rank}
                         </span>
-                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80 flex-shrink-0">
-                          {getInitials(userData.name)}
-                        </div>
+                        <Avatar className="h-9 w-9 flex-shrink-0">
+                          <AvatarImage 
+                            src={userData.profilePicture?.startsWith('http') 
+                              ? userData.profilePicture 
+                              : userData.profilePicture 
+                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
+                                : undefined
+                            } 
+                            alt={userData.name} 
+                          />
+                          <AvatarFallback className="text-sm font-semibold bg-muted text-foreground/80">
+                            {getInitials(userData.name)}
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0 flex-1">
                           <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
                             {userData.name}
@@ -628,9 +667,20 @@ const LeaderboardClient = () => {
                         <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-sm text-foreground/70 border-muted">
                           #{userData.rank}
                         </span>
-                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold bg-muted text-foreground/80">
-                          {getInitials(userData.name)}
-                        </div>
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage 
+                            src={userData.profilePicture?.startsWith('http') 
+                              ? userData.profilePicture 
+                              : userData.profilePicture 
+                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
+                                : undefined
+                            } 
+                            alt={userData.name} 
+                          />
+                          <AvatarFallback className="text-sm font-semibold bg-muted text-foreground/80">
+                            {getInitials(userData.name)}
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="min-w-0">
                           <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
                             {userData.name}

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -34,6 +35,8 @@ const CreateCategoriesForCourses = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const placeholderImage = "https://via.placeholder.com/150x100/111827/FFFFFF?text=Image";
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -188,6 +191,53 @@ const CreateCategoriesForCourses = () => {
     } catch (err) {
       console.error("Error deleting category:", err);
       toast.error(err.response?.data?.message || "Erreur lors de la suppression");
+    }
+  };
+
+  const toggleSelectCategory = (categoryId) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCategories.length === currentRows.length && currentRows.length > 0) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(currentRows.map((cat) => cat.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCategories.length === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedCategories.length} catégorie(s) ?`)) return;
+
+    try {
+      setIsBulkDeleting(true);
+      const results = await Promise.allSettled(
+        selectedCategories.map((id) => api.delete(`/course-categories/${id}`))
+      );
+      
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const failCount = results.filter(r => r.status === 'rejected').length;
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} catégorie(s) supprimée(s) avec succès`);
+      }
+      if (failCount > 0) {
+        toast.warning(`${failCount} catégorie(s) non trouvée(s) ou déjà supprimée(s)`);
+      }
+      
+      setSelectedCategories([]);
+      fetchCategories();
+    } catch (err) {
+      console.error("Error deleting categories:", err);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -369,6 +419,28 @@ const CreateCategoriesForCourses = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedCategories.length > 0 && (
+                <div className="mt-4 flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                  <Button 
+                    onClick={handleBulkDelete}
+                    disabled={isBulkDeleting}
+                    variant="destructive"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {isBulkDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Supprimer ({selectedCategories.length})
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedCategories.length} élément(s) sélectionné(s)
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -401,6 +473,12 @@ const CreateCategoriesForCourses = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left py-4 px-6 font-semibold text-black w-[50px]">
+                            <Checkbox 
+                              checked={selectedCategories.length === currentRows.length && currentRows.length > 0}
+                              onCheckedChange={toggleSelectAll}
+                            />
+                          </th>
                           <th className="text-left py-4 px-6 font-semibold text-black">ID</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Module</th>
                           <th className="text-left py-4 px-6 font-semibold text-black">Catégorie</th>
@@ -420,6 +498,12 @@ const CreateCategoriesForCourses = () => {
                               transition={{ duration: 0.3, delay: idx * 0.05 }}
                               className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                             >
+                              <td className="py-4 px-6">
+                                <Checkbox 
+                                  checked={selectedCategories.includes(row.id)}
+                                  onCheckedChange={() => toggleSelectCategory(row.id)}
+                                />
+                              </td>
                               <td className="py-4 px-6">
                                 <Badge className="bg-gray-200 text-black border border-gray-300">
                                   #{row.id.slice(-6)}

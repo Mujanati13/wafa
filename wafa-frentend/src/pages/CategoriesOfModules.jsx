@@ -14,6 +14,7 @@ import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
 import NewCategoryForm from "@/components/admin/NewCategoryForm";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // 3 default categories
 const DEFAULT_CATEGORIES = [
@@ -43,6 +44,10 @@ const CategoriesOfModules = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingModule, setDeletingModule] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Multi-selection state
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -175,6 +180,59 @@ const CategoriesOfModules = () => {
       toast.error("Erreur lors de la suppression du module");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Multi-selection handlers
+  const toggleSelectCategory = (moduleId) => {
+    setSelectedCategories(prev => 
+      prev.includes(moduleId) 
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCategories.length === currentModules.length) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(currentModules.map(m => m._id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCategories.length === 0) {
+      toast.warning('Veuillez sélectionner au moins une catégorie');
+      return;
+    }
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedCategories.length} catégorie(s) ?`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedCategories.map(id => api.delete(`/modules/${id}`))
+      );
+      
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      const failCount = results.filter(r => r.status === 'rejected').length;
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} catégorie(s) supprimée(s) avec succès`);
+      }
+      if (failCount > 0) {
+        toast.warning(`${failCount} catégorie(s) non trouvée(s) ou déjà supprimée(s)`);
+      }
+      
+      setSelectedCategories([]);
+      fetchModules();
+    } catch (error) {
+      console.error("Error bulk deleting categories:", error);
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -332,10 +390,38 @@ const CategoriesOfModules = () => {
               </Select>
             </div>
 
+            {selectedCategories.length > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                <Button 
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                >
+                  {isBulkDeleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Supprimer ({selectedCategories.length})
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {selectedCategories.length} élément(s) sélectionné(s)
+                </span>
+              </div>
+            )}
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedCategories.length === currentModules.length && currentModules.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Module</TableHead>
                     <TableHead>Semestre</TableHead>
                     <TableHead>Catégorie</TableHead>
@@ -345,13 +431,19 @@ const CategoriesOfModules = () => {
                 <TableBody>
                   {currentModules.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         Aucun module trouvé
                       </TableCell>
                     </TableRow>
                   ) : (
                     currentModules.map((m) => (
                       <TableRow key={m.uniqueKey}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedCategories.includes(m._id)}
+                            onCheckedChange={() => toggleSelectCategory(m._id)}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div

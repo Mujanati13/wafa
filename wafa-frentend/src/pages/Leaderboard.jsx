@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PageHeader, StatCard, TableFilters } from "@/components/shared";
 import { adminAnalyticsService } from "@/services/adminAnalyticsService";
 import { moduleService } from "@/services/moduleService";
@@ -74,6 +75,7 @@ const Leaderboard = () => {
         
         return {
           ...user,
+          photoURL: user.photoURL || '',
           normalPoints: user.normalPoints || user.points || 0,
           bluePoints: user.bluePoints || 0,
           greenPoints: user.greenPoints || 0,
@@ -82,6 +84,9 @@ const Leaderboard = () => {
         };
       });
       
+      console.log('Leaderboard API Response:', response.data);
+      console.log('First user data:', transformedData[0]); 
+      console.log('First user photoURL:', transformedData[0]?.photoURL);
       setLeaderboardData(transformedData);
       setStats(response.data.stats);
     } catch (error) {
@@ -348,9 +353,25 @@ const Leaderboard = () => {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-gray-900">{user.name || user.username}</span>
-                            <span className="text-sm text-gray-500">@{user.username}</span>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage 
+                                src={user.photoURL?.startsWith('http') 
+                                  ? user.photoURL 
+                                  : user.photoURL 
+                                    ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.photoURL}` 
+                                    : undefined
+                                } 
+                                alt={user.name || user.username} 
+                              />
+                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                {(user.name || user.username)?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-gray-900">{user.name || user.username}</span>
+                              <span className="text-sm text-gray-500">@{user.username}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="py-4 px-4">
