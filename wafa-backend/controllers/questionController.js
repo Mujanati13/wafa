@@ -100,6 +100,44 @@ export const questionController = {
         res.status(200).json({ success: true, data: questions });
     }),
 
+    getByModuleId: asyncHandler(async (req, res) => {
+        const { moduleId } = req.params;
+        
+        // Get all exams for this module
+        const ExamParYear = (await import('../models/examParYearModel.js')).default;
+        const ExamCourse = (await import('../models/examCourseModel.js')).default;
+        const QcmBanque = (await import('../models/qcmBanqueModel.js')).default;
+
+        const [examsByYear, examsByCourse, qcmBanques] = await Promise.all([
+            ExamParYear.find({ moduleId }).select('_id').lean(),
+            ExamCourse.find({ moduleId }).select('_id').lean(),
+            QcmBanque.find({ moduleId }).select('_id').lean()
+        ]);
+
+        const examIds = [
+            ...examsByYear.map(e => e._id),
+            ...examsByCourse.map(e => e._id),
+            ...qcmBanques.map(e => e._id)
+        ];
+
+        if (examIds.length === 0) {
+            return res.status(200).json({ success: true, data: [] });
+        }
+
+        // Get all questions from these exams
+        const questions = await QuestionModel.find({ 
+            $or: [
+                { examId: { $in: examIds } },
+                { qcmBanqueId: { $in: examIds } }
+            ]
+        })
+            .select('text options note images sessionLabel questionNumber examId qcmBanqueId')
+            .lean()
+            .sort({ questionNumber: 1, createdAt: 1 });
+        
+        res.status(200).json({ success: true, data: questions });
+    }),
+
     // Get questions with advanced filters (module, exam type, category, course name)
     getFiltered: asyncHandler(async (req, res) => {
         const { moduleId, examType, category, courseName, page = 1, limit = 50 } = req.query;
@@ -600,8 +638,13 @@ export const questionController = {
                 // Get answer text(s) - can be comma-separated for multiple correct answers
                 const answerText = row['answer'] || row['Answer'] || row['Correct'] || row['correct'] || row['Réponse'] || row['reponse'] || '';
                 
-                // Split answer by comma to get individual correct answers
-                const correctAnswerTexts = answerText.toString().split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+                // Check if question is annulled (answer is "null", "nulle", or empty)
+                const isAnnulled = !answerText || 
+                                   answerText.toString().trim().toLowerCase() === 'null' || 
+                                   answerText.toString().trim().toLowerCase() === 'nulle';
+                
+                // Split answer by comma to get individual correct answers (only if not annulled)
+                const correctAnswerTexts = isAnnulled ? [] : answerText.toString().split(',').map(s => s.trim().toLowerCase()).filter(s => s);
 
                 // Parse options from columns A, B, C, D (can also have E)
                 const options = [];
@@ -617,22 +660,25 @@ export const questionController = {
                         
                         // Check if this option is correct by comparing text
                         // Support both: matching by letter (A,B,C,D) or by text content
+                        // For annulled questions, all options are marked as not correct
                         let isCorrect = false;
                         
-                        // Check if answer contains letter reference (e.g., "A" or "A,B")
-                        const letterBasedAnswers = correctAnswerTexts.filter(a => 
-                            optionLetters.map(l => l.toLowerCase()).includes(a.toLowerCase())
-                        );
-                        
-                        if (letterBasedAnswers.length > 0) {
-                            // Letter-based matching
-                            isCorrect = letterBasedAnswers.includes(letter.toLowerCase());
-                        } else {
-                            // Text-based matching - check if any correct answer matches this option
-                            isCorrect = correctAnswerTexts.some(correctText => 
-                                optionTextTrimmed.toLowerCase().includes(correctText) ||
-                                correctText.includes(optionTextTrimmed.toLowerCase())
+                        if (!isAnnulled) {
+                            // Check if answer contains letter reference (e.g., "A" or "A,B")
+                            const letterBasedAnswers = correctAnswerTexts.filter(a => 
+                                optionLetters.map(l => l.toLowerCase()).includes(a.toLowerCase())
                             );
+                            
+                            if (letterBasedAnswers.length > 0) {
+                                // Letter-based matching
+                                isCorrect = letterBasedAnswers.includes(letter.toLowerCase());
+                            } else {
+                                // Text-based matching - check if any correct answer matches this option
+                                isCorrect = correctAnswerTexts.some(correctText => 
+                                    optionTextTrimmed.toLowerCase().includes(correctText) ||
+                                    correctText.includes(optionTextTrimmed.toLowerCase())
+                                );
+                            }
                         }
                         
                         options.push({
@@ -649,7 +695,8 @@ export const questionController = {
                     options,
                     sessionLabel: sessionName || row['Session'] || row['session'] || '',
                     note: row['Note'] || row['note'] || '',
-                    images: []
+                    images: [],
+                    isAnnulled: isAnnulled
                 };
 
                 // Add question number if provided

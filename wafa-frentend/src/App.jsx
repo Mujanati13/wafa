@@ -131,7 +131,7 @@ export default function App() {
           <Route path="importExamParCourse" element={<ImportExamParCourse />} />
           <Route path="examCourses" element={<ExamCourses />} />
           <Route path="qcmBanque" element={<QCMBanque />} />
-          <Route path="resumes" element={<Resumes />} />
+          <Route path="resumes" element={<ImportResumes />} />
           <Route path="importResumes" element={<ImportResumes />} />
           <Route path="importImages" element={<ImportImages />} />
           <Route

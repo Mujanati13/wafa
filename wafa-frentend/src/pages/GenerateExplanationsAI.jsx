@@ -247,8 +247,8 @@ const GenerateExplanationsAI = () => {
   };
 
   const handleGenerate = async () => {
-    if (!selectedExam || !questionNumbers.trim()) {
-      toast.error("Veuillez sélectionner un examen et spécifier les numéros de questions");
+    if (!selectedModule || !questionNumbers.trim()) {
+      toast.error("Veuillez sélectionner un module et spécifier les numéros de questions");
       return;
     }
 
@@ -262,8 +262,16 @@ const GenerateExplanationsAI = () => {
         const questionNum = firstNum.includes('-') ? firstNum.split('-')[0] : firstNum;
 
         // Get the question ID
-        const questionsRes = await api.get(`/questions/exam/${selectedExam}`);
-        const questions = questionsRes.data?.data || [];
+        let questions = [];
+        if (selectedExam && selectedExam !== "all") {
+          // Get questions from specific exam
+          const questionsRes = await api.get(`/questions/exam/${selectedExam}`);
+          questions = questionsRes.data?.data || [];
+        } else {
+          // Get all questions from module
+          const questionsRes = await api.get(`/questions/module/${selectedModule}`);
+          questions = questionsRes.data?.data || [];
+        }
         
         const targetQuestion = questions.find((q, idx) => {
           const qNum = q.questionNumber || (idx + 1);
@@ -293,13 +301,21 @@ const GenerateExplanationsAI = () => {
         }
       } else {
         // Batch generation
-        const { data } = await api.post("/explanations/batch-generate-gemini", {
-          examId: selectedExam,
+        const payload = {
           questionNumbers,
           language,
           customPrompt: customPrompt.trim() || undefined,
           pdfContext: (pdfContext && typeof pdfContext === 'string' ? pdfContext.trim() : '') || undefined
-        });
+        };
+
+        // Add examId or moduleId based on selection
+        if (selectedExam && selectedExam !== "all") {
+          payload.examId = selectedExam;
+        } else {
+          payload.moduleId = selectedModule;
+        }
+
+        const { data } = await api.post("/explanations/batch-generate-gemini", payload);
 
         if (data.success) {
           setResults({
@@ -491,16 +507,17 @@ const GenerateExplanationsAI = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-700">Examen *</Label>
+                  <Label className="font-semibold text-gray-700">Examen (optionnel)</Label>
                   <Select 
                     value={selectedExam} 
                     onValueChange={setSelectedExam}
                     disabled={!selectedModule}
                   >
                     <SelectTrigger className="disabled:bg-gray-100">
-                      <SelectValue placeholder={selectedModule ? "Sélectionner un examen" : "Sélectionner un module d'abord"} />
+                      <SelectValue placeholder={selectedModule ? "Tous les examens du module" : "Sélectionner un module d'abord"} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="all">Tous les examens du module</SelectItem>
                       {examsForModule.map((exam) => (
                         <SelectItem key={exam._id} value={exam._id}>
                           {exam.name}
@@ -508,6 +525,9 @@ const GenerateExplanationsAI = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500">
+                    Laissez vide pour générer depuis tous les examens du module
+                  </p>
                 </div>
               </div>
 

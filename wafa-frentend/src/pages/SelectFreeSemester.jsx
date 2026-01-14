@@ -6,22 +6,64 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { userService } from '@/services/userService';
+import { moduleService } from '@/services/moduleService';
 import logo from '@/assets/logo.png';
-
-// Free plan semesters only: S1, S3, S5, S7, S9
-const semesters = [
-  { id: 'S1', name: 'Semestre 1', year: '1ère année', description: 'Anatomie 1', module: 'Anatomie 1' },
-  { id: 'S3', name: 'Semestre 3', year: '2ème année', description: 'Anatomie 3', module: 'Anatomie 3' },
-  { id: 'S5', name: 'Semestre 5', year: '3ème année', description: 'Parasitologie / Infection', module: 'Parasitologie' },
-  { id: 'S7', name: 'Semestre 7', year: '4ème année', description: 'Maladies de l\'enfant', module: 'Maladies de l\'enfant' },
-  { id: 'S9', name: 'Semestre 9', year: '5ème année', description: 'Réanimation urgence douleur / Soins palliatifs', module: 'Réanimation' },
-];
 
 const SelectFreeSemester = () => {
   const navigate = useNavigate();
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [semesters, setSemesters] = useState([]);
+  const [loadingModules, setLoadingModules] = useState(true);
+
+  useEffect(() => {
+    // Fetch all available semesters from modules
+    const fetchSemesters = async () => {
+      try {
+        setLoadingModules(true);
+        const { data } = await moduleService.getAllmodules();
+        const allModules = data.data || [];
+        
+        // Extract unique semesters and group modules by semester
+        const semesterMap = new Map();
+        
+        allModules.forEach(module => {
+          const semester = module.semester;
+          if (semester && !semesterMap.has(semester)) {
+            // Determine year based on semester number
+            const semesterNum = parseInt(semester.replace('S', ''));
+            const yearNum = Math.ceil(semesterNum / 2);
+            const yearText = `${yearNum}${yearNum === 1 ? 'ère' : 'ème'} année`;
+            
+            semesterMap.set(semester, {
+              id: semester,
+              name: `Semestre ${semesterNum}`,
+              year: yearText,
+              description: module.name,
+              module: module.name
+            });
+          }
+        });
+        
+        // Convert to array and sort by semester number
+        const semestersList = Array.from(semesterMap.values()).sort((a, b) => {
+          const numA = parseInt(a.id.replace('S', ''));
+          const numB = parseInt(b.id.replace('S', ''));
+          return numA - numB;
+        });
+        
+        setSemesters(semestersList);
+      } catch (error) {
+        console.error('Error fetching semesters:', error);
+        toast.error('Erreur lors du chargement des semestres');
+      } finally {
+        setLoadingModules(false);
+      }
+    };
+
+    fetchSemesters();
+  }, []);
 
   useEffect(() => {
     // Check if user needs to select semester
@@ -88,10 +130,13 @@ const SelectFreeSemester = () => {
     }
   };
 
-  if (isChecking) {
+  if (isChecking || loadingModules) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
+          <p className="text-sm text-slate-600">Chargement des semestres...</p>
+        </div>
       </div>
     );
   }
@@ -138,39 +183,45 @@ const SelectFreeSemester = () => {
           transition={{ delay: 0.2 }}
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8"
         >
-          {semesters.map((semester, index) => (
-            <motion.div
-              key={semester.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 + index * 0.05 }}
-            >
-              <Card
-                onClick={() => setSelectedSemester(semester.id)}
-                className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                  selectedSemester === semester.id
-                    ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300'
-                    : 'hover:border-blue-200'
-                }`}
+          {semesters.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-slate-500">
+              Aucun semestre disponible
+            </div>
+          ) : (
+            semesters.map((semester, index) => (
+              <motion.div
+                key={semester.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
               >
-                <CardContent className="p-4 text-center">
-                  <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${
+                <Card
+                  onClick={() => setSelectedSemester(semester.id)}
+                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                     selectedSemester === semester.id
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {selectedSemester === semester.id ? (
-                      <Check className="h-6 w-6" />
-                    ) : (
-                      <BookOpen className="h-6 w-6" />
-                    )}
-                  </div>
-                  <h3 className="font-bold text-lg text-slate-800">{semester.id}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{semester.year}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                      ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300'
+                      : 'hover:border-blue-200'
+                  }`}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${
+                      selectedSemester === semester.id
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {selectedSemester === semester.id ? (
+                        <Check className="h-6 w-6" />
+                      ) : (
+                        <BookOpen className="h-6 w-6" />
+                      )}
+                    </div>
+                    <h3 className="font-bold text-lg text-slate-800">{semester.id}</h3>
+                    <p className="text-xs text-slate-500 mt-1">{semester.year}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
         </motion.div>
 
         {/* Selected Semester Details */}

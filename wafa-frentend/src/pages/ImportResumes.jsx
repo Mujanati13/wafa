@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Loader2, Upload, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Upload, ArrowRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,6 +128,21 @@ const ImportResumes = () => {
       toast.error("Erreur lors de l'import du résumé");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteResume = async (resumeId, resumeTitle) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer "${resumeTitle}" ?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`/resumes/${resumeId}`);
+      toast.success("Résumé supprimé avec succès !");
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error("Error deleting resume:", error);
+      toast.error("Erreur lors de la suppression du résumé");
     }
   };
 
@@ -347,14 +362,23 @@ const ImportResumes = () => {
                                         const pdfFullUrl = resume.pdfUrl?.startsWith('http') ? resume.pdfUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${resume.pdfUrl}`;
                                         return (
                                           <React.Fragment key={resume._id}>
-                                            <a
-                                              href={pdfFullUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-blue-600 hover:text-blue-800 hover:underline"
-                                            >
-                                              {resume.title} (lien)
-                                            </a>
+                                            <div className="inline-flex items-center gap-1.5">
+                                              <a
+                                                href={pdfFullUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                                              >
+                                                {resume.title} (lien)
+                                              </a>
+                                              <button
+                                                onClick={() => handleDeleteResume(resume._id, resume.title)}
+                                                className="text-red-500 hover:text-red-700 transition-colors p-0.5"
+                                                title="Supprimer ce résumé"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
                                             {idx < courseResumes.length - 1 && (
                                               <span className="text-gray-400">-</span>
                                             )}

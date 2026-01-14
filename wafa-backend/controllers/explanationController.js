@@ -503,26 +503,30 @@ export const explanationController = {
         let moduleContextText = '';
         if (moduleId) {
             const Module = (await import('../models/moduleModel.js')).default;
-            const module = await Module.findById(moduleId).select('aiContextFiles').lean();
+            const module = await Module.findById(moduleId).select('aiContextFiles name').lean();
+            
+            console.log(`[AI Context] Module: ${module?.name || 'Unknown'}, Context Files: ${module?.aiContextFiles?.length || 0}`);
             
             if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
                 // Extract text from all saved PDFs
-                const geminiService = (await import('../services/geminiService.js')).default;
                 const path = await import('path');
                 
                 const contextTexts = [];
                 for (const file of module.aiContextFiles) {
                     try {
-                        const filePath = path.join(process.cwd(), file.url.replace(/^\//, ''));
+                        const filePath = path.default.join(process.cwd(), file.url.replace(/^\//, ''));
+                        console.log(`[AI Context] Extracting text from: ${filePath}`);
                         const extractedText = await geminiService.extractTextFromPDF(filePath);
                         contextTexts.push(`\n--- Contexte de ${file.filename} ---\n${extractedText}`);
+                        console.log(`[AI Context] Successfully extracted ${extractedText.length} characters from ${file.filename}`);
                     } catch (error) {
-                        console.error(`Error extracting PDF ${file.filename}:`, error);
+                        console.error(`[AI Context] Error extracting PDF ${file.filename}:`, error.message);
                     }
                 }
                 
                 if (contextTexts.length > 0) {
                     moduleContextText = contextTexts.join('\n\n');
+                    console.log(`[AI Context] Total context text: ${moduleContextText.length} characters from ${contextTexts.length} file(s)`);
                 }
             }
         }
@@ -531,6 +535,8 @@ export const explanationController = {
         const combinedContext = [pdfContext, moduleContextText]
             .filter(ctx => ctx && ctx.trim())
             .join('\n\n=== CONTEXTE ADDITIONNEL ===\n\n');
+
+        console.log(`[AI Context] Combined context length: ${combinedContext.length} characters`);
 
         // Get correct answer indices
         const correctAnswers = question.options
@@ -581,12 +587,12 @@ export const explanationController = {
 
     // Batch generate explanations for multiple questions
     batchGenerateWithGemini: asyncHandler(async (req, res) => {
-        const { examId, questionNumbers, language, customPrompt, pdfContext } = req.body;
+        const { examId, moduleId, questionNumbers, language, customPrompt, pdfContext } = req.body;
 
-        if (!examId) {
+        if (!examId && !moduleId) {
             return res.status(400).json({
                 success: false,
-                message: "Exam ID est requis"
+                message: "Exam ID ou Module ID est requis"
             });
         }
 
@@ -624,65 +630,104 @@ export const explanationController = {
             });
         }
 
-        // Get questions
+        // Get questions based on examId or moduleId
         const Question = (await import('../models/questionModule.js')).default;
-        const allQuestions = await Question.find({ examId })
-            .sort({ questionNumber: 1, createdAt: 1 })
-            .lean();
+        let allQuestions = [];
+        let targetModuleId = moduleId;
+
+        if (examId) {
+            // Get questions from specific exam
+            allQuestions = await Question.find({ examId })
+                .sort({ questionNumber: 1, createdAt: 1 })
+                .lean();
+        } else if (moduleId) {
+            // Get all questions from all exams in this module
+            const ExamParYear = (await import('../models/examParYearModel.js')).default;
+            const ExamCourse = (await import('../models/examCourseModel.js')).default;
+            const QcmBanque = (await import('../models/qcmBanqueModel.js')).default;
+
+            const [examsByYear, examsByCourse, qcmBanques] = await Promise.all([
+                ExamParYear.find({ moduleId }).select('_id').lean(),
+                ExamCourse.find({ moduleId }).select('_id').lean(),
+                QcmBanque.find({ moduleId }).select('_id').lean()
+            ]);
+
+            const examIds = [
+                ...examsByYear.map(e => e._id),
+                ...examsByCourse.map(e => e._id),
+                ...qcmBanques.map(e => e._id)
+            ];
+
+            if (examIds.length > 0) {
+                allQuestions = await Question.find({ 
+                    $or: [
+                        { examId: { $in: examIds } },
+                        { qcmBanqueId: { $in: examIds } }
+                    ]
+                })
+                .sort({ questionNumber: 1, createdAt: 1 })
+                .lean();
+            }
+        }
 
         if (allQuestions.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Aucune question trouvée pour cet examen"
+                message: examId ? "Aucune question trouvée pour cet examen" : "Aucune question trouvée pour ce module"
             });
         }
 
-        // Get module ID from the first question's exam
-        let moduleId = null;
-        if (allQuestions.length > 0 && allQuestions[0].examId) {
+        // Get module ID - either from parameter or from the first question's exam
+        let resolvedModuleId = targetModuleId;
+        
+        if (!resolvedModuleId && allQuestions.length > 0 && allQuestions[0].examId) {
             const ExamParYear = (await import('../models/examParYearModel.js')).default;
             const exam = await ExamParYear.findById(examId).select('moduleId').lean();
             if (exam) {
-                moduleId = exam.moduleId;
+                resolvedModuleId = exam.moduleId;
             } else {
                 // Try exam course
                 const ExamCourse = (await import('../models/examCourseModel.js')).default;
                 const examCourse = await ExamCourse.findById(examId).select('moduleId').lean();
                 if (examCourse) {
-                    moduleId = examCourse.moduleId;
+                    resolvedModuleId = examCourse.moduleId;
                 } else {
                     // Try QCM Banque
                     const QcmBanque = (await import('../models/qcmBanqueModel.js')).default;
                     const qcmBanque = await QcmBanque.findById(examId).select('moduleId').lean();
-                    moduleId = qcmBanque?.moduleId;
+                    resolvedModuleId = qcmBanque?.moduleId;
                 }
             }
         }
 
         // Fetch module's AI context files if available
         let moduleContextText = '';
-        if (moduleId) {
+        if (resolvedModuleId) {
             const Module = (await import('../models/moduleModel.js')).default;
-            const module = await Module.findById(moduleId).select('aiContextFiles').lean();
+            const module = await Module.findById(resolvedModuleId).select('aiContextFiles name').lean();
+            
+            console.log(`[Batch AI Context] Module: ${module?.name || 'Unknown'}, Context Files: ${module?.aiContextFiles?.length || 0}`);
             
             if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
                 // Extract text from all saved PDFs
-                const geminiService = (await import('../services/geminiService.js')).default;
                 const path = await import('path');
                 
                 const contextTexts = [];
                 for (const file of module.aiContextFiles) {
                     try {
-                        const filePath = path.join(process.cwd(), file.url.replace(/^\//, ''));
+                        const filePath = path.default.join(process.cwd(), file.url.replace(/^\//, ''));
+                        console.log(`[Batch AI Context] Extracting text from: ${filePath}`);
                         const extractedText = await geminiService.extractTextFromPDF(filePath);
                         contextTexts.push(`\n--- Contexte de ${file.filename} ---\n${extractedText}`);
+                        console.log(`[Batch AI Context] Successfully extracted ${extractedText.length} characters from ${file.filename}`);
                     } catch (error) {
-                        console.error(`Error extracting PDF ${file.filename}:`, error);
+                        console.error(`[Batch AI Context] Error extracting PDF ${file.filename}:`, error.message);
                     }
                 }
                 
                 if (contextTexts.length > 0) {
                     moduleContextText = contextTexts.join('\n\n');
+                    console.log(`[Batch AI Context] Total context text: ${moduleContextText.length} characters from ${contextTexts.length} file(s)`);
                 }
             }
         }
@@ -691,6 +736,9 @@ export const explanationController = {
         const combinedContext = [pdfContext, moduleContextText]
             .filter(ctx => ctx && ctx.trim())
             .join('\n\n=== CONTEXTE ADDITIONNEL ===\n\n');
+
+        console.log(`[Batch AI Context] Combined context length: ${combinedContext.length} characters`);
+        console.log(`[Batch AI Context] Processing ${parsedNumbers.length} question(s) with ${moduleContextText ? 'module context' : 'no module context'}`);
 
         // Build question number map
         const questionsByNumber = new Map();

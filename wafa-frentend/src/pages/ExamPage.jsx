@@ -609,6 +609,9 @@ const ExamPage = () => {
     const question = questions[questionIndex];
     if (!question || showResults) return;
 
+    // Don't allow answering annulled questions
+    if (question.isAnnulled) return;
+
     // Check if question is already verified - don't allow changes
     const verifiedData = verifiedQuestions[questionIndex];
     const isVerified = verifiedData?.verified || verifiedData === true;
@@ -655,6 +658,11 @@ const ExamPage = () => {
   // Points: +2 for correct, +0 for wrong (no toast messages for points)
   const handleVerifyQuestion = useCallback(async () => {
     const questionData = questions[currentQuestion];
+    
+    // Annulled questions should not be verifiable
+    if (questionData.isAnnulled) {
+      return;
+    }
     
     // Calculate if answer is correct locally for immediate visual feedback
     const userAnswers = selectedAnswers[currentQuestion] || [];
@@ -1402,9 +1410,7 @@ const ExamPage = () => {
                                   >
                                     <div className={cn(
                                       "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] border",
-                                      status === 'correct' && "bg-emerald-100 border-emerald-300 text-emerald-700",
-                                      status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
-                                      status === 'answered' && !isFlagged && "bg-blue-100 border-blue-300 text-blue-700",
+                                      status === 'verified' && "bg-green-100 border-green-300 text-green-700",
                                       status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
                                       status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
                                       isFlagged && !showResults && "bg-purple-100 border-purple-300 text-purple-700"
@@ -1430,26 +1436,7 @@ const ExamPage = () => {
                 {!showResults && (
                   <div className="border-t p-3 bg-gradient-to-br from-gray-50 to-white shrink-0">
                     <div className="space-y-3">
-                      {/* Answered Progress */}
-                      <div>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="font-medium text-gray-700">Répondues</span>
-                          <span className="font-semibold" style={{ color: moduleColor }}>
-                            {answeredCount} / {questions.length}
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full transition-all duration-300 rounded-full"
-                            style={{ 
-                              width: `${(answeredCount / questions.length) * 100}%`,
-                              background: `linear-gradient(90deg, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
-                            }}
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Verified Progress */}
+                      {/* Verified Progress Only */}
                       <div>
                         <div className="flex items-center justify-between text-sm mb-1">
                           <span className="font-medium text-gray-700">Vérifiées</span>
@@ -1552,7 +1539,7 @@ const ExamPage = () => {
           </div>
 
           {/* Main Question Area */}
-          <div className="lg:col-span-3 space-y-4 sm:space-y-6">
+          <div className="lg:col-span-3 space-y-2">
 
             {/* Question Card - with swipe support on mobile */}
             <AnimatePresence mode="wait">
@@ -1576,34 +1563,10 @@ const ExamPage = () => {
                       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                         {/* Verification Status / Verify Button - Desktop Only */}
                         <div className="hidden lg:flex items-center gap-2">
-                          {isQuestionVerified || showResults ? (
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const selected = selectedAnswers[currentQuestion] || [];
-                                const correctIndices = currentQuestionData.options
-                                  .map((opt, idx) => opt.isCorrect ? idx : null)
-                                  .filter(idx => idx !== null);
-                                const isCorrect = selected.length === correctIndices.length &&
-                                  selected.every(s => correctIndices.includes(s));
-                                
-                                return isCorrect ? (
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                                      <Check className="h-5 w-5 text-white" />
-                                    </div>
-                                    <span className="font-semibold text-emerald-600 text-sm">Correct</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
-                                      <X className="h-5 w-5 text-white" />
-                                    </div>
-                                    <span className="font-semibold text-red-600 text-sm">Incorrect</span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          ) : (
+                          {currentQuestionData.isAnnulled ? (
+                            /* Hide verification UI for annulled questions */
+                            null
+                          ) : !isQuestionVerified && !showResults ? (
                             <Button
                               onClick={handleVerifyQuestion}
                               size="sm"
@@ -1615,7 +1578,7 @@ const ExamPage = () => {
                               <Check className="h-4 w-4" />
                               Vérifier
                             </Button>
-                          )}
+                          ) : null}
                         </div>
                         {/* Breadcrumb */}
                         <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600 bg-white px-2 py-1 sm:py-1.5 rounded-md min-w-0 border">
@@ -1643,7 +1606,7 @@ const ExamPage = () => {
                       </div>
                       
                       {/* Right: Desktop action buttons + Mobile 3-dot menu */}
-                      <div className="flex items-center gap-0.5 shrink-0 bg-blue-50 rounded-lg px-2 py-1.5">
+                      <div className="flex items-center gap-0.5 shrink-0 bg-blue-900 rounded-lg px-2 py-1.5">
                         {/* DESKTOP: Show all buttons */}
                         <div className="hidden sm:flex items-center gap-0.5">
                           {/* Playlist */}
@@ -1652,22 +1615,10 @@ const ExamPage = () => {
                             size="icon"
                             onClick={() => handlePremiumFeature('Playlist', () => setShowPlaylistModal(true))}
                             className={cn(
-                              "h-6 w-6 sm:h-8 sm:w-8",
-                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
+                              hasPremiumAnnualAccess ? "text-white" : "text-white/50 cursor-not-allowed"
                             )}
                             disabled={!hasPremiumAnnualAccess}
-                            onMouseEnter={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = moduleColor;
-                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = '';
-                                e.currentTarget.style.backgroundColor = '';
-                              }
-                            }}
                             title={hasPremiumAnnualAccess ? "Playlist" : "Playlist (Premium Annuel requis)"}
                           >
                             <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1677,44 +1628,10 @@ const ExamPage = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowResumesModal(true)}
-                            className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = moduleColor;
-                              e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = '';
-                              e.currentTarget.style.backgroundColor = '';
-                            }}
+                            className="text-white h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800"
                             title="Résumés"
                           >
                             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          {/* Community */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
-                            className={cn(
-                              "h-6 w-6 sm:h-8 sm:w-8",
-                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
-                            )}
-                            disabled={!hasPremiumAnnualAccess}
-                            onMouseEnter={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = moduleColor;
-                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = '';
-                                e.currentTarget.style.backgroundColor = '';
-                              }
-                            }}
-                            title={hasPremiumAnnualAccess ? "Communauté" : "Communauté (Premium Annuel requis)"}
-                          >
-                            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                           {/* Images */}
                           {currentQuestionData.images && currentQuestionData.images.length > 0 && (
@@ -1722,15 +1639,7 @@ const ExamPage = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => setShowImageGallery(true)}
-                              className="text-gray-400 h-6 w-6 sm:h-8 sm:w-8"
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.color = moduleColor;
-                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.color = '';
-                                e.currentTarget.style.backgroundColor = '';
-                              }}
+                              className="text-white h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800"
                               title="Images"
                             >
                               <Image className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1741,22 +1650,10 @@ const ExamPage = () => {
                             size="icon"
                             onClick={() => handlePremiumFeature('Notes', () => setShowNoteModal(true))}
                             className={cn(
-                              "h-6 w-6 sm:h-8 sm:w-8",
-                              hasPremiumAnnualAccess ? "text-gray-400" : "text-gray-300 cursor-not-allowed"
+                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
+                              hasPremiumAnnualAccess ? "text-white" : "text-white/50 cursor-not-allowed"
                             )}
                             disabled={!hasPremiumAnnualAccess}
-                            onMouseEnter={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = moduleColor;
-                                e.currentTarget.style.backgroundColor = `${moduleColor}10`;
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (hasPremiumAnnualAccess) {
-                                e.currentTarget.style.color = '';
-                                e.currentTarget.style.backgroundColor = '';
-                              }
-                            }}
                             title={hasPremiumAnnualAccess ? "Note" : "Note (Premium Annuel requis)"}
                           >
                             <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1765,7 +1662,7 @@ const ExamPage = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowReportModal(true)}
-                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 h-6 w-6 sm:h-8 sm:w-8"
+                            className="text-white hover:text-red-300 hover:bg-blue-800 h-6 w-6 sm:h-8 sm:w-8"
                             title="Signaler"
                           >
                             <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1777,8 +1674,8 @@ const ExamPage = () => {
                             className={cn(
                               "transition-all h-6 w-6 sm:h-8 sm:w-8",
                               flaggedQuestions.has(currentQuestion)
-                                ? "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-                                : "text-gray-400 hover:text-gray-600"
+                                ? "text-amber-400 hover:bg-blue-800"
+                                : "text-white hover:bg-blue-800"
                             )}
                             title="Surligner"
                           >
@@ -1887,6 +1784,15 @@ const ExamPage = () => {
                   </div>
 
                   <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
+                    {/* Annulled Question Badge */}
+                    {currentQuestionData.isAnnulled && (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                        <TriangleAlert className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-medium text-amber-700">Question Annulée</span>
+                        <span className="text-xs text-amber-600">(Pas de points attribués)</span>
+                      </div>
+                    )}
+                    
                     {/* Question Text */}
                     <div
                       className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
@@ -1923,37 +1829,39 @@ const ExamPage = () => {
                           <motion.button
                             key={index}
                             whileHover={{ 
-                              scale: showCorrectness ? 1.02 : 1.01,
+                              scale: (showCorrectness || currentQuestionData.isAnnulled) ? 1 : 1.01,
                               transition: { duration: 0.2 }
                             }}
-                            whileTap={{ scale: showCorrectness ? 1 : 0.99 }}
+                            whileTap={{ scale: (showCorrectness || currentQuestionData.isAnnulled) ? 1 : 0.99 }}
                             animate={isAnimating ? { scale: [1, 1.02, 1] } : {}}
                             className={cn(
                               "w-full text-left rounded-xl border-2 transition-all duration-200",
                               "focus:outline-none",
-                              !showCorrectness && "hover:shadow-md cursor-pointer active:scale-[0.98] bg-white",
-                              showCorrectness && "cursor-default",
+                              !showCorrectness && !currentQuestionData.isAnnulled && "hover:shadow-md cursor-pointer active:scale-[0.98] bg-white",
+                              (showCorrectness || currentQuestionData.isAnnulled) && "cursor-default",
+                              // Annulled question state
+                              currentQuestionData.isAnnulled && "border-gray-200 bg-gray-50 opacity-70",
                               // Default state (not selected, not showing correctness)
-                              !isSelected && !showCorrectness && "border-gray-200 hover:border-gray-300 bg-white",
+                              !currentQuestionData.isAnnulled && !isSelected && !showCorrectness && "border-gray-200 hover:border-gray-300 bg-white",
                               // Selected but not verified yet
-                              isSelected && !showCorrectness && "border-2 bg-white",
+                              !currentQuestionData.isAnnulled && isSelected && !showCorrectness && "border-2 bg-white",
                               // After verification - correct answer (green background + hover effect)
-                              showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-600",
+                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-600",
                               // After verification - wrong answer selected (red border)
-                              showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50 hover:bg-red-100 hover:border-red-600",
+                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50 hover:bg-red-100 hover:border-red-600",
                               // After verification - not selected and not correct (gray)
-                              showCorrectness && !isCorrect && !isSelected && "border-gray-200 opacity-60 bg-white"
+                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && !isSelected && "border-gray-200 opacity-60 bg-white"
                             )}
                             style={
-                              isSelected && !showCorrectness
+                              !currentQuestionData.isAnnulled && isSelected && !showCorrectness
                                 ? {
                                     borderColor: moduleColor,
                                     boxShadow: `0 2px 8px -2px ${moduleColor}30`
                                   }
                                 : {}
                             }
-                            onClick={() => !showCorrectness && handleAnswerSelect(currentQuestion, index)}
-                            disabled={showCorrectness}
+                            onClick={() => !showCorrectness && !currentQuestionData.isAnnulled && handleAnswerSelect(currentQuestion, index)}
+                            disabled={showCorrectness || currentQuestionData.isAnnulled}
                           >
                             <div className="p-3 sm:p-4 flex items-center gap-3">
                               {/* Option Letter */}
@@ -2004,18 +1912,7 @@ const ExamPage = () => {
                                     );
                                   })()}
                                   
-                                  {/* Correct/Incorrect icon */}
-                                  {(isCorrect || isSelected) && (
-                                    isCorrect ? (
-                                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200">
-                                        <Check className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
-                                      </div>
-                                    ) : isSelected ? (
-                                      <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-red-100 flex items-center justify-center">
-                                        <X className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
-                                      </div>
-                                    ) : null
-                                  )}
+                                  {/* Correct/Incorrect icon - Hidden for all questions */}
                                 </div>
                               )}
                             </div>
@@ -2026,8 +1923,8 @@ const ExamPage = () => {
 
                     {/* Action Buttons - Below Answer Options */}
                     <div className="pt-4 border-t">
-                      {!isQuestionVerified && !showResults ? (
-                        /* Before Verification: Show Vérifier only */
+                      {!isQuestionVerified && !showResults && !currentQuestionData.isAnnulled ? (
+                        /* Before Verification: Show Vérifier only (hide for annulled questions) */
                         <div className="flex items-center gap-2">
                           <Button
                             onClick={handleVerifyQuestion}
@@ -2037,13 +1934,13 @@ const ExamPage = () => {
                               background: !selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0
                                 ? '#d1d5db'
                                 : `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
-                            }}
+            }}
                           >
                             <Check className="h-4 w-4" />
                             Vérifier
                           </Button>
                         </div>
-                      ) : (
+                      ) : !currentQuestionData.isAnnulled && (
                         /* After Verification: Show action buttons only */
                         <div className="space-y-3">
                           {/* Action Buttons Grid - Mobile Only */}
@@ -2111,6 +2008,39 @@ const ExamPage = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Desktop Action Buttons - Inside Card */}
+                      {isQuestionVerified && (
+                        <div className="hidden lg:flex items-center justify-center gap-2 pt-4 border-t">
+                          {!verifiedQuestions[currentQuestion]?.isCorrect && (
+                            <Button
+                              variant="outline"
+                              onClick={handleResetQuestion}
+                              className="gap-2 border-gray-300 hover:bg-gray-50"
+                            >
+                              <RefreshCcw className="h-4 w-4" />
+                              Ressayer
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowExplanation(true)}
+                            className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+                          >
+                            <Lightbulb className="h-4 w-4" />
+                            Explication
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
+                            disabled={!hasPremiumAnnualAccess}
+                            className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
+                          >
+                            <Users className="h-4 w-4" />
+                            Communauté
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -2129,58 +2059,32 @@ const ExamPage = () => {
                 <span className="hidden sm:inline">{t('dashboard:previous') || 'Previous'}</span>
               </Button>
 
-              {/* Center: Action buttons when answer is verified */}
-              {isQuestionVerified && (
-                <div className="flex items-center gap-2">
-                  {!verifiedQuestions[currentQuestion]?.isCorrect && (
-                    <Button
-                      variant="outline"
-                      onClick={handleResetQuestion}
-                      className="gap-2 border-gray-300 hover:bg-gray-50"
-                    >
-                      <RefreshCcw className="h-4 w-4" />
-                      Ressayer
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowExplanation(true)}
-                    className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                    Explication
-                  </Button>
-                </div>
-              )}
-
-              {/* Center: Question dots when not verified */}
-              {!isQuestionVerified && (
-                <div className="flex items-center gap-1.5">
-                  {questions.slice(
-                    Math.max(0, currentQuestion - 2),
-                    Math.min(questions.length, currentQuestion + 3)
-                  ).map((_, i) => {
-                    const actualIndex = Math.max(0, currentQuestion - 2) + i;
-                    return (
-                      <button
-                        key={actualIndex}
-                        onClick={() => goToQuestion(actualIndex)}
-                        className={cn(
-                          "w-2 h-2 rounded-full transition-all",
-                          actualIndex === currentQuestion
-                            ? "w-6"
-                            : "bg-gray-300 hover:bg-gray-400"
-                        )}
-                        style={
-                          actualIndex === currentQuestion
-                            ? { backgroundColor: moduleColor }
-                            : {}
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              )}
+              {/* Center: Question dots */}
+              <div className="flex items-center gap-1.5">
+                {questions.slice(
+                  Math.max(0, currentQuestion - 2),
+                  Math.min(questions.length, currentQuestion + 3)
+                ).map((_, i) => {
+                  const actualIndex = Math.max(0, currentQuestion - 2) + i;
+                  return (
+                    <button
+                      key={actualIndex}
+                      onClick={() => goToQuestion(actualIndex)}
+                      className={cn(
+                        "w-2 h-2 rounded-full transition-all",
+                        actualIndex === currentQuestion
+                          ? "w-6"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      )}
+                      style={
+                        actualIndex === currentQuestion
+                          ? { backgroundColor: moduleColor }
+                          : {}
+                      }
+                    />
+                  );
+                })}
+              </div>
 
               <Button
                 onClick={goToNext}
@@ -2396,7 +2300,7 @@ const ExamPage = () => {
                         className={cn(
                           "relative aspect-square rounded-xl text-sm font-semibold transition-all active:scale-95 border-2",
                           isCurrent && "ring-2 ring-offset-2",
-                          status === 'verified' && "bg-blue-100 border-blue-300 text-blue-700",
+                          status === 'verified' && "bg-green-100 border-green-300 text-green-700",
                           status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
                           status === 'unanswered' && "bg-gray-50 border-gray-200 text-gray-500"
                         )}
@@ -2556,7 +2460,7 @@ const ExamPage = () => {
                                 >
                                   <div className={cn(
                                     "w-6 h-6 rounded flex items-center justify-center shrink-0 text-xs border font-medium",
-                                    status === 'verified' && "bg-blue-100 border-blue-300 text-blue-700",
+                                    status === 'verified' && "bg-green-100 border-green-300 text-green-700",
                                     status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
                                     status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600"
                                   )}>
@@ -2582,22 +2486,19 @@ const ExamPage = () => {
                 <div className="border-t p-4 bg-white">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-gray-700">Progression</span>
+                      <span className="font-medium text-gray-700">Vérifiées</span>
                       <span className="font-semibold" style={{ color: moduleColor }}>
-                        {Math.round((answeredCount / questions.length) * 100)}%
+                        {Math.round((verifiedCount / questions.length) * 100)}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{answeredCount} / {questions.length} répondues</span>
-                      {verifiedCount > 0 && (
-                        <span>{verifiedCount} vérifiées</span>
-                      )}
+                      <span>{verifiedCount} / {questions.length} vérifiées</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full transition-all duration-300 rounded-full"
                         style={{ 
-                          width: `${(answeredCount / questions.length) * 100}%`,
+                          width: `${(verifiedCount / questions.length) * 100}%`,
                           background: `linear-gradient(90deg, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
                         }}
                       />

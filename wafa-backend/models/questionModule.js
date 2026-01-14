@@ -44,6 +44,11 @@ const questionSchema = new mongoose.Schema(
             type: String,
             required: false // Changed to false as it may not always be needed
         },
+        // Annulled question flag (for questions with "null" answers)
+        isAnnulled: {
+            type: Boolean,
+            default: false
+        },
         // Community voting system
         communityVotes: [
             {
