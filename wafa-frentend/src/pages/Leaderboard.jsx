@@ -22,18 +22,20 @@ const studentYears = [
   { value: "5", label: "5ème année" },
 ];
 
-// Level calculation based on total points
+// Level calculation based on total points (1 level = 50 points)
 const calculateLevel = (totalPoints) => {
-  if (totalPoints >= 10000) return { level: 10, name: "Maître", color: "bg-purple-500" };
-  if (totalPoints >= 7500) return { level: 9, name: "Expert", color: "bg-indigo-500" };
-  if (totalPoints >= 5000) return { level: 8, name: "Avancé", color: "bg-blue-500" };
-  if (totalPoints >= 3500) return { level: 7, name: "Confirmé", color: "bg-cyan-500" };
-  if (totalPoints >= 2500) return { level: 6, name: "Intermédiaire", color: "bg-teal-500" };
-  if (totalPoints >= 1500) return { level: 5, name: "Apprenti", color: "bg-green-500" };
-  if (totalPoints >= 1000) return { level: 4, name: "Initié", color: "bg-lime-500" };
-  if (totalPoints >= 500) return { level: 3, name: "Novice", color: "bg-yellow-500" };
-  if (totalPoints >= 200) return { level: 2, name: "Débutant", color: "bg-orange-500" };
-  return { level: 1, name: "Nouveau", color: "bg-gray-400" };
+  const level = Math.floor(totalPoints / 50);
+  if (level >= 200) return { level, name: "Maître Suprême", color: "bg-purple-600" };
+  if (level >= 150) return { level, name: "Maître", color: "bg-purple-500" };
+  if (level >= 100) return { level, name: "Expert", color: "bg-indigo-500" };
+  if (level >= 75) return { level, name: "Avancé", color: "bg-blue-500" };
+  if (level >= 50) return { level, name: "Confirmé", color: "bg-cyan-500" };
+  if (level >= 30) return { level, name: "Intermédiaire", color: "bg-teal-500" };
+  if (level >= 20) return { level, name: "Apprenti", color: "bg-green-500" };
+  if (level >= 10) return { level, name: "Initié", color: "bg-lime-500" };
+  if (level >= 5) return { level, name: "Novice", color: "bg-yellow-500" };
+  if (level >= 1) return { level, name: "Débutant", color: "bg-orange-500" };
+  return { level: 0, name: "Nouveau", color: "bg-gray-400" };
 };
 
 const Leaderboard = () => {

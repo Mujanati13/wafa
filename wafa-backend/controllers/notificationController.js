@@ -123,28 +123,42 @@ export const NotificationController = {
 
   // Admin: Send system notification to specific user
   sendSystemNotification: asyncHandler(async (req, res) => {
-    const { userId, title, message, link } = req.body;
+    const { userId, userIds, title, message, link, type, priority } = req.body;
 
-    if (!userId || !title || !message) {
+    if (!title || !message) {
       return res.status(400).json({
         success: false,
-        message: "User ID, title, and message are required"
+        message: "Title and message are required"
+      });
+    }
+
+    // Support both single userId and multiple userIds
+    const targetUserIds = userIds || (userId ? [userId] : []);
+
+    if (targetUserIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one user ID is required"
       });
     }
 
     try {
-      const notification = await Notification.create({
-        userId,
-        type: "system",
+      const notifications = targetUserIds.map(id => ({
+        userId: id,
+        type: type || "system",
         title,
         message,
-        link: link || null
-      });
+        link: link || null,
+        priority: priority || "normal"
+      }));
+
+      const result = await Notification.insertMany(notifications);
 
       res.status(201).json({
         success: true,
-        message: "System notification sent successfully",
-        data: notification
+        message: `Notification sent successfully to ${result.length} user(s)`,
+        count: result.length,
+        data: result
       });
     } catch (error) {
       console.error("Error sending system notification:", error);

@@ -806,6 +806,13 @@ export const questionController = {
         const isCorrect = selectedAnswers.length === correctIndices.length &&
             selectedAnswers.every(ans => correctIndices.includes(ans));
 
+        // Check if user has already answered this question correctly before
+        const UserStatsModel = (await import("../models/userStatsModel.js")).default;
+        const userStats = await UserStatsModel.findOne({ userId });
+        
+        const existingAnswer = userStats?.answeredQuestions?.get(questionId.toString());
+        const hasAlreadyAnsweredCorrectly = existingAnswer?.isVerified && existingAnswer?.isCorrect;
+
         // Calculate points
         let pointsAwarded = 0;
         let pointType = "normal";
@@ -814,10 +821,13 @@ export const questionController = {
             // 0 points for retry (no penalty)
             pointsAwarded = 0;
             pointType = "normal";
-        } else if (isCorrect) {
-            // +1 point for correct answer
+        } else if (isCorrect && !hasAlreadyAnsweredCorrectly) {
+            // +1 point for correct answer (only if not already answered correctly)
             pointsAwarded = 1;
             pointType = "normal";
+        } else if (isCorrect && hasAlreadyAnsweredCorrectly) {
+            // Already answered correctly before, no additional points
+            pointsAwarded = 0;
         }
         // 0 points for wrong answer (no point record needed)
 
@@ -850,9 +860,8 @@ export const questionController = {
             );
         }
 
-        // Get updated user stats (don't update moduleProgress here - let saveAnswer handle it)
-        const UserStatsModel = (await import("../models/userStatsModel.js")).default;
-        const userStats = await UserStatsModel.findOne({ userId });
+        // Get updated user stats
+        const updatedUserStats = await UserStatsModel.findOne({ userId });
 
         res.status(200).json({
             success: true,
@@ -860,7 +869,8 @@ export const questionController = {
                 isCorrect,
                 correctAnswers: correctIndices,
                 pointsAwarded,
-                totalPoints: userStats?.totalPoints || 0
+                totalPoints: updatedUserStats?.totalPoints || 0,
+                alreadyAnswered: hasAlreadyAnsweredCorrectly
             }
         });
     }),
@@ -902,13 +912,22 @@ export const questionController = {
         const existingAnswer = userStats.answeredQuestions.get(questionId.toString());
         const isNewAnswer = !existingAnswer || !existingAnswer.isVerified;
         
+        // Get module name if moduleId is provided (needed for storage)
+        let moduleName = null;
+        if (moduleId) {
+            const Module = (await import("../models/moduleModel.js")).default;
+            const module = await Module.findById(moduleId).select("name");
+            moduleName = module?.name || "Unknown";
+        }
+        
         userStats.answeredQuestions.set(questionId.toString(), {
             selectedAnswers,
             isVerified: isVerified || false,
             isCorrect: isCorrect || false,
             answeredAt: new Date(),
             examId,
-            moduleId
+            moduleId,
+            moduleName
         });
 
         // Update stats only for NEW verified answers (not re-attempts)
@@ -926,10 +945,6 @@ export const questionController = {
 
             // Update module-specific progress
             if (moduleId) {
-                const Module = (await import("../models/moduleModel.js")).default;
-                const module = await Module.findById(moduleId).select("name");
-                const moduleName = module?.name || "Unknown";
-
                 const moduleIndex = userStats.moduleProgress.findIndex(
                     (m) => m.moduleId?.toString() === moduleId.toString()
                 );
@@ -959,6 +974,37 @@ export const questionController = {
             // Update average score
             if (userStats.totalQuestionsAttempted > 0) {
                 userStats.averageScore = (userStats.totalCorrectAnswers / userStats.totalQuestionsAttempted) * 100;
+            }
+            
+            // Update weekly activity (for performance charts)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset to start of day
+            
+            const todayActivity = userStats.weeklyActivity.find(
+                activity => activity.date && activity.date.setHours(0, 0, 0, 0) === today.getTime()
+            );
+            
+            if (todayActivity) {
+                // Update today's activity
+                todayActivity.questionsAttempted = (todayActivity.questionsAttempted || 0) + 1;
+                if (isCorrect) {
+                    todayActivity.correctAnswers = (todayActivity.correctAnswers || 0) + 1;
+                }
+                todayActivity.timeSpent = (todayActivity.timeSpent || 0) + 0; // Can be updated if time tracking added
+            } else {
+                // Add new day activity
+                userStats.weeklyActivity.push({
+                    date: today,
+                    questionsAttempted: 1,
+                    correctAnswers: isCorrect ? 1 : 0,
+                    timeSpent: 0, // Can be updated if time tracking added
+                    examsCompleted: 0
+                });
+                
+                // Keep only last 30 days (for performance trend)
+                if (userStats.weeklyActivity.length > 30) {
+                    userStats.weeklyActivity = userStats.weeklyActivity.slice(-30);
+                }
             }
             
             userStats.lastActivityDate = new Date();

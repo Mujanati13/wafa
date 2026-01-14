@@ -907,40 +907,17 @@ const ExamPage = () => {
     const isFlagged = flaggedQuestions.has(index);
     const isVisited = visitedQuestions.has(index);
 
-    if (showResults || isVerified) {
-      // Use stored isCorrect if available, otherwise calculate
-      let isCorrect;
-      if (verifiedData?.isCorrect !== undefined) {
-        isCorrect = verifiedData.isCorrect;
-      } else {
-        const question = questions[index];
-        const userAnswers = selectedAnswers[index] || [];
-        const correctAnswers = question.options
-          .map((opt, i) => opt.isCorrect ? i : -1)
-          .filter(i => i !== -1);
-
-        isCorrect = userAnswers.length === correctAnswers.length &&
-          userAnswers.every(ans => correctAnswers.includes(ans));
-      }
-
-      return { status: isCorrect ? 'correct' : 'incorrect', isFlagged, isVisited };
+    // Vérifié (blue) - question has been verified
+    if (isVerified) {
+      return { status: 'verified', isFlagged, isVisited };
     }
 
-    // Flagged takes priority (purple)
-    if (isFlagged) {
-      return { status: 'flagged', isFlagged: true, isVisited };
-    }
-
-    // Answered (blue)
-    if (hasAnswer) {
-      return { status: 'answered', isFlagged, isVisited };
-    }
-
-    // Visited but not answered (orange)
-    if (isVisited) {
+    // Visité (orange) - visited but not verified
+    if (isVisited || hasAnswer) {
       return { status: 'visited', isFlagged, isVisited: true };
     }
 
+    // Non visité (gray)
     return { status: 'unanswered', isFlagged, isVisited: false };
   // Use selectedAnswersString for dependency tracking to ensure updates when answers change
   }, [selectedAnswers, selectedAnswersString, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
@@ -1178,6 +1155,13 @@ const ExamPage = () => {
           {/* Left: Menu + Exit */}
           <div className="flex items-center gap-1">
             <button
+              onClick={() => setShowSidebar(true)}
+              className="flex items-center justify-center p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 active:bg-blue-300 transition-colors text-blue-700"
+              aria-label="Show questions"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors text-gray-700"
             >
@@ -1208,188 +1192,12 @@ const ExamPage = () => {
             </span>
           </div>
           
-          {/* Right: Verified + Avatar */}
+          {/* Right: Verified count only */}
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-emerald-600 flex items-center gap-0.5">
               <CheckCircle2 className="h-3 w-3" />
               {verifiedCount}
             </span>
-            
-            {/* Avatar with Profile Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowMobileProfileDropdown(!showMobileProfileDropdown)}
-                className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-semibold hover:from-purple-600 hover:to-indigo-700 transition-colors"
-              >
-                M
-              </button>
-
-              {/* Profile Dropdown Menu */}
-              <AnimatePresence>
-                {showMobileProfileDropdown && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowMobileProfileDropdown(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border overflow-hidden z-50"
-                    >
-                      {/* User info header */}
-                      <div className="p-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                        <p className="font-semibold text-gray-900 text-sm">
-                          {userProfile?.name || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'Utilisateur'}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">{userProfile?.email || ''}</p>
-                        
-                        {/* User Stats Row */}
-                        <div className="flex items-center gap-2 pt-2 text-xs">
-                          <div className="flex items-center gap-1" title="Points Questions">
-                            <span className="text-yellow-500">⚡</span>
-                            <span className="font-medium">{userProfile?.normalPoints || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1" title="Reports approuvés">
-                            <span className="text-green-500">🟢</span>
-                            <span className="font-medium">{userProfile?.greenPoints || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1" title="Explications approuvées">
-                            <span className="text-blue-500">🔵</span>
-                            <span className="font-medium">{userProfile?.bluePoints || 0}</span>
-                          </div>
-                          <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 ml-auto">
-                            {userProfile?.totalPoints || 0} pts
-                          </Badge>
-                        </div>
-                        
-                        {/* Level and Progress */}
-                        <div className="mt-2 space-y-2">
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="font-medium text-slate-600">Niveau {Math.floor((userProfile?.totalPoints || 0) / 50)}</span>
-                            <span className="text-slate-500">{((userProfile?.totalPoints || 0) % 50)}/50 XP</span>
-                          </div>
-                          
-                          {/* Detailed Progress Bar */}
-                          <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden relative">
-                            {(() => {
-                              const totalPoints = userProfile?.totalPoints || 0;
-                              const currentLevelPoints = totalPoints % 50;
-                              const normalPoints = userProfile?.normalPoints || 0;
-                              const greenPointsValue = (userProfile?.greenPoints || 0) * 30;
-                              const bluePointsValue = (userProfile?.bluePoints || 0) * 40;
-                              const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
-                              
-                              const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
-                              const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
-                              const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
-                              
-                              const progressPercent = (currentLevelPoints / 50) * 100;
-                              const normalWidth = normalRatio * progressPercent;
-                              const greenWidth = greenRatio * progressPercent;
-                              const blueWidth = blueRatio * progressPercent;
-                              
-                              return (
-                                <div className="flex h-full">
-                                  {normalWidth > 0 && (
-                                    <div 
-                                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
-                                      style={{ width: `${normalWidth}%` }}
-                                    />
-                                  )}
-                                  {greenWidth > 0 && (
-                                    <div 
-                                      className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
-                                      style={{ width: `${greenWidth}%` }}
-                                    />
-                                  )}
-                                  {blueWidth > 0 && (
-                                    <div 
-                                      className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
-                                      style={{ width: `${blueWidth}%` }}
-                                    />
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          
-                          {/* Legend */}
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] text-slate-500">
-                            <div className="flex items-center gap-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
-                              <span>Questions ({userProfile?.normalPoints || 0})</span>
-                            </div>
-                            {(userProfile?.greenPoints || 0) > 0 && (
-                              <div className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                                <span>Reports ({(userProfile?.greenPoints || 0) * 30})</span>
-                              </div>
-                            )}
-                            {(userProfile?.bluePoints || 0) > 0 && (
-                              <div className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                <span>Explic. ({(userProfile?.bluePoints || 0) * 40})</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="text-[10px] text-slate-500 pt-1">
-                            {userProfile?.percentageAnswered ? `${userProfile.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu Items */}
-                      <div className="p-1.5">
-                        <button
-                          onClick={() => {
-                            setShowMobileProfileDropdown(false);
-                            navigate('/dashboard/profile');
-                          }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                        >
-                          <User className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="text-xs">Profile</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowMobileProfileDropdown(false);
-                            navigate('/dashboard/settings');
-                          }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                        >
-                          <Settings className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="text-xs">Settings</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowMobileProfileDropdown(false);
-                            navigate('/dashboard/subscription');
-                          }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                        >
-                          <CreditCard className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="text-xs">Subscription</span>
-                        </button>
-                        <hr className="my-1.5" />
-                        <button
-                          onClick={() => {
-                            setShowMobileProfileDropdown(false);
-                            // Logout logic would go here
-                          }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
-                        >
-                          <LogOut className="h-3.5 w-3.5" />
-                          <span className="text-xs">Se déconnecter</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
         </div>
 
@@ -1518,184 +1326,6 @@ const ExamPage = () => {
                   <span className="text-xs font-semibold">Vue d'ensemble</span>
                 </Button>
               </motion.div>
-
-              {/* Profile Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
-                    {userProfile?.name?.charAt(0) || userProfile?.firstName?.charAt(0) || 'U'}
-                  </div>
-                </button>
-
-                {/* Profile Dropdown Menu */}
-                <AnimatePresence>
-                  {showProfileDropdown && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowProfileDropdown(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border overflow-hidden z-50"
-                      >
-                        {/* User info header */}
-                        <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                          <p className="font-semibold text-gray-900">
-                            {userProfile?.name || `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'Utilisateur'}
-                          </p>
-                          <p className="text-sm text-gray-500 truncate">{userProfile?.email || ''}</p>
-                          
-                          {/* User Stats Row */}
-                          <div className="flex items-center gap-3 pt-2 text-xs">
-                            <div className="flex items-center gap-1" title="Points Questions">
-                              <span className="text-yellow-500">⚡</span>
-                              <span className="font-medium">{userProfile?.normalPoints || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1" title="Reports approuvés">
-                              <span className="text-green-500">🟢</span>
-                              <span className="font-medium">{userProfile?.greenPoints || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1" title="Explications approuvées">
-                              <span className="text-blue-500">🔵</span>
-                              <span className="font-medium">{userProfile?.bluePoints || 0}</span>
-                            </div>
-                            <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 ml-auto">
-                              {userProfile?.totalPoints || 0} pts
-                            </Badge>
-                          </div>
-                          
-                          {/* Level and Progress */}
-                          <div className="mt-3 space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-medium text-slate-600">Niveau {Math.floor((userProfile?.totalPoints || 0) / 50)}</span>
-                              <span className="text-slate-500">{((userProfile?.totalPoints || 0) % 50)}/50 XP</span>
-                            </div>
-                            
-                            {/* Detailed Progress Bar */}
-                            <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden relative">
-                              {(() => {
-                                const totalPoints = userProfile?.totalPoints || 0;
-                                const currentLevelPoints = totalPoints % 50;
-                                const normalPoints = userProfile?.normalPoints || 0;
-                                const greenPointsValue = (userProfile?.greenPoints || 0) * 30;
-                                const bluePointsValue = (userProfile?.bluePoints || 0) * 40;
-                                const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
-                                
-                                const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
-                                const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
-                                const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
-                                
-                                const progressPercent = (currentLevelPoints / 50) * 100;
-                                const normalWidth = normalRatio * progressPercent;
-                                const greenWidth = greenRatio * progressPercent;
-                                const blueWidth = blueRatio * progressPercent;
-                                
-                                return (
-                                  <div className="flex h-full">
-                                    {normalWidth > 0 && (
-                                      <div 
-                                        className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
-                                        style={{ width: `${normalWidth}%` }}
-                                      />
-                                    )}
-                                    {greenWidth > 0 && (
-                                      <div 
-                                        className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
-                                        style={{ width: `${greenWidth}%` }}
-                                      />
-                                    )}
-                                    {blueWidth > 0 && (
-                                      <div 
-                                        className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
-                                        style={{ width: `${blueWidth}%` }}
-                                      />
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            
-                            {/* Legend */}
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                                <span>Questions ({userProfile?.normalPoints || 0})</span>
-                              </div>
-                              {(userProfile?.greenPoints || 0) > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                                  <span>Reports ({(userProfile?.greenPoints || 0) * 30})</span>
-                                </div>
-                              )}
-                              {(userProfile?.bluePoints || 0) > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                                  <span>Explic. ({(userProfile?.bluePoints || 0) * 40})</span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="text-xs text-slate-500 pt-1">
-                              {userProfile?.percentageAnswered ? `${userProfile.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="p-2">
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false);
-                              navigate('/dashboard/profile');
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                          >
-                            <User className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm">Profile</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false);
-                              navigate('/dashboard/settings');
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                          >
-                            <Settings className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm">Settings</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false);
-                              navigate('/dashboard/subscription');
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
-                          >
-                            <CreditCard className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm">Subscription</span>
-                          </button>
-                          <hr className="my-2" />
-                          <button
-                            onClick={() => {
-                              setShowProfileDropdown(false);
-                              // Logout logic would go here
-                            }}
-                            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-left text-red-600"
-                          >
-                            <LogOut className="h-4 w-4" />
-                            <span className="text-sm">Se déconnecter</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
           </div>
         </div>
@@ -2196,19 +1826,6 @@ const ExamPage = () => {
                                 <span>Résumés</span>
                               </DropdownMenuItem>
 
-                              {/* Community */}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  handlePremiumFeature('Communauté', () => setShowCommunityModal(true));
-                                  setShowMobileMenu(false);
-                                }}
-                                disabled={!hasPremiumAnnualAccess}
-                              >
-                                <Users className="h-4 w-4 mr-2" />
-                                <span>Communauté</span>
-                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
-                              </DropdownMenuItem>
-
                               {/* Images */}
                               {currentQuestionData.images && currentQuestionData.images.length > 0 && (
                                 <>
@@ -2431,14 +2048,16 @@ const ExamPage = () => {
                         <div className="space-y-3">
                           {/* Action Buttons Grid - Mobile Only */}
                           <div className="lg:hidden grid grid-cols-2 gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={handleResetQuestion}
-                              className="gap-2 border-gray-300 hover:bg-gray-50"
-                            >
-                              <RefreshCcw className="h-4 w-4" />
-                              Ressayer
-                            </Button>
+                            {!verifiedQuestions[currentQuestion]?.isCorrect && (
+                              <Button
+                                variant="outline"
+                                onClick={handleResetQuestion}
+                                className="gap-2 border-gray-300 hover:bg-gray-50"
+                              >
+                                <RefreshCcw className="h-4 w-4" />
+                                Ressayer
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               onClick={() => setShowExplanation(true)}
@@ -2465,6 +2084,31 @@ const ExamPage = () => {
                               Vue d'ensemble
                             </Button>
                           </div>
+
+                          {/* Status Display - Mobile Only */}
+                          <div className="lg:hidden">
+                            {verifiedQuestions[currentQuestion]?.isCorrect ? (
+                              <div className="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-r-lg">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-semibold text-emerald-800">Correct !</p>
+                                    <p className="text-sm text-emerald-700">Bonne réponse</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-r-lg">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-semibold text-red-800">Incorrect</p>
+                                    <p className="text-sm text-red-700">Réessayez ou consultez l'explication</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2488,14 +2132,16 @@ const ExamPage = () => {
               {/* Center: Action buttons when answer is verified */}
               {isQuestionVerified && (
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleResetQuestion}
-                    className="gap-2 border-gray-300 hover:bg-gray-50"
-                  >
-                    <RefreshCcw className="h-4 w-4" />
-                    Ressayer
-                  </Button>
+                  {!verifiedQuestions[currentQuestion]?.isCorrect && (
+                    <Button
+                      variant="outline"
+                      onClick={handleResetQuestion}
+                      className="gap-2 border-gray-300 hover:bg-gray-50"
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                      Ressayer
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => setShowExplanation(true)}
@@ -2724,16 +2370,12 @@ const ExamPage = () => {
                   Non visité
                 </span>
                 <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-orange-200 border border-orange-400" />
+                  Visité
+                </span>
+                <span className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-full bg-blue-200 border border-blue-400" />
-                  Répondu
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-emerald-200 border border-emerald-400" />
-                  Correct
-                </span>
-                <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" />
-                  Incorrect
+                  Vérifié
                 </span>
               </div>
 
@@ -2754,11 +2396,8 @@ const ExamPage = () => {
                         className={cn(
                           "relative aspect-square rounded-xl text-sm font-semibold transition-all active:scale-95 border-2",
                           isCurrent && "ring-2 ring-offset-2",
-                          status === 'correct' && "bg-emerald-100 border-emerald-400 text-emerald-700",
-                          status === 'incorrect' && "bg-red-100 border-red-400 text-red-700",
-                          status === 'answered' && "bg-blue-100 border-blue-300 text-blue-700",
+                          status === 'verified' && "bg-blue-100 border-blue-300 text-blue-700",
                           status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
-                          status === 'flagged' && "bg-purple-100 border-purple-400 text-purple-700",
                           status === 'unanswered' && "bg-gray-50 border-gray-200 text-gray-500"
                         )}
                         style={
@@ -2854,24 +2493,8 @@ const ExamPage = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
-                          <span className="text-gray-500">Répondu</span>
+                          <span className="text-gray-500">Vérifié</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
-                          <span className="text-gray-500">Surligné</span>
-                        </div>
-                        {showResults && (
-                          <>
-                            <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></div>
-                              <span className="text-gray-500">Correct</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
-                              <span className="text-gray-500">Incorrect</span>
-                            </div>
-                          </>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -2933,12 +2556,9 @@ const ExamPage = () => {
                                 >
                                   <div className={cn(
                                     "w-6 h-6 rounded flex items-center justify-center shrink-0 text-xs border font-medium",
-                                    status === 'correct' && "bg-emerald-100 border-emerald-300 text-emerald-700",
-                                    status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
-                                    status === 'answered' && !isFlagged && "bg-blue-100 border-blue-300 text-blue-700",
-                                    status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
-                                    status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
-                                    isFlagged && !showResults && "bg-purple-100 border-purple-300 text-purple-700"
+                                    status === 'verified' && "bg-blue-100 border-blue-300 text-blue-700",
+                                    status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
+                                    status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600"
                                   )}>
                                     {shouldShowNumberInBox(questionData) ? (questionData?.displayNumber || idx + 1) : ''}
                                   </div>

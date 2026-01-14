@@ -195,6 +195,20 @@ const SupportPage = () => {
       return;
     }
 
+    // Show confirmation dialog
+    const isConfirmed = window.confirm(
+      `Avant de soumettre votre question, assurez-vous que:\n\n` +
+      `✓ Votre question est claire et précise\n` +
+      `✓ Vous n'incluez pas de contenu inapproprié ou offensant\n` +
+      `✓ Vous décrivez le problème de manière constructive\n\n` +
+      `Êtes-vous sûr que votre question respecte ces critères?`
+    );
+
+    if (!isConfirmed) {
+      toast.info('Submission cancelled. Please review your message.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await axios.post(
@@ -271,25 +285,8 @@ const SupportPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"
       >
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardContent className="pt-6 text-center">
-            <a
-              href="https://www.facebook.com/wafa_app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <ExternalLink className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold mb-1">Facebook</h3>
-              <p className="text-sm text-muted-foreground">@wafa_app</p>
-            </a>
-          </CardContent>
-        </Card>
-
         <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
           <CardContent className="pt-6 text-center">
             <button

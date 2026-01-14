@@ -305,7 +305,12 @@ export const AdminAnalyticsController = {
       },
       {
         $addFields: {
-          totalPoints: { $add: ['$normalPoints', '$bluePoints', '$greenPoints'] }
+          totalPoints: { $add: ['$normalPoints', '$bluePoints', '$greenPoints'] },
+          level: { 
+            $floor: { 
+              $divide: [{ $ifNull: ['$totalPoints', 0] }, 50] 
+            } 
+          }
         }
       },
       {

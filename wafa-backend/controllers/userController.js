@@ -769,7 +769,8 @@ export const UserController = {
             correctAnswers: userStats.correctAnswers || 0,
             totalQuestionsAttempted: userStats.totalQuestionsAttempted || 0,
             totalCorrectAnswers: userStats.totalCorrectAnswers || 0,
-            totalIncorrectAnswers: userStats.totalIncorrectAnswers || 0
+            totalIncorrectAnswers: userStats.totalIncorrectAnswers || 0,
+            weeklyActivity: userStats.weeklyActivity || [] // Include weekly activity for charts
         };
 
         res.status(200).json({

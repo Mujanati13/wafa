@@ -696,16 +696,16 @@ const StatisticsPage = () => {
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
               <StatCard
-                title="Examens complétés"
-                value={stats?.examsCompleted || 0}
-                icon={<Award className="h-4 w-4" />}
+                title="Questions répondues"
+                value={stats?.totalQuestionsAttempted || 0}
+                icon={<BookOpen className="h-4 w-4" />}
                 description="Au total"
               />
               <StatCard
-                title="Score moyen"
+                title="Taux de réussite"
                 value={`${Math.round(stats?.averageScore || 0)}%`}
                 icon={<TrendingUp className="h-4 w-4" />}
-                description="Dernier examen"
+                description={`${stats?.totalCorrectAnswers || 0}/${stats?.totalQuestionsAttempted || 0} correctes`}
               />
               <StatCard
                 title="Heures d'étude"
@@ -714,10 +714,10 @@ const StatisticsPage = () => {
                 description="Temps total"
               />
               <StatCard
-                title="Classement"
-                value={`#${stats?.rank || 0}`}
+                title="Modules actifs"
+                value={stats?.moduleProgress?.length || 0}
                 icon={<Award className="h-4 w-4" />}
-                description="Rang global"
+                description="En progression"
               />
             </div>
           )}
