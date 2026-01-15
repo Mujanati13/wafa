@@ -172,11 +172,31 @@ else
 fi
 
 if [ $SKIP_SSL -eq 0 ]; then
-    print_info "Continue with SSL setup? (y/n)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        SKIP_SSL=1
-        print_warning "Skipping SSL setup"
+    # Check if SSL certificates already exist
+    if [ -f "/etc/letsencrypt/live/imrs-qcm.com/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/backend.imrs-qcm.com/fullchain.pem" ]; then
+        print_success "Existing SSL certificates found!"
+        print_info "Use existing SSL certificates? (y/n)"
+        print_info "Choose 'y' to skip regeneration and use HTTPS with existing certs"
+        print_info "Choose 'n' to regenerate certificates"
+        read -r response
+        if [[ "$response" =~ ^[Yy]$ ]]; then
+            print_success "Using existing SSL certificates"
+            USE_EXISTING_SSL=1
+            SKIP_SSL_GENERATION=1
+        else
+            print_info "Will regenerate SSL certificates"
+            USE_EXISTING_SSL=0
+            SKIP_SSL_GENERATION=0
+        fi
+    else
+        print_info "Continue with SSL setup? (y/n)"
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            SKIP_SSL=1
+            print_warning "Skipping SSL setup - will use HTTP only"
+        fi
+        USE_EXISTING_SSL=0
+        SKIP_SSL_GENERATION=0
     fi
 fi
 
@@ -257,74 +277,21 @@ else
     # Use SSL nginx configuration (will be updated based on which certs succeed)
     NGINX_CONFIG="nginx.conf"
 
-    # Install certbot if not present
-    if ! command -v certbot &> /dev/null; then
-        print_info "Installing certbot..."
-        apt-get update
-        apt-get install -y certbot python3-certbot-nginx
-    fi
-
-    # Stop Docker nginx temporarily to free port 80
-    print_info "Stopping Docker containers temporarily for SSL setup..."
-    docker-compose stop nginx 2>/dev/null || true
-    
-    # Wait a moment for port to be released
-    sleep 2
-    
-    # Obtain SSL certificates using system certbot
-    print_info "Obtaining SSL certificates..."
-    
-    if [ $STAGING -eq 1 ]; then
-        STAGING_FLAG="--staging"
-        print_warning "Using Let's Encrypt STAGING environment (for testing)"
-    else
-        STAGING_FLAG=""
-        print_info "Using Let's Encrypt PRODUCTION environment"
-    fi
-    
-    # Get certificate for main domain (if www exists in DNS, include it)
-    print_info "Obtaining SSL certificate for imrs-qcm.com..."
-    
-    # Check if www subdomain exists
-    WWW_EXISTS=$(dig +short www.imrs-qcm.com | tail -n1)
-    if [ -n "$WWW_EXISTS" ]; then
-        DOMAIN_FLAGS="-d imrs-qcm.com -d www.imrs-qcm.com"
-    else
-        DOMAIN_FLAGS="-d imrs-qcm.com"
-    fi
-    
-    certbot certonly --standalone \
-        --non-interactive \
-        --agree-tos \
-        --email "$EMAIL" \
-        $STAGING_FLAG \
-        $DOMAIN_FLAGS \
-        --preferred-challenges http
-    
-    if [ $? -ne 0 ]; then
-        print_error "Failed to obtain certificate for imrs-qcm.com"
-        print_info "Falling back to HTTP mode..."
-        SKIP_SSL=1
-        sed -i 's|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
-        docker-compose up -d
-    else
-        # Get certificate for backend domain
-        print_info "Obtaining SSL certificate for backend.imrs-qcm.com..."
-        certbot certonly --standalone \
-            --non-interactive \
-            --agree-tos \
-            --email "$EMAIL" \
-            $STAGING_FLAG \
-            -d backend.imrs-qcm.com \
-            --preferred-challenges http
+    # Check if we're using existing certificates
+    if [ "${USE_EXISTING_SSL:-0}" -eq 1 ]; then
+        print_success "Skipping certificate generation - using existing SSL certificates"
         
-        if [ $? -ne 0 ]; then
-            print_warning "Failed to obtain certificate for backend.imrs-qcm.com"
-            print_warning "Using hybrid mode: Frontend with HTTPS, Backend with HTTP"
+        # Verify which certificates exist and configure nginx accordingly
+        if [ -f "/etc/letsencrypt/live/imrs-qcm.com/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/backend.imrs-qcm.com/fullchain.pem" ]; then
+            print_success "Both domain certificates found - using full SSL"
+            NGINX_CONFIG="nginx.conf"
+        elif [ -f "/etc/letsencrypt/live/imrs-qcm.com/fullchain.pem" ]; then
+            print_warning "Only frontend certificate found - using hybrid mode"
             NGINX_CONFIG="nginx-hybrid.conf"
         else
-            print_success "Both SSL certificates obtained successfully"
-            NGINX_CONFIG="nginx.conf"
+            print_error "No valid certificates found, falling back to HTTP"
+            SKIP_SSL=1
+            NGINX_CONFIG="nginx-http.conf"
         fi
         
         # Update docker-compose to use appropriate nginx config
@@ -333,6 +300,86 @@ else
             sed -i "s|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
             sed -i "s|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
             sed -i "s|./nginx/nginx-hybrid.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+        fi
+    else
+        # Generate new certificates
+        # Install certbot if not present
+        if ! command -v certbot &> /dev/null; then
+            print_info "Installing certbot..."
+            apt-get update
+            apt-get install -y certbot python3-certbot-nginx
+        fi
+
+        # Stop Docker nginx temporarily to free port 80
+        print_info "Stopping Docker containers temporarily for SSL setup..."
+        docker-compose stop nginx 2>/dev/null || true
+        
+        # Wait a moment for port to be released
+        sleep 2
+        
+        # Obtain SSL certificates using system certbot
+        print_info "Obtaining SSL certificates..."
+        
+        if [ $STAGING -eq 1 ]; then
+            STAGING_FLAG="--staging"
+            print_warning "Using Let's Encrypt STAGING environment (for testing)"
+        else
+            STAGING_FLAG=""
+            print_info "Using Let's Encrypt PRODUCTION environment"
+        fi
+        
+        # Get certificate for main domain (if www exists in DNS, include it)
+        print_info "Obtaining SSL certificate for imrs-qcm.com..."
+        
+        # Check if www subdomain exists
+        WWW_EXISTS=$(dig +short www.imrs-qcm.com | tail -n1)
+        if [ -n "$WWW_EXISTS" ]; then
+            DOMAIN_FLAGS="-d imrs-qcm.com -d www.imrs-qcm.com"
+        else
+            DOMAIN_FLAGS="-d imrs-qcm.com"
+        fi
+        
+        certbot certonly --standalone \
+            --non-interactive \
+            --agree-tos \
+            --email "$EMAIL" \
+            $STAGING_FLAG \
+            $DOMAIN_FLAGS \
+            --preferred-challenges http
+        
+        if [ $? -ne 0 ]; then
+            print_error "Failed to obtain certificate for imrs-qcm.com"
+            print_info "Falling back to HTTP mode..."
+            SKIP_SSL=1
+            sed -i 's|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+            docker-compose up -d
+        else
+            # Get certificate for backend domain
+            print_info "Obtaining SSL certificate for backend.imrs-qcm.com..."
+            certbot certonly --standalone \
+                --non-interactive \
+                --agree-tos \
+                --email "$EMAIL" \
+                $STAGING_FLAG \
+                -d backend.imrs-qcm.com \
+                --preferred-challenges http
+            
+            if [ $? -ne 0 ]; then
+                print_warning "Failed to obtain certificate for backend.imrs-qcm.com"
+                print_warning "Using hybrid mode: Frontend with HTTPS, Backend with HTTP"
+                NGINX_CONFIG="nginx-hybrid.conf"
+            else
+                print_success "Both SSL certificates obtained successfully"
+                NGINX_CONFIG="nginx.conf"
+            fi
+            
+            # Update docker-compose to use appropriate nginx config
+            print_info "Configuring Nginx with $NGINX_CONFIG..."
+            if [ -f docker-compose.yml ]; then
+                sed -i "s|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+                sed -i "s|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+                sed -i "s|./nginx/nginx-hybrid.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+            fi
         fi
     fi
 
