@@ -20,10 +20,15 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Authentication
 export const auth = getAuth(app);
 
-// Initialize Analytics (optional)
+// Initialize Analytics (optional) - wrapped in try-catch to prevent blocking errors
 let analytics = null;
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Firebase Analytics initialization failed:', error.message);
+    // Analytics is optional, app continues to work without it
+  }
 }
 
 export { analytics };
