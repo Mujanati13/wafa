@@ -1,0 +1,58 @@
+services:
+  mongodb:
+    image: mongo:6
+    container_name: wafa_mongodb
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - wafa-network
+
+  backend:
+    build:
+      context: ./wafa-backend
+      dockerfile: Dockerfile
+    container_name: wafa_backend
+    restart: always
+    depends_on:
+      - mongodb
+    env_file:
+      - .env
+    environment:
+      - PORT=5010
+      - MONGO_URL=mongodb://mongodb:27017/wafa
+    networks:
+      - wafa-network
+
+  frontend:
+    build:
+      context: ./wafa-frentend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_BASED_URL=${VITE_BASED_URL}
+    container_name: wafa_frontend
+    restart: always
+    networks:
+      - wafa-network
+
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: wafa_nginx_gateway
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-gateway/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - wafa-network
+
+networks:
+  wafa-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
