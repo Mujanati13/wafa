@@ -238,12 +238,25 @@ done
 if [ $SKIP_SSL -eq 1 ]; then
     print_header "Skipping SSL Setup"
     print_warning "Your application will run on HTTP (port 80) only"
-    print_info "To add SSL later, configure DNS and run: ./scripts/ssl-setup.sh"
+    print_info "To add SSL later, configure DNS and run: sudo ./deploy-vps.sh again"
+    
+    # Use HTTP-only nginx configuration
+    print_info "Configuring Nginx for HTTP only..."
+    
+    # Update docker-compose to use HTTP config
+    if [ -f docker-compose.yml ]; then
+        sed -i 's|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+    fi
     
     # Start services without SSL
     docker-compose up -d
 else
     print_header "Setting Up SSL Certificates"
+    
+    # Use SSL nginx configuration
+    if [ -f docker-compose.yml ]; then
+        sed -i 's|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+    fi
 
 # Create initial nginx config without SSL for certbot validation
 cat > nginx/nginx-initial.conf << 'EOF'
