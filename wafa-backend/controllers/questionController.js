@@ -1026,18 +1026,23 @@ export const questionController = {
             // Update weekly activity (for performance charts)
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Reset to start of day
+            const todayTime = today.getTime();
             
-            const todayActivity = userStats.weeklyActivity.find(
-                activity => activity.date && activity.date.setHours(0, 0, 0, 0) === today.getTime()
-            );
+            const todayActivityIndex = userStats.weeklyActivity.findIndex(activity => {
+                if (!activity.date) return false;
+                const activityDate = new Date(activity.date);
+                activityDate.setHours(0, 0, 0, 0);
+                return activityDate.getTime() === todayTime;
+            });
             
-            if (todayActivity) {
+            if (todayActivityIndex !== -1) {
                 // Update today's activity
-                todayActivity.questionsAttempted = (todayActivity.questionsAttempted || 0) + 1;
+                userStats.weeklyActivity[todayActivityIndex].questionsAttempted = 
+                    (userStats.weeklyActivity[todayActivityIndex].questionsAttempted || 0) + 1;
                 if (isCorrect) {
-                    todayActivity.correctAnswers = (todayActivity.correctAnswers || 0) + 1;
+                    userStats.weeklyActivity[todayActivityIndex].correctAnswers = 
+                        (userStats.weeklyActivity[todayActivityIndex].correctAnswers || 0) + 1;
                 }
-                todayActivity.timeSpent = (todayActivity.timeSpent || 0) + 0; // Can be updated if time tracking added
             } else {
                 // Add new day activity
                 userStats.weeklyActivity.push({
