@@ -246,6 +246,7 @@ if [ $SKIP_SSL -eq 1 ]; then
     # Update docker-compose to use HTTP config
     if [ -f docker-compose.yml ]; then
         sed -i 's|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+        sed -i 's|./nginx/nginx-hybrid.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
     fi
     
     # Start services without SSL
@@ -253,10 +254,8 @@ if [ $SKIP_SSL -eq 1 ]; then
 else
     print_header "Setting Up SSL Certificates"
     
-    # Use SSL nginx configuration
-    if [ -f docker-compose.yml ]; then
-        sed -i 's|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
-    fi
+    # Use SSL nginx configuration (will be updated based on which certs succeed)
+    NGINX_CONFIG="nginx.conf"
 
     # Install certbot if not present
     if ! command -v certbot &> /dev/null; then
@@ -321,10 +320,20 @@ else
         
         if [ $? -ne 0 ]; then
             print_warning "Failed to obtain certificate for backend.imrs-qcm.com"
-            print_warning "Backend will not have SSL"
+            print_warning "Using hybrid mode: Frontend with HTTPS, Backend with HTTP"
+            NGINX_CONFIG="nginx-hybrid.conf"
+        else
+            print_success "Both SSL certificates obtained successfully"
+            NGINX_CONFIG="nginx.conf"
         fi
         
-        print_success "SSL certificates obtained successfully"
+        # Update docker-compose to use appropriate nginx config
+        print_info "Configuring Nginx with $NGINX_CONFIG..."
+        if [ -f docker-compose.yml ]; then
+            sed -i "s|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+            sed -i "s|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+            sed -i "s|./nginx/nginx-hybrid.conf:/etc/nginx/nginx.conf:ro|./nginx/$NGINX_CONFIG:/etc/nginx/nginx.conf:ro|g" docker-compose.yml
+        fi
     fi
 
 fi  # End of SSL setup
@@ -339,7 +348,11 @@ if [ $SKIP_SSL -eq 0 ]; then
     # Start all services with SSL configuration
     docker-compose up -d
     
-    print_success "All services started successfully with SSL"
+    if [ "$NGINX_CONFIG" = "nginx-hybrid.conf" ]; then
+        print_success "All services started with hybrid SSL (Frontend: HTTPS, Backend: HTTP)"
+    else
+        print_success "All services started successfully with full SSL"
+    fi
 else
     print_header "Starting Services (HTTP Only)"
     print_success "All services started successfully"
