@@ -413,7 +413,52 @@ const ExamPage = () => {
         // Get current user ID for user-specific localStorage
         const currentUserId = userProfile?._id || localStorage.getItem('userId');
         
-        // Restore progress from localStorage (user-specific)
+        // RESTORE FROM BACKEND FIRST (source of truth)
+        let restoredFromBackend = false;
+        try {
+          const serverAnswers = await api.get(`/questions/user-answers/${examId}`);
+          if (serverAnswers.data?.data && Object.keys(serverAnswers.data.data).length > 0) {
+            const answersData = serverAnswers.data.data;
+            const restoredAnswers = {};
+            const restoredVerified = {};
+
+            // Build flat question list with indices
+            const allQuestions = [];
+            Object.values(transformedData.questions || {}).forEach(sessionQuestions => {
+              sessionQuestions.forEach(q => allQuestions.push(q));
+            });
+
+            // Map question IDs to indices and restore ALL answers (verified and unverified)
+            Object.entries(answersData).forEach(([qId, answerData]) => {
+              const qIndex = allQuestions.findIndex(q => q._id === qId);
+              if (qIndex !== -1 && answerData.selectedAnswers?.length > 0) {
+                restoredAnswers[qIndex] = answerData.selectedAnswers;
+                if (answerData.isVerified) {
+                  restoredVerified[qIndex] = {
+                    verified: true,
+                    isCorrect: answerData.isCorrect
+                  };
+                }
+              }
+            });
+
+            // Update state with backend data
+            if (Object.keys(restoredAnswers).length > 0) {
+              setSelectedAnswers(restoredAnswers);
+              restoredFromBackend = true;
+              console.log(`Restored ${Object.keys(restoredAnswers).length} answers from backend`);
+            }
+            if (Object.keys(restoredVerified).length > 0) {
+              setVerifiedQuestions(restoredVerified);
+              console.log(`Restored ${Object.keys(restoredVerified).length} verified questions from backend`);
+            }
+          }
+        } catch (serverErr) {
+          console.log('Could not fetch server answers:', serverErr);
+        }
+
+        // RESTORE FROM LOCALSTORAGE (for UI state like currentQ, timeSpent, flags)
+        // Only use localStorage for answers if backend had none
         const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
         const savedProgress = localStorage.getItem(storageKey);
         if (savedProgress) {
@@ -422,11 +467,19 @@ const ExamPage = () => {
             
             // Validate that stored data belongs to current user
             if (storedUserId === currentUserId) {
-              setSelectedAnswers(answers || {});
+              // Always restore UI state
               setCurrentQuestion(currentQ || 0);
               setTimeElapsed(timeSpent || 0);
               setFlaggedQuestions(new Set(flags || []));
-              if (verified) {
+              
+              // Only use localStorage answers if backend didn't have any
+              if (!restoredFromBackend && answers && Object.keys(answers).length > 0) {
+                setSelectedAnswers(answers);
+                console.log(`Restored ${Object.keys(answers).length} answers from localStorage (fallback)`);
+              }
+              
+              // Merge verified state (backend takes precedence)
+              if (verified && !restoredFromBackend) {
                 setVerifiedQuestions(verified);
               }
             } else {
@@ -438,57 +491,6 @@ const ExamPage = () => {
             console.error('Error parsing saved progress:', err);
             localStorage.removeItem(storageKey);
           }
-        }
-
-        // Also try to restore from server - this is the source of truth for verified questions
-        try {
-          const serverAnswers = await api.get(`/questions/user-answers/${examId}`);
-          if (serverAnswers.data?.data && Object.keys(serverAnswers.data.data).length > 0) {
-            const answersData = serverAnswers.data.data;
-            const restoredAnswers = {};
-            const restoredVerified = {};
-
-            // Map question IDs to indices and restore answers
-            Object.entries(answersData).forEach(([qId, answerData]) => {
-              // Find question index by ID
-              const allQuestions = [];
-              Object.values(transformedData.questions || {}).forEach(sessionQuestions => {
-                sessionQuestions.forEach(q => allQuestions.push(q));
-              });
-              const qIndex = allQuestions.findIndex(q => q._id === qId);
-              if (qIndex !== -1) {
-                restoredAnswers[qIndex] = answerData.selectedAnswers;
-                if (answerData.isVerified) {
-                  // Store both verified status and isCorrect for proper display
-                  restoredVerified[qIndex] = {
-                    verified: true,
-                    isCorrect: answerData.isCorrect
-                  };
-                }
-              }
-            });
-
-            // Always update verified state from server as it's the source of truth
-            if (Object.keys(restoredVerified).length > 0) {
-              setVerifiedQuestions(restoredVerified);
-            }
-            
-            // Merge server answers with local answers (local takes precedence for non-verified)
-            if (Object.keys(restoredAnswers).length > 0) {
-              setSelectedAnswers(prev => {
-                const merged = { ...restoredAnswers };
-                // Keep local answers for non-verified questions
-                Object.keys(prev).forEach(key => {
-                  if (!restoredVerified[key]) {
-                    merged[key] = prev[key];
-                  }
-                });
-                return merged;
-              });
-            }
-          }
-        } catch (serverErr) {
-          console.log('Could not fetch server answers:', serverErr);
         }
       } catch (err) {
         console.error('=== ERROR FETCHING EXAM ===');
@@ -515,7 +517,7 @@ const ExamPage = () => {
   useEffect(() => {
     if (!examData || showResults || !hasUnsavedChanges || !userProfile?._id) return;
 
-    const saveProgress = () => {
+    const saveProgress = async () => {
       setIsSaved(false); // Show saving indicator briefly
       try {
         const currentUserId = userProfile._id;
@@ -527,8 +529,40 @@ const ExamPage = () => {
           flags: Array.from(flaggedQuestions),
           verified: verifiedQuestions
         };
+        
+        // Save to localStorage first (fast, immediate)
         const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
         localStorage.setItem(storageKey, JSON.stringify(progress));
+        
+        // Save unverified answers to backend for persistence
+        // Only save questions that have answers but are not yet verified
+        const unverifiedAnswers = Object.keys(selectedAnswers)
+          .filter(qIndex => {
+            const hasAnswer = selectedAnswers[qIndex]?.length > 0;
+            const isVerified = verifiedQuestions[qIndex]?.verified || verifiedQuestions[qIndex] === true;
+            return hasAnswer && !isVerified;
+          })
+          .map(qIndex => ({
+            questionId: questions[qIndex]?._id,
+            selectedAnswers: selectedAnswers[qIndex],
+            isVerified: false,
+            isCorrect: false,
+            examId: examData._id || examId,
+            moduleId: examData.module?._id || examData.moduleId
+          }))
+          .filter(item => item.questionId); // Only include if we have valid questionId
+        
+        // Batch save unverified answers to backend
+        if (unverifiedAnswers.length > 0) {
+          await Promise.all(
+            unverifiedAnswers.map(answerData => 
+              api.post('/questions/save-answer', answerData).catch(err => {
+                console.warn('Failed to save answer to backend:', err);
+              })
+            )
+          );
+        }
+        
         setIsSaved(true);
         setLastSaveTime(new Date());
         setHasUnsavedChanges(false);
@@ -538,9 +572,9 @@ const ExamPage = () => {
       }
     };
 
-    const saveTimer = setTimeout(saveProgress, 300);
+    const saveTimer = setTimeout(saveProgress, 1000); // Increased debounce to 1s for backend calls
     return () => clearTimeout(saveTimer);
-  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile]);
+  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile, questions]);
 
   // Periodically save time elapsed (every 30 seconds)
   useEffect(() => {
