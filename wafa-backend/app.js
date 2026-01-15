@@ -67,6 +67,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // true in production only
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.NODE_ENV === 'production' ? '.imrs-qcm.com' : undefined, // Share cookies across subdomains
     },
   })
 );
