@@ -83,19 +83,20 @@ fi
 # Check environment files
 print_info "Checking environment files..."
 
-if [ ! -f "wafa-backend/.env.production" ]; then
-    print_warning "Backend .env.production not found. Creating from example..."
-    if [ -f "wafa-backend/.env.production.example" ]; then
-        cp wafa-backend/.env.production.example wafa-backend/.env.production
-        print_warning "Please edit wafa-backend/.env.production with your actual values"
+if [ ! -f ".env" ]; then
+    print_warning "Root .env file not found. Creating from example..."
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        print_warning "Please edit .env with your actual credentials"
+        print_info "Important: Change SESSION_SECRET, JWT_SECRET, and MongoDB password!"
         print_info "Press Enter to continue after editing the file, or Ctrl+C to exit..."
         read
     else
-        print_error "No .env.production.example found for backend"
+        print_error "No .env.example found"
         exit 1
     fi
 else
-    print_success "Backend .env.production exists"
+    print_success "Root .env file exists"
 fi
 
 if [ ! -f "wafa-frentend/.env.production" ]; then

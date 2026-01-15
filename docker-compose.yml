@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MongoDB Database
   mongodb:
@@ -28,12 +26,27 @@ services:
       dockerfile: Dockerfile
     container_name: wafa-backend
     restart: unless-stopped
-    env_file:
-      - ./wafa-backend/.env.production
     environment:
       - NODE_ENV=production
       - PORT=5010
       - MONGO_URL=mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin
+      - SESSION_SECRET=${SESSION_SECRET:-change_this_session_secret_in_production}
+      - JWT_SECRET=${JWT_SECRET:-change_this_jwt_secret_in_production}
+      - CORS_ORIGIN=https://imrs-qcm.com,https://www.imrs-qcm.com,https://backend.imrs-qcm.com
+      - FRONTEND_URL=https://imrs-qcm.com
+      - EMAIL_SERVICE=${EMAIL_SERVICE:-gmail}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@imrs-qcm.com}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_CALLBACK_URL=https://backend.imrs-qcm.com/api/v1/auth/google/callback
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-}
+      - PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
     volumes:
       - ./wafa-backend/uploads:/app/uploads
       - ./wafa-backend/firebase-service-account.json:/app/firebase-service-account.json:ro

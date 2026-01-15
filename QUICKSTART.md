@@ -16,12 +16,13 @@ cd wafa
 ### 2. Configure Environment
 
 ```bash
-# Backend environment
-sudo cp wafa-backend/.env.production.example wafa-backend/.env.production
-sudo nano wafa-backend/.env.production
+# Root environment (for Docker Compose)
+sudo cp .env.example .env
+sudo nano .env
 ```
 
-**Edit these key values:**
+**Edit these key values in .env:**
+- `MONGO_ROOT_PASSWORD` - Strong password for MongoDB
 - `SESSION_SECRET` - Generate: `openssl rand -base64 32`
 - `JWT_SECRET` - Generate: `openssl rand -base64 32`
 - `EMAIL_USER` / `EMAIL_PASSWORD` - Your Gmail & app password
@@ -44,16 +45,14 @@ sudo nano wafa-backend/firebase-service-account.json
 
 ### 4. MongoDB Credentials
 
+MongoDB credentials are now in the root `.env` file:
+
 ```bash
-# Edit docker-compose.yml
-sudo nano docker-compose.yml
+sudo nano .env
 
-# Change these lines (in the mongodb service):
-MONGO_INITDB_ROOT_USERNAME: admin        # Change to secure username
-MONGO_INITDB_ROOT_PASSWORD: changeme123  # Change to secure password
-
-# Also update in backend environment section:
-MONGO_URL=mongodb://USERNAME:PASSWORD@mongodb:27017/wafa?authSource=admin
+# Change these:
+MONGO_ROOT_USERNAME=admin           # Your MongoDB username
+MONGO_ROOT_PASSWORD=YOUR_SECURE_PASSWORD_HERE
 ```
 
 ### 5. Deploy!
