@@ -130,20 +130,54 @@ print_info "Checking DNS configuration..."
 SERVER_IP=$(curl -s ifconfig.me)
 print_info "Server IP: $SERVER_IP"
 
+DNS_MISSING=0
 for domain in "${DOMAINS[@]}"; do
     DOMAIN_IP=$(dig +short "$domain" | tail -n1)
-    if [ "$DOMAIN_IP" == "$SERVER_IP" ]; then
+    if [ -z "$DOMAIN_IP" ]; then
+        print_error "$domain has no DNS record"
+        DNS_MISSING=1
+    elif [ "$DOMAIN_IP" == "$SERVER_IP" ]; then
         print_success "$domain points to this server ($SERVER_IP)"
     else
         print_warning "$domain points to $DOMAIN_IP (expected: $SERVER_IP)"
-        print_warning "Please update your DNS records to point to this server"
+        DNS_MISSING=1
     fi
 done
 
-print_info "Continue with deployment? (y/n)"
-read -r response
-if [[ ! "$response" =~ ^[Yy]$ ]]; then
-    exit 0
+if [ $DNS_MISSING -eq 1 ]; then
+    echo ""
+    print_error "DNS records are not properly configured!"
+    echo ""
+    print_info "Required DNS A records in your domain registrar:"
+    echo "  Type    Name        Value           TTL"
+    echo "  A       @           $SERVER_IP      300"
+    echo "  A       backend     $SERVER_IP      300"
+    echo ""
+    print_info "Options:"
+    echo "  1. Exit and configure DNS records (recommended)"
+    echo "  2. Continue without SSL (development only)"
+    echo ""
+    read -p "Enter your choice (1 or 2): " dns_choice
+    
+    if [ "$dns_choice" != "2" ]; then
+        print_info "Please configure DNS records and run the script again."
+        print_info "DNS changes can take 5-30 minutes to propagate."
+        exit 0
+    fi
+    
+    print_warning "Continuing without SSL. Your site will use HTTP only."
+    SKIP_SSL=1
+else
+    SKIP_SSL=0
+fi
+
+if [ $SKIP_SSL -eq 0 ]; then
+    print_info "Continue with SSL setup? (y/n)"
+    read -r response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        SKIP_SSL=1
+        print_warning "Skipping SSL setup"
+    fi
 fi
 
 ################################################################################
@@ -201,7 +235,15 @@ done
 # SSL Certificate Setup
 ################################################################################
 
-print_header "Setting Up SSL Certificates"
+if [ $SKIP_SSL -eq 1 ]; then
+    print_header "Skipping SSL Setup"
+    print_warning "Your application will run on HTTP (port 80) only"
+    print_info "To add SSL later, configure DNS and run: ./scripts/ssl-setup.sh"
+    
+    # Start services without SSL
+    docker-compose up -d
+else
+    print_header "Setting Up SSL Certificates"
 
 # Create initial nginx config without SSL for certbot validation
 cat > nginx/nginx-initial.conf << 'EOF'
@@ -294,16 +336,23 @@ docker stop temp-nginx && docker rm temp-nginx
 
 print_success "SSL certificates obtained successfully"
 
+fi  # End of SSL setup
+
 ################################################################################
-# Start Full Stack with SSL
+# Start Full Stack
 ################################################################################
 
-print_header "Starting Full Stack with SSL"
-
-# Start nginx and certbot with full configuration
-docker-compose up -d
-
-print_success "All services started successfully"
+if [ $SKIP_SSL -eq 0 ]; then
+    print_header "Starting Full Stack with SSL"
+    
+    # Start nginx and certbot with full configuration
+    docker-compose up -d
+    
+    print_success "All services started successfully with SSL"
+else
+    print_header "Starting Services (HTTP Only)"
+    print_success "All services started successfully"
+fi
 
 ################################################################################
 # Post-Deployment
@@ -348,7 +397,8 @@ fi
 # Setup Auto-Renewal
 ################################################################################
 
-print_header "Setting Up SSL Auto-Renewal"
+if [ $SKIP_SSL -eq 0 ]; then
+    print_header "Setting Up SSL Auto-Renewal"
 
 # Create renewal script
 cat > scripts/ssl-renew.sh << 'EOF'
@@ -365,6 +415,7 @@ CRON_CMD="0 0,12 * * * $(pwd)/scripts/ssl-renew.sh >> /var/log/ssl-renew.log 2>&
 (crontab -l 2>/dev/null | grep -v ssl-renew.sh; echo "$CRON_CMD") | crontab -
 
 print_success "SSL auto-renewal configured (runs twice daily)"
+fi  # End of SSL auto-renewal setup
 
 ################################################################################
 # Final Summary
@@ -375,9 +426,20 @@ print_header "Deployment Complete!"
 echo ""
 echo -e "${GREEN}🎉 WAFA Application Successfully Deployed!${NC}"
 echo ""
-echo -e "${BLUE}Access your application at:${NC}"
-echo -e "  Frontend: ${GREEN}https://imrs-qcm.com${NC}"
-echo -e "  Backend:  ${GREEN}https://backend.imrs-qcm.com${NC}"
+if [ $SKIP_SSL -eq 0 ]; then
+    echo -e "${BLUE}Access your application at:${NC}"
+    echo -e "  Frontend: ${GREEN}https://imrs-qcm.com${NC}"
+    echo -e "  Backend:  ${GREEN}https://backend.imrs-qcm.com${NC}"
+else
+    echo -e "${YELLOW}Access your application at (HTTP only):${NC}"
+    echo -e "  Frontend: ${YELLOW}http://imrs-qcm.com${NC}"
+    echo -e "  Backend:  ${YELLOW}http://backend.imrs-qcm.com${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠ To enable HTTPS:${NC}"
+    echo -e "  1. Add DNS A records for backend.imrs-qcm.com"
+    echo -e "  2. Wait 5-30 minutes for DNS propagation"
+    echo -e "  3. Run: ${GREEN}sudo ./deploy-vps.sh${NC} again"
+fi
 echo ""
 echo -e "${BLUE}Useful Commands:${NC}"
 echo -e "  View logs:        ${YELLOW}docker-compose logs -f [service]${NC}"
