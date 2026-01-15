@@ -410,18 +410,34 @@ const ExamPage = () => {
         console.log('Transformed data:', transformedData);
         setExamData(transformedData);
 
-        // Restore progress from localStorage
-        const savedProgress = localStorage.getItem(`exam_progress_${examType}_${examId}`);
+        // Get current user ID for user-specific localStorage
+        const currentUserId = userProfile?._id || localStorage.getItem('userId');
+        
+        // Restore progress from localStorage (user-specific)
+        const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+        const savedProgress = localStorage.getItem(storageKey);
         if (savedProgress) {
-          const { answers, currentQ, timeSpent, flags, verified } = JSON.parse(savedProgress);
-          setSelectedAnswers(answers || {});
-          setCurrentQuestion(currentQ || 0);
-          setTimeElapsed(timeSpent || 0);
-          setFlaggedQuestions(new Set(flags || []));
-          if (verified) {
-            setVerifiedQuestions(verified);
+          try {
+            const { answers, currentQ, timeSpent, flags, verified, userId: storedUserId } = JSON.parse(savedProgress);
+            
+            // Validate that stored data belongs to current user
+            if (storedUserId === currentUserId) {
+              setSelectedAnswers(answers || {});
+              setCurrentQuestion(currentQ || 0);
+              setTimeElapsed(timeSpent || 0);
+              setFlaggedQuestions(new Set(flags || []));
+              if (verified) {
+                setVerifiedQuestions(verified);
+              }
+            } else {
+              // Data belongs to different user, clear it
+              console.log('Clearing stale localStorage data from different user');
+              localStorage.removeItem(storageKey);
+            }
+          } catch (err) {
+            console.error('Error parsing saved progress:', err);
+            localStorage.removeItem(storageKey);
           }
-          
         }
 
         // Also try to restore from server - this is the source of truth for verified questions
@@ -497,19 +513,22 @@ const ExamPage = () => {
 
   // Auto-save progress (including verified state) - debounced
   useEffect(() => {
-    if (!examData || showResults || !hasUnsavedChanges) return;
+    if (!examData || showResults || !hasUnsavedChanges || !userProfile?._id) return;
 
     const saveProgress = () => {
       setIsSaved(false); // Show saving indicator briefly
       try {
+        const currentUserId = userProfile._id;
         const progress = {
+          userId: currentUserId, // Include userId for validation
           answers: selectedAnswers,
           currentQ: currentQuestion,
           timeSpent: timeElapsed,
           flags: Array.from(flaggedQuestions),
           verified: verifiedQuestions
         };
-        localStorage.setItem(`exam_progress_${examType}_${examId}`, JSON.stringify(progress));
+        const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+        localStorage.setItem(storageKey, JSON.stringify(progress));
         setIsSaved(true);
         setLastSaveTime(new Date());
         setHasUnsavedChanges(false);
@@ -521,19 +540,24 @@ const ExamPage = () => {
 
     const saveTimer = setTimeout(saveProgress, 300);
     return () => clearTimeout(saveTimer);
-  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed]);
+  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile]);
 
   // Periodically save time elapsed (every 30 seconds)
   useEffect(() => {
-    if (!examData || showResults) return;
+    if (!examData || showResults || !userProfile?._id) return;
     
     const timeUpdateTimer = setInterval(() => {
       try {
-        const savedProgress = localStorage.getItem(`exam_progress_${examType}_${examId}`);
+        const currentUserId = userProfile._id;
+        const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+        const savedProgress = localStorage.getItem(storageKey);
         if (savedProgress) {
           const progress = JSON.parse(savedProgress);
-          progress.timeSpent = timeElapsed;
-          localStorage.setItem(`exam_progress_${examType}_${examId}`, JSON.stringify(progress));
+          // Validate user before updating
+          if (progress.userId === currentUserId) {
+            progress.timeSpent = timeElapsed;
+            localStorage.setItem(storageKey, JSON.stringify(progress));
+          }
         }
       } catch (error) {
         console.error('Failed to save time:', error);
@@ -541,7 +565,7 @@ const ExamPage = () => {
     }, 30000); // Every 30 seconds
     
     return () => clearInterval(timeUpdateTimer);
-  }, [examData, showResults, examType, examId, timeElapsed]);
+  }, [examData, showResults, examType, examId, timeElapsed, userProfile]);
 
   // Warn before leaving - only if there are actual unsaved changes
   useEffect(() => {
@@ -878,7 +902,13 @@ const ExamPage = () => {
   const handleSubmit = useCallback(() => {
     setShowResults(true);
     setShowConfirmSubmit(false);
-    localStorage.removeItem(`exam_progress_${examType}_${examId}`);
+    
+    // Clear user-specific localStorage
+    const currentUserId = userProfile?._id;
+    if (currentUserId) {
+      const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+      localStorage.removeItem(storageKey);
+    }
 
     const score = calculateScore();
     const percentage = Math.round((score.correct / score.total) * 100);
@@ -901,9 +931,16 @@ const ExamPage = () => {
     setTimeElapsed(0);
     setShowResults(false);
     setFlaggedQuestions(new Set());
-    localStorage.removeItem(`exam_progress_${examType}_${examId}`);
+    
+    // Clear user-specific localStorage
+    const currentUserId = userProfile?._id;
+    if (currentUserId) {
+      const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+      localStorage.removeItem(storageKey);
+    }
+    
     toast.info(t('dashboard:new_attempt_started') || 'New attempt started');
-  }, [examId, examType, t]);
+  }, [examId, examType, t, userProfile]);
 
   const score = useMemo(() => calculateScore(), [calculateScore]);
   
