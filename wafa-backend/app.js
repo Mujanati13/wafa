@@ -26,9 +26,15 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 // Serve static files from uploads folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// CORS middleware
+// CORS middleware - use environment variable or defaults
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:4010'];
+
+console.log('CORS allowed origins:', allowedOrigins);
+
 app.use(cors({
-  origin: ['https://wafa.albech.me', 'https://api-wafa.albech.me', 'http://localhost:5173', 'http://localhost:4010', 'http://72.62.16.59:4010'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
