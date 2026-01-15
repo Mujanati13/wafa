@@ -74,8 +74,17 @@ echo ".env file created with production settings."
 # 3. Build and Run containers
 echo "Building and starting containers..."
 docker compose down # Stop existing if any
-docker compose up -d --build
+
+# Check if SSL setup is needed
+if [ ! -d "./certbot/conf/live/imrs-qcm.com" ]; then
+    echo "SSL certificates not found. Starting SSL initialization..."
+    chmod +x init-letsencrypt.sh
+    ./init-letsencrypt.sh
+else
+    echo "SSL certificates found. Starting services..."
+    docker compose up -d --build
+fi
 
 echo "Deployment finished successfully!"
-echo "Frontend: ${PROTOCOL}://${FRONTEND_DOMAIN}"
-echo "Backend: ${PROTOCOL}://${BACKEND_DOMAIN}"
+echo "Frontend: https://${FRONTEND_DOMAIN}"
+echo "Backend: https://${BACKEND_DOMAIN}"
