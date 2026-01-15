@@ -1,0 +1,33 @@
+# Environment files with sensitive data
+.env
+.env.local
+.env.production
+wafa-backend/.env
+wafa-backend/.env.production
+wafa-frentend/.env
+
+# Firebase service account
+wafa-backend/firebase-service-account.json
+
+# Logs
+*.log
+deployment.log
+nginx/logs/
+
+# Backups
+backups/
+
+# SSL certificates (managed by Let's Encrypt)
+nginx/ssl/
+
+# Node modules (will be installed in Docker)
+node_modules/
+wafa-backend/node_modules/
+wafa-frentend/node_modules/
+
+# Build outputs
+wafa-frentend/dist/
+wafa-frentend/.vite/
+
+# Docker volumes
+volumes/
