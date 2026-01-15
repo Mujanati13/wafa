@@ -18,14 +18,19 @@ cd "$(dirname "$0")/.."
 
 echo -e "${YELLOW}[$(date)] Starting SSL certificate renewal...${NC}"
 
-# Renew certificates
-docker-compose run --rm certbot renew --quiet
+# Stop Docker nginx temporarily
+docker-compose stop nginx
 
-# Reload Nginx to pick up new certificates
-if docker-compose exec -T nginx nginx -s reload; then
-    echo -e "${GREEN}[$(date)] SSL certificates renewed and Nginx reloaded successfully${NC}"
+# Renew certificates using system certbot
+certbot renew --standalone --quiet
+
+# Restart Docker nginx
+docker-compose start nginx
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}[$(date)] SSL certificates renewed and Nginx restarted successfully${NC}"
 else
-    echo -e "${RED}[$(date)] Failed to reload Nginx${NC}"
+    echo -e "${RED}[$(date)] Failed to restart Nginx${NC}"
     exit 1
 fi
 

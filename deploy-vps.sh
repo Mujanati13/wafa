@@ -258,96 +258,74 @@ else
         sed -i 's|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
     fi
 
-# Create initial nginx config without SSL for certbot validation
-cat > nginx/nginx-initial.conf << 'EOF'
-user nginx;
-worker_processes auto;
-error_log /var/log/nginx/error.log warn;
-pid /var/run/nginx.pid;
+    # Install certbot if not present
+    if ! command -v certbot &> /dev/null; then
+        print_info "Installing certbot..."
+        apt-get update
+        apt-get install -y certbot python3-certbot-nginx
+    fi
 
-events {
-    worker_connections 1024;
-}
-
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-
-    server {
-        listen 80;
-        server_name imrs-qcm.com backend.imrs-qcm.com;
-
-        location /.well-known/acme-challenge/ {
-            root /var/www/certbot;
-        }
-
-        location / {
-            return 200 'Server is being configured...';
-            add_header Content-Type text/plain;
-        }
-    }
-}
-EOF
-
-# Start nginx with initial config
-print_info "Starting temporary nginx for certificate validation..."
-docker rm -f temp-nginx 2>/dev/null || true
-
-docker run -d --name temp-nginx \
-    -p 80:80 \
-    -v "$(pwd)/nginx/nginx-initial.conf:/etc/nginx/nginx.conf:ro" \
-    -v "$(pwd)/certbot/www:/var/www/certbot:ro" \
-    nginx:alpine
-
-if [ $? -ne 0 ]; then
-    print_error "Failed to start temporary nginx. Port 80 may still be in use."
-    print_info "Checking what's using port 80..."
-    netstat -tuln | grep ":80 "
-    lsof -i :80 || true
-    exit 1
-fi
-
-print_success "Temporary Nginx started for certificate validation"
-
-# Obtain SSL certificates
-if [ $STAGING -eq 1 ]; then
-    STAGING_FLAG="--staging"
-    print_warning "Using Let's Encrypt STAGING environment (for testing)"
-else
-    STAGING_FLAG=""
-    print_info "Using Let's Encrypt PRODUCTION environment"
-fi
-
-# Get certificate for main domain
-print_info "Obtaining SSL certificate for imrs-qcm.com..."
-docker run --rm \
-    -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-    -v "$(pwd)/certbot/www:/var/www/certbot" \
-    certbot/certbot certonly --webroot \
-    --webroot-path=/var/www/certbot \
-    --email "$EMAIL" \
-    --agree-tos \
-    --no-eff-email \
-    $STAGING_FLAG \
-    -d imrs-qcm.com
-
-# Get certificate for backend domain
-print_info "Obtaining SSL certificate for backend.imrs-qcm.com..."
-docker run --rm \
-    -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-    -v "$(pwd)/certbot/www:/var/www/certbot" \
-    certbot/certbot certonly --webroot \
-    --webroot-path=/var/www/certbot \
-    --email "$EMAIL" \
-    --agree-tos \
-    --no-eff-email \
-    $STAGING_FLAG \
-    -d backend.imrs-qcm.com
-
-# Stop temporary nginx
-docker stop temp-nginx && docker rm temp-nginx
-
-print_success "SSL certificates obtained successfully"
+    # Stop Docker nginx temporarily to free port 80
+    print_info "Stopping Docker containers temporarily for SSL setup..."
+    docker-compose stop nginx 2>/dev/null || true
+    
+    # Wait a moment for port to be released
+    sleep 2
+    
+    # Obtain SSL certificates using system certbot
+    print_info "Obtaining SSL certificates..."
+    
+    if [ $STAGING -eq 1 ]; then
+        STAGING_FLAG="--staging"
+        print_warning "Using Let's Encrypt STAGING environment (for testing)"
+    else
+        STAGING_FLAG=""
+        print_info "Using Let's Encrypt PRODUCTION environment"
+    fi
+    
+    # Get certificate for main domain (if www exists in DNS, include it)
+    print_info "Obtaining SSL certificate for imrs-qcm.com..."
+    
+    # Check if www subdomain exists
+    WWW_EXISTS=$(dig +short www.imrs-qcm.com | tail -n1)
+    if [ -n "$WWW_EXISTS" ]; then
+        DOMAIN_FLAGS="-d imrs-qcm.com -d www.imrs-qcm.com"
+    else
+        DOMAIN_FLAGS="-d imrs-qcm.com"
+    fi
+    
+    certbot certonly --standalone \
+        --non-interactive \
+        --agree-tos \
+        --email "$EMAIL" \
+        $STAGING_FLAG \
+        $DOMAIN_FLAGS \
+        --preferred-challenges http
+    
+    if [ $? -ne 0 ]; then
+        print_error "Failed to obtain certificate for imrs-qcm.com"
+        print_info "Falling back to HTTP mode..."
+        SKIP_SSL=1
+        sed -i 's|./nginx/nginx.conf:/etc/nginx/nginx.conf:ro|./nginx/nginx-http.conf:/etc/nginx/nginx.conf:ro|g' docker-compose.yml
+        docker-compose up -d
+    else
+        # Get certificate for backend domain
+        print_info "Obtaining SSL certificate for backend.imrs-qcm.com..."
+        certbot certonly --standalone \
+            --non-interactive \
+            --agree-tos \
+            --email "$EMAIL" \
+            $STAGING_FLAG \
+            -d backend.imrs-qcm.com \
+            --preferred-challenges http
+        
+        if [ $? -ne 0 ]; then
+            print_warning "Failed to obtain certificate for backend.imrs-qcm.com"
+            print_warning "Backend will not have SSL"
+        fi
+        
+        print_success "SSL certificates obtained successfully"
+    fi
 
 fi  # End of SSL setup
 
@@ -358,7 +336,7 @@ fi  # End of SSL setup
 if [ $SKIP_SSL -eq 0 ]; then
     print_header "Starting Full Stack with SSL"
     
-    # Start nginx and certbot with full configuration
+    # Start all services with SSL configuration
     docker-compose up -d
     
     print_success "All services started successfully with SSL"
