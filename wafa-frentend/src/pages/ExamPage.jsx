@@ -536,31 +536,34 @@ const ExamPage = () => {
         
         // Save unverified answers to backend for persistence
         // Only save questions that have answers but are not yet verified
-        const unverifiedAnswers = Object.keys(selectedAnswers)
-          .filter(qIndex => {
-            const hasAnswer = selectedAnswers[qIndex]?.length > 0;
-            const isVerified = verifiedQuestions[qIndex]?.verified || verifiedQuestions[qIndex] === true;
-            return hasAnswer && !isVerified;
-          })
-          .map(qIndex => ({
-            questionId: questions[qIndex]?._id,
-            selectedAnswers: selectedAnswers[qIndex],
-            isVerified: false,
-            isCorrect: false,
-            examId: examData._id || examId,
-            moduleId: examData.module?._id || examData.moduleId
-          }))
-          .filter(item => item.questionId); // Only include if we have valid questionId
-        
-        // Batch save unverified answers to backend
-        if (unverifiedAnswers.length > 0) {
-          await Promise.all(
-            unverifiedAnswers.map(answerData => 
-              api.post('/questions/save-answer', answerData).catch(err => {
-                console.warn('Failed to save answer to backend:', err);
-              })
-            )
-          );
+        // Guard: only proceed if questions array is ready
+        if (questions && questions.length > 0) {
+          const unverifiedAnswers = Object.keys(selectedAnswers)
+            .filter(qIndex => {
+              const hasAnswer = selectedAnswers[qIndex]?.length > 0;
+              const isVerified = verifiedQuestions[qIndex]?.verified || verifiedQuestions[qIndex] === true;
+              return hasAnswer && !isVerified;
+            })
+            .map(qIndex => ({
+              questionId: questions[qIndex]?._id,
+              selectedAnswers: selectedAnswers[qIndex],
+              isVerified: false,
+              isCorrect: false,
+              examId: examData._id || examId,
+              moduleId: examData.module?._id || examData.moduleId
+            }))
+            .filter(item => item.questionId); // Only include if we have valid questionId
+          
+          // Batch save unverified answers to backend
+          if (unverifiedAnswers.length > 0) {
+            await Promise.all(
+              unverifiedAnswers.map(answerData => 
+                api.post('/questions/save-answer', answerData).catch(err => {
+                  console.warn('Failed to save answer to backend:', err);
+                })
+              )
+            );
+          }
         }
         
         setIsSaved(true);
