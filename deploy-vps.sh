@@ -126,49 +126,58 @@ if [ ! -f "wafa-backend/firebase-service-account.json" ]; then
 fi
 
 # Check DNS configuration
-print_info "Checking DNS configuration..."
-SERVER_IP=$(curl -s ifconfig.me)
-print_info "Server IP: $SERVER_IP"
+print_info "Skip DNS validation? (y/n)"
+print_info "Choose 'y' if DNS and SSL are already configured"
+read -r skip_dns_response
 
-DNS_MISSING=0
-for domain in "${DOMAINS[@]}"; do
-    DOMAIN_IP=$(dig +short "$domain" | tail -n1)
-    if [ -z "$DOMAIN_IP" ]; then
-        print_error "$domain has no DNS record"
-        DNS_MISSING=1
-    elif [ "$DOMAIN_IP" == "$SERVER_IP" ]; then
-        print_success "$domain points to this server ($SERVER_IP)"
-    else
-        print_warning "$domain points to $DOMAIN_IP (expected: $SERVER_IP)"
-        DNS_MISSING=1
-    fi
-done
-
-if [ $DNS_MISSING -eq 1 ]; then
-    echo ""
-    print_error "DNS records are not properly configured!"
-    echo ""
-    print_info "Required DNS A records in your domain registrar:"
-    echo "  Type    Name        Value           TTL"
-    echo "  A       @           $SERVER_IP      300"
-    echo "  A       backend     $SERVER_IP      300"
-    echo ""
-    print_info "Options:"
-    echo "  1. Exit and configure DNS records (recommended)"
-    echo "  2. Continue without SSL (development only)"
-    echo ""
-    read -p "Enter your choice (1 or 2): " dns_choice
-    
-    if [ "$dns_choice" != "2" ]; then
-        print_info "Please configure DNS records and run the script again."
-        print_info "DNS changes can take 5-30 minutes to propagate."
-        exit 0
-    fi
-    
-    print_warning "Continuing without SSL. Your site will use HTTP only."
-    SKIP_SSL=1
-else
+if [[ "$skip_dns_response" =~ ^[Yy]$ ]]; then
+    print_success "Skipping DNS validation"
     SKIP_SSL=0
+else
+    print_info "Checking DNS configuration..."
+    SERVER_IP=$(curl -s ifconfig.me)
+    print_info "Server IP: $SERVER_IP"
+
+    DNS_MISSING=0
+    for domain in "${DOMAINS[@]}"; do
+        DOMAIN_IP=$(dig +short "$domain" | tail -n1)
+        if [ -z "$DOMAIN_IP" ]; then
+            print_error "$domain has no DNS record"
+            DNS_MISSING=1
+        elif [ "$DOMAIN_IP" == "$SERVER_IP" ]; then
+            print_success "$domain points to this server ($SERVER_IP)"
+        else
+            print_warning "$domain points to $DOMAIN_IP (expected: $SERVER_IP)"
+            DNS_MISSING=1
+        fi
+    done
+
+    if [ $DNS_MISSING -eq 1 ]; then
+        echo ""
+        print_error "DNS records are not properly configured!"
+        echo ""
+        print_info "Required DNS A records in your domain registrar:"
+        echo "  Type    Name        Value           TTL"
+        echo "  A       @           $SERVER_IP      300"
+        echo "  A       backend     $SERVER_IP      300"
+        echo ""
+        print_info "Options:"
+        echo "  1. Exit and configure DNS records (recommended)"
+        echo "  2. Continue without SSL (development only)"
+        echo ""
+        read -p "Enter your choice (1 or 2): " dns_choice
+        
+        if [ "$dns_choice" != "2" ]; then
+            print_info "Please configure DNS records and run the script again."
+            print_info "DNS changes can take 5-30 minutes to propagate."
+            exit 0
+        fi
+        
+        print_warning "Continuing without SSL. Your site will use HTTP only."
+        SKIP_SSL=1
+    else
+        SKIP_SSL=0
+    fi
 fi
 
 if [ $SKIP_SSL -eq 0 ]; then
