@@ -277,14 +277,31 @@ const ExamPage = () => {
 
   const userLevelInfo = userProfile ? calculateLevel(userProfile.totalPoints || 0) : null;
 
-  // Check if user has access to premium annual features
-  const hasPremiumAnnualAccess = userPlan === "Premium Annuel";
+  // Check access levels for different features
+  const hasPremiumAccess = userPlan === "PREMIUM" || userPlan === "PREMIUM PRO" || userPlan === "Premium" || userPlan === "Premium Annuel";
+  const hasPremiumProAccess = userPlan === "PREMIUM PRO" || userPlan === "Premium Annuel";
 
-  // Helper to handle feature access with upgrade prompt
+  // Helper to handle feature access with upgrade prompt for PREMIUM PRO features
+  const handlePremiumProFeature = (featureName, action) => {
+    if (!hasPremiumProAccess) {
+      toast.error('Fonctionnalité Premium Pro', {
+        description: `${featureName} est disponible uniquement pour les abonnés Premium Pro.`,
+        action: {
+          label: 'Mettre à niveau',
+          onClick: () => navigate('/dashboard/subscription')
+        },
+        duration: 5000,
+      });
+      return;
+    }
+    action();
+  };
+
+  // Helper to handle feature access for PREMIUM features (student explanations, stats, leaderboard)
   const handlePremiumFeature = (featureName, action) => {
-    if (!hasPremiumAnnualAccess) {
-      toast.error('Fonctionnalité Premium Annuel', {
-        description: `${featureName} est disponible uniquement pour les abonnés Premium Annuel.`,
+    if (!hasPremiumAccess) {
+      toast.error('Fonctionnalité Premium', {
+        description: `${featureName} est disponible uniquement pour les abonnés Premium ou Premium Pro.`,
         action: {
           label: 'Mettre à niveau',
           onClick: () => navigate('/dashboard/subscription')
@@ -1613,13 +1630,13 @@ const ExamPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handlePremiumFeature('Playlist', () => setShowPlaylistModal(true))}
+                            onClick={() => handlePremiumProFeature('Playlist', () => setShowPlaylistModal(true))}
                             className={cn(
                               "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
-                              hasPremiumAnnualAccess ? "text-white" : "text-white/50 cursor-not-allowed"
+                              hasPremiumProAccess ? "text-white" : "text-white/50 cursor-not-allowed"
                             )}
-                            disabled={!hasPremiumAnnualAccess}
-                            title={hasPremiumAnnualAccess ? "Playlist" : "Playlist (Premium Annuel requis)"}
+                            disabled={!hasPremiumProAccess}
+                            title={hasPremiumProAccess ? "Playlist" : "Playlist (Premium Pro requis)"}
                           >
                             <ListMusic className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
@@ -1648,13 +1665,13 @@ const ExamPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handlePremiumFeature('Notes', () => setShowNoteModal(true))}
+                            onClick={() => handlePremiumProFeature('Notes', () => setShowNoteModal(true))}
                             className={cn(
                               "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
-                              hasPremiumAnnualAccess ? "text-white" : "text-white/50 cursor-not-allowed"
+                              hasPremiumProAccess ? "text-white" : "text-white/50 cursor-not-allowed"
                             )}
-                            disabled={!hasPremiumAnnualAccess}
-                            title={hasPremiumAnnualAccess ? "Note" : "Note (Premium Annuel requis)"}
+                            disabled={!hasPremiumProAccess}
+                            title={hasPremiumProAccess ? "Note" : "Note (Premium Pro requis)"}
                           >
                             <NotebookPen className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
@@ -1702,14 +1719,14 @@ const ExamPage = () => {
                               {/* Playlist */}
                               <DropdownMenuItem
                                 onClick={() => {
-                                  handlePremiumFeature('Playlist', () => setShowPlaylistModal(true));
+                                  handlePremiumProFeature('Playlist', () => setShowPlaylistModal(true));
                                   setShowMobileMenu(false);
                                 }}
-                                disabled={!hasPremiumAnnualAccess}
+                                disabled={!hasPremiumProAccess}
                               >
                                 <ListMusic className="h-4 w-4 mr-2" />
                                 <span>Playlist</span>
-                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
+                                {!hasPremiumProAccess && <span className="text-xs ml-auto">Pro</span>}
                               </DropdownMenuItem>
 
                               {/* Résumés */}
@@ -1743,14 +1760,14 @@ const ExamPage = () => {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => {
-                                  handlePremiumFeature('Notes', () => setShowNoteModal(true));
+                                  handlePremiumProFeature('Notes', () => setShowNoteModal(true));
                                   setShowMobileMenu(false);
                                 }}
-                                disabled={!hasPremiumAnnualAccess}
+                                disabled={!hasPremiumProAccess}
                               >
                                 <NotebookPen className="h-4 w-4 mr-2" />
                                 <span>Notes</span>
-                                {!hasPremiumAnnualAccess && <span className="text-xs ml-auto">Premium</span>}
+                                {!hasPremiumProAccess && <span className="text-xs ml-auto">Pro</span>}
                               </DropdownMenuItem>
 
                               {/* Report & Flag */}
@@ -1794,11 +1811,16 @@ const ExamPage = () => {
                     )}
                     
                     {/* Question Text */}
-                    <div
-                      className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
-                      style={{ fontSize: `${Math.max(14, fontSize - 2)}px`, lineHeight: '1.6' }}
-                    >
-                      {currentQuestionData.question || currentQuestionData.text}
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-gray-500">
+                        {currentQuestionData?.displayNumber || currentQuestion + 1}/{questions.length}
+                      </div>
+                      <div
+                        className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
+                        style={{ fontSize: `${Math.max(14, fontSize - 2)}px`, lineHeight: '1.6' }}
+                      >
+                        {currentQuestionData.question || currentQuestionData.text}
+                      </div>
                     </div>
 
                     {/* Question Images */}
@@ -1843,14 +1865,14 @@ const ExamPage = () => {
                               currentQuestionData.isAnnulled && "border-gray-200 bg-gray-50 opacity-70",
                               // Default state (not selected, not showing correctness)
                               !currentQuestionData.isAnnulled && !isSelected && !showCorrectness && "border-gray-200 hover:border-gray-300 bg-white",
-                              // Selected but not verified yet
+                              // Selected but not verified yet - show module color for all
                               !currentQuestionData.isAnnulled && isSelected && !showCorrectness && "border-2 bg-white",
-                              // After verification - correct answer (green background + hover effect)
-                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && "border-emerald-500 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-600",
-                              // After verification - wrong answer selected (red border)
-                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && isSelected && "border-red-500 bg-red-50 hover:bg-red-100 hover:border-red-600",
-                              // After verification - not selected and not correct (gray)
-                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && !isSelected && "border-gray-200 opacity-60 bg-white"
+                              // After verification - correct answer shows light green background with dark text
+                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && "border-emerald-500 bg-emerald-100 hover:bg-emerald-200 hover:border-emerald-600",
+                              // After verification - wrong answer selected (light red background)
+                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && isSelected && "border-red-400 bg-red-50 hover:bg-red-100 hover:border-red-500",
+                              // After verification - not selected and not correct (gray) - keep normal opacity
+                              !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && !isSelected && "border-gray-200 bg-white"
                             )}
                             style={
                               !currentQuestionData.isAnnulled && isSelected && !showCorrectness
@@ -1870,9 +1892,9 @@ const ExamPage = () => {
                                   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all",
                                   !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
                                   isSelected && !showCorrectness && "text-white",
-                                  showCorrectness && isCorrect && "bg-emerald-500 text-white group-hover:bg-emerald-600",
+                                  showCorrectness && isCorrect && "bg-emerald-600 text-white font-bold",
                                   showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white",
-                                  showCorrectness && !isCorrect && !isSelected && "bg-gray-100 text-gray-400"
+                                  showCorrectness && !isCorrect && !isSelected && "bg-gray-100 text-gray-600"
                                 )}
                                 style={
                                   isSelected && !showCorrectness
@@ -1887,9 +1909,9 @@ const ExamPage = () => {
                               <span
                                 className={cn(
                                   "flex-1 text-sm sm:text-base",
-                                  showCorrectness && isCorrect && "text-emerald-700 font-medium",
+                                  showCorrectness && isCorrect && "text-emerald-700 font-semibold",
                                   showCorrectness && !isCorrect && isSelected && "text-red-700",
-                                  showCorrectness && !isCorrect && !isSelected && "text-gray-400"
+                                  showCorrectness && !isCorrect && !isSelected && "text-gray-600"
                                 )}
                                 style={{ fontSize: `${Math.max(13, fontSize - 2)}px` }}
                               >
@@ -1965,8 +1987,8 @@ const ExamPage = () => {
                             </Button>
                             <Button
                               variant="outline"
-                              onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
-                              disabled={!hasPremiumAnnualAccess}
+                              onClick={() => handlePremiumProFeature('Communauté', () => setShowCommunityModal(true))}
+                              disabled={!hasPremiumProAccess}
                               className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
                             >
                               <Users className="h-4 w-4" />
@@ -2011,7 +2033,22 @@ const ExamPage = () => {
 
                       {/* Desktop Action Buttons - Inside Card */}
                       {isQuestionVerified && (
-                        <div className="hidden lg:flex items-center justify-center gap-2 pt-4 border-t">
+                        <div className="hidden lg:flex flex-col gap-3 pt-4 border-t">
+                          {/* Status Display - Desktop */}
+                          {verifiedQuestions[currentQuestion]?.isCorrect ? (
+                            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                              <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                              <span className="font-semibold text-emerald-800">Réponse correcte !</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+                              <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                              <span className="font-semibold text-red-800">Réponse incorrecte</span>
+                            </div>
+                          )}
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center justify-center gap-2">
                           {!verifiedQuestions[currentQuestion]?.isCorrect && (
                             <Button
                               variant="outline"
@@ -2032,13 +2069,14 @@ const ExamPage = () => {
                           </Button>
                           <Button
                             variant="outline"
-                            onClick={() => handlePremiumFeature('Communauté', () => setShowCommunityModal(true))}
-                            disabled={!hasPremiumAnnualAccess}
+                            onClick={() => handlePremiumProFeature('Communauté', () => setShowCommunityModal(true))}
+                            disabled={!hasPremiumProAccess}
                             className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
                           >
                             <Users className="h-4 w-4" />
                             Communauté
                           </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2271,15 +2309,15 @@ const ExamPage = () => {
               <div className="flex items-center justify-center gap-3 py-2 px-4 bg-gray-50 text-[10px]">
                 <span className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300" />
-                  Non visité
+                  non visité
                 </span>
                 <span className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-full bg-orange-200 border border-orange-400" />
-                  Visité
+                  visité
                 </span>
                 <span className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full bg-blue-200 border border-blue-400" />
-                  Vérifié
+                  <div className="w-3 h-3 rounded-full bg-green-200 border border-green-400" />
+                  surligné
                 </span>
               </div>
 
@@ -2389,15 +2427,15 @@ const ExamPage = () => {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px]">
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
-                          <span className="text-gray-500">Non visité</span>
+                          <span className="text-gray-500">non visité</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
-                          <span className="text-gray-500">Visité</span>
+                          <span className="text-gray-500">visité</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
-                          <span className="text-gray-500">Vérifié</span>
+                          <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
+                          <span className="text-gray-500">surligné</span>
                         </div>
                       </div>
                     </div>
@@ -2437,7 +2475,7 @@ const ExamPage = () => {
                         </button>
 
                         {!isCollapsed && (
-                          <div className="pl-6 space-y-0.5">
+                          <div className="pl-6 space-y-0.5 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-1">
                             {sessionQuestions.map((q, idx) => {
                               const globalIndex = questions.findIndex(question => question._id === q._id);
                               if (globalIndex === -1) return null; // Skip if question not found
@@ -2450,7 +2488,8 @@ const ExamPage = () => {
                                   key={q._id}
                                   className={cn(
                                     "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-all",
-                                    isCurrent && "bg-blue-50 border-l-2 border-blue-500",
+                                    "lg:flex-col lg:items-center lg:justify-center lg:gap-1 lg:px-2 lg:py-1.5 lg:text-xs",
+                                    isCurrent && "bg-blue-50 border-l-2 border-blue-500 lg:border-l-0 lg:ring-2 lg:ring-blue-500",
                                     !isCurrent && "hover:bg-gray-50 active:bg-gray-100"
                                   )}
                                   onClick={() => {
@@ -2466,7 +2505,7 @@ const ExamPage = () => {
                                   )}>
                                     {shouldShowNumberInBox(questionData) ? (questionData?.displayNumber || idx + 1) : ''}
                                   </div>
-                                  <span className="flex-1 text-left text-gray-600">Q{questionData?.displayNumber || idx + 1}</span>
+                                  <span className="flex-1 text-left text-gray-600 lg:flex-none lg:text-center lg:text-[10px] lg:leading-tight">Q{questionData?.displayNumber || idx + 1}</span>
                                   {isFlagged && (
                                     <Flag className="h-3 w-3 fill-purple-500 text-purple-500 shrink-0" />
                                   )}
@@ -2656,6 +2695,7 @@ const ExamPage = () => {
         <ExplicationModel
           question={currentQuestionData}
           setShowExplanation={setShowExplanation}
+          userPlan={userPlan}
         />
       )}
 

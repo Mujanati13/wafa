@@ -134,7 +134,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
     }
     // Default: show only S1 for free users (and only the first module)
     return module.semester === "S1";
-  }).slice(0, userPlan === "Free" ? 1 : undefined); // Free users see only 1 module
+  }).slice(0, (userPlan === "Free" || userPlan === "GRATUIT") ? 1 : undefined); // GRATUIT users see only 1 module
 
   // Group modules by semester
   const modulesBySemester = filteredModules.reduce((acc, module) => {
@@ -200,7 +200,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:ranking'),
       icon: Trophy,
       path: "/dashboard/leaderboard",
-      requiresPremium: true, // Premium or Premium Annuel required
+      requiresPremium: true, // PREMIUM or PREMIUM PRO required
       isPremiumFeature: true,
     },
     {
@@ -208,12 +208,12 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:statistics', 'Statistiques'),
       icon: BarChart3,
       path: "/dashboard/statistics",
-      requiresPremium: true, // Premium or Premium Annuel required
+      requiresPremium: true, // PREMIUM or PREMIUM PRO required
       isPremiumFeature: true,
     },
   ].filter(item => {
-    // Filter out premium features for free users
-    if (item.requiresPremium && userPlan === "Free") {
+    // Filter out premium features for GRATUIT users
+    if (item.requiresPremium && (userPlan === "Free" || userPlan === "GRATUIT")) {
       return false;
     }
     return true;
@@ -225,14 +225,14 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       label: t('dashboard:my_playlists'),
       icon: SquareLibrary,
       path: "/dashboard/playlist",
-      requiresPremiumAnnual: true, // Only available for Premium Annuel
+      requiresPremiumPro: true, // Only available for PREMIUM PRO or Premium Annuel
     },
     {
       id: "note",
       label: t('dashboard:my_notes'),
       icon: NotebookPen,
       path: "/dashboard/note",
-      requiresPremiumAnnual: true, // Only available for Premium Annuel
+      requiresPremiumPro: true, // Only available for PREMIUM PRO or Premium Annuel
     },
     {
       id: "subscription",
@@ -247,8 +247,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
       path: "/dashboard/support",
     },
   ].filter(item => {
-    // Filter out premium annual features for non-premium-annual users
-    if (item.requiresPremiumAnnual && userPlan !== "Premium Annuel") {
+    // Filter out PREMIUM PRO features for users without PREMIUM PRO or Premium Annuel
+    if (item.requiresPremiumPro && userPlan !== "PREMIUM PRO" && userPlan !== "Premium Annuel") {
       return false;
     }
     return true;

@@ -436,27 +436,162 @@ const SubscriptionPage = () => {
                     </div>
 
                     {/* Features */}
-                    {Array.isArray(plan.features) && plan.features.length > 0 && (
-                      <div className="pt-2 border-t border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
-                          Features
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {plan.features.map((f, i) => {
-                            const featureText = typeof f === 'string' ? f : f.text;
-                            return (
-                              <Badge
-                                key={`${plan.id}-feature-${i}`}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {featureText}
-                              </Badge>
-                            );
-                          })}
-                        </div>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
+                        Features
+                      </p>
+                      <div className="space-y-2">
+                        {/* Custom features based on plan name */}
+                        {plan.name === 'GRATUIT' && (
+                          <>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">1 module</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Questions triées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Interface adaptée aux mobiles</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Pourcentage des réponses</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Classements</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Statistiques</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Explications</span>
+                            </div>
+                          </>
+                        )}
+
+                        {plan.name === 'PREMIUM' && (
+                          <>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Tous les modules</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Questions triées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Interface adaptée aux mobiles</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Pourcentage des réponses</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Accès aux classements</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Accès aux statistiques</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Explication des étudiants</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Explication IA</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Communauté votes</span>
+                            </div>
+                            <div className="flex items-start gap-2 opacity-50">
+                              <span className="text-red-500 text-xs">❌</span>
+                              <span className="text-xs text-gray-400 line-through">Playlists</span>
+                            </div>
+                          </>
+                        )}
+
+                        {plan.name === 'PREMIUM PRO' && (
+                          <>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Tous les modules</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Questions triées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Interface mobiles</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Pourcentage réponses</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Classements</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Statistiques</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Explications étudiants</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Explication IA</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Communauté votes</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Playlists</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Notes personnalisées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Assistance prioritaire</span>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Fallback: if none match, show original features */}
+                        {!['GRATUIT', 'PREMIUM', 'PREMIUM PRO'].includes(plan.name) && Array.isArray(plan.features) && plan.features.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {plan.features.map((f, i) => {
+                              const featureText = typeof f === 'string' ? f : f.text;
+                              return (
+                                <Badge
+                                  key={`${plan.id}-feature-${i}`}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {featureText}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
 
                     {/* Status Badge */}
                     <div className="flex items-center gap-2 pt-2 border-t border-gray-200">

@@ -33,10 +33,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import { userService } from '@/services/userService';
 
@@ -289,23 +290,8 @@ const SupportPage = () => {
       >
         <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
           <CardContent className="pt-6 text-center">
-            <button
-              onClick={() => navigate('/dashboard/support?tab=contact')}
-              className="block w-full"
-            >
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                <Mail className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold mb-1">Email</h3>
-              <p className="text-sm text-muted-foreground">Envoyez-nous un message</p>
-            </button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <CardContent className="pt-6 text-center">
             <a
-              href="https://instagram.com/wafa_app"
+              href="https://www.instagram.com/imrsqcm.rabat?igsh=ZHR3aDU0OHN2OWV4"
               target="_blank"
               rel="noopener noreferrer"
               className="block"
@@ -314,7 +300,7 @@ const SupportPage = () => {
                 <ExternalLink className="w-6 h-6 text-pink-600" />
               </div>
               <h3 className="font-semibold mb-1">Instagram</h3>
-              <p className="text-sm text-muted-foreground">@wafa_app</p>
+              <p className="text-sm text-muted-foreground">@imrsqcm.rabat</p>
             </a>
           </CardContent>
         </Card>
@@ -342,6 +328,44 @@ const SupportPage = () => {
               <span className="hidden sm:inline">Mes Tickets</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* FAQ Tab */}
+          <TabsContent value="faq">
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border-2 border-blue-100 shadow-lg overflow-hidden">
+                <Accordion type="single" collapsible className="w-full">
+                  {faqCategories.flatMap(category => 
+                    category.faqs.map((item, idx) => {
+                      const colorScheme = [
+                        { bg: "bg-blue-100", icon: "text-blue-600" },
+                        { bg: "bg-green-100", icon: "text-green-600" },
+                        { bg: "bg-purple-100", icon: "text-purple-600" },
+                        { bg: "bg-teal-100", icon: "text-teal-600" },
+                        { bg: "bg-orange-100", icon: "text-orange-600" },
+                        { bg: "bg-indigo-100", icon: "text-indigo-600" },
+                      ][idx % 6];
+                      
+                      return (
+                        <AccordionItem key={`${category.id}-${idx}`} value={`${category.id}-${idx}`} className="border-b border-blue-100 last:border-0">
+                          <AccordionTrigger className="hover:no-underline py-4 sm:py-6 px-4 sm:px-6 md:px-8 group">
+                            <div className="flex items-center gap-2 sm:gap-4 text-left flex-1">
+                              <div className={`p-1.5 sm:p-2 ${colorScheme.bg} rounded-lg group-hover:opacity-80 transition-opacity flex-shrink-0`}>
+                                <HelpCircle className={`h-4 w-4 sm:h-5 sm:w-5 ${colorScheme.icon}`} />
+                              </div>
+                              <span className="font-semibold text-slate-900 text-sm sm:text-base">{item.question}</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="text-slate-600 pb-4 sm:pb-6 px-4 sm:px-6 md:px-8 pl-10 sm:pl-16 text-sm sm:text-base">
+                            {item.answer}
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })
+                  )}
+                </Accordion>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Contact Form Tab */}
           <TabsContent value="contact">
@@ -494,40 +518,6 @@ const SupportPage = () => {
         </Tabs>
       </motion.div>
     </div>
-  );
-};
-
-// FAQ Item Component
-const FAQItem = ({ question, answer }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="w-full">
-        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors text-left">
-          <span className="font-medium text-sm">{question}</span>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          )}
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="px-3 pb-3"
-          >
-            <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
-              {answer}
-            </p>
-          </motion.div>
-        </AnimatePresence>
-      </CollapsibleContent>
-    </Collapsible>
   );
 };
 

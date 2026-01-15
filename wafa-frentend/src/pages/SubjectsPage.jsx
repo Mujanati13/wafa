@@ -142,9 +142,9 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             </div>
 
             {/* Right side - Info */}
-            <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0 pr-6">
-                <h3 className="font-semibold text-gray-900 text-sm mb-1.5 leading-snug line-clamp-2">
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-semibold text-gray-900 text-[11px] mb-1 leading-tight line-clamp-2">
                   {exam.name}
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-gray-600">

@@ -395,37 +395,6 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
 
   return (
     <div className="relative flex flex-col h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b border-slate-200 flex-shrink-0">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-2 sm:gap-3"
-        >
-          <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-            <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-          </div>
-          {sidebarOpen && (
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">Imrs-Qcma</h2>
-              <p className="text-[10px] sm:text-xs text-slate-500">{t('admin:admin_panel')}</p>
-            </div>
-          )}
-        </motion.div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="hover:bg-slate-100"
-        >
-          {sidebarOpen ? (
-            <ChevronDown className="h-4 w-4 rotate-90" />
-          ) : (
-            <Menu className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
-
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-3 sm:py-4">
         <nav className="space-y-1 sm:space-y-2">

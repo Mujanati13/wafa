@@ -10,7 +10,7 @@ const MAX_EXPLANATIONS = 3;
 const MAX_IMAGES = 5;
 const MAX_PDF = 1;
 
-const ExplicationModel = ({ question, setShowExplanation }) => {
+const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) => {
   const [activeTab, setActiveTab] = useState("ai"); // 'ai' or 'user'
   const [activeExplanationIndex, setActiveExplanationIndex] = useState(0);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
@@ -29,6 +29,17 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
   // State for AI generation
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiExplanationData, setAiExplanationData] = useState(null);
+
+  // Check access levels - AI explanations only for PREMIUM PRO
+  const hasPremiumAccess = userPlan === "PREMIUM" || userPlan === "PREMIUM PRO" || userPlan === "Premium" || userPlan === "Premium Annuel";
+  const hasPremiumProAccess = userPlan === "PREMIUM PRO" || userPlan === "Premium Annuel";
+
+  // If user doesn't have premium access, default to user tab
+  useEffect(() => {
+    if (!hasPremiumAccess && activeTab === "ai") {
+      setActiveTab("user");
+    }
+  }, [hasPremiumAccess, activeTab]);
 
   // Fetch user explanations from API
   useEffect(() => {
@@ -310,28 +321,42 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
         {/* Main Tabs */}
         <div className="flex border-b border-gray-200 bg-gray-50">
           <button
-            onClick={() => setActiveTab("ai")}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "ai"
+            onClick={() => hasPremiumProAccess && setActiveTab("ai")}
+            disabled={!hasPremiumProAccess}
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-all relative ${activeTab === "ai"
               ? "border-b-2 border-blue-600 text-blue-700 bg-white"
               : "text-gray-600 hover:bg-gray-100"
-              }`}
+              } ${!hasPremiumProAccess ? "opacity-50 cursor-not-allowed" : ""}`}
+            title={!hasPremiumProAccess ? "Explication IA disponible uniquement pour Premium Pro" : ""}
           >
             <Bot className="h-4 w-4" />
             Explication IA
-            {hasAIExplanation && (
+            {!hasPremiumProAccess && (
+              <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5">
+                Pro
+              </Badge>
+            )}
+            {hasAIExplanation && hasPremiumProAccess && (
               <span className="w-2 h-2 rounded-full bg-green-500" />
             )}
           </button>
           <button
             onClick={() => setActiveTab("user")}
+            disabled={!hasPremiumAccess}
             className={`flex items-center gap-2 px-6 py-3 font-medium transition-all ${activeTab === "user"
               ? "border-b-2 border-purple-600 text-purple-700 bg-white"
               : "text-gray-600 hover:bg-gray-100"
-              }`}
+              } ${!hasPremiumAccess ? "opacity-50 cursor-not-allowed" : ""}`}
+            title={!hasPremiumAccess ? "Explications disponibles à partir de Premium" : ""}
           >
             <Users className="h-4 w-4" />
             Explications Communauté
-            {userExplanations.length > 0 && (
+            {!hasPremiumAccess && (
+              <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5">
+                Premium
+              </Badge>
+            )}
+            {userExplanations.length > 0 && hasPremiumAccess && (
               <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700">
                 {userExplanations.length}
               </Badge>
@@ -341,7 +366,34 @@ const ExplicationModel = ({ question, setShowExplanation }) => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">
-          {activeTab === "ai" ? (
+          {/* Show upgrade prompt for GRATUIT users */}
+          {!hasPremiumAccess ? (
+            <div className="flex items-center justify-center h-full py-12">
+              <div className="text-center max-w-md">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="h-10 w-10 text-blue-600" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">
+                  Explications Premium
+                </h4>
+                <p className="text-gray-600 mb-6">
+                  Les explications d\u00e9taill\u00e9es sont disponibles \u00e0 partir du plan <strong>Premium</strong>.
+                  <br />
+                  Passez \u00e0 Premium pour acc\u00e9der aux explications des \u00e9tudiants et \u00e0 Premium Pro pour l'IA.
+                </p>
+                <Button
+                  onClick={() => {
+                    setShowExplanation(false);
+                    window.location.href = '/dashboard/subscription';
+                  }}
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Mettre \u00e0 niveau
+                </Button>
+              </div>
+            </div>
+          ) : activeTab === "ai" ? (
             // AI Explanation Tab
             <div className="space-y-4">
               {hasAIExplanation ? (
