@@ -157,7 +157,23 @@ mkdir -p certbot/conf certbot/www nginx/ssl
 
 # Stop and remove existing containers
 print_info "Stopping existing containers..."
-docker-compose down 2>/dev/null || true
+docker-compose down --remove-orphans 2>/dev/null || true
+
+# Remove any existing temp-nginx or nginx containers
+print_info "Cleaning up existing nginx containers..."
+docker rm -f temp-nginx 2>/dev/null || true
+docker rm -f wafa-nginx 2>/dev/null || true
+docker rm -f wafa_nginx_gateway 2>/dev/null || true
+
+# Check if port 80 is in use and try to free it
+if netstat -tuln | grep -q ":80 "; then
+    print_warning "Port 80 is in use. Attempting to free it..."
+    # Try to stop nginx if it's running as a service
+    systemctl stop nginx 2>/dev/null || true
+    # Kill any processes using port 80
+    lsof -ti:80 | xargs kill -9 2>/dev/null || true
+    sleep 2
+fi
 
 # Build and start containers (without SSL first)
 print_info "Building Docker images..."
@@ -219,11 +235,22 @@ http {
 EOF
 
 # Start nginx with initial config
+print_info "Starting temporary nginx for certificate validation..."
+docker rm -f temp-nginx 2>/dev/null || true
+
 docker run -d --name temp-nginx \
     -p 80:80 \
     -v "$(pwd)/nginx/nginx-initial.conf:/etc/nginx/nginx.conf:ro" \
     -v "$(pwd)/certbot/www:/var/www/certbot:ro" \
     nginx:alpine
+
+if [ $? -ne 0 ]; then
+    print_error "Failed to start temporary nginx. Port 80 may still be in use."
+    print_info "Checking what's using port 80..."
+    netstat -tuln | grep ":80 "
+    lsof -i :80 || true
+    exit 1
+fi
 
 print_success "Temporary Nginx started for certificate validation"
 
