@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-DOMAINS=("imrs-qcm.com" "www.imrs-qcm.com" "backend.imrs-qcm.com")
+DOMAINS=("imrs-qcm.com" "backend.imrs-qcm.com")
 EMAIL="admin@imrs-qcm.com"  # Email for Let's Encrypt notifications
 STAGING=0  # Set to 1 for testing with Let's Encrypt staging server
 
@@ -220,7 +220,7 @@ http {
 
     server {
         listen 80;
-        server_name imrs-qcm.com www.imrs-qcm.com backend.imrs-qcm.com;
+        server_name imrs-qcm.com backend.imrs-qcm.com;
 
         location /.well-known/acme-challenge/ {
             root /var/www/certbot;
@@ -274,8 +274,7 @@ docker run --rm \
     --agree-tos \
     --no-eff-email \
     $STAGING_FLAG \
-    -d imrs-qcm.com \
-    -d www.imrs-qcm.com
+    -d imrs-qcm.com
 
 # Get certificate for backend domain
 print_info "Obtaining SSL certificate for backend.imrs-qcm.com..."
