@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7
+    container_name: wafa-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme123}
+      MONGO_INITDB_DATABASE: wafa
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - wafa-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./wafa-backend
+      dockerfile: Dockerfile
+    container_name: wafa-backend
+    restart: unless-stopped
+    env_file:
+      - ./wafa-backend/.env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=5010
+      - MONGO_URL=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-changeme123}@mongodb:27017/wafa?authSource=admin
+    volumes:
+      - ./wafa-backend/uploads:/app/uploads
+      - ./wafa-backend/firebase-service-account.json:/app/firebase-service-account.json:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - wafa-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5010/api/v1/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./wafa-frentend
+      dockerfile: Dockerfile
+    container_name: wafa-frontend
+    restart: unless-stopped
+    networks:
+      - wafa-network
+    depends_on:
+      - backend
+
+  # Nginx Reverse Proxy with SSL
+  nginx:
+    image: nginx:alpine
+    container_name: wafa-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - wafa-network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: wafa-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  wafa-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
