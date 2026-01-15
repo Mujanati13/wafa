@@ -28,7 +28,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CORS middleware
 app.use(cors({
-  origin: ['https://wafa.albech.me', 'https://api-wafa.albech.me', 'http://localhost:5173', 'http://localhost:4010', 'http://72.62.16.59:4010'],
+  origin: [
+    'https://imrs-qcm.com',
+    'https://www.imrs-qcm.com',
+    'https://backend.imrs-qcm.com',
+    'https://wafa.albech.me',
+    'https://api-wafa.albech.me',
+    'http://localhost:5173',
+    'http://localhost:4010',
+    'http://72.62.16.59:4010'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -123,6 +132,16 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -134,6 +153,8 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check available at: http://localhost:${PORT}/health`);
 });
 
 
