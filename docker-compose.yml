@@ -33,7 +33,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5010
-      - MONGO_URL=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-changeme123}@mongodb:27017/wafa?authSource=admin
+      - MONGO_URL=mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin
     volumes:
       - ./wafa-backend/uploads:/app/uploads
       - ./wafa-backend/firebase-service-account.json:/app/firebase-service-account.json:ro
