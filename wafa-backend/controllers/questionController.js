@@ -418,13 +418,14 @@ export const questionController = {
             question.communityVotes[existingVoteIndex].selectedOptions = selectedOptions;
             question.communityVotes[existingVoteIndex].votedAt = new Date();
         } else {
-            // Add new vote
+            // Add new vote with weight of 1
+            // Weight will be increased to 20 only if/when their explanation for THIS question is approved
             question.communityVotes.push({
                 userId,
                 selectedOptions,
                 hasExplanation: false,
                 explanationApproved: false,
-                voteWeight: 1,
+                voteWeight: 1, // Always start with 1
                 votedAt: new Date()
             });
         }

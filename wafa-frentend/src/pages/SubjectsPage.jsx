@@ -81,8 +81,13 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
 
   const imageUrl = getImageUrl();
   
-  // Calculate answered questions (progress * total / 100)
+  // Calculate answered questions
   const answeredQuestions = exam.answeredQuestions || Math.round((exam.progress || 0) * exam.questions / 100);
+  
+  // Calculate REAL progress percentage based on actual answered questions
+  const realProgress = exam.questions > 0 
+    ? Math.round((answeredQuestions / exam.questions) * 100)
+    : 0;
 
   return (
     <motion.div
@@ -158,7 +163,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
               {/* Circular Progress */}
               <div className="flex-shrink-0">
                 <ProgressCircle 
-                  progress={exam.progress || 0} 
+                  progress={realProgress} 
                   size={52} 
                   color={moduleColor || '#f59e0b'} 
                 />
@@ -214,10 +219,39 @@ const SubjectsPage = () => {
         const semesters = userProfile.semesters || [];
         const plan = userProfile.plan || "Free";
         const freeModules = userProfile.freeModules || [];
+        const userId = userProfile._id;
+        
         setUserSemesters(semesters);
         setUserPlan(plan);
         setUserFreeModules(freeModules);
         localStorage.setItem("user", JSON.stringify(userProfile));
+
+        // Clean up stale localStorage from other users
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('exam_progress_')) {
+            // Extract userId from key format: exam_progress_{userId}_{examType}_{examId}
+            const parts = key.split('_');
+            if (parts.length >= 5) {
+              const storedUserId = parts[2];
+              
+              // If this progress doesn't belong to current user, mark for removal
+              if (storedUserId !== userId) {
+                keysToRemove.push(key);
+              }
+            }
+          }
+        }
+
+        // Remove stale data
+        if (keysToRemove.length > 0) {
+          console.log(`🧹 Cleaning up ${keysToRemove.length} stale localStorage items from other users`);
+          keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`  ✓ Removed: ${key}`);
+          });
+        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
         const storedUser = localStorage.getItem("user");
@@ -425,7 +459,8 @@ const SubjectsPage = () => {
                   let answeredCount = examQuestions.filter(q => {
                     const questionId = q._id?.toString() || q._id;
                     const answer = answeredQuestionsMap[questionId];
-                    return answer && answer.isVerified === true;
+                    // Count all answered questions (verified OR unverified)
+                    return answer && (answer.isVerified === true || answer.selectedAnswers?.length > 0);
                   }).length;
                   
                   // Note: We trust server data over localStorage to avoid showing stale data

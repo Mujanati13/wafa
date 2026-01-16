@@ -164,11 +164,14 @@ const ExamPage = () => {
   const [showOverview, setShowOverview] = useState(false);
   const [showVueEnsemble, setShowVueEnsemble] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isSavingBeforeExit, setIsSavingBeforeExit] = useState(false);
 
   // Save status tracking
   const [isSaved, setIsSaved] = useState(true);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSavedAnswers, setLastSavedAnswers] = useState({});
 
   // Extract module color from exam data
   const moduleColor = examData?.moduleColor || '#6366f1'; // Default indigo
@@ -316,6 +319,97 @@ const ExamPage = () => {
     action();
   };
 
+  // Handle exit with save
+  const handleExitWithSave = async () => {
+    // Check if user has any answers (verified or unverified)
+    const hasAnyAnswers = Object.keys(selectedAnswers).length > 0 || Object.keys(verifiedQuestions).length > 0;
+    
+    if (!hasAnyAnswers) {
+      // No answers at all, exit immediately
+      navigate(-1);
+      return;
+    }
+
+    // Has answers, show confirmation modal to save before exit
+    setShowExitConfirm(true);
+  };
+
+  // Save all data before exiting
+  const saveBeforeExit = async () => {
+    setIsSavingBeforeExit(true);
+    try {
+      const currentUserId = userProfile?._id;
+      if (!currentUserId) {
+        navigate(-1);
+        return;
+      }
+
+      // Save to localStorage
+      const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+      const progress = {
+        userId: currentUserId,
+        answers: selectedAnswers,
+        currentQ: currentQuestion,
+        timeSpent: timeElapsed,
+        flags: Array.from(flaggedQuestions),
+        verified: verifiedQuestions
+      };
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+
+      // Save verified answers to backend
+      const verifiedAnswers = Object.keys(verifiedQuestions)
+        .filter(qIndex => {
+          const v = verifiedQuestions[qIndex];
+          return v?.verified || v === true;
+        })
+        .map(qIndex => ({
+          questionId: questions[qIndex]?._id,
+          selectedAnswers: selectedAnswers[qIndex] || [],
+          isVerified: true,
+          isCorrect: verifiedQuestions[qIndex]?.isCorrect || false,
+          examId: examData._id || examId,
+          moduleId: examData.module?._id || examData.moduleId
+        }))
+        .filter(item => item.questionId);
+
+      // Save unverified answers as well
+      const unverifiedAnswers = Object.keys(selectedAnswers)
+        .filter(qIndex => {
+          const hasAnswer = selectedAnswers[qIndex]?.length > 0;
+          const isVerified = verifiedQuestions[qIndex]?.verified || verifiedQuestions[qIndex] === true;
+          return hasAnswer && !isVerified;
+        })
+        .map(qIndex => ({
+          questionId: questions[qIndex]?._id,
+          selectedAnswers: selectedAnswers[qIndex],
+          isVerified: false,
+          isCorrect: false,
+          examId: examData._id || examId,
+          moduleId: examData.module?._id || examData.moduleId
+        }))
+        .filter(item => item.questionId);
+
+      const allAnswers = [...verifiedAnswers, ...unverifiedAnswers];
+
+      if (allAnswers.length > 0) {
+        await Promise.allSettled(
+          allAnswers.map(answerData =>
+            api.post('/questions/save-answer', answerData)
+          )
+        );
+      }
+
+      toast.success('Session enregistrée avec succès');
+    } catch (error) {
+      console.error('Error saving before exit:', error);
+      toast.error('Erreur lors de l\'enregistrement');
+    } finally {
+      setIsSavingBeforeExit(false);
+      setShowExitConfirm(false);
+      navigate(-1);
+    }
+  };
+
   // Get the API endpoint based on exam type
   const getExamEndpoint = useCallback(() => {
     switch (examType) {
@@ -432,6 +526,40 @@ const ExamPage = () => {
     };
     fetchData();
   }, [examId, examType, t, getExamEndpoint, transformExamData, examDataFetched]);
+
+  // Clean up localStorage from other users when component mounts
+  useEffect(() => {
+    if (!userProfile?._id) return;
+
+    const currentUserId = userProfile._id;
+    const keysToRemove = [];
+
+    // Check all localStorage keys for exam_progress items
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('exam_progress_')) {
+        // Extract userId from key format: exam_progress_{userId}_{examType}_{examId}
+        const parts = key.split('_');
+        if (parts.length >= 5) {
+          const storedUserId = parts[2]; // index 2 after splitting by '_'
+          
+          // If this progress doesn't belong to current user, mark for removal
+          if (storedUserId !== currentUserId) {
+            keysToRemove.push(key);
+          }
+        }
+      }
+    }
+
+    // Remove stale data
+    if (keysToRemove.length > 0) {
+      console.log(`🧹 Cleaning up ${keysToRemove.length} stale localStorage items from other users`);
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`  ✓ Removed: ${key}`);
+      });
+    }
+  }, [userProfile]);
 
   // Restore progress - runs after both examData and userProfile are loaded
   // Also handles case when userProfile fails to load
@@ -633,8 +761,32 @@ const ExamPage = () => {
 
     const saveProgress = async () => {
       console.log('=== AUTO-SAVE TRIGGERED ===');
-      console.log('Selected answers:', selectedAnswers);
+      
+      // Find only answers that changed since last save
+      const changedAnswers = {};
+      Object.keys(selectedAnswers).forEach(qIndex => {
+        const current = JSON.stringify(selectedAnswers[qIndex]);
+        const previous = JSON.stringify(lastSavedAnswers[qIndex]);
+        if (current !== previous) {
+          changedAnswers[qIndex] = selectedAnswers[qIndex];
+        }
+      });
+
+      // Also check for removed answers
+      Object.keys(lastSavedAnswers).forEach(qIndex => {
+        if (!selectedAnswers[qIndex] && lastSavedAnswers[qIndex]) {
+          changedAnswers[qIndex] = []; // Mark as removed
+        }
+      });
+
+      console.log('Changed answers:', Object.keys(changedAnswers).length);
       console.log('Has unsaved changes:', hasUnsavedChanges);
+
+      // If no changes, skip save
+      if (Object.keys(changedAnswers).length === 0) {
+        console.log('No changes to save');
+        return;
+      }
 
       setIsSaved(false);
       try {
@@ -653,16 +805,16 @@ const ExamPage = () => {
         localStorage.setItem(storageKey, JSON.stringify(progress));
         console.log('✓ Saved to localStorage:', storageKey);
 
-        // Save unverified answers to backend for persistence
-        const unverifiedAnswers = Object.keys(selectedAnswers)
+        // Save only CHANGED unverified answers to backend
+        const answersToSave = Object.keys(changedAnswers)
           .filter(qIndex => {
-            const hasAnswer = selectedAnswers[qIndex]?.length > 0;
+            const hasAnswer = changedAnswers[qIndex]?.length > 0;
             const isVerified = verifiedQuestions[qIndex]?.verified || verifiedQuestions[qIndex] === true;
             return hasAnswer && !isVerified;
           })
           .map(qIndex => ({
             questionId: questions[qIndex]?._id,
-            selectedAnswers: selectedAnswers[qIndex],
+            selectedAnswers: changedAnswers[qIndex],
             isVerified: false,
             isCorrect: false,
             examId: examData._id || examId,
@@ -670,12 +822,12 @@ const ExamPage = () => {
           }))
           .filter(item => item.questionId);
 
-        console.log('Unverified answers to save:', unverifiedAnswers.length);
+        console.log('Answers to save to backend:', answersToSave.length);
 
-        // Batch save unverified answers to backend
-        if (unverifiedAnswers.length > 0) {
+        // Batch save changed answers to backend
+        if (answersToSave.length > 0) {
           const results = await Promise.allSettled(
-            unverifiedAnswers.map(answerData =>
+            answersToSave.map(answerData =>
               api.post('/questions/save-answer', answerData)
             )
           );
@@ -687,12 +839,15 @@ const ExamPage = () => {
           if (failed > 0) {
             results.forEach((r, i) => {
               if (r.status === 'rejected') {
-                console.error('Failed to save answer:', unverifiedAnswers[i], r.reason);
+                console.error('Failed to save answer:', answersToSave[i], r.reason);
               }
             });
           }
         }
 
+        // Update lastSavedAnswers to current state
+        setLastSavedAnswers(JSON.parse(JSON.stringify(selectedAnswers)));
+        
         setIsSaved(true);
         setLastSaveTime(new Date());
         setHasUnsavedChanges(false);
@@ -703,9 +858,9 @@ const ExamPage = () => {
       }
     };
 
-    const saveTimer = setTimeout(saveProgress, 1000);
+    const saveTimer = setTimeout(saveProgress, 1000); // Increased to 1s for stability
     return () => clearTimeout(saveTimer);
-  }, [selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile, questions, hasUnsavedChanges]);
+  }, [selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile, questions, hasUnsavedChanges, lastSavedAnswers]);
 
   // Periodically save time elapsed (every 30 seconds)
   useEffect(() => {
@@ -1530,7 +1685,7 @@ const ExamPage = () => {
               <Menu className="h-4 w-4" />
             </button>
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleExitWithSave}
               className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-colors text-gray-700"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -1594,7 +1749,7 @@ const ExamPage = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(-1)}
+                onClick={handleExitWithSave}
                 className="gap-1.5 text-gray-700 hover:bg-gray-100"
               >
                 <LogOut className="h-4 w-4" />
@@ -3166,7 +3321,12 @@ const ExamPage = () => {
         <ResumesModal
           isOpen={showResumesModal}
           onClose={() => setShowResumesModal(false)}
-          examData={examData}
+          examData={{
+            ...examData,
+            moduleId: typeof examData?.moduleId === 'object' 
+              ? examData.moduleId?._id 
+              : examData?.moduleId
+          }}
         />
       )}
 
@@ -3332,6 +3492,71 @@ const ExamPage = () => {
                     Fermer
                   </Button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Exit Confirmation Modal */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowExitConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md sm:max-w-lg w-full p-4 sm:p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center space-y-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-amber-100 text-amber-600">
+                  {isSavingBeforeExit ? (
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8" />
+                  )}
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {isSavingBeforeExit ? 'Enregistrement en cours...' : 'Modifications non enregistrées'}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  {isSavingBeforeExit
+                    ? 'Veuillez patienter pendant que nous enregistrons vos réponses...'
+                    : 'Voulez-vous enregistrer vos réponses avant de quitter ?'}
+                </p>
+                {!isSavingBeforeExit && (
+                  <div className="flex flex-col gap-2 sm:gap-3 pt-4 w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full text-xs sm:text-sm py-2 h-auto"
+                      onClick={() => setShowExitConfirm(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm py-2 h-auto"
+                      onClick={saveBeforeExit}
+                    >
+                      Enregistrer et quitter
+                    </Button>
+                    <Button
+                      className="w-full bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm py-2 h-auto"
+                      onClick={() => {
+                        setShowExitConfirm(false);
+                        navigate(-1);
+                      }}
+                    >
+                      Quitter sans enregistrer
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

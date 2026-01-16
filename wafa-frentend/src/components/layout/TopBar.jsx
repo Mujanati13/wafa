@@ -78,6 +78,17 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userProfile");
+    
+    // Clean up all exam progress items
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('exam_progress_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
     userService.clearProfileCache();
     navigate("/login");
   };

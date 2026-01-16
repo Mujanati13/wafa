@@ -334,12 +334,14 @@ export const explanationController = {
             v => v.userId.toString() === userId.toString()
         );
 
-        // Calculate vote weight (multiplied by 20 if user has approved explanations)
-        const approvedExplanationsCount = await explanationModel.countDocuments({
+        // Calculate vote weight based on whether user has an approved explanation for THIS question
+        // Only multiply by 20 if user has an approved explanation specifically for this question
+        const hasApprovedExplanationForThisQuestion = await explanationModel.findOne({
             userId,
+            questionId: explanation.questionId,
             status: 'approved'
         });
-        const voteWeight = approvedExplanationsCount > 0
+        const voteWeight = hasApprovedExplanationForThisQuestion
             ? APPROVED_EXPLANATION_VOTE_WEIGHT_MULTIPLIER
             : 1;
 
