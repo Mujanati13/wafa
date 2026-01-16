@@ -511,12 +511,24 @@ const createBankTransferRequest = asyncHandler(async (req, res) => {
     }
   }
 
+  // Map plan name to valid enum value for Transaction model
+  let normalizedPlanName = planName;
+  const planNameLower = planName.toLowerCase();
+  
+  if (planNameLower.includes('annuel') || planNameLower.includes('annual') || planNameLower.includes('year')) {
+    normalizedPlanName = "Premium Annuel";
+  } else if (planNameLower.includes('premium')) {
+    normalizedPlanName = "Premium";
+  } else if (planNameLower.includes('gratuit') || planNameLower.includes('free')) {
+    normalizedPlanName = "Gratuit";
+  }
+
   // Create transaction record for bank transfer
   const transaction = await Transaction.create({
     user: req.user._id,
     amount,
     currency: "MAD",
-    plan: planName,
+    plan: normalizedPlanName,
     semesters,
     status: "pending",
     paymentMethod: paymentMode,
