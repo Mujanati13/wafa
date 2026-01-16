@@ -46,15 +46,15 @@ router.post("/unlock-achievement", isAuthenticated, UserController.unlockAchieve
 // ========== Dynamic routes (must come AFTER static routes) ==========
 
 // Update user plan (admin only)
-router.patch("/:userId/plan", isAdmin, UserController.updateUserPlan);
+router.patch("/:userId/plan", isAuthenticated, isAdmin, UserController.updateUserPlan);
 
 // Toggle user active status (admin only)
-router.patch("/:userId/status", isAdmin, UserController.toggleUserStatus);
+router.patch("/:userId/status", isAuthenticated, isAdmin, UserController.toggleUserStatus);
 
 // Update user (admin only - for role and permissions)
-router.put("/:userId", isAdmin, UserController.updateUser);
+router.put("/:userId", isAuthenticated, isAdmin, UserController.updateUser);
 
 // Delete user (admin only)
-router.delete("/:userId", isAdmin, UserController.deleteUser);
+router.delete("/:userId", isAuthenticated, isAdmin, UserController.deleteUser);
 
 export default router;
