@@ -263,8 +263,9 @@ if netstat -tuln | grep -q ":80 "; then
 fi
 
 # Build and start containers (without SSL first)
-print_info "Building Docker images..."
-docker-compose build
+print_info "Building Docker images (forcing clean rebuild)..."
+docker-compose build --no-cache backend
+docker-compose build frontend
 
 print_info "Starting containers..."
 docker-compose up -d mongodb backend frontend
