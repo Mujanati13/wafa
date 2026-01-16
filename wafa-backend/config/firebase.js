@@ -17,7 +17,13 @@ try {
     
     let serviceAccount;
     try {
-      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+      const fileContent = readFileSync(serviceAccountPath, 'utf8');
+      serviceAccount = JSON.parse(fileContent);
+      
+      console.log('📝 Firebase service account loaded from file');
+      console.log('📋 Project ID:', serviceAccount.project_id);
+      console.log('📧 Client Email:', serviceAccount.client_email);
+      console.log('🔑 Private Key ID:', serviceAccount.private_key_id);
       
       firebaseApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
@@ -25,6 +31,7 @@ try {
       
       console.log('✅ Firebase Admin SDK initialized successfully');
     } catch (fileError) {
+      console.error('❌ Error loading Firebase service account file:', fileError.message);
       // If file doesn't exist, try environment variables
       if (process.env.FIREBASE_PROJECT_ID && 
           process.env.FIREBASE_PRIVATE_KEY && 
@@ -35,6 +42,8 @@ try {
           privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         };
+        
+        console.log('📝 Firebase service account loaded from environment variables');
         
         firebaseApp = admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),

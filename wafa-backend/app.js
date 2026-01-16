@@ -10,6 +10,7 @@ import "./strategies/local-strategy.js";
 import "./strategies/google-strategy.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 dotenv.config();
 
@@ -23,8 +24,24 @@ const PORT = process.env.PORT || 5010;
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
-// Serve static files from uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`Created uploads directory at: ${uploadsDir}`);
+}
+
+// Serve static files from uploads folder with better logging
+app.use('/uploads', (req, res, next) => {
+  console.log(`[Static File Request] ${req.method} ${req.url} -> ${path.join(uploadsDir, req.path)}`);
+  next();
+}, express.static(uploadsDir, {
+  dotfiles: 'allow',
+  index: false,
+  setHeaders: (res, path) => {
+    console.log(`[Serving File] ${path}`);
+  }
+}));
 
 // CORS middleware - Allow all origins (no restrictions)
 console.log('CORS: Allowing all origins');
@@ -90,6 +107,27 @@ app.get("/api/v1/auth-check", (req, res) => {
     user: req.user ? { id: req.user._id, email: req.user.email, name: req.user.name } : null,
     sessionID: req.sessionID
   });
+});
+
+// Debug route to check uploads directory
+app.get("/api/v1/debug/uploads", (req, res) => {
+  const uploadsPath = path.join(__dirname, 'uploads');
+  try {
+    const files = fs.readdirSync(uploadsPath, { recursive: true });
+    res.json({
+      success: true,
+      uploadsDir: uploadsPath,
+      exists: fs.existsSync(uploadsPath),
+      files: files.slice(0, 100) // First 100 files
+    });
+  } catch (err) {
+    res.json({
+      success: false,
+      uploadsDir: uploadsPath,
+      exists: fs.existsSync(uploadsPath),
+      error: err.message
+    });
+  }
 });
 
 

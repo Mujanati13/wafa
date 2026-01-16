@@ -40,7 +40,8 @@ const updateQuestionSchema = joi.object({
     options: joi.array().items(optionSchema).min(2),
     note: joi.string().allow('', null),
     images: joi.array().items(joi.string().allow('')), // Allow any string path, not just URIs
-    sessionLabel: joi.string().allow('', null) // Allow sessionLabel in updates
+    sessionLabel: joi.string().allow('', null), // Allow sessionLabel in updates
+    questionNumber: joi.number().integer().allow(null) // Allow questionNumber in updates
 });
 
 export default { createQuestionSchema, updateQuestionSchema };

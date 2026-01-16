@@ -7,7 +7,6 @@ import { Lock, HelpCircle, X, BookOpen, Info, CheckCircle, Image as ImageIcon, F
 
 import { api } from "@/lib/utils";
 import { moduleService } from "@/services/moduleService";
-import ResumesModal from "@/components/ExamsPage/ResumesModal";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +35,6 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
-  const [showResumesModal, setShowResumesModal] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -173,18 +171,6 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
 
         {/* Course Stats */}
         <div className="relative flex flex-col items-stretch justify-between pt-2 sm:pt-3 border-t border-gray-200 gap-2">
-          <motion.button
-            className="flex-1 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-semibold shadow-md hover:shadow-lg hover:from-purple-600 hover:to-indigo-600 transition-all whitespace-nowrap"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowResumesModal(true);
-            }}
-          >
-            <FileText className="w-3 h-3 inline mr-1" />
-            Résumés
-          </motion.button>
           <motion.button
             className={`flex-1 px-3 py-1.5 rounded-md text-white text-xs font-semibold shadow-md hover:shadow-lg transition-all whitespace-nowrap ${!customStyle ? `bg-gradient-to-r ${colorScheme.gradient}` : ''}`}
             style={customStyle || undefined}
@@ -487,15 +473,6 @@ const ModuleCard = ({ course, handleCourseClick, index }) => {
           )}
         </AnimatePresence>,
         document.body
-      )}
-
-      {/* Resumes Modal */}
-      {showResumesModal && (
-        <ResumesModal
-          isOpen={showResumesModal}
-          onClose={() => setShowResumesModal(false)}
-          examData={{ moduleId: course._id, name: course.name }}
-        />
       )}
     </>
   );

@@ -419,7 +419,24 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                       <p className="text-sm font-medium text-gray-700">Il doit etre comme ça :</p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {aiExplanation.images.map((src, idx) => {
-                          const fullImgUrl = src.startsWith('http') ? src : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${src}`;
+                          let fullImgUrl = src;
+                          if (!src.startsWith('http')) {
+                            const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || window.location.origin;
+                            // Try multiple path formats
+                            if (src.startsWith('/uploads/')) {
+                              fullImgUrl = `${baseUrl}${src}`;
+                            } else if (src.includes('/uploads/')) {
+                              // Extract uploads path from middle of string
+                              const uploadsIndex = src.indexOf('/uploads/');
+                              fullImgUrl = `${baseUrl}${src.substring(uploadsIndex)}`;
+                            } else {
+                              // Assume it's just filename or relative path
+                              fullImgUrl = `${baseUrl}/uploads${src.startsWith('/') ? src : `/${src}`}`;
+                            }
+                            console.log(`[AI Image ${idx}] Raw: "${src}" -> URL: "${fullImgUrl}" (Base: "${baseUrl}")`);
+                          } else {
+                            console.log(`[AI Image ${idx}] Already HTTP: "${fullImgUrl}"`);
+                          }
                           return (
                           <button
                             key={`${src}-${idx}`}
@@ -433,6 +450,10 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                               alt={`explication ${idx + 1}`}
                               className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
                               loading="lazy"
+                              onError={(e) => {
+                                console.error(`Failed to load AI explanation image: ${fullImgUrl}`);
+                                e.target.style.backgroundColor = '#f3f4f6';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                           </button>
@@ -567,7 +588,24 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                       <p className="text-sm font-medium text-gray-700">Il doit etre comme ça :</p>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {currentUserExplanation.images.map((imgUrl, idx) => {
-                          const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${imgUrl}`;
+                          let fullImgUrl = imgUrl;
+                          if (!imgUrl.startsWith('http')) {
+                            const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || window.location.origin;
+                            // Try multiple path formats
+                            if (imgUrl.startsWith('/uploads/')) {
+                              fullImgUrl = `${baseUrl}${imgUrl}`;
+                            } else if (imgUrl.includes('/uploads/')) {
+                              // Extract uploads path from middle of string
+                              const uploadsIndex = imgUrl.indexOf('/uploads/');
+                              fullImgUrl = `${baseUrl}${imgUrl.substring(uploadsIndex)}`;
+                            } else {
+                              // Assume it's just filename or relative path
+                              fullImgUrl = `${baseUrl}/uploads${imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`}`;
+                            }
+                            console.log(`[User Image ${idx}] Raw: "${imgUrl}" -> URL: "${fullImgUrl}" (Base: "${baseUrl}")`);
+                          } else {
+                            console.log(`[User Image ${idx}] Already HTTP: "${fullImgUrl}"`);
+                          }
                           return (
                           <button
                             key={idx}
@@ -581,6 +619,10 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                               alt={`Image ${idx + 1}`}
                               className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
                               loading="lazy"
+                              onError={(e) => {
+                                console.error(`Failed to load user explanation image: ${fullImgUrl}`);
+                                e.target.style.backgroundColor = '#f3f4f6';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                           </button>
@@ -594,9 +636,12 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                   {/* Display PDF if any */}
                   {currentUserExplanation.pdfUrl && (
                     <a
-                      href={currentUserExplanation.pdfUrl.startsWith('http') 
-                        ? currentUserExplanation.pdfUrl 
-                        : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || ''}${currentUserExplanation.pdfUrl}`}
+                      href={(() => {
+                        const pdfUrl = currentUserExplanation.pdfUrl;
+                        if (pdfUrl.startsWith('http')) return pdfUrl;
+                        const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || 'http://localhost:5010';
+                        return pdfUrl.startsWith('/uploads/') ? `${baseUrl}${pdfUrl}` : `${baseUrl}/uploads${pdfUrl.startsWith('/') ? pdfUrl : `/${pdfUrl}`}`;
+                      })()}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-sm"

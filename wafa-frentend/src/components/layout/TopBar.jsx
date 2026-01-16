@@ -229,7 +229,7 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                     {/* Legend */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
                       <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                        <div className="w-2 h-2 rounded-full bg-purple-400"></div>
                         <span>Questions ({user?.normalPoints || 0})</span>
                       </div>
                       {(user?.greenPoints || 0) > 0 && (
@@ -244,10 +244,6 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                           <span>Explic. ({(user?.bluePoints || 0) * 40})</span>
                         </div>
                       )}
-                    </div>
-                    
-                    <div className="text-xs text-slate-500 pt-1">
-                      {user?.percentageAnswered ? `${user.percentageAnswered.toFixed(1)}% répondues` : '0% répondues'}
                     </div>
                   </div>
                 </div>

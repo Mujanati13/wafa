@@ -2162,17 +2162,15 @@ const ExamPage = () => {
                             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                           {/* Images */}
-                          {currentQuestionData.images && currentQuestionData.images.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setShowImageGallery(true)}
-                              className="text-blue-700 h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200"
-                              title="Images"
-                            >
-                              <Image className="h-3 w-3 sm:h-4 sm:w-4" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowImageGallery(true)}
+                            className="text-blue-700 h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200"
+                            title={`Images (${currentQuestionData.images?.length || 0})`}
+                          >
+                            <Image className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -2252,20 +2250,16 @@ const ExamPage = () => {
                               </DropdownMenuItem>
 
                               {/* Images */}
-                              {currentQuestionData.images && currentQuestionData.images.length > 0 && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setShowImageGallery(true);
-                                      setShowMobileMenu(false);
-                                    }}
-                                  >
-                                    <Image className="h-4 w-4 mr-2" />
-                                    <span>Images ({currentQuestionData.images.length})</span>
-                                  </DropdownMenuItem>
-                                </>
-                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setShowImageGallery(true);
+                                  setShowMobileMenu(false);
+                                }}
+                              >
+                                <Image className="h-4 w-4 mr-2" />
+                                <span>Images ({currentQuestionData.images?.length || 0})</span>
+                              </DropdownMenuItem>
 
                               {/* Notes */}
                               <DropdownMenuSeparator />
@@ -3587,8 +3581,7 @@ const ExamPage = () => {
                   <h2 className="text-base sm:text-xl font-bold">
                     {(() => {
                       const currentQData = questions[currentQuestion];
-                      const currentQuestionHasImages = currentQData?.images && currentQData.images.length > 0;
-                      return currentQuestionHasImages ? 'Images de cette question' : `Images de ${currentQData?.sessionLabel || 'la session'}`;
+                      return `Images de ${currentQData?.sessionLabel || 'la session'}`;
                     })()}
                   </h2>
                 </div>
@@ -3607,21 +3600,38 @@ const ExamPage = () => {
                   const currentQData = questions[currentQuestion];
                   const currentSession = currentQData?.sessionLabel;
                   
-                  // Check if current question has images
-                  const currentQuestionHasImages = currentQData?.images && currentQData.images.length > 0;
+                  // Get all questions from current session
+                  const questionsInSession = questions.filter(q => q.sessionLabel === currentSession);
                   
-                  // Filter questions: if current question has images, show only those
-                  // Otherwise, show all images from the current session
-                  const questionsToShow = currentQuestionHasImages
-                    ? [currentQData]
-                    : questions.filter(q => q.sessionLabel === currentSession);
-                  
-                  const allImages = questionsToShow.reduce((acc, q, idx) => {
+                  // Get all images from all questions in session
+                  const allImages = questionsInSession.reduce((acc, q, idx) => {
                     const globalIndex = questions.findIndex(question => question._id === q._id);
                     if (q.images && q.images.length > 0) {
                       q.images.forEach((imgUrl, imgIdx) => {
+                        // Ensure proper URL formatting for images
+                        let imageUrl = imgUrl;
+                        if (!imageUrl.startsWith('http')) {
+                          // Get base URL without /api/v1
+                          const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || 'http://localhost:5010';
+                          
+                          // Handle different image path formats
+                          if (imageUrl.startsWith('/uploads/')) {
+                            // Already has /uploads/ prefix
+                            imageUrl = `${baseUrl}${imageUrl}`;
+                          } else if (imageUrl.includes('/uploads/')) {
+                            // Has /uploads/ somewhere in path
+                            imageUrl = `${baseUrl}/${imageUrl}`;
+                          } else {
+                            // Assume it's just filename or relative path
+                            imageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+                            imageUrl = `${baseUrl}/uploads${imageUrl}`;
+                          }
+                        }
+                        
+                        console.log(`Image URL for Q${q.displayNumber}:`, imageUrl); // Debug log
+                        
                         acc.push({
-                          src: imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`,
+                          src: imageUrl,
                           questionIndex: globalIndex,
                           questionNumber: q.displayNumber,
                           questionText: q.text?.substring(0, 50) + '...',
@@ -3639,12 +3649,10 @@ const ExamPage = () => {
                           <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
                         </div>
                         <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-                          Aucune image {currentQuestionHasImages ? 'dans cette question' : 'dans cette session'}
+                          Aucune image dans cette session
                         </h4>
                         <p className="text-gray-500 text-xs sm:text-sm">
-                          {currentQuestionHasImages 
-                            ? 'Cette question ne contient pas d\'images.' 
-                            : 'Cette session ne contient pas d\'images.'}
+                          Cette session ne contient pas d'images.
                         </p>
                       </div>
                     );
@@ -3665,6 +3673,14 @@ const ExamPage = () => {
                             src={img.src}
                             alt={`Question ${img.questionNumber}`}
                             className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform"
+                            onError={(e) => {
+                              // Log error for debugging
+                              console.error(`Failed to load image from: ${img.src}`);
+                              console.error(`Error details:`, e);
+                              // Show placeholder if image fails
+                              e.target.style.backgroundColor = '#e5e7eb';
+                              e.target.alt = 'Image not found';
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                             <span className="text-white text-xs font-medium">

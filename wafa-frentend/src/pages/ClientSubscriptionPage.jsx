@@ -32,7 +32,7 @@ const ClientSubscriptionPage = () => {
   const [requestLoading, setRequestLoading] = useState(false);
 
   // WhatsApp contact number
-  const WHATSAPP_NUMBER = "0612345678";
+  const WHATSAPP_NUMBER = "0699204386";
 
   // All available semesters
   const allSemesters = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"];
@@ -845,58 +845,7 @@ const ClientSubscriptionPage = () => {
               </div>
 
               {/* Payment Methods */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                {/* Card Payment Option */}
-                <div
-                  onClick={() => setPaymentMethod('card')}
-                  className={`
-                    relative p-5 rounded-xl border-2 cursor-pointer transition-all
-                    ${paymentMethod === 'card'
-                      ? 'border-purple-500 bg-purple-50 shadow-lg'
-                      : 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
-                    }
-                  `}
-                >
-                  {paymentMethod === 'card' && (
-                    <div className="absolute -top-2 -right-2">
-                      <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-white" />
-                    </div>
-                    <h4 className="font-bold text-lg text-slate-900">Paiement par Carte Débit</h4>
-                  </div>
-
-                  <p className="text-sm text-slate-600 mb-4">
-                    Paiement direct avec activation immédiate de votre compte
-                  </p>
-
-                  <ul className="space-y-2">
-                    <li className="flex items-center gap-2 text-sm text-slate-700">
-                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                      Pour l'un des deux plans tarifaires : +30 DH pour la transaction
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-slate-700">
-                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                      Paiement direct + activation directe de votre compte
-                    </li>
-                    <li className="flex items-center gap-2 text-sm text-slate-700">
-                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                      Traitement instantané et sécurisé
-                    </li>
-                  </ul>
-
-                  <div className="mt-4 flex items-center gap-2 text-purple-600">
-                    <Zap className="w-4 h-4" />
-                    <span className="text-sm font-medium">Activation instantanée</span>
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-6">
                 {/* Bank Transfer Option */}
                 <div
                   onClick={() => setPaymentMethod('transfer')}
@@ -964,26 +913,6 @@ const ClientSubscriptionPage = () => {
             >
               Annuler
             </Button>
-
-            {paymentMethod === 'card' && (
-              <Button
-                onClick={handlePayWithPayPal}
-                disabled={paymentLoading || selectedSemesters.length !== getMaxSemesters(selectedPlan)}
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-              >
-                {paymentLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Traitement...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Payer {selectedPlan?.price + 30} MAD
-                  </>
-                )}
-              </Button>
-            )}
 
             {paymentMethod === 'transfer' && (
               <Button
