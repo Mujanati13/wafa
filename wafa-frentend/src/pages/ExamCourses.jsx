@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/shared";
 import NewExamCourseForm from "@/components/admin/NewExamCourseForm";
 import { api } from "@/lib/utils";
@@ -47,7 +48,8 @@ const ExamCourses = () => {
 
   const [examCourses, setExamCourses] = useState([]);
   const [modules, setModules] = useState([]);
-  const [courseCategories, setCourseCategories] = useState([]); // Categories from /course-categories
+  const [courseCategories, setCourseCategories] = useState([]);
+  const [selectedItems, setSelectedItems] = useState(new Set()); // Categories from /course-categories
   const [moduleCategoriesData, setModuleCategoriesData] = useState([]); // Categories filtered by selected module
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -289,6 +291,42 @@ const ExamCourses = () => {
     }
   };
 
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedItems(new Set(currentCourses.map(c => c.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleSelectItem = (id, checked) => {
+    const newSelected = new Set(selectedItems);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} cours ?`)) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedItems).map(id => api.delete(`/exam-courses/${id}`))
+      );
+      toast.success(`${selectedItems.size} cours supprimé(s) avec succès`);
+      setSelectedItems(new Set());
+      fetchCourses();
+    } catch (error) {
+      console.error("Error bulk deleting courses:", error);
+      toast.error("Erreur lors de la suppression groupée");
+    }
+  };
+
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
@@ -390,6 +428,25 @@ const ExamCourses = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Bulk Delete Toolbar */}
+        {selectedItems.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between"
+          >
+            <span className="font-medium">{selectedItems.size} élément(s) sélectionné(s)</span>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer la sélection
+            </Button>
+          </motion.div>
+        )}
+
         {/* Action Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -469,8 +526,12 @@ const ExamCourses = () => {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
+                  <TableRow>                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={currentCourses.length > 0 && selectedItems.size === currentCourses.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>                    <TableHead>ID</TableHead>
                     <TableHead>Module</TableHead>
                     <TableHead>Catégorie</TableHead>
                     <TableHead>Nom du Cours</TableHead>
@@ -490,6 +551,13 @@ const ExamCourses = () => {
                   ) : (
                     currentCourses.map((course) => (
                       <TableRow key={course.id}>
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={selectedItems.has(course.id)}
+                            onCheckedChange={(checked) => handleSelectItem(course.id, checked)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-sm">{course.id}</TableCell>
                         <TableCell className="font-medium">{course.moduleName}</TableCell>
                         <TableCell>

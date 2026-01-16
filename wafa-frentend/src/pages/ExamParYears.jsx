@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import NewExamForm from "@/components/admin/NewExamForm";
@@ -34,6 +35,7 @@ const ExamParYears = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedItems, setSelectedItems] = useState(new Set());
   const [formData, setFormData] = useState({
     examName: "",
     moduleName: "",
@@ -123,6 +125,42 @@ const ExamParYears = () => {
     } catch (err) {
       console.error("Error deleting exam:", err);
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedItems(new Set(currentExams.map(e => e.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleSelectItem = (id, checked) => {
+    const newSelected = new Set(selectedItems);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} examen(s) ?`)) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedItems).map(id => api.delete(`/exams/delete/${id}`))
+      );
+      toast.success(`${selectedItems.size} examen(s) supprimé(s) avec succès`);
+      setSelectedItems(new Set());
+      fetchExams();
+    } catch (error) {
+      console.error("Error bulk deleting exams:", error);
+      toast.error("Erreur lors de la suppression groupée");
     }
   };
 
@@ -303,6 +341,25 @@ const ExamParYears = () => {
 
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* Bulk Delete Toolbar */}
+        {selectedItems.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between"
+          >
+            <span className="font-medium">{selectedItems.size} élément(s) sélectionné(s)</span>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer la sélection
+            </Button>
+          </motion.div>
+        )}
+
         {/* Action Bar */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -385,6 +442,12 @@ const ExamParYears = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={currentExams.length > 0 && selectedItems.size === currentExams.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Module</TableHead>
                     <TableHead>Nom de l'Examen</TableHead>
@@ -405,6 +468,13 @@ const ExamParYears = () => {
                   ) : (
                     currentExams.map((exam) => (
                       <TableRow key={exam.id}>
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={selectedItems.has(exam.id)}
+                            onCheckedChange={(checked) => handleSelectItem(exam.id, checked)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-sm">{exam.id}</TableCell>
                         <TableCell className="font-medium">{exam.moduleName}</TableCell>
                         <TableCell className="font-medium">{exam.examName}</TableCell>

@@ -30,19 +30,27 @@ const SelectFreeSemester = () => {
         
         allModules.forEach(module => {
           const semester = module.semester;
-          if (semester && !semesterMap.has(semester)) {
-            // Determine year based on semester number
-            const semesterNum = parseInt(semester.replace('S', ''));
-            const yearNum = Math.ceil(semesterNum / 2);
-            const yearText = `${yearNum}${yearNum === 1 ? 'ère' : 'ème'} année`;
-            
-            semesterMap.set(semester, {
-              id: semester,
-              name: `Semestre ${semesterNum}`,
-              year: yearText,
-              description: module.name,
-              module: module.name
-            });
+          if (semester) {
+            if (!semesterMap.has(semester)) {
+              // Determine year based on semester number
+              const semesterNum = parseInt(semester.replace('S', ''));
+              const yearNum = Math.ceil(semesterNum / 2);
+              const yearText = `${yearNum}${yearNum === 1 ? 'ère' : 'ème'} année`;
+              
+              semesterMap.set(semester, {
+                id: semester,
+                name: `Semestre ${semesterNum}`,
+                year: yearText,
+                description: module.name,
+                moduleCount: 1,
+                modules: [module.name]
+              });
+            } else {
+              // Add module to existing semester
+              const existing = semesterMap.get(semester);
+              existing.moduleCount += 1;
+              existing.modules.push(module.name);
+            }
           }
         });
         
@@ -53,6 +61,7 @@ const SelectFreeSemester = () => {
           return numA - numB;
         });
         
+        console.log('Available semesters:', semestersList);
         setSemesters(semestersList);
       } catch (error) {
         console.error('Error fetching semesters:', error);
@@ -242,7 +251,7 @@ const SelectFreeSemester = () => {
                       {semesters.find(s => s.id === selectedSemester)?.name}
                     </h3>
                     <p className="text-blue-100">
-                      {semesters.find(s => s.id === selectedSemester)?.year} • {semesters.find(s => s.id === selectedSemester)?.description}
+                      {semesters.find(s => s.id === selectedSemester)?.year} • {semesters.find(s => s.id === selectedSemester)?.moduleCount || 0} module(s) disponible(s)
                     </p>
                   </div>
                 </div>

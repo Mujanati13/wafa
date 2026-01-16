@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
@@ -36,6 +37,7 @@ const QCMBanque = () => {
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [selectedItems, setSelectedItems] = useState(new Set());
     const [formData, setFormData] = useState({
         name: "",
         moduleId: "",
@@ -183,6 +185,42 @@ const QCMBanque = () => {
         }
     };
 
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedItems(new Set(currentQCMs.map(q => q.id)));
+        } else {
+            setSelectedItems(new Set());
+        }
+    };
+
+    const handleSelectItem = (id, checked) => {
+        const newSelected = new Set(selectedItems);
+        if (checked) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedItems(newSelected);
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedItems.size === 0) return;
+        
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} QCM Banque ?`)) return;
+
+        try {
+            await Promise.all(
+                Array.from(selectedItems).map(id => api.delete(`/qcm-banque/${id}`))
+            );
+            toast.success(`${selectedItems.size} QCM Banque supprimé(s) avec succès`);
+            setSelectedItems(new Set());
+            fetchQCMList();
+        } catch (error) {
+            console.error("Error bulk deleting QCM Banque:", error);
+            toast.error("Erreur lors de la suppression groupée");
+        }
+    };
+
     const handleEdit = (qcm) => {
         // Find the module to get its semester for the form filter
         const module = modules.find(m => m._id === qcm.moduleId);
@@ -319,6 +357,25 @@ const QCMBanque = () => {
     return (
         <div className="min-h-screen bg-white">
             <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+                {/* Bulk Delete Toolbar */}
+                {selectedItems.size > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between"
+                    >
+                        <span className="font-medium">{selectedItems.size} élément(s) sélectionné(s)</span>
+                        <Button
+                            variant="destructive"
+                            onClick={handleBulkDelete}
+                            className="gap-2"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Supprimer la sélection
+                        </Button>
+                    </motion.div>
+                )}
+
                 {/* Action Bar */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -388,6 +445,12 @@ const QCMBanque = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={currentQCMs.length > 0 && selectedItems.size === currentQCMs.length}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
                                         <TableHead>ID</TableHead>
                                         <TableHead>Module</TableHead>
                                         <TableHead>Nom du QCM</TableHead>
@@ -412,6 +475,13 @@ const QCMBanque = () => {
                                     ) : (
                                         currentQCMs.map((qcm) => (
                                             <TableRow key={qcm.id}>
+                                                <TableCell className="w-12">
+                                                    <Checkbox
+                                                        checked={selectedItems.has(qcm.id)}
+                                                        onCheckedChange={(checked) => handleSelectItem(qcm.id, checked)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </TableCell>
                                                 <TableCell className="font-mono text-sm">{qcm.id?.slice(-6)}</TableCell>
                                                 <TableCell className="font-medium">{qcm.moduleName}</TableCell>
                                                 <TableCell className="font-medium">{qcm.name}</TableCell>

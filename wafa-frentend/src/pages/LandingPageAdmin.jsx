@@ -676,10 +676,10 @@ const LandingPageAdmin = () => {
               </CardContent>
             </Card>
 
-            {/* Premium Annual */}
+            {/* Premium Pro */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Premium Annuel</CardTitle>
+                <CardTitle className="text-lg">Premium Pro</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-2">

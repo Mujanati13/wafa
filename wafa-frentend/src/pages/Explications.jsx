@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ const Explications = () => {
   const [explanations, setExplanations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedItems, setSelectedItems] = useState(new Set());
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -341,6 +343,45 @@ const Explications = () => {
     }
   };
 
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedItems(new Set(currentReports.map(r => r.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleSelectItem = (id, checked) => {
+    const newSelected = new Set(selectedItems);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} explication(s) ?`)) return;
+
+    setActionLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedItems).map(id => api.delete(`/explanations/${id}`))
+      );
+      toast.success(`${selectedItems.size} explication(s) supprimée(s) avec succès`);
+      setSelectedItems(new Set());
+      fetchData();
+    } catch (error) {
+      console.error("Error bulk deleting explanations:", error);
+      toast.error("Erreur lors de la suppression groupée");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -579,6 +620,26 @@ const Explications = () => {
         </motion.div>
       </div>
 
+      {/* Bulk Delete Toolbar */}
+      {selectedItems.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between"
+        >
+          <span className="font-medium">{selectedItems.size} élément(s) sélectionné(s)</span>
+          <Button
+            variant="destructive"
+            onClick={handleBulkDelete}
+            disabled={actionLoading}
+            className="gap-2"
+          >
+            <Trash className="h-4 w-4" />
+            Supprimer la sélection
+          </Button>
+        </motion.div>
+      )}
+
       {/* Main Table Card */}
       <Card className="shadow-lg border-slate-200">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
@@ -792,6 +853,12 @@ const Explications = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 hover:bg-slate-50 border-slate-200">
+                      <TableHead className="w-12 font-semibold text-slate-700">
+                        <Checkbox
+                          checked={currentReports.length > 0 && selectedItems.size === currentReports.length}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="font-semibold text-slate-700">User</TableHead>
                       <TableHead className="font-semibold text-slate-700">Module</TableHead>
                       <TableHead className="font-semibold text-slate-700">Type d'Examen</TableHead>
@@ -814,6 +881,13 @@ const Explications = () => {
                         transition={{ duration: 0.2, delay: idx * 0.05 }}
                         className="border-b border-slate-200 hover:bg-slate-50/50 transition-colors"
                       >
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={selectedItems.has(report.id)}
+                            onCheckedChange={(checked) => handleSelectItem(report.id, checked)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
                         <TableCell className="py-3">
                           <div className="flex flex-col">
                             <p className="font-medium text-slate-900">{report.name}</p>

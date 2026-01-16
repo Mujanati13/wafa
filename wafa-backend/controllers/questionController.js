@@ -927,6 +927,14 @@ export const questionController = {
         const { questionId, selectedAnswers, isVerified, isCorrect, examId, moduleId } = req.body;
         const userId = req.user._id;
 
+        console.log('=== SAVE ANSWER ===');
+        console.log('User ID:', userId);
+        console.log('Question ID:', questionId);
+        console.log('Selected answers:', selectedAnswers);
+        console.log('Is verified:', isVerified);
+        console.log('Exam ID:', examId);
+        console.log('Module ID:', moduleId);
+
         if (!questionId) {
             return res.status(400).json({
                 success: false,
@@ -941,6 +949,7 @@ export const questionController = {
         // Find or create user stats
         let userStats = await UserStatsModel.findOne({ userId });
         if (!userStats) {
+            console.log('Creating new user stats');
             userStats = await UserStatsModel.create({
                 userId,
                 questionsAnswered: 0,
@@ -976,6 +985,9 @@ export const questionController = {
             moduleId,
             moduleName
         });
+
+        console.log('Stored answer in Map for question:', questionId.toString());
+        console.log('Total questions in Map:', userStats.answeredQuestions.size);
 
         // Update stats only for NEW verified answers (not re-attempts)
         if (isVerified && isNewAnswer) {
@@ -1063,6 +1075,7 @@ export const questionController = {
         }
 
         await userStats.save();
+        console.log('✓ User stats saved successfully');
 
         res.status(200).json({
             success: true,
@@ -1081,23 +1094,36 @@ export const questionController = {
         const { examId } = req.params;
         const userId = req.user._id;
 
+        console.log('=== GET USER ANSWERS ===');
+        console.log('Exam ID from params:', examId);
+        console.log('User ID:', userId);
+
         const UserStatsModel = (await import("../models/userStatsModel.js")).default;
         const userStats = await UserStatsModel.findOne({ userId });
 
         if (!userStats || !userStats.answeredQuestions) {
+            console.log('No user stats or answered questions found');
             return res.status(200).json({
                 success: true,
                 data: {}
             });
         }
 
-        // Filter answers for this exam
+        console.log('Total answered questions:', userStats.answeredQuestions.size);
+
+        // Filter answers for this exam - handle both string and ObjectId comparison
         const examAnswers = {};
         for (const [qId, answer] of userStats.answeredQuestions.entries()) {
-            if (answer.examId?.toString() === examId) {
+            // Convert both to strings for comparison
+            const answerExamId = answer.examId ? answer.examId.toString() : null;
+            if (answerExamId === examId || answerExamId === examId.toString()) {
                 examAnswers[qId] = answer;
+                console.log(`Found answer for question ${qId}:`, answer.selectedAnswers);
             }
         }
+
+        console.log('Filtered answers for this exam:', Object.keys(examAnswers).length);
+        console.log('Exam answers:', examAnswers);
 
         res.status(200).json({
             success: true,

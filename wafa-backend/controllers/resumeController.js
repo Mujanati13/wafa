@@ -82,7 +82,15 @@ export const resumeController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        const resumes = await resumeModel.find()
+        const { moduleId } = req.query;
+        
+        // Build query filter
+        const filter = {};
+        if (moduleId) {
+            filter.moduleId = moduleId;
+        }
+        
+        const resumes = await resumeModel.find(filter)
             .populate('userId', 'name email')
             .populate('moduleId', 'name semester color')
             .populate('questionId')

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { PageHeader, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const ReportQuestionsAdmin = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -21,6 +22,7 @@ const ReportQuestionsAdmin = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [selectedItems, setSelectedItems] = useState(new Set());
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -127,6 +129,42 @@ const ReportQuestionsAdmin = () => {
     } catch (error) {
       console.error("Error rejecting report:", error);
       toast.error("Échec du rejet");
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedItems(new Set(currentReports.map(r => r.id)));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleSelectItem = (id, checked) => {
+    const newSelected = new Set(selectedItems);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedItems.size} rapport(s) ?`)) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedItems).map(id => api.delete(`/report-questions/${id}`))
+      );
+      toast.success(`${selectedItems.size} rapport(s) supprimé(s) avec succès`);
+      setSelectedItems(new Set());
+      fetchReports();
+    } catch (error) {
+      console.error("Error bulk deleting reports:", error);
+      toast.error("Erreur lors de la suppression groupée");
     }
   };
 
@@ -469,12 +507,37 @@ const ReportQuestionsAdmin = () => {
           </CardContent>
         </Card>
 
+        {/* Bulk Delete Toolbar */}
+        {selectedItems.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between"
+          >
+            <span className="font-medium">{selectedItems.size} élément(s) sélectionné(s)</span>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Supprimer la sélection
+            </Button>
+          </motion.div>
+        )}
+
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={currentReports.length > 0 && selectedItems.size === currentReports.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Utilisateur</TableHead>
                     <TableHead>Module</TableHead>
                     <TableHead>Type d'Examen</TableHead>
@@ -500,6 +563,13 @@ const ReportQuestionsAdmin = () => {
                         key={report.id}
                         className="cursor-pointer hover:bg-slate-50 transition-colors"
                       >
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={selectedItems.has(report.id)}
+                            onCheckedChange={(checked) => handleSelectItem(report.id, checked)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <button

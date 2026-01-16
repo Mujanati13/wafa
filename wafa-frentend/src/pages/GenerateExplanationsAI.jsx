@@ -490,7 +490,7 @@ const GenerateExplanationsAI = () => {
                     value={selectedModule} 
                     onValueChange={(val) => {
                       setSelectedModule(val);
-                      setSelectedExam("");
+                      setSelectedExam("all");
                     }}
                   >
                     <SelectTrigger>
@@ -507,7 +507,7 @@ const GenerateExplanationsAI = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-700">Examen (optionnel)</Label>
+                  <Label className="font-semibold text-gray-700">Examen(s)</Label>
                   <Select 
                     value={selectedExam} 
                     onValueChange={setSelectedExam}
@@ -517,7 +517,10 @@ const GenerateExplanationsAI = () => {
                       <SelectValue placeholder={selectedModule ? "Tous les examens du module" : "Sélectionner un module d'abord"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tous les examens du module</SelectItem>
+                      <SelectItem value="all">
+                        <span className="font-semibold">✓ Tous les examens du module ({examsForModule.length})</span>
+                      </SelectItem>
+                      {examsForModule.length > 0 && <div className="border-t my-2" />}
                       {examsForModule.map((exam) => (
                         <SelectItem key={exam._id} value={exam._id}>
                           {exam.name}
@@ -526,7 +529,7 @@ const GenerateExplanationsAI = () => {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-500">
-                    Laissez vide pour générer depuis tous les examens du module
+                    ✓ Tous les examens du module sont sélectionnés par défaut
                   </p>
                 </div>
               </div>

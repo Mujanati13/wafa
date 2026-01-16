@@ -126,7 +126,7 @@ const ExamPage = () => {
   const { examId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Get exam type from query params (default: exam-years)
   const examType = searchParams.get('type') || 'exam'; // 'exam', 'course', 'qcm'
 
@@ -180,6 +180,7 @@ const ExamPage = () => {
   const [verifiedQuestions, setVerifiedQuestions] = useState({});
   const [validationError, setValidationError] = useState(null);
   const [communityStats, setCommunityStats] = useState({}); // Store community voting stats per question
+  const [isVerifying, setIsVerifying] = useState(false); // Prevent double-click on verify
 
   // UI preferences
   const [fontSize, setFontSize] = useState(() => {
@@ -201,6 +202,8 @@ const ExamPage = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const questionCardRef = useRef(null);
+  const questionsLengthRef = useRef(0); // Track questions length for navigation
+  const currentQuestionRef = useRef(0); // Track current question for debugging
 
   // User profile state for header
   const [userProfile, setUserProfile] = useState(null);
@@ -254,7 +257,7 @@ const ExamPage = () => {
     const currentLevelPoints = (level - 1) * 50;
     const nextLevelPoints = level * 50;
     const progressToNextLevel = ((totalPoints - currentLevelPoints) / 50) * 100;
-    
+
     // Level names based on ranges
     let name = "Nouveau";
     if (level >= 20) name = "Maître";
@@ -266,12 +269,12 @@ const ExamPage = () => {
     else if (level >= 4) name = "Initié";
     else if (level >= 3) name = "Novice";
     else if (level >= 2) name = "Débutant";
-    
-    return { 
-      level, 
-      name, 
-      nextLevel: nextLevelPoints, 
-      progress: Math.min(progressToNextLevel, 100) 
+
+    return {
+      level,
+      name,
+      nextLevel: nextLevelPoints,
+      progress: Math.min(progressToNextLevel, 100)
     };
   };
 
@@ -333,13 +336,13 @@ const ExamPage = () => {
       // ExamCourse now returns questions grouped by session (same as exam-years)
       // Check if questions are already grouped or if they're in linkedQuestions array
       const questionsData = data.questions || {};
-      
+
       // If questions is an object with sessions, use it directly
       // Otherwise, fall back to linkedQuestions array
-      const questions = Object.keys(questionsData).length > 0 
-        ? questionsData 
+      const questions = Object.keys(questionsData).length > 0
+        ? questionsData
         : { "Session principale": data.linkedQuestions || [] };
-      
+
       return {
         ...data,
         name: data.name,
@@ -352,7 +355,7 @@ const ExamPage = () => {
     } else if (type === 'qcm') {
       // QCMBanque has questions array - group by session
       const questions = data.questions || [];
-      
+
       // Group questions by sessionLabel (same logic as exam-years)
       const questionsBySession = {};
       questions.forEach(q => {
@@ -362,7 +365,7 @@ const ExamPage = () => {
         }
         questionsBySession[sessionName].push(q);
       });
-      
+
       return {
         ...data,
         name: data.name,
@@ -391,8 +394,14 @@ const ExamPage = () => {
     return data;
   }, []);
 
-  // Fetch exam data
+  // Track if we've already fetched exam data to prevent refetching
+  const [examDataFetched, setExamDataFetched] = useState(false);
+  const [progressRestored, setProgressRestored] = useState(false);
+
+  // Fetch exam data - only once when component mounts
   useEffect(() => {
+    if (examDataFetched) return; // Don't refetch if already fetched
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -401,97 +410,16 @@ const ExamPage = () => {
         console.log('Exam ID:', examId);
         console.log('Exam Type:', examType);
         console.log('Endpoint:', endpoint);
-        
+
         const response = await api.get(endpoint);
         console.log('API Response:', response);
         console.log('Response data:', response.data);
-        
+
         const transformedData = transformExamData(response.data.data, examType);
         console.log('Transformed data:', transformedData);
         setExamData(transformedData);
-
-        // Get current user ID for user-specific localStorage
-        const currentUserId = userProfile?._id || localStorage.getItem('userId');
-        
-        // RESTORE FROM BACKEND FIRST (source of truth)
-        let restoredFromBackend = false;
-        try {
-          const serverAnswers = await api.get(`/questions/user-answers/${examId}`);
-          if (serverAnswers.data?.data && Object.keys(serverAnswers.data.data).length > 0) {
-            const answersData = serverAnswers.data.data;
-            const restoredAnswers = {};
-            const restoredVerified = {};
-
-            // Build flat question list with indices
-            const allQuestions = [];
-            Object.values(transformedData.questions || {}).forEach(sessionQuestions => {
-              sessionQuestions.forEach(q => allQuestions.push(q));
-            });
-
-            // Map question IDs to indices and restore ALL answers (verified and unverified)
-            Object.entries(answersData).forEach(([qId, answerData]) => {
-              const qIndex = allQuestions.findIndex(q => q._id === qId);
-              if (qIndex !== -1 && answerData.selectedAnswers?.length > 0) {
-                restoredAnswers[qIndex] = answerData.selectedAnswers;
-                if (answerData.isVerified) {
-                  restoredVerified[qIndex] = {
-                    verified: true,
-                    isCorrect: answerData.isCorrect
-                  };
-                }
-              }
-            });
-
-            // Update state with backend data
-            if (Object.keys(restoredAnswers).length > 0) {
-              setSelectedAnswers(restoredAnswers);
-              restoredFromBackend = true;
-              console.log(`Restored ${Object.keys(restoredAnswers).length} answers from backend`);
-            }
-            if (Object.keys(restoredVerified).length > 0) {
-              setVerifiedQuestions(restoredVerified);
-              console.log(`Restored ${Object.keys(restoredVerified).length} verified questions from backend`);
-            }
-          }
-        } catch (serverErr) {
-          console.log('Could not fetch server answers:', serverErr);
-        }
-
-        // RESTORE FROM LOCALSTORAGE (for UI state like currentQ, timeSpent, flags)
-        // Only use localStorage for answers if backend had none
-        const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
-        const savedProgress = localStorage.getItem(storageKey);
-        if (savedProgress) {
-          try {
-            const { answers, currentQ, timeSpent, flags, verified, userId: storedUserId } = JSON.parse(savedProgress);
-            
-            // Validate that stored data belongs to current user
-            if (storedUserId === currentUserId) {
-              // Always restore UI state
-              setCurrentQuestion(currentQ || 0);
-              setTimeElapsed(timeSpent || 0);
-              setFlaggedQuestions(new Set(flags || []));
-              
-              // Only use localStorage answers if backend didn't have any
-              if (!restoredFromBackend && answers && Object.keys(answers).length > 0) {
-                setSelectedAnswers(answers);
-                console.log(`Restored ${Object.keys(answers).length} answers from localStorage (fallback)`);
-              }
-              
-              // Merge verified state (backend takes precedence)
-              if (verified && !restoredFromBackend) {
-                setVerifiedQuestions(verified);
-              }
-            } else {
-              // Data belongs to different user, clear it
-              console.log('Clearing stale localStorage data from different user');
-              localStorage.removeItem(storageKey);
-            }
-          } catch (err) {
-            console.error('Error parsing saved progress:', err);
-            localStorage.removeItem(storageKey);
-          }
-        }
+        setExamDataFetched(true);
+        // Note: Keep loading true until progress is restored
       } catch (err) {
         console.error('=== ERROR FETCHING EXAM ===');
         console.error('Error:', err);
@@ -499,12 +427,194 @@ const ExamPage = () => {
         console.error('Error message:', err.message);
         setError(t('dashboard:failed_load_exam') || 'Failed to load exam');
         toast.error(t('dashboard:failed_load_exam') || 'Failed to load exam');
-      } finally {
-        setLoading(false);
+        setLoading(false); // Only set loading false on error
       }
     };
     fetchData();
-  }, [examId, examType, t, getExamEndpoint, transformExamData]);
+  }, [examId, examType, t, getExamEndpoint, transformExamData, examDataFetched]);
+
+  // Restore progress - runs after both examData and userProfile are loaded
+  // Also handles case when userProfile fails to load
+  useEffect(() => {
+    // If already restored, don't run again
+    if (progressRestored) return;
+    
+    // Need examData to proceed
+    if (!examData) return;
+    
+    // If no user profile after 3 seconds of having examData, proceed without restoration
+    const timeoutId = setTimeout(() => {
+      if (!progressRestored && examData && !userProfile?._id) {
+        console.log('No user profile available, skipping progress restoration');
+        setProgressRestored(true);
+        setLoading(false);
+      }
+    }, 3000);
+    
+    // If we have both examData and userProfile, restore progress
+    if (userProfile?._id) {
+      clearTimeout(timeoutId);
+      
+      const restoreProgress = async () => {
+        const currentUserId = userProfile._id;
+        console.log('=== RESTORING PROGRESS FOR USER:', currentUserId, '===');
+
+      // Build flat question list with indices for mapping
+      const allQuestions = [];
+      Object.values(examData.questions || {}).forEach(sessionQuestions => {
+        sessionQuestions.forEach(q => allQuestions.push(q));
+      });
+
+      // RESTORE FROM BACKEND FIRST (source of truth)
+      let restoredFromBackend = false;
+      try {
+        const serverAnswers = await api.get(`/questions/user-answers/${examId}`);
+        console.log('Backend answers response:', serverAnswers.data);
+
+        if (serverAnswers.data?.data && Object.keys(serverAnswers.data.data).length > 0) {
+          const answersData = serverAnswers.data.data;
+          const restoredAnswers = {};
+          const restoredVerified = {};
+
+          // Map question IDs to indices and restore ALL answers (verified and unverified)
+          Object.entries(answersData).forEach(([qId, answerData]) => {
+            const qIndex = allQuestions.findIndex(q => q._id === qId);
+            if (qIndex !== -1 && answerData.selectedAnswers?.length > 0) {
+              restoredAnswers[qIndex] = answerData.selectedAnswers;
+              if (answerData.isVerified) {
+                restoredVerified[qIndex] = {
+                  verified: true,
+                  isCorrect: answerData.isCorrect
+                };
+              }
+            }
+          });
+
+          // Update state with backend data
+          if (Object.keys(restoredAnswers).length > 0) {
+            setSelectedAnswers(restoredAnswers);
+            restoredFromBackend = true;
+            console.log(`✓ Restored ${Object.keys(restoredAnswers).length} answers from backend`);
+          }
+          if (Object.keys(restoredVerified).length > 0) {
+            setVerifiedQuestions(restoredVerified);
+            console.log(`✓ Restored ${Object.keys(restoredVerified).length} verified questions from backend`);
+          }
+        } else {
+          console.log('No backend answers found');
+        }
+      } catch (serverErr) {
+        console.error('Could not fetch server answers:', serverErr);
+      }
+
+      // RESTORE FROM LOCALSTORAGE (for UI state like currentQ, timeSpent, flags)
+      // Only use localStorage for answers if backend had none
+      const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+      const savedProgress = localStorage.getItem(storageKey);
+      console.log('LocalStorage key:', storageKey);
+      console.log('LocalStorage data:', savedProgress);
+
+      if (savedProgress) {
+        try {
+          const { answers, currentQ, timeSpent, flags, verified, userId: storedUserId } = JSON.parse(savedProgress);
+
+          // Validate that stored data belongs to current user
+          if (storedUserId === currentUserId) {
+            // Always restore UI state
+            if (currentQ !== undefined && currentQ !== null) {
+              setCurrentQuestion(currentQ);
+              setVisitedQuestions(prev => new Set([...prev, currentQ]));
+            }
+            if (timeSpent !== undefined && timeSpent !== null) {
+              setTimeElapsed(timeSpent);
+            }
+            if (flags && Array.isArray(flags)) {
+              setFlaggedQuestions(new Set(flags));
+            }
+            console.log(`✓ Restored UI state: question ${currentQ}, time ${timeSpent}s, ${flags?.length || 0} flags`);
+
+            // Only use localStorage answers if backend didn't have any
+            if (!restoredFromBackend && answers && Object.keys(answers).length > 0) {
+              setSelectedAnswers(answers);
+              console.log(`✓ Restored ${Object.keys(answers).length} answers from localStorage (fallback)`);
+            }
+
+            // Merge verified state (backend takes precedence)
+            if (verified && Object.keys(verified).length > 0 && !restoredFromBackend) {
+              setVerifiedQuestions(verified);
+              console.log(`✓ Restored ${Object.keys(verified).length} verified from localStorage`);
+            }
+          } else {
+            // Data belongs to different user, clear it
+            console.log('⚠ Clearing stale localStorage data from different user');
+            localStorage.removeItem(storageKey);
+          }
+        } catch (err) {
+          console.error('Error parsing saved progress:', err);
+          localStorage.removeItem(storageKey);
+        }
+      } else {
+        console.log('No localStorage data found');
+      }
+
+      setProgressRestored(true);
+      setLoading(false); // Now safe to show the exam
+      console.log('=== PROGRESS RESTORATION COMPLETE ===');
+    };
+
+    restoreProgress();
+    }
+    
+    return () => clearTimeout(timeoutId);
+  }, [examData, userProfile, examId, examType, progressRestored]);
+
+  // Get all questions - sorted by questionNumber, with displayNumber assigned
+  // MOVED HERE: Must be defined before effects that use it
+  const questions = useMemo(() => {
+    if (!examData?.questions) return [];
+    const allQuestions = [];
+    Object.entries(examData.questions).forEach(([sessionName, sessionQuestions]) => {
+      sessionQuestions.forEach(q => {
+        allQuestions.push({ ...q, sessionLabel: sessionName });
+      });
+    });
+
+    // Sort questions: those with questionNumber come first (sorted numerically),
+    // then those without questionNumber come after (in original order)
+    const sorted = allQuestions.sort((a, b) => {
+      const hasNumA = a.questionNumber != null && a.questionNumber !== undefined;
+      const hasNumB = b.questionNumber != null && b.questionNumber !== undefined;
+
+      // Both have questionNumber - sort numerically
+      if (hasNumA && hasNumB) {
+        return a.questionNumber - b.questionNumber;
+      }
+      // Only A has questionNumber - A comes first
+      if (hasNumA && !hasNumB) return -1;
+      // Only B has questionNumber - B comes first
+      if (!hasNumA && hasNumB) return 1;
+      // Neither has questionNumber - keep original order
+      return 0;
+    });
+
+    // Assign displayNumber to each question (1-indexed position)
+    return sorted.map((q, idx) => ({
+      ...q,
+      displayNumber: q.questionNumber || (idx + 1)
+    }));
+  }, [examData]);
+
+  // Keep the questions length ref updated for navigation functions
+  useEffect(() => {
+    questionsLengthRef.current = questions.length;
+    console.log('Questions length updated:', questions.length);
+  }, [questions.length]);
+
+  // Keep track of current question for debugging
+  useEffect(() => {
+    currentQuestionRef.current = currentQuestion;
+    console.log('Current question state changed to:', currentQuestion);
+  }, [currentQuestion]);
 
   // Mark as unsaved when answers change
   useEffect(() => {
@@ -516,27 +626,34 @@ const ExamPage = () => {
   // Auto-save progress (including verified state) - debounced
   useEffect(() => {
     // Guard: ensure all required data is ready
-    if (!examData || showResults || !hasUnsavedChanges || !userProfile?._id || !questions || questions.length === 0) return;
+    if (!examData || showResults || !userProfile?._id || !questions || questions.length === 0) {
+      console.log('Auto-save skipped:', { examData: !!examData, showResults, userProfile: !!userProfile, questions: questions?.length });
+      return;
+    }
 
     const saveProgress = async () => {
-      setIsSaved(false); // Show saving indicator briefly
+      console.log('=== AUTO-SAVE TRIGGERED ===');
+      console.log('Selected answers:', selectedAnswers);
+      console.log('Has unsaved changes:', hasUnsavedChanges);
+
+      setIsSaved(false);
       try {
         const currentUserId = userProfile._id;
         const progress = {
-          userId: currentUserId, // Include userId for validation
+          userId: currentUserId,
           answers: selectedAnswers,
           currentQ: currentQuestion,
           timeSpent: timeElapsed,
           flags: Array.from(flaggedQuestions),
           verified: verifiedQuestions
         };
-        
+
         // Save to localStorage first (fast, immediate)
         const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
         localStorage.setItem(storageKey, JSON.stringify(progress));
-        
+        console.log('✓ Saved to localStorage:', storageKey);
+
         // Save unverified answers to backend for persistence
-        // Only save questions that have answers but are not yet verified
         const unverifiedAnswers = Object.keys(selectedAnswers)
           .filter(qIndex => {
             const hasAnswer = selectedAnswers[qIndex]?.length > 0;
@@ -551,36 +668,49 @@ const ExamPage = () => {
             examId: examData._id || examId,
             moduleId: examData.module?._id || examData.moduleId
           }))
-          .filter(item => item.questionId); // Only include if we have valid questionId
-        
+          .filter(item => item.questionId);
+
+        console.log('Unverified answers to save:', unverifiedAnswers.length);
+
         // Batch save unverified answers to backend
         if (unverifiedAnswers.length > 0) {
-          await Promise.all(
-            unverifiedAnswers.map(answerData => 
-              api.post('/questions/save-answer', answerData).catch(err => {
-                console.warn('Failed to save answer to backend:', err);
-              })
+          const results = await Promise.allSettled(
+            unverifiedAnswers.map(answerData =>
+              api.post('/questions/save-answer', answerData)
             )
           );
+
+          const succeeded = results.filter(r => r.status === 'fulfilled').length;
+          const failed = results.filter(r => r.status === 'rejected').length;
+          console.log(`✓ Saved ${succeeded} answers to backend, ${failed} failed`);
+
+          if (failed > 0) {
+            results.forEach((r, i) => {
+              if (r.status === 'rejected') {
+                console.error('Failed to save answer:', unverifiedAnswers[i], r.reason);
+              }
+            });
+          }
         }
-        
+
         setIsSaved(true);
         setLastSaveTime(new Date());
         setHasUnsavedChanges(false);
+        console.log('=== AUTO-SAVE COMPLETE ===');
       } catch (error) {
         console.error('Failed to save progress:', error);
         setIsSaved(false);
       }
     };
 
-    const saveTimer = setTimeout(saveProgress, 1000); // Increased debounce to 1s for backend calls
+    const saveTimer = setTimeout(saveProgress, 1000);
     return () => clearTimeout(saveTimer);
-  }, [hasUnsavedChanges, selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile, questions]);
+  }, [selectedAnswers, currentQuestion, flaggedQuestions, verifiedQuestions, examId, examData, showResults, examType, timeElapsed, userProfile, questions, hasUnsavedChanges]);
 
   // Periodically save time elapsed (every 30 seconds)
   useEffect(() => {
     if (!examData || showResults || !userProfile?._id) return;
-    
+
     const timeUpdateTimer = setInterval(() => {
       try {
         const currentUserId = userProfile._id;
@@ -591,6 +721,7 @@ const ExamPage = () => {
           // Validate user before updating
           if (progress.userId === currentUserId) {
             progress.timeSpent = timeElapsed;
+            progress.currentQ = currentQuestionRef.current; // Also update current question
             localStorage.setItem(storageKey, JSON.stringify(progress));
           }
         }
@@ -598,7 +729,7 @@ const ExamPage = () => {
         console.error('Failed to save time:', error);
       }
     }, 30000); // Every 30 seconds
-    
+
     return () => clearInterval(timeUpdateTimer);
   }, [examData, showResults, examType, examId, timeElapsed, userProfile]);
 
@@ -607,7 +738,41 @@ const ExamPage = () => {
     if (!examData || showResults) return;
 
     const handleBeforeUnload = (e) => {
-      // Only warn if there are unsaved changes that haven't been saved to localStorage
+      // Save all verified answers to backend before leaving
+      if (Object.keys(verifiedQuestions).length > 0) {
+        const verifiedAnswers = Object.keys(verifiedQuestions)
+          .filter(qIndex => {
+            const v = verifiedQuestions[qIndex];
+            return v?.verified || v === true;
+          })
+          .map(qIndex => ({
+            questionId: questions[qIndex]?._id,
+            selectedAnswers: selectedAnswers[qIndex] || [],
+            isVerified: true,
+            isCorrect: verifiedQuestions[qIndex]?.isCorrect || false,
+            examId: examData._id || examId,
+            moduleId: examData.module?._id || examData.moduleId
+          }))
+          .filter(item => item.questionId);
+
+        // Use sendBeacon for reliable data transmission even if tab closes
+        if (verifiedAnswers.length > 0) {
+          try {
+            // Save to localStorage as fallback
+            const currentUserId = userProfile?._id;
+            if (currentUserId) {
+              const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
+              const progress = JSON.parse(localStorage.getItem(storageKey) || '{}');
+              progress.verified = verifiedQuestions;
+              localStorage.setItem(storageKey, JSON.stringify(progress));
+            }
+          } catch (error) {
+            console.error('Failed to save verified answers:', error);
+          }
+        }
+      }
+
+      // Only warn if there are unsaved unverified answers
       if (hasUnsavedChanges && Object.keys(selectedAnswers).length > 0) {
         e.preventDefault();
         e.returnValue = '';
@@ -616,42 +781,7 @@ const ExamPage = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges, showResults, examData, selectedAnswers]);
-
-  // Get all questions - sorted by questionNumber, with displayNumber assigned
-  const questions = useMemo(() => {
-    if (!examData?.questions) return [];
-    const allQuestions = [];
-    Object.entries(examData.questions).forEach(([sessionName, sessionQuestions]) => {
-      sessionQuestions.forEach(q => {
-        allQuestions.push({ ...q, sessionLabel: sessionName });
-      });
-    });
-    
-    // Sort questions: those with questionNumber come first (sorted numerically),
-    // then those without questionNumber come after (in original order)
-    const sorted = allQuestions.sort((a, b) => {
-      const hasNumA = a.questionNumber != null && a.questionNumber !== undefined;
-      const hasNumB = b.questionNumber != null && b.questionNumber !== undefined;
-      
-      // Both have questionNumber - sort numerically
-      if (hasNumA && hasNumB) {
-        return a.questionNumber - b.questionNumber;
-      }
-      // Only A has questionNumber - A comes first
-      if (hasNumA && !hasNumB) return -1;
-      // Only B has questionNumber - B comes first
-      if (!hasNumA && hasNumB) return 1;
-      // Neither has questionNumber - keep original order
-      return 0;
-    });
-    
-    // Assign displayNumber to each question (1-indexed position)
-    return sorted.map((q, idx) => ({
-      ...q,
-      displayNumber: q.questionNumber || (idx + 1)
-    }));
-  }, [examData]);
+  }, [hasUnsavedChanges, showResults, examData, selectedAnswers, verifiedQuestions, questions, userProfile, examType, examId]);
 
   const currentQuestionData = questions[currentQuestion];
 
@@ -702,7 +832,7 @@ const ExamPage = () => {
       const updated = current.includes(optionIndex)
         ? current.filter(i => i !== optionIndex)
         : [...current, optionIndex];
-      
+
       // Remove the key if no answers selected, otherwise update it
       const newAnswers = { ...prevAnswers };
       if (updated.length === 0) {
@@ -732,86 +862,135 @@ const ExamPage = () => {
 
   // Verify current question - show answer and award points
   // Points: +2 for correct, +0 for wrong (no toast messages for points)
-  const handleVerifyQuestion = useCallback(async () => {
-    const questionData = questions[currentQuestion];
-    
-    // Annulled questions should not be verifiable
-    if (questionData.isAnnulled) {
+  const handleVerifyQuestion = useCallback(async (e) => {
+    // Prevent default behavior and form submission
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Prevent double-click
+    if (isVerifying) {
+      console.log('Already verifying, ignoring click');
       return;
     }
-    
-    // Calculate if answer is correct locally for immediate visual feedback
-    const userAnswers = selectedAnswers[currentQuestion] || [];
-    const correctIndices = questionData.options
-      .map((opt, idx) => opt.isCorrect ? idx : null)
-      .filter(idx => idx !== null);
-    const isCorrectAnswer = userAnswers.length === correctIndices.length &&
-      userAnswers.every(ans => correctIndices.includes(ans));
 
-    // Immediately mark as verified with isCorrect status for visual feedback
-    playSound(isCorrectAnswer ? 'correct' : 'incorrect');
-    
-    setVerifiedQuestions(prev => ({
-      ...prev,
-      [currentQuestion]: {
-        verified: true,
-        isCorrect: isCorrectAnswer
-      }
-    }));
+    console.log('=== VERIFY BUTTON CLICKED ===');
+    console.log('Current Question:', currentQuestion);
+    console.log('Selected Answers:', selectedAnswers[currentQuestion]);
+    console.log('Questions array:', questions.length);
 
-    // Fetch community voting stats for this question
-    try {
-      const statsResponse = await api.get(`questions/community-votes/${questionData._id}`);
-      if (statsResponse.data.success) {
-        setCommunityStats(prev => ({
-          ...prev,
-          [currentQuestion]: statsResponse.data.data.voteStats
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch community stats:', error);
+    const questionData = questions[currentQuestion];
+    console.log('Question Data:', questionData);
+
+    // Check if user has selected an answer
+    if (!selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0) {
+      console.warn('No answer selected!');
+      toast.warning('Veuillez sélectionner une réponse avant de vérifier');
+      return;
     }
 
-    // Call backend to verify answer and award points (no toast messages)
+    // Check if already verified
+    if (verifiedQuestions[currentQuestion]?.verified) {
+      console.log('Question already verified');
+      return;
+    }
+
+    // Annulled questions should not be verifiable
+    if (questionData?.isAnnulled) {
+      console.log('Question is annulled, skipping verification');
+      return;
+    }
+
+    setIsVerifying(true);
+
     try {
+      // Calculate if answer is correct locally for immediate visual feedback
+      const userAnswers = selectedAnswers[currentQuestion] || [];
+      const correctIndices = questionData.options
+        .map((opt, idx) => opt.isCorrect ? idx : null)
+        .filter(idx => idx !== null);
+      const isCorrectAnswer = userAnswers.length === correctIndices.length &&
+        userAnswers.every(ans => correctIndices.includes(ans));
+
+      // Immediately mark as verified with isCorrect status for visual feedback
+      playSound(isCorrectAnswer ? 'correct' : 'incorrect');
+
+      setVerifiedQuestions(prev => {
+        const updated = {
+          ...prev,
+          [currentQuestion]: {
+            verified: true,
+            isCorrect: isCorrectAnswer
+          }
+        };
+        console.log('Updated verifiedQuestions:', updated);
+        return updated;
+      });
+
+      console.log('Local verification complete:', isCorrectAnswer ? 'CORRECT' : 'INCORRECT');
+
+      // Fetch community voting stats for this question (non-blocking)
+      api.get(`questions/community-votes/${questionData._id}`)
+        .then(statsResponse => {
+          if (statsResponse.data.success) {
+            setCommunityStats(prev => ({
+              ...prev,
+              [currentQuestion]: statsResponse.data.data.voteStats
+            }));
+          }
+        })
+        .catch(error => console.error('Failed to fetch community stats:', error));
+
+      // Call backend to verify answer and award points (no toast messages)
       const response = await api.post('/questions/verify-answer', {
         questionId: questionData._id,
-        selectedAnswers: selectedAnswers[currentQuestion] || [],
+        selectedAnswers: userAnswers,
         examId: examId,
         moduleId: examData?.moduleId,
         isRetry: false
       });
 
       const { isCorrect, pointsAwarded, totalPoints } = response.data.data;
+      console.log('Backend verification:', { isCorrect, pointsAwarded, totalPoints });
 
       // Update user profile points in state silently (no toast)
-      if (userProfile) {
-        setUserProfile(prev => ({
+      if (totalPoints !== undefined) {
+        setUserProfile(prev => prev ? ({
           ...prev,
-          totalPoints: totalPoints // Use totalPoints for consistency with TopBar
-        }));
+          totalPoints: totalPoints
+        }) : prev);
       }
 
       // Save answer for persistence
       await api.post('/questions/save-answer', {
         questionId: questionData._id,
-        selectedAnswers: selectedAnswers[currentQuestion] || [],
+        selectedAnswers: userAnswers,
         isVerified: true,
         isCorrect,
         examId: examId,
         moduleId: examData?.moduleId
       });
 
+      console.log('=== VERIFICATION COMPLETE ===');
+
     } catch (error) {
       console.error('Error verifying answer:', error);
-      // Still marked as verified locally even if API fails
+      toast.error('Erreur lors de la vérification');
+      // Keep local verified state even if API fails
+    } finally {
+      setIsVerifying(false);
     }
-
-    playSound('select');
-  }, [currentQuestion, selectedAnswers, questions, examId, examData, userProfile, playSound]);
+  }, [currentQuestion, selectedAnswers, questions, examId, examData, playSound, isVerifying, verifiedQuestions]);
 
   // Reset current question verification (Ressayer) - costs 1 point
-  const handleResetQuestion = useCallback(async () => {
+  const handleResetQuestion = useCallback(async (e) => {
+    // Prevent default behavior and form submission
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     const questionData = questions[currentQuestion];
 
     // Call backend to deduct point for retry
@@ -854,7 +1033,28 @@ const ExamPage = () => {
   }, [currentQuestion, questions, examId, examData, userProfile]);
 
   // Check if current question is verified (now verifiedQuestions stores object with verified and isCorrect)
-  const isQuestionVerified = verifiedQuestions[currentQuestion]?.verified || verifiedQuestions[currentQuestion] === true || false;
+  const isQuestionVerified = useMemo(() => {
+    const verifiedData = verifiedQuestions[currentQuestion];
+    const isVerified = verifiedData?.verified === true || verifiedData === true;
+    console.log('isQuestionVerified check - question:', currentQuestion, 'verifiedData:', verifiedData, 'result:', isVerified);
+    return isVerified;
+  }, [verifiedQuestions, currentQuestion]);
+
+  // Calculate current question position within its session (for counter display)
+  const sessionQuestionInfo = useMemo(() => {
+    const currentQData = questions[currentQuestion];
+    if (!currentQData) return { position: 0, total: 0, sessionName: '' };
+    
+    const currentSession = currentQData.sessionLabel;
+    const sessQuestions = questions.filter(q => q.sessionLabel === currentSession);
+    const position = sessQuestions.findIndex(q => q._id === currentQData._id) + 1;
+    
+    return {
+      position,
+      total: sessQuestions.length,
+      sessionName: currentSession
+    };
+  }, [questions, currentQuestion]);
 
   // Font size controls
   const adjustFontSize = useCallback((delta) => {
@@ -863,34 +1063,70 @@ const ExamPage = () => {
     localStorage.setItem('examFontSize', newSize.toString());
   }, [fontSize]);
 
-  // Navigation
+  // Navigation - Session-aware (stays within current session)
   const goToNext = useCallback(() => {
-    if (currentQuestion < questions.length - 1) {
-      setQuestionTransition('next');
-      const nextQ = currentQuestion + 1;
-      setCurrentQuestion(nextQ);
-      setVisitedQuestions(prev => new Set([...prev, nextQ]));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    const currentQ = currentQuestionRef.current;
+    const currentQData = questions[currentQ];
+    
+    if (!currentQData) {
+      console.log('goToNext: current question not found');
+      return;
     }
-  }, [currentQuestion, questions.length]);
+
+    const currentSession = currentQData.sessionLabel;
+    
+    // Find next question in the same session
+    for (let i = currentQ + 1; i < questions.length; i++) {
+      if (questions[i].sessionLabel === currentSession) {
+        console.log('goToNext: moving from', currentQ, 'to', i, '(same session:', currentSession, ')');
+        setQuestionTransition('next');
+        setCurrentQuestion(i);
+        setVisitedQuestions(prev => new Set([...prev, i]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+    
+    console.log('goToNext: no more questions in session', currentSession);
+  }, [questions]);
 
   const goToPrevious = useCallback(() => {
-    if (currentQuestion > 0) {
-      setQuestionTransition('prev');
-      const prevQ = currentQuestion - 1;
-      setCurrentQuestion(prevQ);
-      setVisitedQuestions(prev => new Set([...prev, prevQ]));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    const currentQ = currentQuestionRef.current;
+    const currentQData = questions[currentQ];
+    
+    if (!currentQData) {
+      console.log('goToPrevious: current question not found');
+      return;
     }
-  }, [currentQuestion]);
+
+    const currentSession = currentQData.sessionLabel;
+    
+    // Find previous question in the same session
+    for (let i = currentQ - 1; i >= 0; i--) {
+      if (questions[i].sessionLabel === currentSession) {
+        console.log('goToPrevious: moving from', currentQ, 'to', i, '(same session:', currentSession, ')');
+        setQuestionTransition('prev');
+        setCurrentQuestion(i);
+        setVisitedQuestions(prev => new Set([...prev, i]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+    
+    console.log('goToPrevious: no previous questions in session', currentSession);
+  }, [questions]);
 
   const goToQuestion = useCallback((index) => {
-    setQuestionTransition(index > currentQuestion ? 'next' : 'prev');
-    setCurrentQuestion(index);
-    setVisitedQuestions(prev => new Set([...prev, index]));
+    if (index >= 0 && index < questions.length) {
+      const currentQ = currentQuestionRef.current;
+      console.log('goToQuestion: moving from', currentQ, 'to', index);
+      setQuestionTransition(index > currentQ ? 'next' : 'prev');
+      setCurrentQuestion(index);
+      setVisitedQuestions(prev => new Set([...prev, index]));
+    }
     setShowSidebar(false);
     setShowMobileQuestionNav(false);
-  }, [currentQuestion]);
+  }, [questions.length]);
 
   // Touch/Swipe handlers for mobile navigation
   const onTouchStart = useCallback((e) => {
@@ -908,13 +1144,14 @@ const ExamPage = () => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (isLeftSwipe && currentQuestion < questions.length - 1) {
+    // Use goToNext/goToPrevious which handle state updates properly
+    if (isLeftSwipe) {
       goToNext();
     }
-    if (isRightSwipe && currentQuestion > 0) {
+    if (isRightSwipe) {
       goToPrevious();
     }
-  }, [touchStart, touchEnd, currentQuestion, questions.length, goToNext, goToPrevious]);
+  }, [touchStart, touchEnd, goToNext, goToPrevious]);
 
   // Calculate score
   const calculateScore = useCallback(() => {
@@ -937,7 +1174,7 @@ const ExamPage = () => {
   const handleSubmit = useCallback(() => {
     setShowResults(true);
     setShowConfirmSubmit(false);
-    
+
     // Clear user-specific localStorage
     const currentUserId = userProfile?._id;
     if (currentUserId) {
@@ -966,31 +1203,31 @@ const ExamPage = () => {
     setTimeElapsed(0);
     setShowResults(false);
     setFlaggedQuestions(new Set());
-    
+
     // Clear user-specific localStorage
     const currentUserId = userProfile?._id;
     if (currentUserId) {
       const storageKey = `exam_progress_${currentUserId}_${examType}_${examId}`;
       localStorage.removeItem(storageKey);
     }
-    
+
     toast.info(t('dashboard:new_attempt_started') || 'New attempt started');
   }, [examId, examType, t, userProfile]);
 
   const score = useMemo(() => calculateScore(), [calculateScore]);
-  
+
   // Convert selectedAnswers to a string for dependency tracking (ensures re-render on changes)
   const selectedAnswersString = useMemo(() => {
     return JSON.stringify(selectedAnswers);
   }, [selectedAnswers]);
-  
+
   // Count only questions with actual answers (not empty arrays)
   const answeredCount = useMemo(() => {
     // Parse the stringified answers to ensure fresh calculation
     const answers = JSON.parse(selectedAnswersString);
     return Object.entries(answers).filter(([_, ans]) => ans && ans.length > 0).length;
   }, [selectedAnswersString]);
-  
+
   const progress = useMemo(() => {
     const total = Math.max(questions.length, 1);
     return (answeredCount / total) * 100;
@@ -1004,9 +1241,19 @@ const ExamPage = () => {
     const isFlagged = flaggedQuestions.has(index);
     const isVisited = visitedQuestions.has(index);
 
-    // Vérifié (blue) - question has been verified
-    if (isVerified) {
-      return { status: 'verified', isFlagged, isVisited };
+    // Surligné (purple) - flagged questions (highest priority for display)
+    if (isFlagged) {
+      return { status: 'flagged', isFlagged: true, isVisited };
+    }
+
+    // Vérifié et correct (green)
+    if (isVerified && verifiedData?.isCorrect) {
+      return { status: 'correct', isFlagged, isVisited };
+    }
+
+    // Vérifié mais incorrect (red)
+    if (isVerified && !verifiedData?.isCorrect) {
+      return { status: 'incorrect', isFlagged, isVisited };
     }
 
     // Visité (orange) - visited but not verified
@@ -1016,7 +1263,7 @@ const ExamPage = () => {
 
     // Non visité (gray)
     return { status: 'unanswered', isFlagged, isVisited: false };
-  // Use selectedAnswersString for dependency tracking to ensure updates when answers change
+    // Use selectedAnswersString for dependency tracking to ensure updates when answers change
   }, [selectedAnswers, selectedAnswersString, flaggedQuestions, questions, showResults, verifiedQuestions, visitedQuestions]);
 
   // Keyboard shortcuts
@@ -1039,7 +1286,8 @@ const ExamPage = () => {
           const verifiedData = verifiedQuestions[currentQuestion];
           const isAlreadyVerified = verifiedData?.verified || verifiedData === true;
           if (!showResults && !isAlreadyVerified) {
-            handleVerifyQuestion();
+            e.preventDefault();
+            handleVerifyQuestion(e);
           }
           break;
         case '1': case '2': case '3': case '4': case '5':
@@ -1061,6 +1309,29 @@ const ExamPage = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentQuestion, goToNext, goToPrevious, toggleFlag, handleAnswerSelect, showResults, currentQuestionData, verifiedQuestions, handleVerifyQuestion]);
+
+  // Auto-expand current question's session in sidebar when sidebar opens
+  useEffect(() => {
+    if (showSidebar && questions.length > 0) {
+      const currentQ = questions[currentQuestion];
+      if (currentQ?.sessionLabel) {
+        // Expand the session containing the current question
+        setCollapsedSessions(prev => {
+          const newCollapsed = new Set(prev);
+          newCollapsed.delete(currentQ.sessionLabel);
+          return newCollapsed;
+        });
+        
+        // Scroll to the current question item
+        setTimeout(() => {
+          const currentQuestionElement = document.querySelector(`[data-question-id="${currentQ._id}"]`);
+          if (currentQuestionElement) {
+            currentQuestionElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
+      }
+    }
+  }, [showSidebar, currentQuestion, questions]);
 
   // Loading state
   if (loading) {
@@ -1094,7 +1365,7 @@ const ExamPage = () => {
           className="w-full max-w-lg"
         >
           <Card className="shadow-2xl border-0 overflow-hidden">
-            <div 
+            <div
               className="p-6 text-white"
               style={{
                 background: `linear-gradient(to right, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
@@ -1132,11 +1403,11 @@ const ExamPage = () => {
                 </ul>
               </div>
 
-              <div 
+              <div
                 className="border rounded-lg p-4"
-                style={{ 
-                  backgroundColor: `${moduleColor}10`, 
-                  borderColor: `${moduleColor}30` 
+                style={{
+                  backgroundColor: `${moduleColor}10`,
+                  borderColor: `${moduleColor}30`
                 }}
               >
                 <p className="text-sm flex items-start gap-2" style={{ color: adjustColor(moduleColor, -60) }}>
@@ -1184,12 +1455,12 @@ const ExamPage = () => {
     const verifiedData = verifiedQuestions[i];
     const isVerified = verifiedData?.verified || verifiedData === true;
     if (!isVerified) return false;
-    
+
     // Use stored isCorrect if available
     if (verifiedData?.isCorrect !== undefined) {
       return verifiedData.isCorrect;
     }
-    
+
     // Fallback to calculation
     const selected = selectedAnswers[i] || [];
     const correctIndices = questions[i].options
@@ -1266,7 +1537,7 @@ const ExamPage = () => {
               <span className="text-xs font-medium">Exit</span>
             </button>
           </div>
-          
+
           {/* Center: Timer + Progress */}
           <div className="flex items-center gap-1.5 flex-1 justify-center">
             <Badge
@@ -1279,16 +1550,17 @@ const ExamPage = () => {
               <Timer className="h-3 w-3" />
               <span>{formatTime(timeElapsed)}</span>
             </Badge>
+            <span className="text-[10px] text-gray-400">
+              Q{sessionQuestionInfo.position}/{sessionQuestionInfo.total}
+            </span>
             {isSaved ? (
               <Cloud className="h-3 w-3 text-emerald-500" />
             ) : (
               <CloudOff className="h-3 w-3 text-amber-500 animate-pulse" />
             )}
-            <span className="text-[10px] text-gray-400">
-              Q{currentQuestionData?.displayNumber || currentQuestion + 1}/{questions.length}
-            </span>
+
           </div>
-          
+
           {/* Right: Verified count only */}
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-emerald-600 flex items-center gap-0.5">
@@ -1499,10 +1771,11 @@ const ExamPage = () => {
                                   >
                                     <div className={cn(
                                       "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] border",
-                                      status === 'verified' && "bg-green-100 border-green-300 text-green-700",
-                                      status === 'visited' && !isFlagged && "bg-orange-100 border-orange-300 text-orange-700",
-                                      status === 'unanswered' && !isFlagged && "bg-gray-100 border-gray-300 text-gray-600",
-                                      isFlagged && !showResults && "bg-purple-100 border-purple-300 text-purple-700"
+                                      status === 'correct' && "bg-green-100 border-green-300 text-green-700",
+                                      status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
+                                      status === 'flagged' && "bg-purple-100 border-purple-300 text-purple-700",
+                                      status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
+                                      status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600"
                                     )}>
                                       {shouldShowNumberInBox(questionData) ? (questionData?.displayNumber || idx + 1) : ''}
                                     </div>
@@ -1657,15 +1930,26 @@ const ExamPage = () => {
                             null
                           ) : !isQuestionVerified && !showResults ? (
                             <Button
-                              onClick={handleVerifyQuestion}
+                              type="button"
+                              onClick={(e) => handleVerifyQuestion(e)}
+                              disabled={isVerifying}
                               size="sm"
                               className="gap-1.5 text-white px-4 h-8"
                               style={{
                                 background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
                               }}
                             >
-                              <Check className="h-4 w-4" />
-                              Vérifier
+                              {isVerifying ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  Vérification...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4" />
+                                  Vérifier
+                                </>
+                              )}
                             </Button>
                           ) : null}
                         </div>
@@ -1683,19 +1967,19 @@ const ExamPage = () => {
                               if (examType === 'QCM banque' || examData?.isQcmBanque) {
                                 return `${moduleName} > ${qcmName}`;
                               }
-                              
+
                               if (examType === 'Exam par courses' || examData?.isParCours) {
                                 return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
                               }
-                              
+
                               return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''}`;
                             })()}
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Right: Desktop action buttons + Mobile 3-dot menu */}
-                      <div className="flex items-center gap-0.5 shrink-0 bg-blue-900 rounded-lg px-2 py-1.5">
+                      <div className="flex items-center gap-0.5 shrink-0 bg-blue-100 rounded-lg px-2 py-1.5">
                         {/* DESKTOP: Show all buttons */}
                         <div className="hidden sm:flex items-center gap-0.5">
                           {/* Playlist */}
@@ -1704,8 +1988,8 @@ const ExamPage = () => {
                             size="icon"
                             onClick={() => handlePremiumProFeature('Playlist', () => setShowPlaylistModal(true))}
                             className={cn(
-                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
-                              hasPremiumProAccess ? "text-white" : "text-white/50 cursor-not-allowed"
+                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200",
+                              hasPremiumProAccess ? "text-blue-700" : "text-blue-400 cursor-not-allowed"
                             )}
                             disabled={!hasPremiumProAccess}
                             title={hasPremiumProAccess ? "Playlist" : "Playlist (Premium Pro requis)"}
@@ -1717,7 +2001,7 @@ const ExamPage = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowResumesModal(true)}
-                            className="text-white h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800"
+                            className="text-blue-700 h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200"
                             title="Résumés"
                           >
                             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1728,7 +2012,7 @@ const ExamPage = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => setShowImageGallery(true)}
-                              className="text-white h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800"
+                              className="text-blue-700 h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200"
                               title="Images"
                             >
                               <Image className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1739,8 +2023,8 @@ const ExamPage = () => {
                             size="icon"
                             onClick={() => handlePremiumProFeature('Notes', () => setShowNoteModal(true))}
                             className={cn(
-                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-800",
-                              hasPremiumProAccess ? "text-white" : "text-white/50 cursor-not-allowed"
+                              "h-6 w-6 sm:h-8 sm:w-8 hover:bg-blue-200",
+                              hasPremiumProAccess ? "text-blue-700" : "text-blue-400 cursor-not-allowed"
                             )}
                             disabled={!hasPremiumProAccess}
                             title={hasPremiumProAccess ? "Note" : "Note (Premium Pro requis)"}
@@ -1751,7 +2035,7 @@ const ExamPage = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowReportModal(true)}
-                            className="text-white hover:text-red-300 hover:bg-blue-800 h-6 w-6 sm:h-8 sm:w-8"
+                            className="text-blue-700 hover:text-red-600 hover:bg-blue-200 h-6 w-6 sm:h-8 sm:w-8"
                             title="Signaler"
                           >
                             <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1763,8 +2047,8 @@ const ExamPage = () => {
                             className={cn(
                               "transition-all h-6 w-6 sm:h-8 sm:w-8",
                               flaggedQuestions.has(currentQuestion)
-                                ? "text-amber-400 hover:bg-blue-800"
-                                : "text-white hover:bg-blue-800"
+                                ? "text-amber-500 hover:bg-blue-200"
+                                : "text-blue-700 hover:bg-blue-200"
                             )}
                             title="Surligner"
                           >
@@ -1881,11 +2165,11 @@ const ExamPage = () => {
                         <span className="text-xs text-amber-600">(Pas de points attribués)</span>
                       </div>
                     )}
-                    
+
                     {/* Question Text */}
                     <div className="space-y-2">
                       <div className="text-sm font-semibold text-gray-500">
-                        {currentQuestionData?.displayNumber || currentQuestion + 1}/{questions.length}
+                        Q{sessionQuestionInfo.position}/{sessionQuestionInfo.total}
                       </div>
                       <div
                         className="text-gray-800 leading-relaxed font-medium text-sm sm:text-base"
@@ -1922,7 +2206,7 @@ const ExamPage = () => {
                         return (
                           <motion.button
                             key={index}
-                            whileHover={{ 
+                            whileHover={{
                               scale: (showCorrectness || currentQuestionData.isAnnulled) ? 1 : 1.01,
                               transition: { duration: 0.2 }
                             }}
@@ -1949,9 +2233,9 @@ const ExamPage = () => {
                             style={
                               !currentQuestionData.isAnnulled && isSelected && !showCorrectness
                                 ? {
-                                    borderColor: moduleColor,
-                                    boxShadow: `0 2px 8px -2px ${moduleColor}30`
-                                  }
+                                  borderColor: moduleColor,
+                                  boxShadow: `0 2px 8px -2px ${moduleColor}30`
+                                }
                                 : {}
                             }
                             onClick={() => !showCorrectness && !currentQuestionData.isAnnulled && handleAnswerSelect(currentQuestion, index)}
@@ -1959,7 +2243,7 @@ const ExamPage = () => {
                           >
                             <div className="p-3 sm:p-4 flex items-center gap-3">
                               {/* Option Letter */}
-                              <div 
+                              <div
                                 className={cn(
                                   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all",
                                   !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
@@ -2005,7 +2289,7 @@ const ExamPage = () => {
                                       </span>
                                     );
                                   })()}
-                                  
+
                                   {/* Correct/Incorrect icon - Hidden for all questions */}
                                 </div>
                               )}
@@ -2021,17 +2305,27 @@ const ExamPage = () => {
                         /* Before Verification: Show Vérifier only (hide for annulled questions) */
                         <div className="flex items-center gap-2">
                           <Button
-                            onClick={handleVerifyQuestion}
-                            disabled={!selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0}
+                            type="button"
+                            onClick={(e) => handleVerifyQuestion(e)}
+                            disabled={isVerifying || !selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0}
                             className="flex-1 gap-2 text-white"
                             style={{
-                              background: !selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0
+                              background: isVerifying || !selectedAnswers[currentQuestion] || selectedAnswers[currentQuestion].length === 0
                                 ? '#d1d5db'
                                 : `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
-            }}
+                            }}
                           >
-                            <Check className="h-4 w-4" />
-                            Vérifier
+                            {isVerifying ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Vérification...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4" />
+                                Vérifier
+                              </>
+                            )}
                           </Button>
                         </div>
                       ) : !currentQuestionData.isAnnulled && (
@@ -2042,7 +2336,7 @@ const ExamPage = () => {
                             {!verifiedQuestions[currentQuestion]?.isCorrect && (
                               <Button
                                 variant="outline"
-                                onClick={handleResetQuestion}
+                                onClick={(e) => handleResetQuestion(e)}
                                 className="gap-2 border-gray-300 hover:bg-gray-50"
                               >
                                 <RefreshCcw className="h-4 w-4" />
@@ -2118,36 +2412,36 @@ const ExamPage = () => {
                               <span className="font-semibold text-red-800">Réponse incorrecte</span>
                             </div>
                           )}
-                          
+
                           {/* Action Buttons */}
                           <div className="flex items-center justify-center gap-2">
-                          {!verifiedQuestions[currentQuestion]?.isCorrect && (
+                            {!verifiedQuestions[currentQuestion]?.isCorrect && (
+                              <Button
+                                variant="outline"
+                                onClick={(e) => handleResetQuestion(e)}
+                                className="gap-2 border-gray-300 hover:bg-gray-50"
+                              >
+                                <RefreshCcw className="h-4 w-4" />
+                                Ressayer
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
-                              onClick={handleResetQuestion}
-                              className="gap-2 border-gray-300 hover:bg-gray-50"
+                              onClick={() => setShowExplanation(true)}
+                              className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
                             >
-                              <RefreshCcw className="h-4 w-4" />
-                              Ressayer
+                              <Lightbulb className="h-4 w-4" />
+                              Explication
                             </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowExplanation(true)}
-                            className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
-                          >
-                            <Lightbulb className="h-4 w-4" />
-                            Explication
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => handlePremiumProFeature('Communauté', () => setShowCommunityModal(true))}
-                            disabled={!hasPremiumProAccess}
-                            className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
-                          >
-                            <Users className="h-4 w-4" />
-                            Communauté
-                          </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handlePremiumProFeature('Communauté', () => setShowCommunityModal(true))}
+                              disabled={!hasPremiumProAccess}
+                              className="gap-2 text-green-600 border-green-300 hover:bg-green-50 disabled:opacity-50"
+                            >
+                              <Users className="h-4 w-4" />
+                              Communauté
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -2160,8 +2454,13 @@ const ExamPage = () => {
             {/* Navigation - Desktop Only */}
             <div className="hidden lg:flex items-center justify-between gap-4">
               <Button
+                type="button"
                 variant="outline"
-                onClick={goToPrevious}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goToPrevious();
+                }}
                 disabled={currentQuestion === 0}
                 className="gap-2"
               >
@@ -2197,7 +2496,12 @@ const ExamPage = () => {
               </div>
 
               <Button
-                onClick={goToNext}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goToNext();
+                }}
                 disabled={currentQuestion === questions.length - 1}
                 className="gap-2"
               >
@@ -2217,13 +2521,18 @@ const ExamPage = () => {
             <div className="flex items-center gap-2">
               {/* Previous button */}
               <button
-                onClick={goToPrevious}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goToPrevious();
+                }}
                 disabled={currentQuestion === 0}
                 className={cn(
                   "p-3 rounded-xl transition-all active:scale-95",
                   currentQuestion === 0
-                    ? "bg-gray-100 text-gray-300"
-                    : "bg-gray-100 text-gray-700"
+                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 cursor-pointer"
                 )}
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -2232,15 +2541,29 @@ const ExamPage = () => {
               {/* Verify / Check button - Main CTA */}
               {!isQuestionVerified && !showResults ? (
                 <button
-                  onClick={handleVerifyQuestion}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-white transition-all active:scale-98"
+                  type="button"
+                  onClick={(e) => handleVerifyQuestion(e)}
+                  disabled={isVerifying}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold text-white transition-all active:scale-98",
+                    isVerifying && "opacity-70 cursor-not-allowed"
+                  )}
                   style={{
                     background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`,
                     boxShadow: `0 4px 15px ${moduleColor}40`
                   }}
                 >
-                  <Check className="h-5 w-5" />
-                  Vérifier
+                  {isVerifying ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Vérification...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-5 w-5" />
+                      Vérifier
+                    </>
+                  )}
                 </button>
               ) : (
                 <div className="flex-1 flex items-center gap-2">
@@ -2252,10 +2575,11 @@ const ExamPage = () => {
                     <Lightbulb className="h-5 w-5" />
                     Explication
                   </button>
-                  
+
                   {/* Reset button */}
                   <button
-                    onClick={handleResetQuestion}
+                    type="button"
+                    onClick={(e) => handleResetQuestion(e)}
                     className="p-3 rounded-xl bg-gray-100 text-gray-600 transition-all active:scale-95"
                   >
                     <RefreshCcw className="h-5 w-5" />
@@ -2274,19 +2598,25 @@ const ExamPage = () => {
 
               {/* Next button */}
               <button
-                onClick={goToNext}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Next button clicked');
+                  goToNext();
+                }}
                 disabled={currentQuestion === questions.length - 1}
                 className={cn(
                   "p-3 rounded-xl transition-all active:scale-95",
                   currentQuestion === questions.length - 1
-                    ? "bg-gray-100 text-gray-300"
-                    : "text-white"
+                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    : "text-white cursor-pointer"
                 )}
                 style={
                   currentQuestion !== questions.length - 1
                     ? {
-                        background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
-                      }
+                      background: `linear-gradient(135deg, ${moduleColor}, ${adjustColor(moduleColor, -30)})`
+                    }
                     : {}
                 }
               >
@@ -2301,11 +2631,16 @@ const ExamPage = () => {
           <div className="flex items-center gap-3 px-4 py-3">
             {/* Previous */}
             <button
-              onClick={goToPrevious}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToPrevious();
+              }}
               disabled={currentQuestion === 0}
               className={cn(
                 "p-3 rounded-xl transition-all active:scale-95",
-                currentQuestion === 0 ? "bg-gray-100 text-gray-300" : "bg-gray-100 text-gray-700"
+                currentQuestion === 0 ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-gray-100 text-gray-700 cursor-pointer"
               )}
             >
               <ChevronLeft className="h-5 w-5" />
@@ -2325,11 +2660,16 @@ const ExamPage = () => {
 
             {/* Next */}
             <button
-              onClick={goToNext}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                goToNext();
+              }}
               disabled={currentQuestion === questions.length - 1}
               className={cn(
                 "p-3 rounded-xl transition-all active:scale-95",
-                currentQuestion === questions.length - 1 ? "bg-gray-100 text-gray-300" : "bg-gray-100 text-gray-700"
+                currentQuestion === questions.length - 1 ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-gray-100 text-gray-700 cursor-pointer"
               )}
             >
               <ChevronRight className="h-5 w-5" />
@@ -2389,6 +2729,14 @@ const ExamPage = () => {
                 </span>
                 <span className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded-full bg-green-200 border border-green-400" />
+                  correct
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-200 border border-red-400" />
+                  incorrect
+                </span>
+                <span className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-purple-200 border border-purple-400" />
                   surligné
                 </span>
               </div>
@@ -2410,7 +2758,9 @@ const ExamPage = () => {
                         className={cn(
                           "relative aspect-square rounded-xl text-sm font-semibold transition-all active:scale-95 border-2",
                           isCurrent && "ring-2 ring-offset-2",
-                          status === 'verified' && "bg-green-100 border-green-300 text-green-700",
+                          status === 'correct' && "bg-green-100 border-green-300 text-green-700",
+                          status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
+                          status === 'flagged' && "bg-purple-100 border-purple-300 text-purple-700",
                           status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
                           status === 'unanswered' && "bg-gray-50 border-gray-200 text-gray-500"
                         )}
@@ -2492,27 +2842,35 @@ const ExamPage = () => {
                     <X className="h-5 w-5" />
                   </Button>
                 </div>
-                
+
                 {/* Legend Section */}
                 <div className="border-b">
                   <div className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px]">
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
-                          <span className="text-gray-500">non visité</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
-                          <span className="text-gray-500">visité</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
-                          <span className="text-gray-500">surligné</span>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                        <span className="text-gray-500">non visité</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                        <span className="text-gray-500">visité</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
+                        <span className="text-gray-500">correct</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                        <span className="text-gray-500">incorrect</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                        <span className="text-gray-500">surligné</span>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
               <ScrollArea className="h-[calc(100vh-340px)]">
                 <div className="p-3 space-y-2">
@@ -2558,6 +2916,7 @@ const ExamPage = () => {
                               return (
                                 <button
                                   key={q._id}
+                                  data-question-id={q._id}
                                   className={cn(
                                     "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-all",
                                     "lg:flex-col lg:items-center lg:justify-center lg:gap-1 lg:px-2 lg:py-1.5 lg:text-xs",
@@ -2571,7 +2930,9 @@ const ExamPage = () => {
                                 >
                                   <div className={cn(
                                     "w-6 h-6 rounded flex items-center justify-center shrink-0 text-xs border font-medium",
-                                    status === 'verified' && "bg-green-100 border-green-300 text-green-700",
+                                    status === 'correct' && "bg-green-100 border-green-300 text-green-700",
+                                    status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
+                                    status === 'flagged' && "bg-purple-100 border-purple-300 text-purple-700",
                                     status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
                                     status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600"
                                   )}>
@@ -2606,9 +2967,9 @@ const ExamPage = () => {
                       <span>{verifiedCount} / {questions.length} vérifiées</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full transition-all duration-300 rounded-full"
-                        style={{ 
+                        style={{
                           width: `${(verifiedCount / questions.length) * 100}%`,
                           background: `linear-gradient(90deg, ${moduleColor}, ${adjustColor(moduleColor, -20)})`
                         }}
@@ -2998,7 +3359,13 @@ const ExamPage = () => {
               <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-t-xl">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Image className="h-5 w-5 sm:h-6 sm:w-6" />
-                  <h2 className="text-base sm:text-xl font-bold">Images de l'examen</h2>
+                  <h2 className="text-base sm:text-xl font-bold">
+                    {(() => {
+                      const currentQData = questions[currentQuestion];
+                      const currentQuestionHasImages = currentQData?.images && currentQData.images.length > 0;
+                      return currentQuestionHasImages ? 'Images de cette question' : `Images de ${currentQData?.sessionLabel || 'la session'}`;
+                    })()}
+                  </h2>
                 </div>
                 <button
                   onClick={() => setShowImageGallery(false)}
@@ -3011,12 +3378,26 @@ const ExamPage = () => {
               {/* Images Grid */}
               <ScrollArea className="flex-1 p-3 sm:p-4">
                 {(() => {
-                  const allImages = questions.reduce((acc, q, idx) => {
+                  // Get current question's session
+                  const currentQData = questions[currentQuestion];
+                  const currentSession = currentQData?.sessionLabel;
+                  
+                  // Check if current question has images
+                  const currentQuestionHasImages = currentQData?.images && currentQData.images.length > 0;
+                  
+                  // Filter questions: if current question has images, show only those
+                  // Otherwise, show all images from the current session
+                  const questionsToShow = currentQuestionHasImages
+                    ? [currentQData]
+                    : questions.filter(q => q.sessionLabel === currentSession);
+                  
+                  const allImages = questionsToShow.reduce((acc, q, idx) => {
+                    const globalIndex = questions.findIndex(question => question._id === q._id);
                     if (q.images && q.images.length > 0) {
                       q.images.forEach((imgUrl, imgIdx) => {
                         acc.push({
                           src: imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`,
-                          questionIndex: idx,
+                          questionIndex: globalIndex,
                           questionNumber: q.displayNumber,
                           questionText: q.text?.substring(0, 50) + '...',
                           imageIndex: imgIdx
@@ -3033,10 +3414,12 @@ const ExamPage = () => {
                           <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
                         </div>
                         <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-                          Aucune image dans cet examen
+                          Aucune image {currentQuestionHasImages ? 'dans cette question' : 'dans cette session'}
                         </h4>
                         <p className="text-gray-500 text-xs sm:text-sm">
-                          Cet examen ne contient pas d'images.
+                          {currentQuestionHasImages 
+                            ? 'Cette question ne contient pas d\'images.' 
+                            : 'Cette session ne contient pas d\'images.'}
                         </p>
                       </div>
                     );

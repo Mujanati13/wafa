@@ -445,32 +445,52 @@ const SubscriptionPage = () => {
                         {plan.name === 'GRATUIT' && (
                           <>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">1 module</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Questions triées</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Interface adaptée aux mobiles</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Pourcentage des réponses</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Classements</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Accès aux classements</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Statistiques</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Accès aux statistiques</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Explications</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Explication des étudiants</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Explication de l'IA</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Accès à la communauté votes</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Création de playlists</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Notes personnalisées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Assistance prioritaire</span>
                             </div>
                           </>
                         )}
@@ -478,44 +498,52 @@ const SubscriptionPage = () => {
                         {plan.name === 'PREMIUM' && (
                           <>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Tous les modules</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Questions triées</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Interface adaptée aux mobiles</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Pourcentage des réponses</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Accès aux classements</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Accès aux statistiques</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Explication des étudiants</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Explication IA</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Explication de l'IA</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Communauté votes</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Accès à la communauté votes</span>
                             </div>
-                            <div className="flex items-start gap-2 opacity-50">
-                              <span className="text-red-500 text-xs">❌</span>
-                              <span className="text-xs text-gray-400 line-through">Playlists</span>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Création de playlists</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Notes personnalisées</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-xs">❌</span>
+                              <span className="text-xs text-gray-400">Assistance prioritaire</span>
                             </div>
                           </>
                         )}
@@ -523,51 +551,51 @@ const SubscriptionPage = () => {
                         {plan.name === 'PREMIUM PRO' && (
                           <>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Tous les modules</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Questions triées</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Interface mobiles</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Interface adaptée aux mobiles</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Pourcentage réponses</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Pourcentage des réponses</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Classements</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Accès aux classements</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Statistiques</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Accès aux statistiques</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Explications étudiants</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Explication des étudiants</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Explication IA</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Explication de l'IA</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Communauté votes</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Accès à la communauté votes</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
-                              <span className="text-xs text-gray-700">Playlists</span>
+                              <span className="text-xs">✔️</span>
+                              <span className="text-xs text-gray-700">Création de playlists</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Notes personnalisées</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="text-green-500 text-xs">✔️</span>
+                              <span className="text-xs">✔️</span>
                               <span className="text-xs text-gray-700">Assistance prioritaire</span>
                             </div>
                           </>
