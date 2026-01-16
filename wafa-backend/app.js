@@ -26,15 +26,11 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 // Serve static files from uploads folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// CORS middleware - use environment variable or defaults
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:5173', 'http://localhost:4010'];
-
-console.log('CORS allowed origins:', allowedOrigins);
+// CORS middleware - Allow all origins (no restrictions)
+console.log('CORS: Allowing all origins');
 
 app.use(cors({
-  origin: [],
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
