@@ -579,62 +579,67 @@ const PricingSection = ({ settings }) => {
         setPlans([
           {
             _id: "1",
-            name: "Gratuit",
+            name: "GRATUIT",
             price: 0,
-            period: "Semester",
+            period: "Gratuit",
             isPopular: false,
             features: [
-              { text: "one module", included: true },
-              { text: "un exam", included: true },
-              { text: "Mobile-friendly interface", included: true },
-              { text: "fonctionalités", included: false },
-              { text: "Access to Boards", included: false },
-              { text: "access to statistiques", included: false },
-              { text: "Ai companion access", included: false },
-              { text: "Early features access", included: false }
+              { text: "1 module", included: true },
+              { text: "Questions triées", included: true },
+              { text: "Interface adaptée aux mobiles", included: true },
+              { text: "Pourcentage des réponses", included: true },
+              { text: "Accès aux classements", included: false },
+              { text: "Accès aux statistiques", included: false },
+              { text: "Explication des étudiants", included: false },
+              { text: "Explication de l'IA", included: false },
+              { text: "Accès à la communauté votes", included: false },
+              { text: "Création de playlists", included: false },
+              { text: "Notes personnalisées", included: false },
+              { text: "Assistance prioritaire", included: false }
             ]
           },
           {
             _id: "2",
-            name: "Premium",
+            name: "PREMIUM",
             price: 90,
             oldPrice: 120,
-            period: "Semester",
+            period: "Semestre",
             isPopular: false,
             features: [
-              { text: "tous les modules", included: true },
-              { text: "tous les exams", included: true },
-              { text: "Mobile-friendly interface", included: true },
-              { text: "fonctionalités principales", included: true },
-              { text: "Access to Boards", included: true },
-              { text: "access to statistiques", included: true },
-              { text: "Ai companion access", included: true },
-              { text: "Early features access", included: true },
-              { text: "Community access", included: false },
-              { text: "Playlist creation", included: false },
-              { text: "Notes personnalisées", included: false }
+              { text: "Tous les modules", included: true },
+              { text: "Questions triées", included: true },
+              { text: "Interface adaptée aux mobiles", included: true },
+              { text: "Pourcentage des réponses", included: true },
+              { text: "Accès aux classements", included: true },
+              { text: "Accès aux statistiques", included: true },
+              { text: "Explication des étudiants", included: true },
+              { text: "Explication de l'IA", included: false },
+              { text: "Accès à la communauté votes", included: false },
+              { text: "Création de playlists", included: false },
+              { text: "Notes personnalisées", included: false },
+              { text: "Assistance prioritaire", included: false }
             ]
           },
           {
             _id: "3",
-            name: "Premium Annuel",
-            price: 120,
+            name: "PREMIUM PRO",
+            price: 150,
             oldPrice: 200,
-            period: "Semester",
+            period: "Semestre",
             isPopular: true,
             features: [
-              { text: "tous les modules", included: true },
-              { text: "tous les exams", included: true },
-              { text: "Mobile-friendly interface", included: true },
-              { text: "toutes les fonctionalités", included: true },
-              { text: "Access to Boards", included: true },
-              { text: "access to statistiques", included: true },
-              { text: "Ai companion access", included: true },
-              { text: "Early features access", included: true },
-              { text: "Community access", included: true },
-              { text: "Playlist creation", included: true },
+              { text: "Tous les modules", included: true },
+              { text: "Questions triées", included: true },
+              { text: "Interface adaptée aux mobiles", included: true },
+              { text: "Pourcentage des réponses", included: true },
+              { text: "Accès aux classements", included: true },
+              { text: "Accès aux statistiques", included: true },
+              { text: "Explication des étudiants", included: true },
+              { text: "Explication de l'IA", included: true },
+              { text: "Accès à la communauté votes", included: true },
+              { text: "Création de playlists", included: true },
               { text: "Notes personnalisées", included: true },
-              { text: "Support prioritaire", included: true }
+              { text: "Assistance prioritaire", included: true }
             ]
           }
         ]);
@@ -1482,7 +1487,7 @@ const Footer = ({ settings }) => {
         <Separator className="bg-slate-800 mb-8" />
 
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs md:text-sm text-slate-400">
-          <p>© 2026 Imrs-Qcma. Tous les droits réservés.</p>
+          <p>© 2026 Imrs-Qcm. Tous les droits réservés.</p>
           <div className="flex gap-4 md:gap-6">
             <a href="/privacy-policy" className="hover:text-white transition-colors">{t("footer_terms")}</a>
             <a href="/privacy-policy" className="hover:text-white transition-colors">{t("footer_privacy")}</a>
