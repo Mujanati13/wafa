@@ -97,6 +97,14 @@ if [ ! -f ".env" ]; then
     fi
 else
     print_success "Root .env file exists"
+    
+    # Ensure CORS_ORIGIN is set correctly
+    if ! grep -q "^CORS_ORIGIN=" .env; then
+        print_warning "CORS_ORIGIN not found in .env. Adding default value..."
+        echo "" >> .env
+        echo "# CORS Configuration - Allows requests from these origins" >> .env
+        echo "CORS_ORIGIN=http://localhost:5173,http://localhost:4010,http://$DOMAINS,https://$DOMAINS" >> .env
+    fi
 fi
 
 if [ ! -f "wafa-frentend/.env.production" ]; then
@@ -436,6 +444,20 @@ for service in "${services[@]}"; do
     fi
 done
 
+# Check CORS configuration
+print_info "Checking CORS configuration..."
+BACKEND_CORS=$(docker-compose exec -T backend printenv CORS_ORIGIN 2>/dev/null || echo "Not set")
+print_info "Backend CORS_ORIGIN: $BACKEND_CORS"
+
+if [[ "$BACKEND_CORS" == *"$DOMAINS"* ]]; then
+    print_success "CORS is configured for your domain"
+else
+    print_error "CORS may not be properly configured!"
+    print_warning "If you see CORS errors in browser, run:"
+    print_info "  docker-compose exec backend printenv CORS_ORIGIN"
+    print_info "And check if your domain (${DOMAINS[0]}) is included"
+fi
+
 # Test endpoints
 print_info "Testing endpoints..."
 
@@ -523,6 +545,18 @@ echo -e "  • Change default MongoDB credentials in docker-compose.yml"
 echo -e "  • Keep your .env.production files secure and never commit them"
 echo -e "  • Regularly update Docker images and system packages"
 echo -e "  • Set up regular database backups"
+echo ""
+
+echo -e "${BLUE}CORS Troubleshooting:${NC}"
+echo -e "  If you get CORS errors, check these steps:"
+echo -e "  1. Verify CORS_ORIGIN in .env includes your domain:"
+echo -e "     ${YELLOW}grep CORS_ORIGIN .env${NC}"
+echo -e "  2. Check what backend is configured:"
+echo -e "     ${YELLOW}docker-compose exec backend printenv CORS_ORIGIN${NC}"
+echo -e "  3. If missing, update .env and restart:"
+echo -e "     ${YELLOW}echo 'CORS_ORIGIN=https://imrs-qcm.com,https://backend.imrs-qcm.com' >> .env${NC}"
+echo -e "     ${YELLOW}docker-compose restart backend${NC}"
+echo -e "  4. Clear browser cache and try again"
 echo ""
 
 print_success "Deployment script completed successfully!"

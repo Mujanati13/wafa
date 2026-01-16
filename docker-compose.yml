@@ -32,8 +32,8 @@ services:
       - MONGO_URL=mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin
       - SESSION_SECRET=${SESSION_SECRET:-change_this_session_secret_in_production}
       - JWT_SECRET=${JWT_SECRET:-change_this_jwt_secret_in_production}
-      - CORS_ORIGIN=http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com
-      - FRONTEND_URL=https://imrs-qcm.com
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173,http://localhost:4010,http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com}
+      - FRONTEND_URL=${FRONTEND_URL:-https://imrs-qcm.com}
       - EMAIL_SERVICE=${EMAIL_SERVICE:-gmail}
       - EMAIL_USER=${EMAIL_USER:-}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD:-}
