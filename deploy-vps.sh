@@ -103,7 +103,23 @@ else
         print_warning "CORS_ORIGIN not found in .env. Adding default value..."
         echo "" >> .env
         echo "# CORS Configuration - Allows requests from these origins" >> .env
-        echo "CORS_ORIGIN=http://localhost:5173,http://localhost:4010,http://$DOMAINS,https://$DOMAINS" >> .env
+        echo "CORS_ORIGIN=http://localhost:5173,http://localhost:4010,http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com" >> .env
+        print_success "CORS_ORIGIN added to .env"
+    else
+        print_success "CORS_ORIGIN already exists in .env"
+    fi
+fi
+
+# Fix docker-compose.yml to use environment variable for CORS
+print_info "Ensuring docker-compose.yml uses CORS_ORIGIN from .env..."
+if [ -f "docker-compose.yml" ]; then
+    # Check if CORS_ORIGIN is hardcoded in docker-compose.yml
+    if grep -q "CORS_ORIGIN=http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com" docker-compose.yml; then
+        print_warning "Found hardcoded CORS_ORIGIN in docker-compose.yml. Fixing..."
+        sed -i 's|- CORS_ORIGIN=http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com|- CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173,http://localhost:4010,http://imrs-qcm.com,https://imrs-qcm.com,http://backend.imrs-qcm.com,https://backend.imrs-qcm.com}|g' docker-compose.yml
+        print_success "docker-compose.yml updated to use environment variable"
+    else
+        print_success "docker-compose.yml already uses environment variable"
     fi
 fi
 
