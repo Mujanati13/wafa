@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { dashboardService } from "@/services/dashboardService";
 import { subscriptionPlanService } from "@/services/subscriptionPlanService";
 import { toast } from "sonner";
-import axios from "axios";
+import { api } from "@/lib/utils";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -150,10 +150,9 @@ const ClientSubscriptionPage = () => {
       };
 
       // Call API to create payment request
-      const response = await axios.post(
-        `${API_URL}/payments/bank-transfer-request`,
-        requestData,
-        { withCredentials: true }
+      const response = await api.post(
+        `/payments/bank-transfer-request`,
+        requestData
       );
 
       if (response.data.success) {
@@ -208,14 +207,13 @@ const ClientSubscriptionPage = () => {
       const duration = selectedPlan.period === "Annee" ? '1year' : '6months';
 
       // Create PayPal order with selected semesters
-      const response = await axios.post(
-        `${API_URL}/payments/create-order`,
+      const response = await api.post(
+        `/payments/create-order`,
         {
           duration,
           semesters: selectedSemesters,
           planId: selectedPlan._id
-        },
-        { withCredentials: true }
+        }
       );
 
       if (response.data.success && response.data.orderId) {
