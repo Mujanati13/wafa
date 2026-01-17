@@ -3,6 +3,7 @@ import asyncHandler from '../handlers/asyncHandler.js';
 import Point from "../models/pointModel.js";
 import UserStats from "../models/userStatsModel.js";
 import geminiService from '../services/geminiService.js';
+import Question from "../models/questionModule.js";
 
 // Constants
 const MAX_EXPLANATIONS_PER_QUESTION = 3;
@@ -62,6 +63,23 @@ export const explanationController = {
             status: "pending",
             isAiGenerated: false
         });
+
+        // Mark user's vote as having an explanation
+        try {
+            const question = await Question.findById(questionId);
+            if (question) {
+                const voteIndex = question.communityVotes.findIndex(
+                    vote => vote.userId.toString() === userId.toString()
+                );
+                if (voteIndex !== -1) {
+                    question.communityVotes[voteIndex].hasExplanation = true;
+                    await question.save();
+                }
+            }
+        } catch (error) {
+            console.error('Error updating vote hasExplanation flag:', error);
+        }
+
         res.status(201).json({
             success: true,
             data: newExplanation,
@@ -284,6 +302,46 @@ export const explanationController = {
                     },
                     { upsert: true }
                 );
+
+                // Update the vote weight in the question's communityVotes array
+                const question = await Question.findById(updatedExplanation.questionId);
+                if (question) {
+                    // Find the user's vote in communityVotes array
+                    const voteIndex = question.communityVotes.findIndex(
+                        vote => vote.userId.toString() === updatedExplanation.userId.toString()
+                    );
+
+                    if (voteIndex !== -1) {
+                        // Calculate the old vote weight contribution
+                        const oldWeight = question.communityVotes[voteIndex].voteWeight;
+                        const selectedOptions = question.communityVotes[voteIndex].selectedOptions;
+
+                        // Update vote weight and explanation flags
+                        question.communityVotes[voteIndex].voteWeight = APPROVED_EXPLANATION_VOTE_WEIGHT_MULTIPLIER;
+                        question.communityVotes[voteIndex].hasExplanation = true;
+                        question.communityVotes[voteIndex].explanationApproved = true;
+
+                        // Recalculate voteStats completely from all votes
+                        const optionVotes = {};
+                        let totalVotes = 0;
+
+                        question.communityVotes.forEach(vote => {
+                            vote.selectedOptions.forEach(optIndex => {
+                                const letter = String.fromCharCode(65 + optIndex);
+                                const weight = vote.voteWeight || 1;
+                                optionVotes[letter] = (optionVotes[letter] || 0) + weight;
+                                totalVotes += weight;
+                            });
+                        });
+
+                        question.voteStats = {
+                            totalVotes,
+                            optionVotes
+                        };
+
+                        await question.save();
+                    }
+                }
             } catch (error) {
                 console.error('Error awarding blue points:', error);
             }

@@ -193,6 +193,12 @@ const VerifyEmail = () => {
                   </AlertDescription>
                 </Alert>
 
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertDescription className="text-sm text-amber-800">
+                    ⚠️ <span className="font-semibold">Important:</span> Please also check your <span className="font-semibold">SPAM</span> or <span className="font-semibold">PROMOTIONS</span> folder. The verification email might be filtered there.
+                  </AlertDescription>
+                </Alert>
+
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground text-center">
                     {t('auth:didnt_receive_email')}

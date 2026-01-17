@@ -20,7 +20,8 @@ const subscriptionPlanSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
     },
     price: {
       type: Number,
@@ -33,7 +34,7 @@ const subscriptionPlanSchema = new mongoose.Schema(
     },
     period: {
       type: String,
-      enum: ["Semester", "Annee"],
+      enum: ["Gratuit", "Semester", "Semestre", "Annee", "Annuel", "Monthly", "Annual"],
       default: "Semester",
     },
     features: {

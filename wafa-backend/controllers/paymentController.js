@@ -247,12 +247,9 @@ const capturePayment = asyncHandler(async (req, res) => {
       user.plan = "Premium";
       user.planExpiry = currentExpiry;
 
-      // Update user's semesters with the selected ones
+      // Replace semesters with the selected ones (remove free semester)
       if (transaction.semesters && transaction.semesters.length > 0) {
-        // Merge existing semesters with new ones (avoid duplicates)
-        const existingSemesters = user.semesters || [];
-        const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
-        user.semesters = newSemesters;
+        user.semesters = transaction.semesters;
       }
 
       await user.save();
@@ -599,16 +596,15 @@ const approvePayment = asyncHandler(async (req, res) => {
 
   currentExpiry.setDate(currentExpiry.getDate() + daysToAdd);
 
-  user.plan = "Premium";
+  // Set the user's plan to the one from the transaction (e.g., "Premium Pro", "Premium Annuel")
+  user.plan = transaction.plan;
   user.planExpiry = currentExpiry;
   user.approvalDate = new Date();
   user.paymentDate = new Date();
 
-  // Update user's semesters with the selected ones
+  // Replace semesters with the selected ones (remove free semester)
   if (transaction.semesters && transaction.semesters.length > 0) {
-    const existingSemesters = user.semesters || [];
-    const newSemesters = [...new Set([...existingSemesters, ...transaction.semesters])];
-    user.semesters = newSemesters;
+    user.semesters = transaction.semesters;
   }
 
   await user.save();
@@ -641,7 +637,7 @@ const approvePayment = asyncHandler(async (req, res) => {
 // Admin: Reject a payment request
 const rejectPayment = asyncHandler(async (req, res) => {
   const { transactionId } = req.params;
-  const { reason } = req.body;
+  const { reason } = req.body || {};
 
   const transaction = await Transaction.findById(transactionId);
 

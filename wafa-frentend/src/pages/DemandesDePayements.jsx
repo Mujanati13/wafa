@@ -70,6 +70,21 @@ const DemandesDePayements = () => {
     }
   };
 
+  // Handle reject transaction
+  const handleReject = async (transactionId) => {
+    setActionLoading(transactionId);
+    try {
+      await paymentService.rejectTransaction(transactionId);
+      toast.success('Succès', { description: 'Transaction refusée avec succès.' });
+      fetchTransactions(pagination.page); // Refresh the list
+    } catch (error) {
+      toast.error('Erreur', { description: 'Impossible de refuser la transaction.' });
+      console.error('Reject error:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Old hardcoded data (keeping for reference, will be removed)
   const demandesOld = [
     {
@@ -527,17 +542,30 @@ const DemandesDePayements = () => {
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {t.status === 'pending' ? (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="h-8 px-3 bg-green-600 hover:bg-green-700"
-                                  title="Approuver"
-                                  onClick={() => handleApprove(t._id)}
-                                  disabled={actionLoading === t._id}
-                                >
-                                  <Check className="h-4 w-4 mr-1" />
-                                  {actionLoading === t._id ? 'Approbation...' : 'Approuver'}
-                                </Button>
+                                <>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                                    title="Approuver"
+                                    onClick={() => handleApprove(t._id)}
+                                    disabled={actionLoading === t._id}
+                                  >
+                                    <Check className="h-4 w-4 mr-1" />
+                                    {actionLoading === t._id ? 'Chargement...' : 'Approuver'}
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8 px-3 bg-red-600 hover:bg-red-700"
+                                    title="Refuser"
+                                    onClick={() => handleReject(t._id)}
+                                    disabled={actionLoading === t._id}
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    {actionLoading === t._id ? 'Chargement...' : 'Refuser'}
+                                  </Button>
+                                </>
                               ) : (
                                 <Badge className={
                                   t.status === 'completed' ? 'bg-green-100 text-green-700' :

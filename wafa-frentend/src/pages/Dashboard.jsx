@@ -505,7 +505,9 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     <div className="relative flex items-center justify-between gap-3">
                       <div className="text-white min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium opacity-90">Mon Abonnement</p>
-                        <p className="text-xl sm:text-2xl font-bold mt-0.5 truncate">{user?.plan || 'Gratuit'}</p>
+                        <p className="text-xl sm:text-2xl font-bold mt-0.5 truncate">
+                          {user?.plan === 'Premium Annuel' ? 'Premium Pro' : (user?.plan || 'Gratuit')}
+                        </p>
                         <p className="text-[10px] xs:text-xs opacity-80 mt-1 group-hover:underline">Voir les détails →</p>
                       </div>
                       <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">

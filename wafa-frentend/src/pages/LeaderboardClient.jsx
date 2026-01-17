@@ -68,6 +68,21 @@ function getUserLevel(points) {
   return { level, name: "Nouveau", color: "bg-slate-400" };
 }
 
+// Helper function to get year from semester (S1-S2 = Year 1, S3-S4 = Year 2, etc.)
+function getYearFromSemester(semester) {
+  if (!semester) return null;
+  const semesterNum = parseInt(semester.replace('S', ''));
+  return Math.ceil(semesterNum / 2);
+}
+
+// Helper function to get user's current academic year
+function getUserAcademicYear(semesters) {
+  if (!semesters || semesters.length === 0) return null;
+  // Get the highest semester the user is enrolled in to determine their year
+  const latestSemester = semesters[semesters.length - 1];
+  return getYearFromSemester(latestSemester);
+}
+
 const LeaderboardClient = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -136,18 +151,15 @@ const LeaderboardClient = () => {
     );
   }
 
-  const sorted = leaderboardData;
+  // Filter leaderboard to show only users in the same study year as current user
+  const currentUserYear = user?.currentYear;
+  const filtered = currentUserYear 
+    ? leaderboardData.filter((leaderboardUser) => leaderboardUser.currentYear === currentUserYear)
+    : leaderboardData; // If no year set, show all users
+
+  const sorted = filtered;
   const topThree = sorted.slice(0, 3);
   const maxScore = sorted[0]?.totalPoints || 1;
-
-  // Filter buttons config
-  const filterButtons = [
-    { key: "totalPoints", label: "Points", icon: <Star className="h-4 w-4" />, color: "yellow" },
-    { key: "bluePoints", label: "Points Bleus", icon: <Zap className="h-4 w-4" />, color: "blue" },
-    { key: "greenPoints", label: "Points Verts", icon: <Star className="h-4 w-4" />, color: "green" },
-    { key: "level", label: "Niveau", icon: <TrendingUp className="h-4 w-4" />, color: "purple" },
-    { key: "percentage", label: "Pourcentage", icon: <Percent className="h-4 w-4" />, color: "cyan" },
-  ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
@@ -158,30 +170,6 @@ const LeaderboardClient = () => {
         <p className="text-muted-foreground mt-1">
           {t('dashboard:top_10_students_by_points')}
         </p>
-      </div>
-
-      {/* Filter Buttons - Hidden on mobile */}
-      <div className="hidden sm:flex mb-6 flex-wrap gap-2">
-        {filterButtons.map(({ key, label, icon, color }) => (
-          <Button
-            key={key}
-            variant={sortBy === key ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSortBy(key)}
-            className={`flex items-center gap-2 ${
-              sortBy === key 
-                ? color === "blue" ? "bg-blue-600 hover:bg-blue-700" :
-                  color === "green" ? "bg-green-600 hover:bg-green-700" :
-                  color === "purple" ? "bg-purple-600 hover:bg-purple-700" :
-                  color === "cyan" ? "bg-cyan-600 hover:bg-cyan-700" :
-                  "bg-yellow-600 hover:bg-yellow-700"
-                : ""
-            }`}
-          >
-            {icon}
-            {label}
-          </Button>
-        ))}
       </div>
 
       {/* Podium */}
@@ -423,9 +411,9 @@ const LeaderboardClient = () => {
                                 <div className="text-xs text-muted-foreground mb-1">Progression</div>
                                 <div className="h-2 w-full rounded-full bg-gray-200">
                                   <div
-                                    className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                                    className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
                                     style={{
-                                      width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
+                                      width: `${Math.min(userData.percentageAnswered || 0, 100)}%`,
                                     }}
                                   />
                                 </div>
@@ -517,9 +505,9 @@ const LeaderboardClient = () => {
                     <div className="block">
                       <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+                          className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
                           style={{
-                            width: `${Math.round((userData.totalPoints / maxScore) * 100)}%`,
+                            width: `${Math.min(userData.percentageAnswered || 0, 100)}%`,
                           }}
                         />
                       </div>
@@ -713,8 +701,8 @@ const LeaderboardClient = () => {
                       <div className="block">
                         <div className="h-2 w-full rounded-full bg-gray-200">
                           <div
-                            className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-                            style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
+                            className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                            style={{ width: `${Math.min(userData.percentageAnswered || 0, 100)}%` }}
                           />
                         </div>
                       </div>

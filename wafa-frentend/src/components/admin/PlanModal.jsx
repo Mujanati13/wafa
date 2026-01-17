@@ -19,6 +19,7 @@ const PlanModal = ({
     description: "",
     price: "",
     oldPrice: "",
+    period: "Semester",
     features: [],
     featuresInput: "",
   });
@@ -42,6 +43,7 @@ const PlanModal = ({
         initialPlan?.oldPrice === 0 || initialPlan?.oldPrice
           ? String(initialPlan.oldPrice)
           : "",
+      period: initialPlan?.period ?? "Semester",
       features: featuresArray,
       featuresInput: "",
     });
@@ -105,20 +107,43 @@ const PlanModal = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="plan-desc" className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Label htmlFor="plan-period" className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                   <Package className="w-4 h-4 text-purple-600" />
-                  {t("admin:description")}
+                  Period
                 </Label>
-                <Input
-                  id="plan-desc"
-                  placeholder="Brief description of the plan"
-                  value={form.description}
+                <select
+                  id="plan-period"
+                  value={form.period}
                   onChange={(e) =>
-                    setForm((p) => ({ ...p, description: e.target.value }))
+                    setForm((p) => ({ ...p, period: e.target.value }))
                   }
-                  className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-all"
-                />
+                  className="h-11 w-full rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-all px-3 bg-white"
+                >
+                  <option value="Gratuit">Gratuit</option>
+                  <option value="Semester">Semester</option>
+                  <option value="Semestre">Semestre</option>
+                  <option value="Annee">Annee</option>
+                  <option value="Annuel">Annuel</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Annual">Annual</option>
+                </select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan-desc" className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <Package className="w-4 h-4 text-purple-600" />
+                {t("admin:description")}
+              </Label>
+              <Input
+                id="plan-desc"
+                placeholder="Brief description of the plan"
+                value={form.description}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, description: e.target.value }))
+                }
+                className="h-11 rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 transition-all"
+              />
             </div>
 
             <div>

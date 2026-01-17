@@ -52,13 +52,13 @@ const getPlanById = asyncHandler(async (req, res) => {
 
 // Create new plan (admin only)
 const createPlan = asyncHandler(async (req, res) => {
-  const { name, description, price, oldPrice, features, status, order } = req.body;
+  const { name, description, price, oldPrice, features, status, order, period } = req.body;
 
   // Validate required fields
-  if (!name || !description || price === undefined) {
+  if (!name || price === undefined) {
     return res.status(400).json({
       success: false,
-      message: "Name, description, and price are required",
+      message: "Name and price are required",
     });
   }
 
@@ -72,9 +72,10 @@ const createPlan = asyncHandler(async (req, res) => {
 
   const plan = new SubscriptionPlan({
     name,
-    description,
+    description: description || "",
     price,
     oldPrice: oldPrice || null,
+    period: period || "Semester",
     features: normalizeFeatures(features),
     status: status || "Active",
     order: order !== undefined ? order : 0,
@@ -92,7 +93,7 @@ const createPlan = asyncHandler(async (req, res) => {
 // Update plan (admin only)
 const updatePlan = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, description, price, oldPrice, features, status, order } = req.body;
+  const { name, description, price, oldPrice, features, status, order, period } = req.body;
 
   const plan = await SubscriptionPlan.findById(id);
 
@@ -118,6 +119,7 @@ const updatePlan = asyncHandler(async (req, res) => {
   if (description !== undefined) plan.description = description;
   if (price !== undefined) plan.price = price;
   if (oldPrice !== undefined) plan.oldPrice = oldPrice;
+  if (period !== undefined) plan.period = period;
   if (features !== undefined) plan.features = normalizeFeatures(features);
   if (status) plan.status = status;
   if (order !== undefined) plan.order = order;

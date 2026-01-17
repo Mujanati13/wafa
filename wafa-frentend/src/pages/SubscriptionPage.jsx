@@ -89,6 +89,7 @@ const SubscriptionPage = () => {
       description: "",
       price: "",
       oldPrice: "",
+      period: "Semester",
       features: [],
     });
     setIsPlanModalOpen(true);
@@ -116,6 +117,7 @@ const SubscriptionPage = () => {
         description: form.description?.trim() || "",
         price: form.price === "" || form.price == null ? 0 : parseFloat(form.price),
         oldPrice: form.oldPrice === "" || form.oldPrice == null ? null : parseFloat(form.oldPrice),
+        period: form.period || "Semester",
         features: Array.isArray(form.features) ? form.features.filter(Boolean) : [],
       };
 

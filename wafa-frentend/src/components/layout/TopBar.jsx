@@ -153,10 +153,10 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                   </p>
                   {/* User Stats Row */}
                   <div className="flex items-center gap-2 sm:gap-3 pt-2 text-xs">
-                    <div className="flex items-center gap-1" title="Points Questions">
+                    {/* <div className="flex items-center gap-1" title="Points Questions">
                       <span className="text-yellow-500">⚡</span>
                       <span className="font-medium">{user?.normalPoints || 0}</span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-1" title="Reports approuvés">
                       <span className="text-green-500">🟢</span>
                       <span className="font-medium">{user?.greenPoints || 0}</span>
