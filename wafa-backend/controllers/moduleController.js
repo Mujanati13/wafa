@@ -372,5 +372,56 @@ export const moduleController = {
                 remainingFiles: module.aiContextFiles
             }
         });
+    }),
+
+    // Update module AI prompt
+    updateAiPrompt: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { aiPrompt } = req.body;
+
+        const module = await moduleSchema.findById(id);
+
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module non trouvé"
+            });
+        }
+
+        module.aiPrompt = aiPrompt || "";
+        await module.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Prompt IA mis à jour avec succès",
+            data: {
+                moduleId: module._id,
+                aiPrompt: module.aiPrompt
+            }
+        });
+    }),
+
+    // Get module AI configuration (prompt + context files)
+    getAiConfig: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+
+        const module = await moduleSchema.findById(id).select('name aiPrompt aiContextFiles');
+
+        if (!module) {
+            return res.status(404).json({
+                success: false,
+                message: "Module non trouvé"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                moduleId: module._id,
+                moduleName: module.name,
+                aiPrompt: module.aiPrompt || "",
+                aiContextFiles: module.aiContextFiles || []
+            }
+        });
     })
 };

@@ -69,8 +69,10 @@ const GenerateExplanationsAI = () => {
   useEffect(() => {
     if (selectedModule) {
       fetchModuleContextFiles(selectedModule);
+      fetchModuleAiConfig(selectedModule);
     } else {
       setModuleContextFiles([]);
+      setCustomPrompt("");
     }
   }, [selectedModule]);
 
@@ -109,6 +111,41 @@ const GenerateExplanationsAI = () => {
       setModuleContextFiles([]);
     } finally {
       setLoadingModuleContext(false);
+    }
+  };
+
+  const fetchModuleAiConfig = async (moduleId) => {
+    if (!moduleId) return;
+    
+    try {
+      const { data } = await api.get(`/modules/${moduleId}/ai-config`);
+      if (data.success) {
+        setCustomPrompt(data.data.aiPrompt || "");
+      }
+    } catch (error) {
+      console.error('Error fetching module AI config:', error);
+    }
+  };
+
+  const handleSaveModulePrompt = async () => {
+    if (!selectedModule) {
+      toast.error("Veuillez sélectionner un module");
+      return;
+    }
+
+    try {
+      const { data } = await api.put(`/modules/${selectedModule}/ai-prompt`, {
+        aiPrompt: customPrompt
+      });
+
+      if (data.success) {
+        toast.success("Prompt sauvegardé pour ce module", {
+          description: "Le prompt sera utilisé automatiquement pour les futures générations"
+        });
+      }
+    } catch (error) {
+      console.error('Error saving module prompt:', error);
+      toast.error("Erreur lors de la sauvegarde du prompt");
     }
   };
 
@@ -680,15 +717,28 @@ const GenerateExplanationsAI = () => {
 
                 {/* Custom Prompt */}
                 <div className="space-y-2 mb-4">
-                  <Label className="font-semibold text-gray-700">Prompt personnalisé</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-gray-700">Prompt personnalisé pour ce module</Label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSaveModulePrompt}
+                      disabled={!selectedModule}
+                      className="gap-1 text-xs h-7"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      Sauvegarder pour le module
+                    </Button>
+                  </div>
                   <Textarea
-                    placeholder="Entrez votre propre prompt pour personnaliser les explications. Utilisez {questionText}, {options}, {correctAnswers} comme variables."
+                    placeholder="Entrez votre propre prompt pour personnaliser les explications de ce module. Ce prompt sera utilisé automatiquement par les utilisateurs."
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     className="min-h-[100px] font-mono text-sm"
+                    disabled={!selectedModule}
                   />
                   <p className="text-xs text-gray-500">
-                    💡 Variables disponibles: {"{questionText}"}, {"{options}"}, {"{correctAnswers}"}
+                    💡 Ce prompt sera automatiquement utilisé lors de la génération d'explications pour ce module
                   </p>
                 </div>
 

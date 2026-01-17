@@ -123,15 +123,21 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
 
     setIsGeneratingAI(true);
     try {
+      // Backend will automatically fetch module ID from the question's exam
+      // No need to get module ID on frontend
       const response = await api.post('/explanations/generate-gemini', {
         questionId: question._id,
-        language: 'fr'
+        language: 'fr',
+        useModuleConfig: true // Signal to backend to use module config
       });
 
       if (response.data?.success && response.data?.data) {
         setAiExplanationData(response.data.data);
+        const usedModuleConfig = response.data.debug?.usedModulePrompt || response.data.debug?.usedModuleContext;
         toast.success("Explication IA générée avec succès !", {
-          description: "L'explication a été sauvegardée pour cette question.",
+          description: usedModuleConfig
+            ? "Générée avec la configuration du module" 
+            : "L'explication a été sauvegardée pour cette question.",
           duration: 4000
         });
       }

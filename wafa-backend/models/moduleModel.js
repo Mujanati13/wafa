@@ -68,6 +68,11 @@ const moduleSchema = new mongoose.Schema(
                 uploadedAt: { type: Date, default: Date.now },
                 uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
         }],
+        // AI Prompt - Custom prompt for AI explanation generation for this module
+        aiPrompt: {
+                type: String,
+                default: "",
+        },
         // Difficulty level
         difficulty: {
                 type: String,

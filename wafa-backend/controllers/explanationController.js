@@ -515,7 +515,7 @@ export const explanationController = {
 
     // Generate explanation using Gemini AI
     generateWithGemini: asyncHandler(async (req, res) => {
-        const { questionId, language, customPrompt, pdfContext } = req.body;
+        const { questionId, language, customPrompt, pdfContext, useModuleConfig } = req.body;
 
         if (!questionId) {
             return res.status(400).json({
@@ -559,16 +559,23 @@ export const explanationController = {
             moduleId = qcmBanque?.moduleId;
         }
 
-        // Fetch module's AI context files if available
+        // Fetch module's AI config (prompt + context files) if available
         let moduleContextText = '';
+        let modulePrompt = '';
         if (moduleId) {
             const Module = (await import('../models/moduleModel.js')).default;
-            const module = await Module.findById(moduleId).select('aiContextFiles name').lean();
+            const module = await Module.findById(moduleId).select('aiContextFiles aiPrompt name').lean();
             
-            console.log(`[AI Context] Module: ${module?.name || 'Unknown'}, Context Files: ${module?.aiContextFiles?.length || 0}`);
+            console.log(`[AI Config] Module: ${module?.name || 'Unknown'}, Prompt: ${!!module?.aiPrompt}, Context Files: ${module?.aiContextFiles?.length || 0}`);
             
+            // Use module's prompt if useModuleConfig is true and no custom prompt provided
+            if (useModuleConfig && module?.aiPrompt && !customPrompt) {
+                modulePrompt = module.aiPrompt;
+                console.log(`[AI Config] Using module prompt (${modulePrompt.length} chars)`);
+            }
+            
+            // Extract context from module's PDF files
             if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
-                // Extract text from all saved PDFs
                 const path = await import('path');
                 
                 const contextTexts = [];
@@ -598,6 +605,10 @@ export const explanationController = {
 
         console.log(`[AI Context] Combined context length: ${combinedContext.length} characters`);
 
+        // Use module prompt if available, otherwise use custom prompt
+        const finalPrompt = modulePrompt || customPrompt || null;
+        console.log(`[AI Config] Final prompt source: ${modulePrompt ? 'module' : customPrompt ? 'custom' : 'default'}`);
+
         // Get correct answer indices
         const correctAnswers = question.options
             .map((opt, idx) => opt.isCorrect ? idx : null)
@@ -612,11 +623,11 @@ export const explanationController = {
         };
 
         try {
-            // Generate explanation using Gemini with combined context
+            // Generate explanation using Gemini with combined context and prompt
             const generatedText = await geminiService.generateExplanation(
                 questionData,
                 language || 'fr',
-                customPrompt || null,
+                finalPrompt,
                 combinedContext || null
             );
 
@@ -634,7 +645,12 @@ export const explanationController = {
             res.status(201).json({
                 success: true,
                 message: "Explication générée avec succès",
-                data: aiExplanation
+                data: aiExplanation,
+                debug: {
+                    usedModulePrompt: !!modulePrompt,
+                    usedModuleContext: !!moduleContextText,
+                    contextLength: combinedContext.length
+                }
             });
         } catch (error) {
             console.error('Gemini generation error:', error);
@@ -762,11 +778,18 @@ export const explanationController = {
 
         // Fetch module's AI context files if available
         let moduleContextText = '';
+        let modulePrompt = '';
         if (resolvedModuleId) {
             const Module = (await import('../models/moduleModel.js')).default;
-            const module = await Module.findById(resolvedModuleId).select('aiContextFiles name').lean();
+            const module = await Module.findById(resolvedModuleId).select('aiContextFiles aiPrompt name').lean();
             
-            console.log(`[Batch AI Context] Module: ${module?.name || 'Unknown'}, Context Files: ${module?.aiContextFiles?.length || 0}`);
+            console.log(`[Batch AI Config] Module: ${module?.name || 'Unknown'}, Prompt: ${!!module?.aiPrompt}, Context Files: ${module?.aiContextFiles?.length || 0}`);
+            
+            // Use module's prompt if no custom prompt provided
+            if (module?.aiPrompt && !customPrompt) {
+                modulePrompt = module.aiPrompt;
+                console.log(`[Batch AI Config] Using module prompt (${modulePrompt.length} chars)`);
+            }
             
             if (module?.aiContextFiles && module.aiContextFiles.length > 0) {
                 // Extract text from all saved PDFs
@@ -797,6 +820,9 @@ export const explanationController = {
             .filter(ctx => ctx && ctx.trim())
             .join('\n\n=== CONTEXTE ADDITIONNEL ===\n\n');
 
+        // Use module prompt if available, otherwise use custom prompt
+        const finalPrompt = modulePrompt || customPrompt || null;
+        console.log(`[Batch AI Config] Final prompt source: ${modulePrompt ? 'module' : customPrompt ? 'custom' : 'default'}`);
         console.log(`[Batch AI Context] Combined context length: ${combinedContext.length} characters`);
         console.log(`[Batch AI Context] Processing ${parsedNumbers.length} question(s) with ${moduleContextText ? 'module context' : 'no module context'}`);
 
@@ -830,11 +856,11 @@ export const explanationController = {
         }));
 
         try {
-            // Generate explanations in batch with combined context
+            // Generate explanations in batch with combined context and prompt
             const results = await geminiService.generateBatchExplanations(
                 questionsData,
                 language || 'fr',
-                customPrompt || null,
+                finalPrompt,
                 combinedContext || null
             );
 

@@ -155,6 +155,12 @@ router.get("/:id/ai-context", moduleController.getAiContextFiles)
 // Delete an AI context file from a module
 router.delete("/:id/ai-context/:fileId", moduleController.deleteAiContextFile)
 
+// Update AI prompt for a module
+router.put("/:id/ai-prompt", moduleController.updateAiPrompt)
+
+// Get module AI configuration (prompt + context files)
+router.get("/:id/ai-config", moduleController.getAiConfig)
+
 // Get a single module by ID
 router.get("/:id", moduleController.getById)
 
