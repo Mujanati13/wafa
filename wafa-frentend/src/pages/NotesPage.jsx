@@ -5,7 +5,6 @@ import {
   Trash2, Search, Pin, NotebookPen, Plus, Calendar, Clock, FileText, Zap,
   Filter, ChevronDown, X, Eye, Edit2, BookOpen, CheckCircle2, Tag
 } from "lucide-react";
-import axios from "axios";
 import { debounce } from "lodash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,10 +71,7 @@ const NotesPage = () => {
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/notes`,
-        { withCredentials: true }
-      );
+      const { data } = await api.get("/notes");
       setNotes(data.data || []);
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -90,11 +86,7 @@ const NotesPage = () => {
       if (!content.trim()) return;
       setAutoSaving(true);
       try {
-        await axios.put(
-          `${import.meta.env.VITE_API_URL}/notes/${noteId}`,
-          { content },
-          { withCredentials: true }
-        );
+        await api.put(`/notes/${noteId}`, { content });
         toast.success(t('dashboard:note_auto_saved'));
       } catch (error) {
         console.error("Auto-save failed:", error);
@@ -130,9 +122,7 @@ const NotesPage = () => {
     if (!confirm(t('dashboard:confirm_delete_note'))) return;
     
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/notes/${noteId}`, {
-        withCredentials: true,
-      });
+      await api.delete(`/notes/${noteId}`);
       setNotes((prevNotes) => prevNotes.filter((note) => note._id !== noteId));
       if (selectedNote?._id === noteId) {
         setSelectedNote(null);
@@ -148,11 +138,7 @@ const NotesPage = () => {
 
   const togglePin = async (noteId, currentPinned) => {
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/notes/${noteId}`,
-        { isPinned: !currentPinned },
-        { withCredentials: true }
-      );
+      await api.put(`/notes/${noteId}`, { isPinned: !currentPinned });
       setNotes((prevNotes) =>
         prevNotes.map((note) =>
           note._id === noteId ? { ...note, isPinned: !currentPinned } : note
@@ -175,11 +161,9 @@ const NotesPage = () => {
     
     try {
       setIsSavingTitle(true);
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/notes/${selectedNote._id}`,
-        { title: editTitle.trim() },
-        { withCredentials: true }
-      );
+      await api.put(`/notes/${selectedNote._id}`, { 
+        title: editTitle.trim() 
+      });
       
       setNotes((prevNotes) =>
         prevNotes.map((note) =>
@@ -205,18 +189,14 @@ const NotesPage = () => {
 
   const createNewNote = async () => {
     try {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL}/notes`,
-        { 
-          title: "Nouvelle note",
-          content: t('dashboard:new_note_placeholder') || "Commencez à taper...",
-          questionId: null,
-          moduleId: null,
-          tags: [],
-          color: "#fbbf24"
-        },
-        { withCredentials: true }
-      );
+      const { data } = await api.post("/notes", { 
+        title: "Nouvelle note",
+        content: t('dashboard:new_note_placeholder') || "Commencez à taper...",
+        questionId: null,
+        moduleId: null,
+        tags: [],
+        color: "#fbbf24"
+      });
       
       const newNote = data.data || data;
       
@@ -261,14 +241,10 @@ const NotesPage = () => {
     if (!editingNote) return;
 
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/notes/${editingNote._id}`,
-        { 
-          title: editingNote.title,
-          content: editingNote.content 
-        },
-        { withCredentials: true }
-      );
+      await api.put(`/notes/${editingNote._id}`, { 
+        title: editingNote.title,
+        content: editingNote.content 
+      });
       
       setNotes((prevNotes) =>
         prevNotes.map((note) =>

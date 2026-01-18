@@ -45,6 +45,7 @@ const Explications = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [userFilter, setUserFilter] = useState("all");
+  const [explanationTypeFilter, setExplanationTypeFilter] = useState("all");
 
   // Popup state for question viewing
   const [questionPopup, setQuestionPopup] = useState({ open: false, text: '' });
@@ -159,6 +160,8 @@ const Explications = () => {
         courseCategory: item?.courseCategory || "—",
         courseName: item?.courseName || "—",
         numberOfQuestions: item?.numberOfQuestions || "—",
+        isAiGenerated: item?.isAiGenerated || false,
+        explanationType: item?.isAiGenerated ? 'ai' : 'human',
       }));
       setExplanations(mapped);
     } catch (e) {
@@ -502,6 +505,11 @@ const Explications = () => {
         return false;
       }
 
+      // Explanation type filter
+      if (explanationTypeFilter !== "all" && exp.explanationType !== explanationTypeFilter) {
+        return false;
+      }
+
       // Date range filter
       if (dateFrom && exp.date < dateFrom) {
         return false;
@@ -512,7 +520,7 @@ const Explications = () => {
 
       return true;
     });
-  }, [explanations, searchQuery, statusFilter, moduleFilter, examTypeFilter, userFilter, dateFrom, dateTo]);
+  }, [explanations, searchQuery, statusFilter, moduleFilter, examTypeFilter, userFilter, explanationTypeFilter, dateFrom, dateTo]);
 
   // Calculate pagination using filtered data
   const totalPages = Math.max(1, Math.ceil(filteredExplanations.length / itemsPerPage));
@@ -532,6 +540,7 @@ const Explications = () => {
     setModuleFilter("all");
     setExamTypeFilter("all");
     setUserFilter("all");
+    setExplanationTypeFilter("all");
     setDateFrom("");
     setDateTo("");
   };
@@ -701,6 +710,18 @@ const Explications = () => {
                   <SelectItem value="QCM banque">QCM banque</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Explanation Type Filter */}
+              <Select value={explanationTypeFilter} onValueChange={setExplanationTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Type d'explication" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  <SelectItem value="human">Explication Humaine</SelectItem>
+                  <SelectItem value="ai">Explication IA</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Row 2: Module, User, Date Range */}
@@ -756,7 +777,7 @@ const Explications = () => {
 
             {/* Active Filters & Reset */}
             <div className="flex flex-wrap items-center gap-2">
-              {(searchQuery || statusFilter !== "all" || moduleFilter !== "all" || examTypeFilter !== "all" || userFilter !== "all" || dateFrom || dateTo) && (
+              {(searchQuery || statusFilter !== "all" || moduleFilter !== "all" || examTypeFilter !== "all" || userFilter !== "all" || explanationTypeFilter !== "all" || dateFrom || dateTo) && (
                 <>
                   <span className="text-sm text-slate-500">Filtres actifs:</span>
                   {searchQuery && (
@@ -781,6 +802,12 @@ const Explications = () => {
                     <Badge variant="secondary" className="gap-1">
                       Type: {examTypeFilter}
                       <X className="h-3 w-3 cursor-pointer" onClick={() => setExamTypeFilter("all")} />
+                    </Badge>
+                  )}
+                  {explanationTypeFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Explication: {explanationTypeFilter === 'ai' ? 'IA' : 'Humaine'}
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => setExplanationTypeFilter("all")} />
                     </Badge>
                   )}
                   {userFilter !== "all" && (

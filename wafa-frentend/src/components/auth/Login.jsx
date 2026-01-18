@@ -53,7 +53,10 @@ const Login = () => {
         return;
       }
 
-      // Store user data in both keys for consistency
+      // Store JWT token and user data
+      if (result.token) {
+        localStorage.setItem('token', result.token);
+      }
       localStorage.setItem('user', JSON.stringify(result.user));
       localStorage.setItem('userProfile', JSON.stringify(result.user));
 
@@ -109,7 +112,10 @@ const Login = () => {
     try {
       const result = await loginWithGoogle();
 
-      // Store user data in both keys for consistency
+      // Store JWT token and user data
+      if (result.token) {
+        localStorage.setItem('token', result.token);
+      }
       localStorage.setItem('user', JSON.stringify(result.user));
       localStorage.setItem('userProfile', JSON.stringify(result.user));
 
