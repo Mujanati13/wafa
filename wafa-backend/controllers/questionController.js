@@ -431,15 +431,19 @@ export const questionController = {
         }
 
         // Recalculate vote stats
+        // Each user counts as ONE vote (their weight), regardless of how many options they selected
         const optionVotes = {};
         let totalVotes = 0;
 
         question.communityVotes.forEach(vote => {
+            const weight = vote.voteWeight || 1;
+            // Add weight once per user (not per selected option)
+            totalVotes += weight;
+            
+            // Distribute the user's vote across their selected options
             vote.selectedOptions.forEach(optIndex => {
                 const letter = String.fromCharCode(65 + optIndex);
-                const weight = vote.voteWeight || 1;
                 optionVotes[letter] = (optionVotes[letter] || 0) + weight;
-                totalVotes += weight;
             });
         });
 
@@ -555,15 +559,19 @@ export const questionController = {
             question.communityVotes[voteIndex].voteWeight = 20; // Multiply by 20
 
             // Recalculate vote stats
+            // Each user counts as ONE vote (their weight), regardless of how many options they selected
             const optionVotes = {};
             let totalVotes = 0;
 
             question.communityVotes.forEach(vote => {
+                const weight = vote.voteWeight || 1;
+                // Add weight once per user (not per selected option)
+                totalVotes += weight;
+                
+                // Distribute the user's vote across their selected options
                 vote.selectedOptions.forEach(optIndex => {
                     const letter = String.fromCharCode(65 + optIndex);
-                    const weight = vote.voteWeight || 1;
                     optionVotes[letter] = (optionVotes[letter] || 0) + weight;
-                    totalVotes += weight;
                 });
             });
 
