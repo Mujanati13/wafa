@@ -562,87 +562,24 @@ const PricingSection = ({ settings }) => {
       try {
         setLoading(true);
         const response = await subscriptionPlanService.getAllPlans();
-        if (response.success && response.data) {
-          // Sort plans by order and set Premium Annuel as popular
-          const sortedPlans = response.data.sort((a, b) => a.order - b.order).map(plan => ({
+        // Handle both nested (response.data) and array structures
+        const plansData = Array.isArray(response.data) ? response.data : response.data?.data || [];
+        
+        if (plansData && plansData.length > 0) {
+          // Sort plans by order if available, otherwise maintain order
+          const sortedPlans = (plansData.sort((a, b) => (a.order || 0) - (b.order || 0))).map(plan => ({
             ...plan,
-            isPopular: plan.name === "Premium Annuel" || plan.name.toLowerCase().includes("annuel")
+            isPopular: plan.isPopular || plan.name === "PREMIUM PRO" || plan.name === "Premium Pro"
           }));
           setPlans(sortedPlans);
         } else {
-          setError("Failed to load plans");
+          setError("No subscription plans available");
+          setPlans([]);
         }
       } catch (err) {
         console.error("Error fetching plans:", err);
         setError("Error loading pricing plans");
-        // Fallback to hardcoded plans if API fails
-        setPlans([
-          {
-            _id: "1",
-            name: "GRATUIT",
-            price: 0,
-            period: "Gratuit",
-            isPopular: false,
-            features: [
-              { text: "1 module", included: true },
-              { text: "Questions triées", included: true },
-              { text: "Interface adaptée aux mobiles", included: true },
-              { text: "Pourcentage des réponses", included: true },
-              { text: "Accès aux classements", included: false },
-              { text: "Accès aux statistiques", included: false },
-              { text: "Explication des étudiants", included: false },
-              { text: "Explication de l'IA", included: false },
-              { text: "Accès à la communauté votes", included: false },
-              { text: "Création de playlists", included: false },
-              { text: "Notes personnalisées", included: false },
-              { text: "Assistance prioritaire", included: false }
-            ]
-          },
-          {
-            _id: "2",
-            name: "PREMIUM",
-            price: 90,
-            oldPrice: 120,
-            period: "Semestre",
-            isPopular: false,
-            features: [
-              { text: "Tous les modules", included: true },
-              { text: "Questions triées", included: true },
-              { text: "Interface adaptée aux mobiles", included: true },
-              { text: "Pourcentage des réponses", included: true },
-              { text: "Accès aux classements", included: true },
-              { text: "Accès aux statistiques", included: true },
-              { text: "Explication des étudiants", included: true },
-              { text: "Explication de l'IA", included: false },
-              { text: "Accès à la communauté votes", included: false },
-              { text: "Création de playlists", included: false },
-              { text: "Notes personnalisées", included: false },
-              { text: "Assistance prioritaire", included: false }
-            ]
-          },
-          {
-            _id: "3",
-            name: "PREMIUM PRO",
-            price: 150,
-            oldPrice: 200,
-            period: "Semestre",
-            isPopular: true,
-            features: [
-              { text: "Tous les modules", included: true },
-              { text: "Questions triées", included: true },
-              { text: "Interface adaptée aux mobiles", included: true },
-              { text: "Pourcentage des réponses", included: true },
-              { text: "Accès aux classements", included: true },
-              { text: "Accès aux statistiques", included: true },
-              { text: "Explication des étudiants", included: true },
-              { text: "Explication de l'IA", included: true },
-              { text: "Accès à la communauté votes", included: true },
-              { text: "Création de playlists", included: true },
-              { text: "Notes personnalisées", included: true },
-              { text: "Assistance prioritaire", included: true }
-            ]
-          }
-        ]);
+        setPlans([]);
       } finally {
         setLoading(false);
       }

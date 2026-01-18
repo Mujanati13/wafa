@@ -2431,7 +2431,7 @@ const ExamPage = () => {
                                     const letter = String.fromCharCode(65 + index);
                                     const voteCount = communityStats[currentQuestion].optionVotes?.[letter] || 0;
                                     const totalVoters = communityStats[currentQuestion].totalVoters || 1;
-                                    const percentage = Math.round((voteCount / totalVoters) * 1000) / 10;
+                                    const percentage = Math.round((voteCount / totalVoters) * 100);
                                     return (
                                       <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-gray-100 text-gray-700 whitespace-nowrap">
                                         {percentage}%

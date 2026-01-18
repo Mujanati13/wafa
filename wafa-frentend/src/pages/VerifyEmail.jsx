@@ -285,7 +285,30 @@ const VerifyEmail = () => {
                 <Alert variant="destructive">
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
-                <Button asChild className="w-full">
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertDescription className="text-sm text-amber-800">
+                    ⚠️ <span className="font-semibold">Important:</span> Please also check your <span className="font-semibold">SPAM</span> or <span className="font-semibold">PROMOTIONS</span> folder. The verification email might be filtered there.
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  onClick={handleResendEmail}
+                  disabled={isResending || !canResend}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isResending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('common:loading')}
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {canResend ? t('auth:resend_verification') : `${t('auth:resend_in')} ${countdown}s`}
+                    </>
+                  )}
+                </Button>
+                <Button asChild variant="secondary" className="w-full">
                   <Link to="/login">{t('auth:back_to_login')}</Link>
                 </Button>
               </div>
