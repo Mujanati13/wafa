@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import axios from "axios";
+import { api } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const PlaylistsPage = () => {
@@ -29,10 +29,7 @@ const PlaylistsPage = () => {
   const fetchPlaylists = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/playlists`,
-        { withCredentials: true }
-      );
+      const { data } = await api.get("/playlists");
       console.log('Playlists response:', data);
       setPlaylists(data.data || data.playlists || []);
     } catch (error) {
@@ -51,14 +48,10 @@ const PlaylistsPage = () => {
     }
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/playlists`,
-        {
-          name: newPlaylistName,
-          description: newPlaylistDescription,
-        },
-        { withCredentials: true }
-      );
+      await api.post("/playlists", {
+        name: newPlaylistName,
+        description: newPlaylistDescription,
+      });
       setNewPlaylistName("");
       setNewPlaylistDescription("");
       setShowCreateModal(false);
@@ -72,9 +65,7 @@ const PlaylistsPage = () => {
 
   const deletePlaylist = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/playlists/${id}`, {
-        withCredentials: true,
-      });
+      await api.delete(`/playlists/${id}`);
       toast.success("Playlist supprimée");
       fetchPlaylists();
     } catch (error) {

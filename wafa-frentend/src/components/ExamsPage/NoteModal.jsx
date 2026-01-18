@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes, FaSave, FaTrash } from "react-icons/fa";
 import { NotebookPen } from "lucide-react";
-import axios from "axios";
+import { api } from "@/lib/utils";
 
 const NoteModal = ({ isOpen, onClose, questionId }) => {
   const [content, setContent] = useState("");
@@ -18,13 +18,9 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
 
   const fetchNote = async () => {
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/notes`,
-        {
-          params: { questionId },
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/notes", {
+        params: { questionId },
+      });
       // Backend returns {success, data: [...]} not {notes: [...]}
       if (data.data && data.data.length > 0) {
         const note = data.data[0];
@@ -42,21 +38,13 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
     setLoading(true);
     try {
       if (existingNoteId) {
-        await axios.put(
-          `${import.meta.env.VITE_API_URL}/notes/${existingNoteId}`,
-          { content },
-          { withCredentials: true }
-        );
+        await api.put(`/notes/${existingNoteId}`, { content });
       } else {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/notes`,
-          { 
-            questionId, 
-            content,
-            title: `Note Q${questionId?.slice(-6) || 'Question'}` // Generate a title from question ID
-          },
-          { withCredentials: true }
-        );
+        const { data } = await api.post("/notes", {
+          questionId,
+          content,
+          title: `Note Q${questionId?.slice(-6) || 'Question'}`,
+        });
         setExistingNoteId(data.data?._id || data.note?._id);
       }
       setLastSaved(new Date());
@@ -75,10 +63,7 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
 
     setLoading(true);
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/notes/${existingNoteId}`,
-        { withCredentials: true }
-      );
+      await api.delete(`/notes/${existingNoteId}`);
       setContent("");
       setExistingNoteId(null);
       setLastSaved(null);

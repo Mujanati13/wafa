@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes, FaPlus, FaCheck } from "react-icons/fa";
 import { Album, Loader2, CheckCircle2 } from "lucide-react";
-import axios from "axios";
 import { toast } from "sonner";
+import { api } from "@/lib/utils";
 
 const PlaylistModal = ({ isOpen, onClose, questionId }) => {
   const [playlists, setPlaylists] = useState([]);
@@ -22,10 +22,7 @@ const PlaylistModal = ({ isOpen, onClose, questionId }) => {
   const fetchPlaylists = async () => {
     setFetchingPlaylists(true);
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_API_URL}/playlists`,
-        { withCredentials: true }
-      );
+      const { data } = await api.get("/playlists");
       setPlaylists(data.data || data.playlists || []);
     } catch (error) {
       console.error("Error fetching playlists:", error);
@@ -43,14 +40,10 @@ const PlaylistModal = ({ isOpen, onClose, questionId }) => {
 
     setLoading(true);
     try {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL}/playlists`,
-        {
-          title: newPlaylistName,
-          questionIds: [questionId],
-        },
-        { withCredentials: true }
-      );
+      const { data } = await api.post("/playlists", {
+        title: newPlaylistName,
+        questionIds: [questionId],
+      });
       const newPlaylist = data.data || data.playlist;
       setPlaylists([...playlists, newPlaylist]);
       setNewPlaylistName("");
@@ -70,9 +63,8 @@ const PlaylistModal = ({ isOpen, onClose, questionId }) => {
     setUpdatingPlaylistId(playlistId);
     try {
       if (currentlyContains) {
-        await axios.delete(
-          `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/questions/${questionId}`,
-          { withCredentials: true }
+        await api.delete(
+          `/playlists/${playlistId}/questions/${questionId}`
         );
         toast.success("Question retirée de la playlist");
         // Optimistically update UI
@@ -82,10 +74,9 @@ const PlaylistModal = ({ isOpen, onClose, questionId }) => {
             : p
         ));
       } else {
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/playlists/${playlistId}/questions`,
-          { questionId },
-          { withCredentials: true }
+        await api.post(
+          `/playlists/${playlistId}/questions`,
+          { questionId }
         );
         toast.success("Question ajoutée à la playlist", {
           icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
