@@ -659,7 +659,7 @@ const StatisticsPage = () => {
                 </div>
                 <div className="hidden md:flex items-center gap-2">
                   <Badge className="bg-white/20 text-white border-white/30">
-                    {userProfile?.plan || 'Gratuit'}
+                    {userProfile?.plan === 'Premium Annuel' ? 'Premium Pro' : (userProfile?.plan || 'Gratuit')}
                   </Badge>
                 </div>
               </div>

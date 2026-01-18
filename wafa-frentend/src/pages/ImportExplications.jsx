@@ -202,16 +202,15 @@ const ImportExplications = () => {
   const handlePdfUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.type !== 'application/pdf') {
-      toast.error("Seuls les fichiers PDF sont acceptés");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Le PDF ne doit pas dépasser 10 Mo");
+    
+    const validTypes = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    
+    if (!validTypes.includes(file.type)) {
+      toast.error("Acceptés: PDF, PPTX, DOC, DOCX");
       return;
     }
     setPdfFile(file);
-    toast.success(`PDF ajouté: ${file.name}`);
+    toast.success(`Fichier ajouté: ${file.name}`);
     e.target.value = '';
   };
 
@@ -591,7 +590,7 @@ const ImportExplications = () => {
                     type="file"
                     ref={pdfInputRef}
                     onChange={handlePdfUpload}
-                    accept=".pdf"
+                    accept=".pdf,.pptx,.ppt,.doc,.docx"
                     className="hidden"
                   />
                   {!pdfFile ? (
@@ -602,8 +601,8 @@ const ImportExplications = () => {
                       <div className="flex items-center justify-center gap-3">
                         <FileText className="w-6 h-6 text-red-500" />
                         <div>
-                          <p className="font-medium text-gray-700">Click to upload PDF</p>
-                          <p className="text-sm text-gray-500">Max 10 MB</p>
+                          <p className="font-medium text-gray-700">Click to upload Document</p>
+                          <p className="text-sm text-gray-500">PDF, PPTX, DOC, DOCX</p>
                         </div>
                       </div>
                     </div>

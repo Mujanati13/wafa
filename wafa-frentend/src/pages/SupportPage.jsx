@@ -85,7 +85,7 @@ const SupportPage = () => {
       faqs: [
         {
           question: 'Comment signaler une erreur dans une question ?',
-          answer: 'Pendant un examen, cliquez sur le bouton "Signaler" (drapeau) pour reporter une question problématique.',
+          answer: 'Pendant un examen, cliquez sur le bouton "Signaler" (alerte) pour reporter une question problématique.',
         },
         {
           question: 'Ma progression est-elle sauvegardée automatiquement ?',

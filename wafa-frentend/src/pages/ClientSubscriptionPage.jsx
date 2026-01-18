@@ -98,7 +98,7 @@ const ClientSubscriptionPage = () => {
 
     setSelectedPlan(plan);
     setSelectedSemesters([]); // Reset selected semesters
-    setPaymentMethod(null); // Reset payment method
+    setPaymentMethod('transfer'); // Auto-select transfer method
     setShowPaymentDialog(true);
   };
 

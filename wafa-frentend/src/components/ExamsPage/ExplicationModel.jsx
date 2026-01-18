@@ -278,18 +278,15 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      toast.error("Seuls les fichiers PDF sont acceptés");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Le PDF ne doit pas dépasser 10 Mo");
+    const validTypes = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    
+    if (!validTypes.includes(file.type)) {
+      toast.error("Acceptés: PDF, PPTX, DOC, DOCX");
       return;
     }
 
     setUploadedPdf(file);
-    toast.success(`PDF ajouté: ${file.name}`);
+    toast.success(`Fichier ajouté: ${file.name}`);
     e.target.value = ''; // Reset input
   };
 
@@ -710,7 +707,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                       type="file"
                       ref={pdfInputRef}
                       onChange={handlePdfUpload}
-                      accept=".pdf"
+                      accept=".pdf,.pptx,.ppt,.doc,.docx"
                       className="hidden"
                     />
 
@@ -758,7 +755,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-gray-600">
-                          PDF ({uploadedPdf ? 1 : 0}/{MAX_PDF})
+                          Document ({uploadedPdf ? 1 : 0}/{MAX_PDF})
                         </span>
                         {!uploadedPdf && (
                           <Button
@@ -768,7 +765,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                             className="gap-1 h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
                           >
                             <FileText className="h-3 w-3" />
-                            Ajouter PDF
+                            Ajouter Fichier
                           </Button>
                         )}
                       </div>

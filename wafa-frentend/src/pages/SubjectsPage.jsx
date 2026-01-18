@@ -847,7 +847,7 @@ const SubjectsPage = () => {
 
       {/* Help Modal */}
       <Dialog open={helpModalOpen} onOpenChange={setHelpModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-blue-600" />
@@ -857,7 +857,7 @@ const SubjectsPage = () => {
               Informations d'aide pour cet examen
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4">
+          <div className="flex-1 overflow-y-auto">
             {selectedHelpExam?.helpText ? (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-gray-900 whitespace-pre-wrap">{selectedHelpExam.helpText}</p>

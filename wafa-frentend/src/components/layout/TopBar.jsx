@@ -179,59 +179,28 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
                     
                     {/* Detailed Progress Bar */}
                     <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden relative">
-                      {/* Calculate widths for each segment */}
                       {(() => {
                         const totalPoints = user?.totalPoints || 0;
                         const currentLevelPoints = totalPoints % 50;
-                        const normalPoints = user?.normalPoints || 0;
-                        const greenPointsValue = (user?.greenPoints || 0) * 30;
-                        const bluePointsValue = (user?.bluePoints || 0) * 40;
-                        const totalEarned = normalPoints + greenPointsValue + bluePointsValue;
-                        
-                        // Calculate proportions for current level progress
-                        const normalRatio = totalEarned > 0 ? normalPoints / totalEarned : 0;
-                        const greenRatio = totalEarned > 0 ? greenPointsValue / totalEarned : 0;
-                        const blueRatio = totalEarned > 0 ? bluePointsValue / totalEarned : 0;
-                        
                         const progressPercent = (currentLevelPoints / 50) * 100;
-                        const normalWidth = normalRatio * progressPercent;
-                        const greenWidth = greenRatio * progressPercent;
-                        const blueWidth = blueRatio * progressPercent;
                         
                         return (
-                          <div className="flex h-full">
-                            {normalWidth > 0 && (
-                              <div 
-                                className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-full transition-all duration-300"
-                                style={{ width: `${normalWidth}%` }}
-                                title={`Questions: ${normalPoints} pts`}
-                              />
-                            )}
-                            {greenWidth > 0 && (
-                              <div 
-                                className="bg-gradient-to-r from-green-400 to-green-500 h-full transition-all duration-300"
-                                style={{ width: `${greenWidth}%` }}
-                                title={`Reports: ${greenPointsValue} pts`}
-                              />
-                            )}
-                            {blueWidth > 0 && (
-                              <div 
-                                className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
-                                style={{ width: `${blueWidth}%` }}
-                                title={`Explications: ${bluePointsValue} pts`}
-                              />
-                            )}
-                          </div>
+                          <div 
+                            className="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-300"
+                            style={{ width: `${progressPercent}%` }}
+                          />
                         );
                       })()}
                     </div>
                     
                     {/* Legend */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-purple-400"></div>
-                        <span>Questions ({user?.normalPoints || 0})</span>
-                      </div>
+                      {(user?.normalPoints || 0) > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                          <span>Questions ({user?.normalPoints || 0})</span>
+                        </div>
+                      )}
                       {(user?.greenPoints || 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-green-400"></div>

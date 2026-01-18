@@ -433,11 +433,11 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
             </div>
 
             <CardContent className="relative z-10 p-3 xs:p-4 sm:p-6 lg:p-8">
-              <div className="flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-4 sm:gap-6">
-                {/* Welcome Section */}
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start gap-2 sm:gap-3">
+              <div className="flex flex-col gap-6 sm:gap-8">
+                {/* Top Row - Welcome & Support */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+                  {/* Welcome Section */}
+                  <div className="flex items-start gap-2 sm:gap-3 flex-1">
                     <motion.div
                       animate={{ rotate: [0, 10, -10, 0] }}
                       transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
@@ -455,33 +455,8 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     </div>
                   </div>
 
-                  {/* Quick Stats Row */}
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
-                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
-                        <Award className="h-3 w-3 xs:h-4 xs:w-4 text-yellow-300" />
-                        <span className="text-[10px] xs:text-xs text-blue-100">Examens</span>
-                      </div>
-                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{stats.examsCompleted}</p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
-                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
-                        <TrendingUp className="h-3 w-3 xs:h-4 xs:w-4 text-green-300" />
-                        <span className="text-[10px] xs:text-xs text-blue-100">Score</span>
-                      </div>
-                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{Math.round(stats.averageScore)}%</p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20">
-                      <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
-                        <Clock className="h-3 w-3 xs:h-4 xs:w-4 text-blue-300" />
-                        <span className="text-[10px] xs:text-xs text-blue-100">Heures</span>
-                      </div>
-                      <p className="text-lg xs:text-xl sm:text-2xl font-bold text-white">{Math.round(stats.studyHours)}h</p>
-                    </div>
-                  </div>
-
                   {/* Support Link */}
-                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-shrink-0">
                     <p className="text-blue-100">Besoin d'aide ?</p>
                     <Button
                       variant="link"
@@ -493,22 +468,22 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   </div>
                 </div>
 
-                {/* Right Column - Plan & Semesters */}
-                <div className="flex flex-col gap-3 sm:gap-4 w-full lg:min-w-[320px] xl:min-w-[340px]">
+                {/* Bottom Row - Plan & Semesters */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Subscription Card */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="relative overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xl cursor-pointer group"
+                    className="relative overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xl cursor-pointer group h-full"
                     onClick={() => navigate('/dashboard/subscription')}
                   >
                     <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full -mr-12 sm:-mr-16 -mt-12 sm:-mt-16" />
                     <div className="relative flex items-center justify-between gap-3">
                       <div className="text-white min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium opacity-90">Mon Abonnement</p>
-                        <p className="text-xl sm:text-2xl font-bold mt-0.5 truncate">
+                        <p className="text-xl sm:text-2xl font-bold mt-1 truncate">
                           {user?.plan === 'Premium Annuel' ? 'Premium Pro' : (user?.plan || 'Gratuit')}
                         </p>
-                        <p className="text-[10px] xs:text-xs opacity-80 mt-1 group-hover:underline">Voir les détails →</p>
+                        <p className="text-[10px] xs:text-xs opacity-80 mt-2 group-hover:underline">Voir les détails →</p>
                       </div>
                       <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">
                         <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
@@ -517,15 +492,15 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                   </motion.div>
 
                   {/* Semester Selector Card */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg border border-white/50">
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
-                      <p className="text-xs sm:text-sm font-bold text-slate-800">Mes Semestres</p>
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-lg border border-white/50 h-full">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <p className="text-sm sm:text-base font-bold text-slate-800">Mes Semestres</p>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] xs:text-xs">
                         {userSemesters.length} actif{userSemesters.length > 1 ? 's' : ''}
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -570,11 +545,13 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       </Button>
                     </div>
                     
-                    <p className="text-[10px] xs:text-xs text-center text-slate-500">
+                    <p className="text-[10px] xs:text-xs text-center text-slate-500 mt-3">
                       Page {semesterPage + 1} sur {totalSemesterPages}
                     </p>
                   </div>
                 </div>
+
+                {/* Right Column - For future content if needed */}
               </div>
             </CardContent>
           </Card>

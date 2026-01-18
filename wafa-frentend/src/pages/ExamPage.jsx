@@ -166,6 +166,8 @@ const ExamPage = () => {
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSavingBeforeExit, setIsSavingBeforeExit] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState(null);
 
   // Save status tracking
   const [isSaved, setIsSaved] = useState(true);
@@ -1457,6 +1459,7 @@ const ExamPage = () => {
           setShowKeyboardShortcuts(false);
           setShowSidebar(false);
           setShowConfirmSubmit(false);
+          setShowImageZoom(false);
           break;
       }
     };
@@ -2018,6 +2021,32 @@ const ExamPage = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Legend Section */}
+                    <div className="border-t pt-3 px-0">
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[10px] px-0.5">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                          <span className="text-gray-500">non visité</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                          <span className="text-gray-500">visité</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
+                          <span className="text-gray-500">correct</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                          <span className="text-gray-500">incorrect</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                          <span className="text-gray-500">surligné</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -2191,7 +2220,7 @@ const ExamPage = () => {
                             className="text-blue-700 hover:text-red-600 hover:bg-blue-200 h-6 w-6 sm:h-8 sm:w-8"
                             title="Signaler"
                           >
-                            <TriangleAlert className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -2331,15 +2360,27 @@ const ExamPage = () => {
                     {/* Question Images */}
                     {currentQuestionData.images && currentQuestionData.images.length > 0 && (
                       <div className="space-y-2">
-                        {currentQuestionData.images.map((imgUrl, imgIdx) => (
-                          <div key={imgIdx} className="relative rounded-lg sm:rounded-xl overflow-hidden border bg-gray-50">
-                            <img
-                              src={imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`}
-                              alt={`Question illustration ${imgIdx + 1}`}
-                              className="w-full max-h-48 sm:max-h-64 md:max-h-80 object-contain"
-                            />
-                          </div>
-                        ))}
+                        {currentQuestionData.images.map((imgUrl, imgIdx) => {
+                          const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${imgUrl}`;
+                          return (
+                            <button
+                              key={imgIdx}
+                              onClick={() => {
+                                setZoomedImageUrl(fullImgUrl);
+                                setShowImageZoom(true);
+                              }}
+                              className="relative rounded-lg sm:rounded-xl overflow-hidden border bg-gray-50 cursor-pointer hover:border-blue-400 transition-all group w-full"
+                              title="Click to zoom"
+                            >
+                              <img
+                                src={fullImgUrl}
+                                alt={`Question illustration ${imgIdx + 1}`}
+                                className="w-full max-h-48 sm:max-h-64 md:max-h-80 object-contain group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -2426,19 +2467,7 @@ const ExamPage = () => {
                               {/* Community vote percentage and indicator icon on right */}
                               {showCorrectness && (
                                 <div className="shrink-0 flex items-center gap-1 sm:gap-2">
-                                  {/* Show community vote percentage */}
-                                  {communityStats[currentQuestion] && (() => {
-                                    const letter = String.fromCharCode(65 + index);
-                                    const voteCount = communityStats[currentQuestion].optionVotes?.[letter] || 0;
-                                    const totalVoters = communityStats[currentQuestion].totalVoters || 1;
-                                    const percentage = Math.round((voteCount / totalVoters) * 100);
-                                    return (
-                                      <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-gray-100 text-gray-700 whitespace-nowrap">
-                                        {percentage}%
-                                      </span>
-                                    );
-                                  })()}
-
+                                  {/* Percentage display removed */}
                                   {/* Correct/Incorrect icon - Hidden for all questions */}
                                 </div>
                               )}
@@ -3713,6 +3742,42 @@ const ExamPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Image Zoom Modal */}
+      <AnimatePresence>
+        {showImageZoom && zoomedImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setShowImageZoom(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-4xl max-h-[90vh] w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={zoomedImageUrl}
+                alt="Zoomed image"
+                className="w-full h-full object-contain rounded-lg shadow-2xl"
+              />
+              <button
+                onClick={() => setShowImageZoom(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/90 hover:bg-white text-black transition-colors shadow-lg"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <p className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm">
+                Click or press ESC to close
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

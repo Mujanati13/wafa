@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import { api } from "../lib/utils.js";
+import { cn } from "../lib/utils.js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,6 +16,7 @@ const Semesters = () => {
   const [updating, setUpdating] = useState(false);
   const [totalModules, setTotalModules] = useState(0);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [draggedItem, setDraggedItem] = useState(null);
 
   // Initialize empty semesters
   const initializeSemesters = () => {
@@ -124,6 +126,25 @@ const Semesters = () => {
     }
   };
 
+  // Update module order in backend
+  const updateModuleOrder = async (moduleId, newOrder) => {
+    try {
+      const response = await api.put(`/modules/${moduleId}`, {
+        order: newOrder,
+      });
+
+      if (response.data.success) {
+        console.log("Module order updated successfully");
+        return true;
+      } else {
+        throw new Error(response.data.message || "Failed to update module order");
+      }
+    } catch (err) {
+      console.error("Error updating module order:", err);
+      return false;
+    }
+  };
+
   // Load modules on component mount
   useEffect(() => {
     fetchModules();
@@ -135,6 +156,7 @@ const Semesters = () => {
       JSON.stringify({ fromColumnId, itemId })
     );
     event.dataTransfer.effectAllowed = "move";
+    setDraggedItem({ fromColumnId, itemId });
   };
 
   const handleDragOver = (event) => {
@@ -148,7 +170,13 @@ const Semesters = () => {
       const raw = event.dataTransfer.getData("text/plain");
       if (!raw) return;
       const { fromColumnId, itemId } = JSON.parse(raw);
-      if (!fromColumnId || !itemId || fromColumnId === toColumnId) return;
+      if (!fromColumnId || !itemId) return;
+
+      // If moving within same column, just update order
+      if (fromColumnId === toColumnId) {
+        // Order will be handled by position in array
+        return;
+      }
 
       console.log(
         `Moving module ${itemId} from ${fromColumnId} to ${toColumnId}`
@@ -179,6 +207,61 @@ const Semesters = () => {
       console.error("Error in handleDrop:", error);
       // Revert the UI change if there was an error
       fetchModules();
+    } finally {
+      setDraggedItem(null);
+    }
+  };
+
+  // Handle reordering within the same column
+  const handleReorderModules = async (columnId, newOrder) => {
+    try {
+      // Update order for each module
+      const updatePromises = newOrder.map((module, index) =>
+        updateModuleOrder(module.id, index)
+      );
+      await Promise.all(updatePromises);
+      
+      setSuccessMessage("Ordre des modules mis à jour");
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error("Error reordering modules:", err);
+      setError("Erreur lors de la mise à jour de l'ordre");
+    }
+  };
+
+  // Handle drag and drop within same column for reordering
+  const handleDropReorder = (event, columnId, dropTargetId) => {
+    event.preventDefault();
+    try {
+      const raw = event.dataTransfer.getData("text/plain");
+      if (!raw) return;
+      const { fromColumnId, itemId } = JSON.parse(raw);
+      
+      if (fromColumnId !== columnId || itemId === dropTargetId) return;
+
+      setBoard((prev) => {
+        const items = [...prev[columnId]];
+        const draggedIndex = items.findIndex((i) => i.id === itemId);
+        const targetIndex = items.findIndex((i) => i.id === dropTargetId);
+        
+        if (draggedIndex === -1 || targetIndex === -1) return prev;
+
+        // Remove dragged item
+        const [draggedItem] = items.splice(draggedIndex, 1);
+        // Insert at target position
+        items.splice(targetIndex, 0, draggedItem);
+
+        const newBoard = { ...prev, [columnId]: items };
+        
+        // Update backend with new order
+        handleReorderModules(columnId, items);
+        
+        return newBoard;
+      });
+    } catch (error) {
+      console.error("Error in handleDropReorder:", error);
+    } finally {
+      setDraggedItem(null);
     }
   };
 
@@ -305,7 +388,10 @@ const Semesters = () => {
                     </div>
 
                     {/* Column Content */}
-                    <div className="p-3 flex flex-col gap-2 min-h-[300px]">
+                    <div 
+                      className="p-3 flex flex-col gap-2 min-h-[300px]"
+                      onDragOver={handleDragOver}
+                    >
                       {items.map((item, itemIdx) => (
                         <motion.div
                           key={item.id}
@@ -316,7 +402,12 @@ const Semesters = () => {
                           onDragStart={(e) =>
                             handleDragStart(e, columnId, item.id)
                           }
-                          className="bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md hover:border-blue-300 cursor-grab active:cursor-grabbing transition-all group"
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDropReorder(e, columnId, item.id)}
+                          className={cn(
+                            "bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-sm hover:shadow-md hover:border-blue-300 cursor-grab active:cursor-grabbing transition-all group",
+                            draggedItem?.itemId === item.id && "opacity-50"
+                          )}
                         >
                           <h4 className="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
                             {item.title}

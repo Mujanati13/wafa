@@ -33,14 +33,22 @@ const storage = multer.diskStorage({
 
 const uploadExplanationFiles = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max per file
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max per file
     fileFilter: (req, file, cb) => {
+        const acceptedDocTypes = [
+            'application/pdf',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        
         if (file.fieldname === 'images' && file.mimetype.startsWith("image/")) {
             cb(null, true);
-        } else if (file.fieldname === 'pdf' && file.mimetype === 'application/pdf') {
+        } else if (file.fieldname === 'pdf' && acceptedDocTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error("Type de fichier non autorisé"), false);
+            cb(new Error("Types acceptés: PDF, PPTX, DOC, DOCX"), false);
         }
     }
 }).fields([
@@ -52,23 +60,31 @@ const uploadExplanationFiles = multer({
 router.post("/create", isAuthenticated, uploadExplanationFiles, explanationController.create);
 // Admin bulk create with file upload support
 router.post("/admin-create", isAuthenticated, isAdmin, uploadExplanationFiles, explanationController.adminCreate);
-// Upload PDF endpoint - returns URL
+// Upload document endpoint (PDF, PPTX, Word) - returns URL
 router.post("/upload-pdf", isAuthenticated, isAdmin, multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: 100 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'application/pdf') {
+        const acceptedDocTypes = [
+            'application/pdf',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        
+        if (acceptedDocTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error("Seuls les fichiers PDF sont acceptés"), false);
+            cb(new Error("Types acceptés: PDF, PPTX, DOC, DOCX"), false);
         }
     }
 }).single('pdf'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ success: false, message: "Aucun fichier PDF fourni" });
+        return res.status(400).json({ success: false, message: "Aucun fichier fourni" });
     }
-    const pdfUrl = `/uploads/explanations/${req.file.filename}`;
-    res.json({ success: true, data: { url: pdfUrl, filename: req.file.filename } });
+    const fileUrl = `/uploads/explanations/${req.file.filename}`;
+    res.json({ success: true, data: { url: fileUrl, filename: req.file.filename } });
 });
 
 // Gemini AI generation endpoints - MUST come before /:id routes

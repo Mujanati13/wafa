@@ -275,16 +275,16 @@ const Leaderboard = () => {
         {/* Leaderboard Table Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
+            <table className="w-full min-w-[1000px]">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 w-16">
                     Rang
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 min-w-[300px]">
                     Utilisateur
                   </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700 w-20">
                     <div className="flex items-center gap-1">
                       <GraduationCap className="w-4 h-4" />
                       year
@@ -355,8 +355,8 @@ const Leaderboard = () => {
                           </div>
                         </td>
                         <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="h-10 w-10 flex-shrink-0">
                               <AvatarImage 
                                 src={user.photoURL?.startsWith('http') 
                                   ? user.photoURL 
@@ -370,9 +370,9 @@ const Leaderboard = () => {
                                 {(user.name || user.username)?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-gray-900">{user.name || user.username}</span>
-                              <span className="text-sm text-gray-500">@{user.username}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-semibold text-gray-900 truncate" title={user.name || user.username}>{user.name || user.username}</span>
+                              <span className="text-sm text-gray-500 truncate">@{user.username}</span>
                             </div>
                           </div>
                         </td>
