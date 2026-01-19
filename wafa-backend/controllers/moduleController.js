@@ -280,7 +280,7 @@ export const moduleController = {
             url: `/uploads/ai-context/${file.filename}`,
             size: file.size,
             uploadedAt: new Date(),
-            uploadedBy: req.user._id
+            uploadedBy: req.user?._id
         }));
 
         // Add to module's aiContextFiles array

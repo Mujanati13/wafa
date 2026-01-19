@@ -147,16 +147,16 @@ router.get("/", moduleController.getAll)
 
 // AI Context Files Management (must be before /:id routes)
 // Upload AI context files to a module
-router.post("/:id/ai-context", uploadAiContextFiles, moduleController.uploadAiContextFiles)
+router.post("/:id/ai-context", isAuthenticated, uploadAiContextFiles, moduleController.uploadAiContextFiles)
 
 // Get AI context files for a module
 router.get("/:id/ai-context", moduleController.getAiContextFiles)
 
 // Delete an AI context file from a module
-router.delete("/:id/ai-context/:fileId", moduleController.deleteAiContextFile)
+router.delete("/:id/ai-context/:fileId", isAuthenticated, moduleController.deleteAiContextFile)
 
 // Update AI prompt for a module
-router.put("/:id/ai-prompt", moduleController.updateAiPrompt)
+router.put("/:id/ai-prompt", isAuthenticated, moduleController.updateAiPrompt)
 
 // Get module AI configuration (prompt + context files)
 router.get("/:id/ai-config", moduleController.getAiConfig)
