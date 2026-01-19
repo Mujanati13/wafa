@@ -179,7 +179,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
     }
 
     const confirmDelete = window.confirm(
-      "Voulez-vous supprimer l'ancienne explication et en générer une nouvelle avec le prompt mis à jour ?"
+      "Cette explication semble mal formatée. Voulez-vous la supprimer et en générer une nouvelle avec le prompt par défaut amélioré ?"
     );
     
     if (!confirmDelete) return;
@@ -196,12 +196,25 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
         description: "Génération d'une nouvelle explication en cours..."
       });
       
-      // Generate new explanation
-      await handleGenerateAIExplanation();
+      // Generate new explanation WITHOUT module config (use default prompt)
+      const response = await api.post('/explanations/generate-gemini', {
+        questionId: question._id,
+        language: 'fr',
+        useModuleConfig: false // Use default prompt instead of module prompt
+      });
+
+      if (response.data?.success && response.data?.data) {
+        setAiExplanationData(response.data.data);
+        toast.success("Nouvelle explication générée avec succès !", {
+          description: "Utilisé le prompt par défaut amélioré",
+          duration: 4000
+        });
+      }
     } catch (error) {
-      console.error("Error deleting AI explanation:", error);
-      toast.error("Erreur lors de la suppression", {
-        description: error.response?.data?.message || "Impossible de supprimer l'explication."
+      console.error("Error deleting/regenerating AI explanation:", error);
+      const errorMessage = error.response?.data?.message;
+      toast.error("Erreur lors de la régénération", {
+        description: errorMessage || "Impossible de regénérer l'explication."
       });
     } finally {
       setIsDeletingAI(false);
@@ -392,9 +405,33 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
           >
             <Users className="h-4 w-4" />
             Explications Communauté
-            {!hasPremiumAccess && (
-              <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5">
-                Premium
+            {!hasPremiumAccess && (justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
+                        </div>
+                        {aiExplanationData?._id && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleDeleteAndRegenerateAI}
+                            disabled={isDeletingAI || isGeneratingAI}
+                            className="gap-1 text-xs h-7 border-amber-300 text-amber-700 hover:bg-amber-50"
+                            title="Cliquez si l'explication est mal formatée"
+                          >
+                            {isDeletingAI || isGeneratingAI ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Regénération...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-3 w-3" />
+                                Regénérer
+                              </>
+                            )}
+                          </Button>
+                        )}
               </Badge>
             )}
             {userExplanations.length > 0 && hasPremiumAccess && (
@@ -442,35 +479,30 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                   {/* AI Text */}
                   {aiExplanation.text && (
                     <div className="border border-blue-200 rounded-lg bg-gradient-to-br from-blue-50/50 to-white p-4 space-y-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleDeleteAndRegenerateAI}
-                          disabled={isDeletingAI || isGeneratingAI}
-                          className="gap-1 text-xs h-7 border-amber-300 text-amber-700 hover:bg-amber-50"
-                        >
-                          {isDeletingAI || isGeneratingAI ? (
-                            <>
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Regénération...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-3 w-3" />
-                              Regénérer
-                            </>
-                          )}
-                        </Button>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
                       </div>
-                      <div className="prose prose-sm max-w-none">
-                        <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
-                          {aiExplanation.text}
-                        </p>
+                      <div className="prose prose-sm prose-slate max-w-none">
+                        <div 
+                          className="text-gray-800 text-sm leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: aiExplanation.text
+                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                              .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold mt-3 mb-2">$1</h3>')
+                              .replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold mt-4 mb-2">$1</h2>')
+                              .replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold mt-4 mb-3">$1</h1>')
+                              .replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>')
+                              .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+                              .replace(/^(\d+)\. (.*$)/gim, '<li class="ml-4" style="list-style-type: decimal;">$2</li>')
+                              .replace(/\n\n/g, '</p><p class="mt-2">')
+                              .replace(/^(?!<[h|l|p])/gim, '<p>')
+                              .replace(/(?<![>])$/gim, '</p>')
+                              .replace(/<\/li>\n<li/g, '</li><li')
+                              .replace(/(<li.*<\/li>)/s, '<ul class="list-disc space-y-1 my-2">$1</ul>')
+                          }}
+                        />
                       </div>
                     </div>
                   )}
