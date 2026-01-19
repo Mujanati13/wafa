@@ -69,12 +69,18 @@ export const AdminAnalyticsController = {
         ? ((examsLastMonth[0].count / examData.totalExams) * 100).toFixed(1)
         : 0;
       
-      // Calculate monthly revenue (mock for now, can be replaced with real transaction data)
+      // Calculate current month's revenue (from 1st of current month to now)
+      const currentMonthStart = new Date();
+      currentMonthStart.setDate(1);
+      currentMonthStart.setHours(0, 0, 0, 0);
+      
+      const currentMonthEnd = new Date();
+      
       const transactions = await Transaction.aggregate([
         {
           $match: {
             status: "completed",
-            createdAt: { $gte: lastMonth }
+            createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
           }
         },
         {
@@ -345,6 +351,59 @@ export const AdminAnalyticsController = {
         }
       }
     });
+  }),
+
+  // Reset monthly revenue
+  resetMonthlyRevenue: asyncHandler(async (req, res) => {
+    try {
+      // Delete all transactions from the current month
+      const currentMonth = new Date();
+      currentMonth.setDate(1);
+      currentMonth.setHours(0, 0, 0, 0);
+      
+      const nextMonth = new Date(currentMonth);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      const result = await Transaction.deleteMany({
+        createdAt: {
+          $gte: currentMonth,
+          $lt: nextMonth
+        }
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Monthly revenue reset. Deleted ${result.deletedCount} transactions.`,
+        deletedCount: result.deletedCount
+      });
+    } catch (error) {
+      console.error("Error resetting monthly revenue:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error resetting monthly revenue",
+        error: error.message
+      });
+    }
+  }),
+
+  // Reset all transactions
+  resetAllTransactions: asyncHandler(async (req, res) => {
+    try {
+      const result = await Transaction.deleteMany({});
+
+      res.status(200).json({
+        success: true,
+        message: `All transactions deleted. Total: ${result.deletedCount} transactions.`,
+        deletedCount: result.deletedCount
+      });
+    } catch (error) {
+      console.error("Error resetting all transactions:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error resetting all transactions",
+        error: error.message
+      });
+    }
   })
 };
 

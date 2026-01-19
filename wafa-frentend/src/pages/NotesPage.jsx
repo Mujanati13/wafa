@@ -752,20 +752,26 @@ const NotesPage = () => {
 
 // Note Card Component - Redesigned per requirements
 const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
-  const [showReference, setShowReference] = useState(false);
-
-  const getReference = () => {
-    if (note.questionId?.examId) {
-      const exam = note.questionId.examId;
-      return exam.name || exam.title || (exam.year ? `Examen ${exam.year}` : null);
-    }
-    if (note.moduleId?.name) {
-      return note.moduleId.name;
+  const getModuleInfo = () => {
+    if (note.moduleId) {
+      return {
+        name: note.moduleId.name,
+        semester: note.moduleId.semester
+      };
     }
     return null;
   };
 
-  const reference = getReference();
+  const getExamInfo = () => {
+    if (note.questionId?.examId) {
+      const exam = note.questionId.examId;
+      return exam.name || exam.title || (exam.year ? `Examen ${exam.year}` : null);
+    }
+    return null;
+  };
+
+  const moduleInfo = getModuleInfo();
+  const examInfo = getExamInfo();
 
   return (
     <motion.div
@@ -788,16 +794,24 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
         )}
       </div>
 
-      {/* Reference Button (Red) */}
-      {reference && (
-        <div className="px-4 pt-3">
-          <button
-            onClick={() => setShowReference(!showReference)}
-            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-medium rounded-full transition-colors flex items-center gap-1"
-          >
-            <Tag className="h-3 w-3" />
-            {showReference ? reference : "Voir référence"}
-          </button>
+      {/* Module/Exam Reference */}
+      {(moduleInfo || examInfo) && (
+        <div className="px-4 pt-3 pb-1 space-y-2">
+          {moduleInfo && (
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-blue-900">{moduleInfo.name}</p>
+                <p className="text-xs text-blue-700">{moduleInfo.semester}</p>
+              </div>
+            </div>
+          )}
+          {examInfo && (
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-purple-50 rounded-md border border-purple-200">
+              <Tag className="h-3.5 w-3.5 text-purple-600" />
+              <p className="text-xs font-medium text-purple-900">{examInfo}</p>
+            </div>
+          )}
         </div>
       )}
 

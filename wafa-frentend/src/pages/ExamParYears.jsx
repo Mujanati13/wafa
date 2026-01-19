@@ -111,7 +111,18 @@ const ExamParYears = () => {
       fetchExams();
     } catch (err) {
       console.error("Error creating exam:", err);
-      toast.error("Erreur lors de la création de l'examen");
+      const errorMessage = err.response?.data?.message || "";
+      
+      if (errorMessage.toLowerCase().includes("unique") || errorMessage.toLowerCase().includes("already exists")) {
+        toast.error("Cet examen existe déjà. Veuillez utiliser un nom différent pour cette année.", {
+          description: `Un examen avec le nom "${formData.examName}" existe déjà pour cette année.`,
+          duration: 5000
+        });
+      } else if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error("Erreur lors de la création de l'examen");
+      }
     }
   };
 
@@ -223,7 +234,18 @@ const ExamParYears = () => {
       }
     } catch (err) {
       console.error("Error updating exam:", err);
-      toast.error(err.response?.data?.message || "Erreur lors de la mise à jour");
+      const errorMessage = err.response?.data?.message || "";
+      
+      if (errorMessage.toLowerCase().includes("unique") || errorMessage.toLowerCase().includes("already exists")) {
+        toast.error("Cet examen existe déjà. Veuillez utiliser un nom différent.", {
+          description: `Un examen avec le nom "${formData.examName}" existe déjà pour cette année.`,
+          duration: 5000
+        });
+      } else if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error("Erreur lors de la mise à jour de l'examen");
+      }
     }
   };
 
@@ -261,16 +283,26 @@ const ExamParYears = () => {
   const filteredExams = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return exams.filter((exam) => {
+      // Check module filter
       const passesModule = moduleFilter === "all" || exam.moduleName === moduleFilter;
-      const passesYear = yearFilter === "all" || exam.year === yearFilter;
+      
+      // Check year filter - ensure both are strings for comparison
+      const passesYear = yearFilter === "all" || String(exam.year) === String(yearFilter);
+      
       // Check semester filter - find module and compare semester
-      const examModule = modules.find(m => m.name === exam.moduleName);
-      const passesSemester = semesterFilter === "all" || (examModule && examModule.semester === semesterFilter);
+      let passesSemester = true;
+      if (semesterFilter !== "all") {
+        const examModule = modules.find(m => m.name === exam.moduleName);
+        passesSemester = examModule && examModule.semester === semesterFilter;
+      }
+      
+      // Check search
       const passesSearch =
         exam.examName.toLowerCase().includes(term) ||
         exam.moduleName.toLowerCase().includes(term) ||
-        exam.year.includes(term) ||
+        String(exam.year).includes(term) ||
         String(exam.id).includes(term);
+      
       return passesModule && passesYear && passesSemester && passesSearch;
     });
   }, [searchTerm, moduleFilter, yearFilter, semesterFilter, exams, modules]);
@@ -427,7 +459,7 @@ const ExamParYears = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes les années</SelectItem>
-                  {Array.from(new Set(exams.map((e) => e.year).filter(y => y && y !== ""))).sort((a, b) => b - a).map((year) => (
+                  {Array.from(new Set(exams.map((e) => e.year).filter(y => y && y !== ""))).sort((a, b) => parseInt(b) - parseInt(a)).map((year) => (
                     <SelectItem key={year} value={year}>
                       {year}
                     </SelectItem>

@@ -758,10 +758,6 @@ const PricingSection = ({ settings }) => {
                                 <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
                                 <span className="text-sm text-slate-700">Interface adaptée aux mobiles</span>
                               </div>
-                              <div className="flex items-start gap-3">
-                                <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
-                                <span className="text-sm text-slate-700">Pourcentage des réponses</span>
-                              </div>
                               <div className="flex items-start gap-3 opacity-50">
                                 <span className="text-red-500 flex-shrink-0 mt-0.5">❌</span>
                                 <span className="text-sm text-slate-400 line-through">Accès aux classements</span>
@@ -813,10 +809,6 @@ const PricingSection = ({ settings }) => {
                               </div>
                               <div className="flex items-start gap-3">
                                 <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
-                                <span className="text-sm text-slate-700">Pourcentage des réponses</span>
-                              </div>
-                              <div className="flex items-start gap-3">
-                                <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
                                 <span className="text-sm text-slate-700">Accès aux classements</span>
                               </div>
                               <div className="flex items-start gap-3">
@@ -863,10 +855,6 @@ const PricingSection = ({ settings }) => {
                               <div className="flex items-start gap-3">
                                 <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
                                 <span className="text-sm text-slate-700">Interface adaptée aux mobiles</span>
-                              </div>
-                              <div className="flex items-start gap-3">
-                                <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
-                                <span className="text-sm text-slate-700">Pourcentage des réponses</span>
                               </div>
                               <div className="flex items-start gap-3">
                                 <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>

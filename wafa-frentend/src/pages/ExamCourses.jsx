@@ -34,6 +34,7 @@ const ExamCourses = () => {
   const [semesterFilter, setSemesterFilter] = useState("all"); // Semester filter for table
   const [formSemesterFilter, setFormSemesterFilter] = useState("all"); // Semester filter for module selection
   const [useCustomCategory, setUseCustomCategory] = useState(false); // Toggle for custom category input
+  const [loadingCategories, setLoadingCategories] = useState(false); // Track loading state for categories
   const [imageFile, setImageFile] = useState(null); // File upload state
   const [imagePreview, setImagePreview] = useState(""); // Image preview URL
   const fileInputRef = useRef(null);
@@ -82,14 +83,18 @@ const ExamCourses = () => {
   const fetchCategoriesForModule = async (moduleId) => {
     if (!moduleId) {
       setModuleCategoriesData([]);
+      setLoadingCategories(false);
       return;
     }
     try {
+      setLoadingCategories(true);
       const { data } = await api.get(`/exam-courses/module/${moduleId}/categories`);
       setModuleCategoriesData(data?.data || []);
     } catch (err) {
       console.error("Error fetching module categories:", err);
       setModuleCategoriesData([]);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
@@ -225,8 +230,17 @@ const ExamCourses = () => {
   const handleAddCourse = async () => {
     const categoryToUse = useCustomCategory ? formData.customCategory : formData.category;
     
-    if (!formData.courseName || !formData.moduleName || !categoryToUse) {
-      toast.error(t('admin:fill_required_fields'));
+    // Better validation with specific error messages
+    if (!formData.courseName) {
+      toast.error("Veuillez entrer le nom du cours");
+      return;
+    }
+    if (!formData.moduleName) {
+      toast.error("Veuillez sélectionner un module");
+      return;
+    }
+    if (!categoryToUse) {
+      toast.error("Veuillez sélectionner ou créer une catégorie");
       return;
     }
 
@@ -330,10 +344,13 @@ const ExamCourses = () => {
   const handleFormChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // When module is changed, fetch categories for that module
+    // When module is changed, fetch categories for that module and reset category selection
     if (field === "moduleName" && value) {
       const selectedModule = modules.find(m => m.name === value);
       if (selectedModule) {
+        // Clear previous category selection when module changes
+        setFormData((prev) => ({ ...prev, category: "", customCategory: "" }));
+        setUseCustomCategory(false);
         fetchCategoriesForModule(selectedModule._id);
       }
     }
@@ -373,8 +390,17 @@ const ExamCourses = () => {
   const handleUpdateCourse = async () => {
     const categoryToUse = useCustomCategory ? formData.customCategory : formData.category;
     
-    if (!formData.courseName || !formData.moduleName || !categoryToUse) {
-      toast.error(t('admin:fill_required_fields'));
+    // Better validation with specific error messages
+    if (!formData.courseName) {
+      toast.error("Veuillez entrer le nom du cours");
+      return;
+    }
+    if (!formData.moduleName) {
+      toast.error("Veuillez sélectionner un module");
+      return;
+    }
+    if (!categoryToUse) {
+      toast.error("Veuillez sélectionner ou créer une catégorie");
       return;
     }
 
@@ -711,8 +737,8 @@ const ExamCourses = () => {
                   {/* Category selection with toggle for custom */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-black font-medium">Catégorie {moduleCategoriesData.length === 0 ? "*" : "(optionnel si existante)"}</Label>
-                      {moduleCategoriesData.length > 0 && (
+                      <Label className="text-black font-medium">Catégorie *</Label>
+                      {moduleCategoriesData.length > 0 && !loadingCategories && (
                         <button
                           type="button"
                           className="text-xs text-purple-600 hover:text-purple-700 underline"
@@ -729,7 +755,13 @@ const ExamCourses = () => {
                       </p>
                     )}
                     
-                    {formData.moduleName && !useCustomCategory && moduleCategoriesData.length > 0 ? (
+                    {formData.moduleName && loadingCategories && (
+                      <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                        Chargement des catégories...
+                      </p>
+                    )}
+                    
+                    {formData.moduleName && !loadingCategories && !useCustomCategory && moduleCategoriesData.length > 0 ? (
                       <>
                         <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
                           <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
@@ -748,9 +780,9 @@ const ExamCourses = () => {
                         </p>
                       </>
                     ) : (
-                      formData.moduleName && (
+                      formData.moduleName && !loadingCategories && (
                         <Input
-                          placeholder="Entrez le nom de la nouvelle catégorie..."
+                          placeholder={moduleCategoriesData.length > 0 ? "Ou entrez un nouveau nom de catégorie..." : "Entrez le nom de la catégorie..."}
                           value={formData.customCategory}
                           onChange={(e) => handleFormChange("customCategory", e.target.value)}
                           className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"

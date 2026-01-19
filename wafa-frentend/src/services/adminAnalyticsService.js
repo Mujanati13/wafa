@@ -60,6 +60,18 @@ export const adminAnalyticsService = {
     const response = await api.get('/admin/analytics/leaderboard', { params });
     return response.data;
   },
+
+  // Reset monthly revenue
+  resetMonthlyRevenue: async () => {
+    const response = await api.post('/admin/analytics/reset-monthly-revenue');
+    return response.data;
+  },
+
+  // Reset all transactions
+  resetAllTransactions: async () => {
+    const response = await api.post('/admin/analytics/reset-all-transactions');
+    return response.data;
+  },
 };
 
 export default adminAnalyticsService;

@@ -545,7 +545,7 @@ export const UserController = {
         try {
             const { userId } = req.params;
 
-            const user = await User.findByIdAndDelete(userId);
+            const user = await User.findById(userId);
 
             if (!user) {
                 return res.status(404).json({
@@ -553,6 +553,28 @@ export const UserController = {
                     message: 'User not found'
                 });
             }
+
+            // Delete from Firebase if user has firebaseUid
+            if (user.firebaseUid) {
+                try {
+                    const firebaseInitialized = admin && admin.apps && admin.apps.length > 0;
+                    if (firebaseInitialized) {
+                        await admin.auth().deleteUser(user.firebaseUid);
+                        console.log('✅ Firebase user deleted:', user.firebaseUid);
+                    } else {
+                        console.log('⚠️  Firebase not initialized - user only deleted from MongoDB');
+                    }
+                } catch (firebaseError) {
+                    console.error('🔥 Firebase user deletion error:', firebaseError.message);
+                    // Continue with MongoDB deletion even if Firebase deletion fails
+                    if (firebaseError.code !== 'auth/user-not-found') {
+                        console.error('   User may still exist in Firebase');
+                    }
+                }
+            }
+
+            // Delete from MongoDB
+            await User.findByIdAndDelete(userId);
 
             // Also delete user stats if exists
             try {
@@ -563,7 +585,7 @@ export const UserController = {
 
             res.status(200).json({
                 success: true,
-                message: 'User deleted successfully'
+                message: 'User deleted successfully from both Firebase and database'
             });
         } catch (error) {
             console.error('Error deleting user:', error);

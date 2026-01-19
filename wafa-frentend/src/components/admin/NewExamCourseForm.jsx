@@ -13,7 +13,13 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Select } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const newExamCourseSchema = z.object({
   name: z.string().min(2, "Course name is required"),
@@ -28,7 +34,7 @@ const newExamCourseSchema = z.object({
     .url("Enter a valid image URL")
     .or(z.string().length(0))
     .transform((v) => v || ""),
-  helpText: z.string().min(2, "Please add the help text shown in the ?"),
+  helpText: z.string().min(0).optional().or(z.string().length(0)).transform((v) => v || ""),
 });
 
 const NewExamCourseForm = ({
@@ -110,19 +116,17 @@ const NewExamCourseForm = ({
                     Select Module
                   </FormLabel>
                   <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                    >
-                      <option value="" disabled>
-                        Choose a module
-                      </option>
-                      {modules.map((module) => (
-                        <option key={module} value={module}>
-                          {module}
-                        </option>
-                      ))}
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-gray-300 focus:border-gray-400 focus:ring-gray-400">
+                        <SelectValue placeholder="Choose a module" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modules.map((module) => (
+                          <SelectItem key={module} value={module}>
+                            {module}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </FormControl>
                   <FormMessage />
@@ -139,19 +143,17 @@ const NewExamCourseForm = ({
                     Select Category
                   </FormLabel>
                   <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="border-gray-300 focus:border-gray-400 focus:ring-gray-400"
-                    >
-                      <option value="" disabled>
-                        Choose a category
-                      </option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="border-gray-300 focus:border-gray-400 focus:ring-gray-400">
+                        <SelectValue placeholder="Choose a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                   </FormControl>
                   <FormMessage />

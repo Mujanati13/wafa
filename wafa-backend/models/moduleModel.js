@@ -12,6 +12,11 @@ const moduleSchema = new mongoose.Schema(
                 enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10"],
                 required: [true, "Semester is required"]
         },
+        // Order within semester for display
+        order: {
+                type: Number,
+                default: 0,
+        },
         // Category - 4 default categories
         category: {
                 type: String,

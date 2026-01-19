@@ -7,46 +7,70 @@ export const examController = {
     create: asyncHandler(async (req, res) => {
 
         const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
-        const newExam = await examModel.create({
-            name,
-            moduleId,
-            year,
-            imageUrl,
-            infoText,
-            courseCategoryId: courseCategoryId || null
-        });
-        res.status(201).json({
-            success: true,
-            data: newExam
-        });
-
-    }),
-
-    update: asyncHandler(async (req, res) => {
-        const { id } = req.params;
-        const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
-        const updatedExam = await examModel.findByIdAndUpdate(
-            id,
-            {
+        
+        try {
+            const newExam = await examModel.create({
                 name,
                 moduleId,
                 year,
                 imageUrl,
                 infoText,
                 courseCategoryId: courseCategoryId || null
-            },
-            { new: true }
-        );
-        if (!updatedExam) {
-            return res.status(404).json({
-                success: false,
-                message: "Exam not found"
             });
+            res.status(201).json({
+                success: true,
+                data: newExam
+            });
+        } catch (error) {
+            // Handle duplicate key error (E11000)
+            if (error.code === 11000) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name must be unique"
+                });
+            }
+            throw error;
         }
-        res.status(200).json({
-            success: true,
-            data: updatedExam
-        });
+
+    }),
+
+    update: asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
+        
+        try {
+            const updatedExam = await examModel.findByIdAndUpdate(
+                id,
+                {
+                    name,
+                    moduleId,
+                    year,
+                    imageUrl,
+                    infoText,
+                    courseCategoryId: courseCategoryId || null
+                },
+                { new: true }
+            );
+            if (!updatedExam) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Exam not found"
+                });
+            }
+            res.status(200).json({
+                success: true,
+                data: updatedExam
+            });
+        } catch (error) {
+            // Handle duplicate key error (E11000)
+            if (error.code === 11000) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name must be unique"
+                });
+            }
+            throw error;
+        }
     }),
 
     delete: asyncHandler(async (req, res) => {

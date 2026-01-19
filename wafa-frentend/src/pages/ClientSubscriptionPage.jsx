@@ -283,7 +283,7 @@ const ClientSubscriptionPage = () => {
                   <div>
                     <p className="text-sm text-slate-600 mb-2">Plan d'abonnement</p>
                     <Badge className="text-lg px-4 py-2" variant={userSubscription?.plan === 'Premium' ? 'default' : 'secondary'}>
-                      {userSubscription?.plan || 'Plan Gratuit'}
+                      {userSubscription?.plan === 'Premium Annuel' ? 'Premium Pro' : (userSubscription?.plan || 'Plan Gratuit')}
                     </Badge>
                   </div>
                   {userSubscription?.subscription && (
@@ -339,7 +339,7 @@ const ClientSubscriptionPage = () => {
                         )}
 
                         <CardHeader className={isCurrentPlan ? 'pt-8' : ''}>
-                          <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                          <CardTitle className="text-2xl">{plan.name === 'Premium Annuel' ? 'Premium Pro' : plan.name}</CardTitle>
                           <CardDescription>{plan.description}</CardDescription>
                           <div className="mt-4">
                             <span className="text-3xl font-bold text-slate-900">
@@ -374,10 +374,6 @@ const ClientSubscriptionPage = () => {
                                 <div className="flex items-start gap-3">
                                   <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
                                   <span className="text-sm text-slate-700">Interface adaptée aux mobiles</span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                  <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
-                                  <span className="text-sm text-slate-700">Pourcentage des réponses</span>
                                 </div>
                                 <div className="flex items-start gap-3 opacity-50">
                                   <span className="text-red-500 flex-shrink-0 mt-0.5">❌</span>
@@ -427,10 +423,6 @@ const ClientSubscriptionPage = () => {
                                 <div className="flex items-start gap-3">
                                   <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
                                   <span className="text-sm text-slate-700">Interface adaptée aux mobiles</span>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                  <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>
-                                  <span className="text-sm text-slate-700">Pourcentage des réponses</span>
                                 </div>
                                 <div className="flex items-start gap-3">
                                   <span className="text-green-500 flex-shrink-0 mt-0.5">✔️</span>

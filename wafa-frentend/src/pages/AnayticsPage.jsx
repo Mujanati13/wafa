@@ -146,6 +146,64 @@ const AnalyticsPage = () => {
     }
   };
 
+  const handleResetMonthlyRevenue = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser les revenus mensuels ? Cette action ne peut pas être annulée.')) {
+      return;
+    }
+
+    try {
+      toast.loading('Réinitialisation en cours...', { id: 'reset' });
+      const response = await adminAnalyticsService.resetMonthlyRevenue();
+      
+      toast.success('Revenus mensuels réinitialisés', { 
+        id: 'reset',
+        description: `${response.deletedCount} transactions supprimées.`
+      });
+
+      // Wait a moment to ensure backend processing is complete, then refresh with visible loading
+      setTimeout(() => {
+        handleRefresh(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Reset error:', error);
+      toast.error('Erreur lors de la réinitialisation', { 
+        id: 'reset',
+        description: error.response?.data?.message || 'Une erreur est survenue'
+      });
+    }
+  };
+
+  const handleResetAllTransactions = async () => {
+    if (!window.confirm('⚠️ ATTENTION: Êtes-vous absolument sûr de vouloir SUPPRIMER TOUTES les transactions ? Cette action ne peut pas être annulée et affectera tous les revenus !')) {
+      return;
+    }
+
+    if (!window.confirm('🚨 Dernier avertissement: Ceci supprimera TOUTES les transactions du système. Êtes-vous certain ?')) {
+      return;
+    }
+
+    try {
+      toast.loading('Suppression de toutes les transactions...', { id: 'reset-all' });
+      const response = await adminAnalyticsService.resetAllTransactions();
+      
+      toast.success('Toutes les transactions supprimées', { 
+        id: 'reset-all',
+        description: `${response.deletedCount} transactions supprimées.`
+      });
+
+      // Wait a moment to ensure backend processing is complete, then refresh with visible loading
+      setTimeout(() => {
+        handleRefresh(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Reset all error:', error);
+      toast.error('Erreur lors de la suppression', { 
+        id: 'reset-all',
+        description: error.response?.data?.message || 'Une erreur est survenue'
+      });
+    }
+  };
+
   const getActivityIcon = (type) => {
     switch (type) {
       case "user":
@@ -277,6 +335,24 @@ const AnalyticsPage = () => {
           >
             <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden xs:inline">{t('common:export')}</span>
+          </Button>
+          <Button
+            onClick={handleResetMonthlyRevenue}
+            variant="destructive"
+            size="sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
+          >
+            <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Réinitialiser revenus</span>
+          </Button>
+          <Button
+            onClick={handleResetAllTransactions}
+            variant="destructive"
+            size="sm"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9 bg-red-700 hover:bg-red-800"
+          >
+            <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Réinitialiser tout</span>
           </Button>
           <Button
             onClick={() => handleRefresh(false)}

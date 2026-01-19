@@ -36,6 +36,7 @@ export const moduleController = {
         // Only include fields that are provided in the request
         if (req.body.name !== undefined) updateData.name = req.body.name;
         if (req.body.semester !== undefined) updateData.semester = req.body.semester;
+        if (req.body.order !== undefined) updateData.order = req.body.order;
         if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
         if (req.body.infoText !== undefined) updateData.infoText = req.body.infoText;
         if (req.body.color !== undefined) updateData.color = req.body.color;
@@ -86,8 +87,8 @@ export const moduleController = {
     }),
 
     getAll: asyncHandler(async (req, res) => {
-        // Get all modules
-        const modules = await moduleSchema.find({}).lean();
+        // Get all modules sorted by semester and order
+        const modules = await moduleSchema.find({}).sort({ semester: 1, order: 1 }).lean();
 
         // Get all ExamParYears for all modules
         const moduleIds = modules.map(m => m._id);

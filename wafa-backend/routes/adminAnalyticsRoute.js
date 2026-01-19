@@ -15,5 +15,7 @@ router.get("/recent-activity", AdminAnalyticsController.getRecentActivity);
 router.get("/subscriptions", AdminAnalyticsController.getSubscriptionAnalytics);
 router.get("/demographics", AdminAnalyticsController.getUserDemographics);
 router.get("/leaderboard", AdminAnalyticsController.getLeaderboard);
+router.post("/reset-monthly-revenue", AdminAnalyticsController.resetMonthlyRevenue);
+router.post("/reset-all-transactions", AdminAnalyticsController.resetAllTransactions);
 
 export default router;

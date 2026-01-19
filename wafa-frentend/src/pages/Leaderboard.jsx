@@ -65,7 +65,7 @@ const Leaderboard = () => {
       });
       
       // Transform data to include all point types
-      const transformedData = (response.data.leaderboard || []).map(user => {
+      const transformedData = (response.data.leaderboard || []).map((user, index) => {
         // Calculate year from semesters if currentYear not set
         let year = user.currentYear;
         if (!year && user.semesters && user.semesters.length > 0) {
@@ -82,7 +82,8 @@ const Leaderboard = () => {
           bluePoints: user.bluePoints || 0,
           greenPoints: user.greenPoints || 0,
           totalPoints: user.totalPoints || ((user.normalPoints || user.points || 0) + (user.bluePoints || 0) + (user.greenPoints || 0)),
-          currentYear: year
+          currentYear: year,
+          rank: user.rank || (index + 1) // Use provided rank or calculate from index
         };
       });
       
@@ -330,11 +331,11 @@ const Leaderboard = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((user, index) => {
+                  filteredData.map((user) => {
                     const levelInfo = calculateLevel(user.totalPoints);
                     return (
                       <tr
-                        key={user._id || index}
+                        key={user._id || user.rank}
                         className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                           user.rank === 1 ? "bg-yellow-50" : user.rank === 2 ? "bg-slate-50" : user.rank === 3 ? "bg-orange-50" : ""
                         }`}
