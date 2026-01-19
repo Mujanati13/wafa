@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter, Lock } from "lucide-react";
+import { Crown, Medal, Trophy, Loader, Zap, Star, TrendingUp, Percent, MoreHorizontal, Filter, Lock, Award } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -151,13 +151,8 @@ const LeaderboardClient = () => {
     );
   }
 
-  // Filter leaderboard to show only users in the same study year as current user
-  const currentUserYear = user?.currentYear;
-  const filtered = currentUserYear 
-    ? leaderboardData.filter((leaderboardUser) => leaderboardUser.currentYear === currentUserYear)
-    : leaderboardData; // If no year set, show all users
-
-  const sorted = filtered;
+  // Show all users in the leaderboard (no year filtering)
+  const sorted = leaderboardData;
   const topThree = sorted.slice(0, 3);
   const maxScore = sorted[0]?.totalPoints || 1;
 
@@ -170,6 +165,16 @@ const LeaderboardClient = () => {
         <p className="text-muted-foreground mt-1">
           {t('dashboard:top_10_students_by_points')}
         </p>
+      </div>
+
+      {/* Info Banner */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+        <Award className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-blue-900">
+            Le classement affiche tous les étudiants de toutes les années confondues.
+          </p>
+        </div>
       </div>
 
       {/* Podium */}

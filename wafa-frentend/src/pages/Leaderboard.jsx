@@ -184,6 +184,19 @@ const Leaderboard = () => {
           </Button>
         </div>
 
+        {/* Note Banner - All Years */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="text-blue-600 mt-1">
+            <Award className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-blue-900">Note importante</p>
+            <p className="text-sm text-blue-800 mt-1">
+              Le classement affiche tous les étudiants de toutes les années confondues.
+            </p>
+          </div>
+        </div>
+
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="shadow-sm bg-white rounded-lg p-6 flex items-center justify-between">
