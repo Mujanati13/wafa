@@ -42,8 +42,6 @@ const NotesPage = () => {
 
   // Filter states
   const [filterType, setFilterType] = useState("recent"); // recent, module, date
-  const [selectedModule, setSelectedModule] = useState("all");
-  const [selectedExamType, setSelectedExamType] = useState("all");
   const [selectedExamName, setSelectedExamName] = useState("all");
   const [selectedQuestionNumber, setSelectedQuestionNumber] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
@@ -261,39 +259,10 @@ const NotesPage = () => {
     }
   };
 
-  // Get unique exam types from notes
-  const getExamTypes = () => {
-    const types = new Set();
-    notes.forEach(note => {
-      if (note.questionId?.examId?.type) {
-        types.add(note.questionId.examId.type);
-      }
-    });
-    return ['exam', 'course', 'qcm'];
-  };
-
-  // Get unique exam names from notes for selected module
-  const getExamNamesForModule = (moduleId) => {
-    if (moduleId === "all") {
-      const names = new Set();
-      notes.forEach(note => {
-        if (note.questionId?.examId) {
-          const examName = note.questionId.examId.name || 
-                          note.questionId.examId.title || 
-                          (note.questionId.examId.year ? `Examen ${note.questionId.examId.year}` : null);
-          if (examName) names.add(examName);
-        }
-      });
-      return Array.from(names);
-    }
-    
-    const moduleNotes = notes.filter(n => {
-      const noteModuleId = n.moduleId?._id || n.moduleId;
-      return noteModuleId === moduleId;
-    });
-    
+  // Get unique exam names from notes
+  const getExamNames = () => {
     const names = new Set();
-    moduleNotes.forEach(note => {
+    notes.forEach(note => {
       if (note.questionId?.examId) {
         const examName = note.questionId.examId.name || 
                         note.questionId.examId.title || 
@@ -301,7 +270,6 @@ const NotesPage = () => {
         if (examName) names.add(examName);
       }
     });
-    
     return Array.from(names);
   };
 
@@ -326,18 +294,6 @@ const NotesPage = () => {
       return false;
     }
 
-    // Module filter
-    if (selectedModule !== "all") {
-      const noteModuleId = note.moduleId?._id || note.moduleId;
-      if (noteModuleId !== selectedModule) return false;
-    }
-
-    // Exam Type filter
-    if (selectedExamType !== "all") {
-      const noteExamType = note.questionId?.examId?.type;
-      if (!noteExamType || noteExamType !== selectedExamType) return false;
-    }
-
     // Exam Name filter
     if (selectedExamName !== "all") {
       const examName = note.questionId?.examId?.name || 
@@ -349,7 +305,7 @@ const NotesPage = () => {
     // Question Number filter
     if (selectedQuestionNumber && selectedQuestionNumber !== "all") {
       const qNumber = note.questionId?.questionNumber;
-      if (!qNumber || qNumber.toString() !== selectedQuestionNumber) return false;
+      if (!qNumber || qNumber.toString() !== selectedQuestionNumber.toString()) return false;
     }
 
     // Date filter
@@ -476,54 +432,17 @@ const NotesPage = () => {
 
               {/* Second Row - Dropdowns */}
               <div className="flex flex-wrap items-center gap-3">
-                {/* Module Filter */}
-                <Select value={selectedModule} onValueChange={(v) => {
-                  setSelectedModule(v);
-                  if (v === "all") {
-                    setSelectedExamName("all");
-                    setSelectedQuestionNumber("all");
-                  } else {
-                    setSelectedExamName("all");
-                  }
-                }}>
-                  <SelectTrigger className="w-[160px] bg-white">
-                    <SelectValue placeholder="Module" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous modules</SelectItem>
-                    {modules.map((module) => (
-                      <SelectItem key={module._id} value={module._id}>
-                        {module.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Exam Type Filter */}
-                <Select value={selectedExamType} onValueChange={setSelectedExamType}>
-                  <SelectTrigger className="w-[140px] bg-white">
-                    <SelectValue placeholder="Exam Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    <SelectItem value="exam">Exam Years</SelectItem>
-                    <SelectItem value="course">Par Cours</SelectItem>
-                    <SelectItem value="qcm">QCM Banque</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 {/* Exam Name Filter */}
                 <Select 
                   value={selectedExamName} 
                   onValueChange={setSelectedExamName}
-                  disabled={selectedModule === "all"}
                 >
                   <SelectTrigger className="w-[160px] bg-white">
                     <SelectValue placeholder="Exam Name" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All exams</SelectItem>
-                    {getExamNamesForModule(selectedModule).map((name) => (
+                    {getExamNames().map((name) => (
                       <SelectItem key={name} value={name}>
                         {name}
                       </SelectItem>

@@ -264,7 +264,7 @@ const ExamParYears = () => {
         examName: e?.name || "",
         year: String(e?.year ?? ""),
         imageUrl: e?.imageUrl || placeholderImage,
-        totalQuestions: Array.isArray(e?.questions) ? e.questions.length : 0,
+        totalQuestions: e?.totalQuestions || 0, // Use totalQuestions from backend
         helpText: e?.infoText || "",
         courseCategoryId: e?.courseCategoryId || "",
         status: "active",
