@@ -29,6 +29,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
   // State for AI generation
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiExplanationData, setAiExplanationData] = useState(null);
+  const [isDeletingAI, setIsDeletingAI] = useState(false);
 
   // Check access levels - AI explanations only for PREMIUM PRO
   const hasPremiumAccess = userPlan === "PREMIUM" || userPlan === "PREMIUM PRO" || userPlan === "Premium" || userPlan === "Premium Annuel";
@@ -167,6 +168,43 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
       }
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  // Function to delete AI explanation and regenerate
+  const handleDeleteAndRegenerateAI = async () => {
+    if (!aiExplanationData?._id) {
+      toast.error("Aucune explication IA à supprimer");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      "Voulez-vous supprimer l'ancienne explication et en générer une nouvelle avec le prompt mis à jour ?"
+    );
+    
+    if (!confirmDelete) return;
+
+    setIsDeletingAI(true);
+    try {
+      // Delete the old AI explanation
+      await api.delete(`/explanations/${aiExplanationData._id}`);
+      
+      // Clear the AI explanation data
+      setAiExplanationData(null);
+      
+      toast.success("Ancienne explication supprimée", {
+        description: "Génération d'une nouvelle explication en cours..."
+      });
+      
+      // Generate new explanation
+      await handleGenerateAIExplanation();
+    } catch (error) {
+      console.error("Error deleting AI explanation:", error);
+      toast.error("Erreur lors de la suppression", {
+        description: error.response?.data?.message || "Impossible de supprimer l'explication."
+      });
+    } finally {
+      setIsDeletingAI(false);
     }
   };
 
@@ -404,9 +442,30 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                   {/* AI Text */}
                   {aiExplanation.text && (
                     <div className="border border-blue-200 rounded-lg bg-gradient-to-br from-blue-50/50 to-white p-4 space-y-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bot className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleDeleteAndRegenerateAI}
+                          disabled={isDeletingAI || isGeneratingAI}
+                          className="gap-1 text-xs h-7 border-amber-300 text-amber-700 hover:bg-amber-50"
+                        >
+                          {isDeletingAI || isGeneratingAI ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Regénération...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3 w-3" />
+                              Regénérer
+                            </>
+                          )}
+                        </Button>
                       </div>
                       <div className="prose prose-sm max-w-none">
                         <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">

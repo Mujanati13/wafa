@@ -719,27 +719,58 @@ const GenerateExplanationsAI = () => {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between">
                     <Label className="font-semibold text-gray-700">Prompt personnalisé pour ce module</Label>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSaveModulePrompt}
-                      disabled={!selectedModule}
-                      className="gap-1 text-xs h-7"
-                    >
-                      <CheckCircle className="w-3 h-3" />
-                      Sauvegarder pour le module
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const examplePrompt = `Question:
+{questionText}
+
+Options:
+{options}
+
+Réponses correctes: {correctAnswers}
+
+Donne une explication directe SANS introduction. Explique pourquoi les réponses correctes sont justes et pourquoi les autres sont incorrectes. Structure ta réponse clairement.`;
+                          setCustomPrompt(examplePrompt);
+                        }}
+                        disabled={!selectedModule}
+                        className="gap-1 text-xs h-7"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Exemple
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleSaveModulePrompt}
+                        disabled={!selectedModule}
+                        className="gap-1 text-xs h-7"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Sauvegarder
+                      </Button>
+                    </div>
                   </div>
                   <Textarea
-                    placeholder="Entrez votre propre prompt pour personnaliser les explications de ce module. Ce prompt sera utilisé automatiquement par les utilisateurs."
+                    placeholder="Utilisez {questionText}, {options}, {correctAnswers} comme placeholders. Cliquez sur 'Exemple' pour voir un modèle."
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
-                    className="min-h-[100px] font-mono text-sm"
+                    className="min-h-[120px] font-mono text-sm"
                     disabled={!selectedModule}
                   />
-                  <p className="text-xs text-gray-500">
-                    💡 Ce prompt sera automatiquement utilisé lors de la génération d'explications pour ce module
-                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-900 font-medium mb-1">📝 Placeholders disponibles:</p>
+                    <ul className="text-xs text-blue-800 space-y-0.5 ml-4 list-disc">
+                      <li><code className="bg-blue-100 px-1 rounded">{"{questionText}"}</code> - Texte de la question</li>
+                      <li><code className="bg-blue-100 px-1 rounded">{"{options}"}</code> - Liste des options (A, B, C, D...)</li>
+                      <li><code className="bg-blue-100 px-1 rounded">{"{correctAnswers}"}</code> - Lettres des réponses correctes</li>
+                    </ul>
+                    <p className="text-xs text-blue-700 mt-2">
+                      ⚠️ <strong>Important:</strong> Ajoutez "SANS introduction" dans votre prompt pour éviter les présentations inutiles
+                    </p>
+                  </div>
                 </div>
 
                 {/* PDF Context Upload */}
