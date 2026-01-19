@@ -101,14 +101,15 @@ Options:
 ${optionsText}
 
 Instructions:
-1. Explique pourquoi la/les réponse(s) correcte(s) est/sont juste(s)
-2. Explique pourquoi les autres options sont incorrectes
-3. Fournis un contexte médical pertinent
-4. Utilise un langage clair et pédagogique
-5. Structure ta réponse avec des paragraphes et des points clés
-${contextData ? '6. Utilise le contexte fourni ci-dessus pour enrichir ton explication' : ''}
+1. Donne directement l'explication SANS introduction ni présentation
+2. Explique pourquoi la/les réponse(s) correcte(s) est/sont juste(s)
+3. Explique pourquoi les autres options sont incorrectes
+4. Fournis un contexte médical pertinent
+5. Utilise un langage clair et pédagogique
+6. Structure ta réponse avec des paragraphes et des points clés
+${contextData ? '7. Utilise le contexte fourni ci-dessus pour enrichir ton explication' : ''}
 
-Génère une explication complète et détaillée:`;
+Explication directe:`;
 }
 
 /**
@@ -136,14 +137,15 @@ Options:
 ${optionsText}
 
 Instructions:
-1. Explain why the correct answer(s) is/are right
-2. Explain why the other options are incorrect
-3. Provide relevant medical context
-4. Use clear and pedagogical language
-5. Structure your response with paragraphs and key points
-${contextData ? '6. Use the provided context above to enrich your explanation' : ''}
+1. Provide explanation directly WITHOUT introduction or preamble
+2. Explain why the correct answer(s) is/are right
+3. Explain why the other options are incorrect
+4. Provide relevant medical context
+5. Use clear and pedagogical language
+6. Structure your response with paragraphs and key points
+${contextData ? '7. Use the provided context above to enrich your explanation' : ''}
 
-Generate a complete and detailed explanation:`;
+Direct explanation:`;
 }
 
 /**
