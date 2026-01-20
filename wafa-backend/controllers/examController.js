@@ -24,9 +24,17 @@ export const examController = {
         } catch (error) {
             // Handle duplicate key error (E11000)
             if (error.code === 11000) {
+                // Check which field caused the duplicate
+                const field = Object.keys(error.keyPattern || {})[0];
+                if (field === 'name' || (error.keyPattern && Object.keys(error.keyPattern).length > 1)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Un examen avec ce nom existe déjà pour ce module et cette année"
+                    });
+                }
                 return res.status(400).json({
                     success: false,
-                    message: "Name must be unique"
+                    message: "Cette valeur existe déjà"
                 });
             }
             throw error;
@@ -66,7 +74,7 @@ export const examController = {
             if (error.code === 11000) {
                 return res.status(400).json({
                     success: false,
-                    message: "Name must be unique"
+                    message: "Un examen avec ce nom existe déjà pour ce module et cette année"
                 });
             }
             throw error;

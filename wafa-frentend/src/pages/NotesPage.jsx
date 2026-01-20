@@ -689,8 +689,13 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
     return null;
   };
 
+  const getQuestionNumber = () => {
+    return note.questionId?.questionNumber || null;
+  };
+
   const moduleInfo = getModuleInfo();
   const examInfo = getExamInfo();
+  const questionNumber = getQuestionNumber();
 
   return (
     <motion.div
@@ -713,22 +718,45 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
         )}
       </div>
 
-      {/* Module/Exam Reference */}
-      {(moduleInfo || examInfo) && (
-        <div className="px-4 pt-3 pb-1 space-y-2">
-          {moduleInfo && (
-            <div className="flex items-center gap-2 px-2 py-1.5 bg-blue-50 rounded-md border border-blue-200">
-              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-blue-900">{moduleInfo.name}</p>
-                <p className="text-xs text-blue-700">{moduleInfo.semester}</p>
+      {/* Context Reference - Organized */}
+      {(moduleInfo || examInfo || questionNumber) && (
+        <div className="px-4 pt-3 pb-2 space-y-2">
+          {/* Module + Exam on same line when both exist */}
+          {moduleInfo && examInfo ? (
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-md border border-blue-200">
+              <BookOpen className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-blue-900 truncate">
+                  {moduleInfo.name} {moduleInfo.semester && `(${moduleInfo.semester})`}
+                </p>
+                <p className="text-xs text-purple-700 truncate">{examInfo}</p>
               </div>
             </div>
+          ) : (
+            <>
+              {moduleInfo && (
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+                  <BookOpen className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-blue-900">{moduleInfo.name}</p>
+                    {moduleInfo.semester && <p className="text-xs text-blue-700">{moduleInfo.semester}</p>}
+                  </div>
+                </div>
+              )}
+              {examInfo && (
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-purple-50 rounded-md border border-purple-200">
+                  <Tag className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                  <p className="text-xs font-medium text-purple-900">{examInfo}</p>
+                </div>
+              )}
+            </>
           )}
-          {examInfo && (
-            <div className="flex items-center gap-2 px-2 py-1.5 bg-purple-50 rounded-md border border-purple-200">
-              <Tag className="h-3.5 w-3.5 text-purple-600" />
-              <p className="text-xs font-medium text-purple-900">{examInfo}</p>
+          
+          {/* Question Reference */}
+          {questionNumber && (
+            <div className="flex items-center gap-2 px-2 py-1.5 bg-amber-50 rounded-md border border-amber-200">
+              <FileText className="h-3.5 w-3.5 text-amber-600 flex-shrink-0" />
+              <p className="text-xs font-medium text-amber-900">Question #{questionNumber}</p>
             </div>
           )}
         </div>

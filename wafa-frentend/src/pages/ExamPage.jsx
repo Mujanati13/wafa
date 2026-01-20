@@ -2138,9 +2138,9 @@ const ExamPage = () => {
                           ) : null}
                         </div>
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-600 bg-white px-2 py-1 sm:py-1.5 rounded-md min-w-0 border">
+                        <div className="flex items-center gap-1 text-[9px] sm:text-xs text-gray-600 bg-white px-2 py-1 sm:py-1.5 rounded-md flex-wrap border">
                           <BookOpen className="h-3 w-3 shrink-0" />
-                          <span className="truncate font-medium">
+                          <span className="break-words font-medium max-w-full">
                             {(() => {
                               const moduleName = examData?.moduleName || 'Module';
                               const examYear = examData?.year ? `${examData.year}` : '';
@@ -3315,6 +3315,12 @@ const ExamPage = () => {
           isOpen={showNoteModal}
           onClose={() => setShowNoteModal(false)}
           questionId={currentQuestionData._id}
+          moduleId={examData?.moduleId || null}
+          examData={{
+            moduleName: examData?.moduleName,
+            examName: examData?.examName || examData?.name,
+            year: examData?.year
+          }}
         />
       )}
 

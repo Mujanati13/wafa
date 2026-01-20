@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes, FaSave, FaTrash } from "react-icons/fa";
 import { NotebookPen } from "lucide-react";
 import { api } from "@/lib/utils";
+import { toast } from "sonner";
 
-const NoteModal = ({ isOpen, onClose, questionId }) => {
+const NoteModal = ({ isOpen, onClose, questionId, moduleId, examData }) => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [existingNoteId, setExistingNoteId] = useState(null);
@@ -33,24 +34,30 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
   };
 
   const saveNote = async () => {
-    if (!content.trim()) return;
+    if (!content.trim()) {
+      toast.warning("Veuillez ajouter du contenu à votre note");
+      return;
+    }
 
     setLoading(true);
     try {
       if (existingNoteId) {
         await api.put(`/notes/${existingNoteId}`, { content });
+        toast.success("Note mise à jour");
       } else {
         const { data } = await api.post("/notes", {
           questionId,
           content,
+          moduleId: moduleId || null,
           title: `Note Q${questionId?.slice(-6) || 'Question'}`,
         });
         setExistingNoteId(data.data?._id || data.note?._id);
+        toast.success("Note créée avec succès");
       }
       setLastSaved(new Date());
     } catch (error) {
       console.error("Error saving note:", error);
-      alert("Échec de l'enregistrement de la note");
+      toast.error("Échec de l'enregistrement de la note");
     } finally {
       setLoading(false);
     }
@@ -67,12 +74,25 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
       setContent("");
       setExistingNoteId(null);
       setLastSaved(null);
+      toast.success("Note supprimée");
     } catch (error) {
       console.error("Error deleting note:", error);
-      alert("Échec de la suppression de la note");
+      toast.error("Échec de la suppression de la note");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get context info for display
+  const getContextInfo = () => {
+    if (examData) {
+      const parts = [];
+      if (examData.moduleName) parts.push(examData.moduleName);
+      if (examData.examName || examData.name) parts.push(examData.examName || examData.name);
+      if (examData.year) parts.push(`(${examData.year})`);
+      return parts.join(" > ");
+    }
+    return "Question";
   };
 
   return (
@@ -93,25 +113,27 @@ const NoteModal = ({ isOpen, onClose, questionId }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <NotebookPen className="text-blue-600" size={20} />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="text-xl font-bold text-gray-800">
                     Ma note personnelle
                   </h3>
+                  <p className="text-xs text-gray-500 truncate">
+                    {getContextInfo()}
+                  </p>
                   {lastSaved && (
-                    <p className="text-xs text-gray-500">
-                      Dernière sauvegarde:{" "}
-                      {lastSaved.toLocaleTimeString("fr-FR")}
+                    <p className="text-xs text-gray-400">
+                      Dernière sauvegarde: {lastSaved.toLocaleTimeString("fr-FR")}
                     </p>
                   )}
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-2"
               >
                 <FaTimes size={20} />
               </button>
