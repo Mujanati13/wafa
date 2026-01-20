@@ -773,13 +773,13 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 pb-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+      <div className="px-4 pb-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
         {/* View Question Button */}
         <Button
           variant="outline"
           size="sm"
           onClick={onViewQuestion}
-          className="flex-1 h-8 text-xs gap-1"
+          className="w-full h-8 text-xs gap-1"
           disabled={!note.questionId}
         >
           <Eye className="h-3.5 w-3.5" />
@@ -791,7 +791,7 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
           variant="outline"
           size="sm"
           onClick={onEdit}
-          className="flex-1 h-8 text-xs gap-1"
+          className="w-full h-8 text-xs gap-1"
         >
           <Edit2 className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Modifier</span>
@@ -802,9 +802,10 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
           variant="outline"
           size="sm"
           onClick={onDelete}
-          className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+          className="w-full h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 gap-1"
         >
           <Trash2 className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Supprimer</span>
         </Button>
       </div>
     </motion.div>
