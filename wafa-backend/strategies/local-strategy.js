@@ -45,6 +45,13 @@ export default Passport.use(
         throw new Error("User not found");
       }
 
+      // Check if user is blocked
+      if (foundUser.isBlocked) {
+        console.log("🚫 User is blocked:", email);
+        const reason = foundUser.blockedReason ? ` Reason: ${foundUser.blockedReason}` : "";
+        throw new Error(`Your account has been blocked.${reason} Please contact support.`);
+      }
+
       // Check if email is verified
       if (!foundUser.emailVerified) {
         throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");

@@ -540,6 +540,47 @@ export const UserController = {
         }
     },
 
+    // Block/Unblock user (admin only)
+    toggleBlockUser: async (req, res) => {
+        try {
+            const { userId } = req.params;
+            const { reason } = req.body;
+
+            const user = await User.findById(userId);
+
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            // Toggle block status
+            user.isBlocked = !user.isBlocked;
+            user.blockedAt = user.isBlocked ? new Date() : null;
+            user.blockedReason = user.isBlocked ? (reason || null) : null;
+            await user.save();
+
+            res.status(200).json({
+                success: true,
+                message: user.isBlocked ? 'User blocked successfully' : 'User unblocked successfully',
+                data: {
+                    userId: user._id,
+                    isBlocked: user.isBlocked,
+                    blockedAt: user.blockedAt,
+                    blockedReason: user.blockedReason
+                }
+            });
+        } catch (error) {
+            console.error('Error toggling user block status:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update user block status',
+                error: error.message
+            });
+        }
+    },
+
     // Delete user (admin only)
     deleteUser: async (req, res) => {
         try {

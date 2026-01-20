@@ -213,6 +213,18 @@ export const userService = {
         }
     },
 
+    // Block/Unblock user (for admin purposes)
+    toggleBlockUser: async (userId, reason = null) => {
+        try {
+            console.log(`Toggling block status for user ${userId}`);
+            const response = await api.patch(`/users/${userId}/block`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error toggling user block status:', error);
+            throw error;
+        }
+    },
+
     // Get leaderboard
     getLeaderboard: async (limit = 20, sortBy = 'totalPoints', userId = null, segmented = false) => {
         try {

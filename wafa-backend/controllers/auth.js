@@ -527,6 +527,16 @@ export const AuthController = {
       let user = await User.findOne({ firebaseUid: uid });
 
       if (user) {
+        // Check if user is blocked
+        if (user.isBlocked) {
+          const reason = user.blockedReason ? ` Reason: ${user.blockedReason}` : "";
+          return res.status(403).json({
+            success: false,
+            message: `Your account has been blocked.${reason} Please contact support.`,
+            isBlocked: true,
+          });
+        }
+
         // Update email verification status from Firebase
         if (email_verified && !user.emailVerified) {
           user.emailVerified = true;
@@ -586,6 +596,16 @@ export const AuthController = {
       user = await User.findOne({ email });
 
       if (user) {
+        // Check if user is blocked
+        if (user.isBlocked) {
+          const reason = user.blockedReason ? ` Reason: ${user.blockedReason}` : "";
+          return res.status(403).json({
+            success: false,
+            message: `Your account has been blocked.${reason} Please contact support.`,
+            isBlocked: true,
+          });
+        }
+
         // Link Firebase account to existing user
         user.firebaseUid = uid;
         

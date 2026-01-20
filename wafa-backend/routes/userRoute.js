@@ -51,6 +51,9 @@ router.patch("/:userId/plan", isAuthenticated, isAdmin, UserController.updateUse
 // Toggle user active status (admin only)
 router.patch("/:userId/status", isAuthenticated, isAdmin, UserController.toggleUserStatus);
 
+// Block/Unblock user (admin only)
+router.patch("/:userId/block", isAuthenticated, isAdmin, UserController.toggleBlockUser);
+
 // Update user (admin only - for role and permissions)
 router.put("/:userId", isAuthenticated, isAdmin, UserController.updateUser);
 

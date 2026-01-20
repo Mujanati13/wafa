@@ -53,6 +53,8 @@ import {
   GraduationCap,
   X,
   AlertCircle,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { TableFilters } from "../shared";
 import NewUserForm from "./NewUserForm";
@@ -108,6 +110,8 @@ const UsersWithTabs = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const [editFormData, setEditFormData] = useState({});
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -460,6 +464,37 @@ const UsersWithTabs = () => {
   const handleDeleteClick = (user) => {
     setSelectedUser(user);
     setShowDeleteDialog(true);
+  };
+
+  // Open block confirmation
+  const handleBlockClick = (user) => {
+    setSelectedUser(user);
+    setBlockReason("");
+    setShowBlockDialog(true);
+  };
+
+  // Confirm block/unblock user
+  const handleToggleBlock = async () => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      await userService.toggleBlockUser(selectedUser._id, blockReason || null);
+      toast.success(
+        selectedUser.isBlocked 
+          ? "Utilisateur débloqué avec succès" 
+          : "Utilisateur bloqué avec succès"
+      );
+      setShowBlockDialog(false);
+      setSelectedUser(null);
+      setBlockReason("");
+      fetchUsers(); // Refresh list
+      fetchStats(); // Refresh stats
+    } catch (error) {
+      toast.error("Erreur lors du changement de statut de blocage");
+      console.error("Block toggle error:", error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   // Confirm delete user
@@ -886,14 +921,22 @@ const UsersWithTabs = () => {
                           </Badge>
                         </td>
                         <td className="py-4 px-4">
-                          <span
-                            className={cn(
-                              "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                              getStatusBadgeColor(user.isAactive)
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={cn(
+                                "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                                getStatusBadgeColor(user.isAactive)
+                              )}
+                            >
+                              {user.isAactive ? "Actif" : "Inactif"}
+                            </span>
+                            {user.isBlocked && (
+                              <Badge className="bg-red-100 text-red-700 border-red-300 text-xs">
+                                <Ban className="w-3 h-3 mr-1" />
+                                Bloqué
+                              </Badge>
                             )}
-                          >
-                            {user.isAactive ? "Actif" : "Inactif"}
-                          </span>
+                          </div>
                         </td>
                         <td className="py-4 px-4">
                           <span className="text-sm text-gray-700">
@@ -1012,6 +1055,25 @@ const UsersWithTabs = () => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
+                                className={cn(
+                                  "flex items-center gap-2 cursor-pointer",
+                                  user.isBlocked ? "text-green-600" : "text-orange-600"
+                                )}
+                                onClick={() => handleBlockClick(user)}
+                              >
+                                {user.isBlocked ? (
+                                  <>
+                                    <ShieldOff className="w-4 h-4" />
+                                    Débloquer
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="w-4 h-4" />
+                                    Bloquer
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 className="flex items-center gap-2 text-red-600 cursor-pointer"
                                 onClick={() => handleDeleteClick(user)}
                               >
@@ -1090,9 +1152,17 @@ const UsersWithTabs = () => {
                 </div>
                 <div>
                   <Label className="text-gray-500">Statut</Label>
-                  <Badge className={getStatusBadgeColor(selectedUser.isAactive)}>
-                    {selectedUser.isAactive ? "Actif" : "Inactif"}
-                  </Badge>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <Badge className={getStatusBadgeColor(selectedUser.isAactive)}>
+                      {selectedUser.isAactive ? "Actif" : "Inactif"}
+                    </Badge>
+                    {selectedUser.isBlocked && (
+                      <Badge className="bg-red-100 text-red-700 border-red-300">
+                        <Ban className="w-3 h-3 mr-1" />
+                        Bloqué
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label className="text-gray-500">Année d'étude</Label>
@@ -1137,6 +1207,30 @@ const UsersWithTabs = () => {
                   <p className="text-sm text-gray-400 mt-1">Aucun semestre assigné</p>
                 )}
               </div>
+
+              {/* Block Status Section */}
+              {selectedUser.isBlocked && (
+                <div className="border-t pt-4">
+                  <Label className="text-gray-500 flex items-center gap-2">
+                    <Ban className="w-4 h-4 text-red-600" />
+                    Informations de blocage
+                  </Label>
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md space-y-2">
+                    {selectedUser.blockedAt && (
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Bloqué le :</span>{" "}
+                        {new Date(selectedUser.blockedAt).toLocaleDateString("fr-FR")} à{" "}
+                        {new Date(selectedUser.blockedAt).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
+                    {selectedUser.blockedReason && (
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Raison :</span> {selectedUser.blockedReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -1377,6 +1471,59 @@ const UsersWithTabs = () => {
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Annuler</Button>
             <Button variant="destructive" onClick={handleDeleteUser} disabled={actionLoading}>
               {actionLoading ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block/Unblock Confirmation Dialog */}
+      <Dialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              {selectedUser?.isBlocked ? (
+                <>
+                  <ShieldOff className="w-5 h-5" />
+                  Débloquer l'utilisateur
+                </>
+              ) : (
+                <>
+                  <Ban className="w-5 h-5" />
+                  Bloquer l'utilisateur
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser?.isBlocked ? (
+                <>
+                  Êtes-vous sûr de vouloir débloquer <strong>{selectedUser?.name || selectedUser?.username}</strong> ? Cet utilisateur pourra à nouveau se connecter.
+                </>
+              ) : (
+                <>
+                  Êtes-vous sûr de vouloir bloquer <strong>{selectedUser?.name || selectedUser?.username}</strong> ? Cet utilisateur ne pourra plus se connecter à son compte.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {!selectedUser?.isBlocked && (
+            <div className="space-y-2">
+              <Label htmlFor="blockReason">Raison du blocage (optionnel)</Label>
+              <Input
+                id="blockReason"
+                placeholder="Ex: Violation des conditions d'utilisation"
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBlockDialog(false)}>Annuler</Button>
+            <Button 
+              onClick={handleToggleBlock} 
+              disabled={actionLoading}
+              className={selectedUser?.isBlocked ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700"}
+            >
+              {actionLoading ? "Traitement..." : (selectedUser?.isBlocked ? "Débloquer" : "Bloquer")}
             </Button>
           </DialogFooter>
         </DialogContent>
