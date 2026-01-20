@@ -243,6 +243,11 @@ const VerifyEmail = () => {
                 <p className="text-muted-foreground">
                   {t('auth:please_wait_verifying')}
                 </p>
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertDescription className="text-sm text-amber-800">
+                    ⚠️ <span className="font-semibold">Important:</span> If verification fails, please check your <span className="font-semibold">SPAM</span> or <span className="font-semibold">PROMOTIONS</span> folder.
+                  </AlertDescription>
+                </Alert>
               </div>
             </CardContent>
           )}
@@ -264,6 +269,11 @@ const VerifyEmail = () => {
                 <Alert className="bg-green-50 border-green-200">
                   <AlertDescription className="text-green-800">
                     {message || t('auth:email_verified')}
+                  </AlertDescription>
+                </Alert>
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertDescription className="text-sm text-amber-800">
+                    ✅ Your email has been successfully verified. If you didn't receive the confirmation email, please check your <span className="font-semibold">SPAM</span> or <span className="font-semibold">PROMOTIONS</span> folder.
                   </AlertDescription>
                 </Alert>
                 <p className="text-sm text-muted-foreground">
