@@ -9,7 +9,6 @@ export function cn(...inputs) {
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
-  headers: { "Content-Type": "application/json" },
   maxContentLength: Infinity,
   maxBodyLength: Infinity,
 });
@@ -25,9 +24,12 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Remove Content-Type for FormData - let axios set it automatically with boundary
+    // Set Content-Type for FormData - let axios set it automatically with boundary
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
+    } else if (config.data && !config.headers['Content-Type']) {
+      // For non-FormData requests (JSON), set the content type
+      config.headers['Content-Type'] = 'application/json';
     }
     
     return config;

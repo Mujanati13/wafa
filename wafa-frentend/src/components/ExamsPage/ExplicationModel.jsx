@@ -244,17 +244,31 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
       formData.append('questionId', question._id);
 
       // Add images (max 5)
+      console.log("Uploading images count:", uploadedImages.length);
       uploadedImages.forEach((img, idx) => {
+        console.log(`Adding image ${idx + 1}:`, img.name, img.size, img.type);
         formData.append('images', img);
       });
 
       // Add PDF (max 1)
       if (uploadedPdf) {
+        console.log("Adding PDF:", uploadedPdf.name);
         formData.append('pdf', uploadedPdf);
       }
 
+      // Log FormData entries for debugging
+      console.log("FormData entries:");
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+
       // Note: Don't set Content-Type for FormData - axios will set it automatically with boundary
-      await api.post('/explanations/create', formData);
+      const response = await api.post('/explanations/create', formData);
+      console.log("Upload response:", response.data);
 
       toast.success("Votre explication a été soumise pour révision !", {
         description: "Elle sera publiée après validation par notre équipe. Vous gagnerez 1 point bleu si approuvée!"

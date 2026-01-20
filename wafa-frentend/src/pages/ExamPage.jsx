@@ -1220,58 +1220,36 @@ const ExamPage = () => {
     localStorage.setItem('examFontSize', newSize.toString());
   }, [fontSize]);
 
-  // Navigation - Session-aware (stays within current session)
+  // Navigation - Move through all questions
   const goToNext = useCallback(() => {
     const currentQ = currentQuestionRef.current;
-    const currentQData = questions[currentQ];
     
-    if (!currentQData) {
-      console.log('goToNext: current question not found');
-      return;
+    if (currentQ < questions.length - 1) {
+      const nextQ = currentQ + 1;
+      console.log('goToNext: moving from', currentQ, 'to', nextQ);
+      setQuestionTransition('next');
+      setCurrentQuestion(nextQ);
+      setVisitedQuestions(prev => new Set([...prev, nextQ]));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.log('goToNext: already at last question');
     }
-
-    const currentSession = currentQData.sessionLabel;
-    
-    // Find next question in the same session
-    for (let i = currentQ + 1; i < questions.length; i++) {
-      if (questions[i].sessionLabel === currentSession) {
-        console.log('goToNext: moving from', currentQ, 'to', i, '(same session:', currentSession, ')');
-        setQuestionTransition('next');
-        setCurrentQuestion(i);
-        setVisitedQuestions(prev => new Set([...prev, i]));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-    }
-    
-    console.log('goToNext: no more questions in session', currentSession);
-  }, [questions]);
+  }, [questions.length]);
 
   const goToPrevious = useCallback(() => {
     const currentQ = currentQuestionRef.current;
-    const currentQData = questions[currentQ];
     
-    if (!currentQData) {
-      console.log('goToPrevious: current question not found');
-      return;
+    if (currentQ > 0) {
+      const prevQ = currentQ - 1;
+      console.log('goToPrevious: moving from', currentQ, 'to', prevQ);
+      setQuestionTransition('prev');
+      setCurrentQuestion(prevQ);
+      setVisitedQuestions(prev => new Set([...prev, prevQ]));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.log('goToPrevious: already at first question');
     }
-
-    const currentSession = currentQData.sessionLabel;
-    
-    // Find previous question in the same session
-    for (let i = currentQ - 1; i >= 0; i--) {
-      if (questions[i].sessionLabel === currentSession) {
-        console.log('goToPrevious: moving from', currentQ, 'to', i, '(same session:', currentSession, ')');
-        setQuestionTransition('prev');
-        setCurrentQuestion(i);
-        setVisitedQuestions(prev => new Set([...prev, i]));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-    }
-    
-    console.log('goToPrevious: no previous questions in session', currentSession);
-  }, [questions]);
+  }, []);
 
   const goToQuestion = useCallback((index) => {
     if (index >= 0 && index < questions.length) {
@@ -2413,8 +2391,10 @@ const ExamPage = () => {
                               !currentQuestionData.isAnnulled && !isSelected && !showCorrectness && "border-gray-200 hover:border-gray-300 bg-white",
                               // Selected but not verified yet - show module color for all
                               !currentQuestionData.isAnnulled && isSelected && !showCorrectness && "border-2 bg-white",
-                              // After verification - correct answer shows light green background with dark text
-                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && "border-emerald-500 bg-emerald-100 hover:bg-emerald-200 hover:border-emerald-600",
+                              // After verification - correct answer that WAS selected (darker green)
+                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && isSelected && "border-emerald-500 bg-emerald-100 hover:bg-emerald-200 hover:border-emerald-600",
+                              // After verification - correct answer that was NOT selected (lighter green with dashed border)
+                              !currentQuestionData.isAnnulled && showCorrectness && isCorrect && !isSelected && "border-emerald-300 border-dashed bg-emerald-50 hover:bg-emerald-100",
                               // After verification - wrong answer selected (light red background)
                               !currentQuestionData.isAnnulled && showCorrectness && !isCorrect && isSelected && "border-red-400 bg-red-50 hover:bg-red-100 hover:border-red-500",
                               // After verification - not selected and not correct (gray) - keep normal opacity
@@ -2438,7 +2418,8 @@ const ExamPage = () => {
                                   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all",
                                   !isSelected && !showCorrectness && "bg-gray-100 text-gray-600",
                                   isSelected && !showCorrectness && "text-white",
-                                  showCorrectness && isCorrect && "bg-emerald-600 text-white font-bold",
+                                  showCorrectness && isCorrect && isSelected && "bg-emerald-600 text-white font-bold",
+                                  showCorrectness && isCorrect && !isSelected && "bg-emerald-400 text-white font-bold border-2 border-emerald-500 border-dashed",
                                   showCorrectness && !isCorrect && isSelected && "bg-red-500 text-white",
                                   showCorrectness && !isCorrect && !isSelected && "bg-gray-100 text-gray-600"
                                 )}
@@ -2455,7 +2436,8 @@ const ExamPage = () => {
                               <span
                                 className={cn(
                                   "flex-1 text-sm sm:text-base",
-                                  showCorrectness && isCorrect && "text-emerald-700 font-semibold",
+                                  showCorrectness && isCorrect && isSelected && "text-emerald-700 font-semibold",
+                                  showCorrectness && isCorrect && !isSelected && "text-emerald-600 font-medium",
                                   showCorrectness && !isCorrect && isSelected && "text-red-700",
                                   showCorrectness && !isCorrect && !isSelected && "text-gray-600"
                                 )}

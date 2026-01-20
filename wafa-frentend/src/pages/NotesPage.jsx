@@ -42,6 +42,7 @@ const NotesPage = () => {
 
   // Filter states
   const [filterType, setFilterType] = useState("recent"); // recent, module, date
+  const [selectedModule, setSelectedModule] = useState("all");
   const [selectedExamName, setSelectedExamName] = useState("all");
   const [selectedQuestionNumber, setSelectedQuestionNumber] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
@@ -259,6 +260,17 @@ const NotesPage = () => {
     }
   };
 
+  // Get unique modules from notes
+  const getUniqueModules = () => {
+    const moduleNames = new Set();
+    notes.forEach(note => {
+      if (note.moduleId?.name) {
+        moduleNames.add(note.moduleId.name);
+      }
+    });
+    return Array.from(moduleNames).sort();
+  };
+
   // Get unique exam names from notes
   const getExamNames = () => {
     const names = new Set();
@@ -292,6 +304,11 @@ const NotesPage = () => {
         !note.content?.toLowerCase().includes(searchLower) &&
         !note.title?.toLowerCase().includes(searchLower)) {
       return false;
+    }
+
+    // Module filter
+    if (selectedModule !== "all") {
+      if (!note.moduleId?.name || note.moduleId.name !== selectedModule) return false;
     }
 
     // Exam Name filter
@@ -376,7 +393,6 @@ const NotesPage = () => {
                     onClick={() => {
                       setFilterType("recent");
                       setSelectedModule("all");
-                      setSelectedExamType("all");
                       setSelectedExamName("all");
                       setSelectedQuestionNumber("all");
                     }}
@@ -404,7 +420,6 @@ const NotesPage = () => {
                     onClick={() => {
                       setFilterType("date");
                       setSelectedModule("all");
-                      setSelectedExamType("all");
                       setSelectedExamName("all");
                       setSelectedQuestionNumber("all");
                     }}
@@ -432,6 +447,24 @@ const NotesPage = () => {
 
               {/* Second Row - Dropdowns */}
               <div className="flex flex-wrap items-center gap-3">
+                {/* Module Filter */}
+                <Select 
+                  value={selectedModule} 
+                  onValueChange={setSelectedModule}
+                >
+                  <SelectTrigger className="w-[180px] bg-white">
+                    <SelectValue placeholder="Module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All modules</SelectItem>
+                    {getUniqueModules().map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {/* Exam Name Filter */}
                 <Select 
                   value={selectedExamName} 
@@ -701,10 +734,10 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl border-2 border-slate-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md overflow-hidden"
+      className="bg-white rounded-xl border-2 border-slate-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md overflow-hidden flex flex-col h-full"
     >
       {/* Date Header */}
-      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <Calendar className="h-3.5 w-3.5" />
           <span>{new Date(note.createdAt).toLocaleDateString('fr-FR', {
@@ -720,7 +753,7 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
 
       {/* Context Reference - Organized */}
       {(moduleInfo || examInfo || questionNumber) && (
-        <div className="px-4 pt-3 pb-2 space-y-2">
+        <div className="px-4 pt-3 pb-2 space-y-2 flex-shrink-0">
           {/* Module + Exam on same line when both exist */}
           {moduleInfo && examInfo ? (
             <div className="flex items-center gap-2 px-2 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-md border border-blue-200">
@@ -763,7 +796,7 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
       )}
 
       {/* Note Content */}
-      <div className="p-4">
+      <div className="p-4 flex-1 overflow-hidden">
         <h3 className="font-bold text-base text-slate-900 mb-3 line-clamp-2">
           {note.title || "Sans titre"}
         </h3>
@@ -773,7 +806,7 @@ const NoteCard = ({ note, onDelete, onViewQuestion, onEdit, onTogglePin }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 pb-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
+      <div className="px-4 pb-3 flex flex-col gap-2 border-t border-slate-100 pt-3 flex-shrink-0">
         {/* View Question Button */}
         <Button
           variant="outline"

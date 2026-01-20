@@ -30,10 +30,10 @@ const examParYearSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Compound unique index: exam name must be unique per module and year
-examParYearSchema.index({ name: 1, moduleId: 1, year: 1 }, { unique: true });
-
 // Add index for moduleId to improve query performance
 examParYearSchema.index({ moduleId: 1 });
+
+// Add index for year to improve query performance  
+examParYearSchema.index({ year: 1 });
 
 export default mongoose.model("ExamParYear", examParYearSchema);

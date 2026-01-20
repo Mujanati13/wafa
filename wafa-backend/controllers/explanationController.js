@@ -15,6 +15,21 @@ export const explanationController = {
         const { questionId, title, contentText } = req.body;
         const userId = req.user._id; // Get from authenticated user
 
+        // Debug logging
+        console.log("=== Explanation Creation Request ===");
+        console.log("Body:", { questionId, title, contentText });
+        console.log("req.files exists:", !!req.files);
+        if (req.files) {
+            console.log("req.files keys:", Object.keys(req.files));
+            console.log("req.files.images:", req.files.images ? `Array of ${req.files.images.length} files` : "undefined");
+            console.log("req.files.pdf:", req.files.pdf ? `Array of ${req.files.pdf.length} files` : "undefined");
+            if (req.files.images && Array.isArray(req.files.images)) {
+                req.files.images.forEach((img, idx) => {
+                    console.log(`  Image ${idx + 1}: ${img.filename} (${img.size} bytes, ${img.mimetype})`);
+                });
+            }
+        }
+
         // Process uploaded files
         let imageUrls = [];
         let pdfUrl = null;
@@ -23,10 +38,12 @@ export const explanationController = {
             // Handle images (max 5)
             if (req.files.images) {
                 imageUrls = req.files.images.map(file => `/uploads/explanations/${file.filename}`);
+                console.log("Processed images:", imageUrls);
             }
             // Handle PDF (max 1)
             if (req.files.pdf && req.files.pdf.length > 0) {
                 pdfUrl = `/uploads/explanations/${req.files.pdf[0].filename}`;
+                console.log("Processed PDF:", pdfUrl);
             }
         }
 
