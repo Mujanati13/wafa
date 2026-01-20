@@ -17,21 +17,13 @@ const dropExamUniqueIndex = async () => {
         
         // If no environment variable found, use default URLs
         if (!MONGO_URL) {
-            // Check if we're likely in a Docker environment (has docker-compose.yml in parent)
-            const isDocker = process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV;
-            
-            if (isDocker) {
-                // Docker environment - connect to mongodb container
-                MONGO_URL = 'mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin';
-                console.log('⚠️  Using Docker default MongoDB URL');
-            } else {
-                // VPS/Host environment - connect to localhost
-                MONGO_URL = 'mongodb://admin:changeme123@localhost:27017/wafa?authSource=admin';
-                console.log('⚠️  Using localhost default MongoDB URL');
-            }
-            
+            // Default to Docker hostname since most production setups use Docker
+            MONGO_URL = 'mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin';
+            console.log('⚠️  Using default MongoDB URL (Docker hostname: mongodb)');
             console.log('💡 To use a custom URL, set MONGO_URL environment variable');
-            console.log('   Example: MONGO_URL="mongodb://..." node drop-exam-unique-index.js\n');
+            console.log('   Example: MONGO_URL="mongodb://..." node drop-exam-unique-index.js');
+            console.log('💡 If running on host (not in Docker), MongoDB may not be accessible');
+            console.log('   Run inside container: docker-compose exec backend node drop-exam-unique-index.js\n');
         }
         
         console.log('🔗 Connecting to MongoDB...');
