@@ -1,13 +1,34 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from multiple possible locations
+dotenv.config(); // Try current directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') }); // Try parent directory
 
 const dropExamUniqueIndex = async () => {
     try {
-        // Connect to MongoDB
-        await mongoose.connect(process.env.MONGO_URL);
+        // Get MongoDB URL from environment
+        const MONGO_URL = process.env.MONGO_URL || process.env.MONGO_URI;
+        
+        if (!MONGO_URL) {
+            console.error('❌ Error: MONGO_URL or MONGO_URI not found in environment variables');
+            console.log('\n📋 Checked locations:');
+            console.log('  - ./env');
+            console.log('  - ../.env');
+            console.log('\n💡 Please ensure your .env file exists and contains:');
+            console.log('  MONGO_URL=mongodb://...');
+            console.log('\nOr run with environment variable:');
+            console.log('  MONGO_URL="mongodb://..." node drop-exam-unique-index.js');
+            process.exit(1);
+        }
+        
+        console.log('🔗 Connecting to MongoDB...');
+        await mongoose.connect(MONGO_URL);
         console.log('✅ Connected to MongoDB');
 
         const db = mongoose.connection.db;
