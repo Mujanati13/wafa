@@ -8,37 +8,18 @@ export const examController = {
 
         const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
         
-        try {
-            const newExam = await examModel.create({
-                name,
-                moduleId,
-                year,
-                imageUrl,
-                infoText,
-                courseCategoryId: courseCategoryId || null
-            });
-            res.status(201).json({
-                success: true,
-                data: newExam
-            });
-        } catch (error) {
-            // Handle duplicate key error (E11000)
-            if (error.code === 11000) {
-                // Check which field caused the duplicate
-                const field = Object.keys(error.keyPattern || {})[0];
-                if (field === 'name' || (error.keyPattern && Object.keys(error.keyPattern).length > 1)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Un examen avec ce nom existe déjà pour ce module et cette année"
-                    });
-                }
-                return res.status(400).json({
-                    success: false,
-                    message: "Cette valeur existe déjà"
-                });
-            }
-            throw error;
-        }
+        const newExam = await examModel.create({
+            name,
+            moduleId,
+            year,
+            imageUrl,
+            infoText,
+            courseCategoryId: courseCategoryId || null
+        });
+        res.status(201).json({
+            success: true,
+            data: newExam
+        });
 
     }),
 
@@ -46,39 +27,28 @@ export const examController = {
         const { id } = req.params;
         const { name, moduleId, year, imageUrl, infoText, courseCategoryId } = req.body;
         
-        try {
-            const updatedExam = await examModel.findByIdAndUpdate(
-                id,
-                {
-                    name,
-                    moduleId,
-                    year,
-                    imageUrl,
-                    infoText,
-                    courseCategoryId: courseCategoryId || null
-                },
-                { new: true }
-            );
-            if (!updatedExam) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Exam not found"
-                });
-            }
-            res.status(200).json({
-                success: true,
-                data: updatedExam
+        const updatedExam = await examModel.findByIdAndUpdate(
+            id,
+            {
+                name,
+                moduleId,
+                year,
+                imageUrl,
+                infoText,
+                courseCategoryId: courseCategoryId || null
+            },
+            { new: true }
+        );
+        if (!updatedExam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found"
             });
-        } catch (error) {
-            // Handle duplicate key error (E11000)
-            if (error.code === 11000) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Un examen avec ce nom existe déjà pour ce module et cette année"
-                });
-            }
-            throw error;
         }
+        res.status(200).json({
+            success: true,
+            data: updatedExam
+        });
     }),
 
     delete: asyncHandler(async (req, res) => {

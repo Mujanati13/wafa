@@ -2265,7 +2265,7 @@ const ExamPage = () => {
                                 }}
                               >
                                 <Image className="h-4 w-4 mr-2" />
-                                <span>Images ({currentQuestionData.images?.length || 0})</span>
+                                <span>Images</span>
                               </DropdownMenuItem>
 
                               {/* Notes */}
