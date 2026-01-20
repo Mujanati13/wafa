@@ -576,6 +576,17 @@ export const explanationController = {
             if (useModuleConfig && module?.aiPrompt && !customPrompt) {
                 modulePrompt = module.aiPrompt;
                 console.log(`[AI Config] Using module prompt (${modulePrompt.length} chars)`);
+                
+                // Validate that module prompt contains the required placeholders
+                const hasQuestionPlaceholder = modulePrompt.includes('{questionText}');
+                const hasOptionsPlaceholder = modulePrompt.includes('{options}');
+                const hasAnswersPlaceholder = modulePrompt.includes('{correctAnswers}');
+                
+                if (!hasQuestionPlaceholder || !hasOptionsPlaceholder || !hasAnswersPlaceholder) {
+                    console.warn(`[AI Config] Module prompt is missing placeholders. Falling back to default prompt.`);
+                    console.warn(`[AI Config] Has {questionText}: ${hasQuestionPlaceholder}, Has {options}: ${hasOptionsPlaceholder}, Has {correctAnswers}: ${hasAnswersPlaceholder}`);
+                    modulePrompt = ''; // Clear invalid prompt to use default
+                }
             }
             
             // Extract context from module's PDF files
