@@ -12,19 +12,26 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') }); // Try parent direc
 
 const dropExamUniqueIndex = async () => {
     try {
-        // Get MongoDB URL from environment
-        const MONGO_URL = process.env.MONGO_URL || process.env.MONGO_URI;
+        // Get MongoDB URL from environment, or use defaults based on environment
+        let MONGO_URL = process.env.MONGO_URL || process.env.MONGO_URI;
         
+        // If no environment variable found, use default URLs
         if (!MONGO_URL) {
-            console.error('❌ Error: MONGO_URL or MONGO_URI not found in environment variables');
-            console.log('\n📋 Checked locations:');
-            console.log('  - ./env');
-            console.log('  - ../.env');
-            console.log('\n💡 Please ensure your .env file exists and contains:');
-            console.log('  MONGO_URL=mongodb://...');
-            console.log('\nOr run with environment variable:');
-            console.log('  MONGO_URL="mongodb://..." node drop-exam-unique-index.js');
-            process.exit(1);
+            // Check if we're likely in a Docker environment (has docker-compose.yml in parent)
+            const isDocker = process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV;
+            
+            if (isDocker) {
+                // Docker environment - connect to mongodb container
+                MONGO_URL = 'mongodb://admin:changeme123@mongodb:27017/wafa?authSource=admin';
+                console.log('⚠️  Using Docker default MongoDB URL');
+            } else {
+                // VPS/Host environment - connect to localhost
+                MONGO_URL = 'mongodb://admin:changeme123@localhost:27017/wafa?authSource=admin';
+                console.log('⚠️  Using localhost default MongoDB URL');
+            }
+            
+            console.log('💡 To use a custom URL, set MONGO_URL environment variable');
+            console.log('   Example: MONGO_URL="mongodb://..." node drop-exam-unique-index.js\n');
         }
         
         console.log('🔗 Connecting to MongoDB...');
