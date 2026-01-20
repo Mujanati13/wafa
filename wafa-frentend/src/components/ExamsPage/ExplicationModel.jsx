@@ -455,33 +455,9 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                   {/* AI Text */}
                   {aiExplanation.text && (
                     <div className="border border-blue-200 rounded-lg bg-gradient-to-br from-blue-50/50 to-white p-4 space-y-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
-                        </div>
-                        {aiExplanationData?._id && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleDeleteAndRegenerateAI}
-                            disabled={isDeletingAI || isGeneratingAI}
-                            className="gap-1 text-xs h-7 border-amber-300 text-amber-700 hover:bg-amber-50"
-                            title="Cliquez si l'explication est mal formatée"
-                          >
-                            {isDeletingAI || isGeneratingAI ? (
-                              <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Regénération...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="h-3 w-3" />
-                                Regénérer
-                              </>
-                            )}
-                          </Button>
-                        )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700">Généré par IA</span>
                       </div>
                       <div className="prose prose-sm prose-slate max-w-none">
                         <div 
