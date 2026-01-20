@@ -354,7 +354,22 @@ const ExamParYears = () => {
     return <div className="flex items-center gap-2">{buttons}</div>;
   };
 
-  const uniqueModules = Array.from(new Set(exams.map((e) => e.moduleName).filter(m => m && m !== "")));
+  // Get unique modules filtered by selected semester
+  const getUniqueModules = () => {
+    let filteredModules = modules;
+    if (semesterFilter !== "all") {
+      filteredModules = modules.filter(m => m.semester === semesterFilter);
+    }
+    // Get module names that have exams
+    const moduleNames = filteredModules.map(m => m.name);
+    return Array.from(new Set(exams
+      .filter(e => moduleNames.includes(e.moduleName))
+      .map((e) => e.moduleName)
+      .filter(m => m && m !== "")
+    )).sort();
+  };
+  
+  const uniqueModules = getUniqueModules();
   const uniqueYears = Array.from(new Set(exams.map((e) => e.year).filter(y => y && y !== ""))).sort((a, b) => b - a);
 
   if (loading) {
@@ -427,7 +442,11 @@ const ExamParYears = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input type="text" placeholder="Rechercher par nom, module ou année..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
-              <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+              <Select value={semesterFilter} onValueChange={(value) => {
+                setSemesterFilter(value);
+                // Reset module filter when semester changes to ensure valid module is selected
+                setModuleFilter("all");
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les semestres" />
                 </SelectTrigger>
@@ -446,7 +465,7 @@ const ExamParYears = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les modules</SelectItem>
-                  {Array.from(new Set(exams.map((e) => e.moduleName).filter(m => m && m !== ""))).map((module) => (
+                  {uniqueModules.map((module) => (
                     <SelectItem key={module} value={module}>
                       {module}
                     </SelectItem>
