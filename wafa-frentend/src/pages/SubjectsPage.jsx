@@ -363,6 +363,9 @@ const SubjectsPage = () => {
             year: e.year,
             helpText: e.infoText || e.helpText || e.description || ""
           }));
+          
+          // Sort by year (descending) to match admin ordering
+          yearExamsFromApi.sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
 
           // Map QCM banque from /qcm-banque endpoint
           const qcmFromApi = moduleQcm.map(q => ({
@@ -374,6 +377,9 @@ const SubjectsPage = () => {
             imageUrl: q.imageUrl,
             helpText: q.infoText || q.helpText || q.description || ""
           }));
+          
+          // Sort QCM by position (if available) or name
+          qcmFromApi.sort((a, b) => a.name.localeCompare(b.name));
 
           // Also get exam-courses with category "Exam par years" as fallback
           const yearExamsFromCourses = examCourses
@@ -385,8 +391,12 @@ const SubjectsPage = () => {
               progress: 0,
               category: c.category,
               imageUrl: c.imageUrl,
+              year: c.year,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
+          
+          // Sort by year (descending) to match admin ordering
+          yearExamsFromCourses.sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
 
           // Get all exam courses that are NOT "Exam par years" and NOT "QCM banque"
           // This includes "Exam par courses" and any custom categories
@@ -401,6 +411,9 @@ const SubjectsPage = () => {
               imageUrl: c.imageUrl,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
+          
+          // Sort course exams by name
+          courseExams.sort((a, b) => a.name.localeCompare(b.name));
 
           // QCM from exam-courses as fallback
           const qcmFromCourses = examCourses
@@ -414,6 +427,9 @@ const SubjectsPage = () => {
               imageUrl: c.imageUrl,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
+          
+          // Sort QCM by name
+          qcmFromCourses.sort((a, b) => a.name.localeCompare(b.name));
 
           // Combine sources - prioritize direct API sources
           const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
