@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 const Login = () => {
   const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,6 +27,9 @@ const Login = () => {
     password: '',
     rememberMe: false
   });
+
+  // Get the page user was trying to access before being redirected to login
+  const from = location.state?.from?.pathname || null;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -94,7 +98,8 @@ const Login = () => {
         if (result.user?.isAdmin) {
           navigate('/admin/analytics');
         } else {
-          navigate('/dashboard/home');
+          // Redirect to the page they were trying to access, or default to dashboard
+          navigate(from || '/dashboard/home');
         }
       }, 1000);
     } catch (error) {
@@ -153,7 +158,8 @@ const Login = () => {
         if (result.user?.isAdmin) {
           navigate('/admin/analytics');
         } else {
-          navigate('/dashboard/home');
+          // Redirect to the page they were trying to access, or default to dashboard
+          navigate(from || '/dashboard/home');
         }
       }, 1000);
     } catch (error) {

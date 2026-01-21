@@ -68,6 +68,7 @@ import ContactMessagesAdmin from "./pages/ContactMessagesAdmin";
 import StatisticsPage from "./pages/StatisticsPage";
 import SelectFreeSemester from "./pages/SelectFreeSemester";
 import ProtectedAdminRoute from "./components/layout/ProtectedAdminRoute";
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminLogin from "./components/auth/AdminLogin";
 import NotFound from "./pages/NotFound";
 
@@ -91,7 +92,7 @@ export default function App() {
         <Route path="/payment/cancel" element={<PaymentCancel />} />
         <Route path="/select-semester" element={<SelectFreeSemester />} />
 
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route path="home" element={<Dashboard />} />
           <Route path="playlist" element={<Myplaylist />} />
           <Route path="playlists" element={<PlaylistsPage />} />
@@ -154,7 +155,7 @@ export default function App() {
           <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
           <Route path="contact-messages" element={<ContactMessagesAdmin />} />
         </Route>
-        <Route path="/exam/:examId" element={<ExamPage />} />
+        <Route path="/exam/:examId" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
 
         {/* 404 Not Found - Must be last */}
         <Route path="*" element={<NotFound />} />
