@@ -9,20 +9,36 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check authentication state
-    const checkAuth = () => {
-      const isAuth = isAuthenticated();
-      setAuthenticated(isAuth);
-      setLoading(false);
-    };
-
     // Listen to Firebase auth state changes
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      checkAuth();
+      if (user) {
+        // User is signed in with Firebase
+        // Check if we also have the JWT token
+        const hasToken = localStorage.getItem('token') !== null;
+        
+        if (!hasToken) {
+          // Firebase user exists but no JWT token - get new token
+          user.getIdToken().then(idToken => {
+            // Try to refresh the JWT token from backend
+            console.log('Refreshing JWT token...');
+            // For now, mark as authenticated - the API interceptor will handle token refresh
+            setAuthenticated(true);
+            setLoading(false);
+          }).catch(error => {
+            console.error('Error getting Firebase token:', error);
+            setAuthenticated(false);
+            setLoading(false);
+          });
+        } else {
+          setAuthenticated(true);
+          setLoading(false);
+        }
+      } else {
+        // No Firebase user
+        setAuthenticated(false);
+        setLoading(false);
+      }
     });
-
-    // Initial check
-    checkAuth();
 
     return () => unsubscribe();
   }, []);

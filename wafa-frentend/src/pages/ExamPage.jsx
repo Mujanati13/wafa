@@ -3603,10 +3603,7 @@ const ExamPage = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Image className="h-5 w-5 sm:h-6 sm:w-6" />
                   <h2 className="text-base sm:text-xl font-bold">
-                    {(() => {
-                      const currentQData = questions[currentQuestion];
-                      return `Images de ${currentQData?.sessionLabel || 'la session'}`;
-                    })()}
+                    Toutes les images
                   </h2>
                 </div>
                 <button
@@ -3620,15 +3617,8 @@ const ExamPage = () => {
               {/* Images Grid */}
               <ScrollArea className="flex-1 p-3 sm:p-4">
                 {(() => {
-                  // Get current question's session
-                  const currentQData = questions[currentQuestion];
-                  const currentSession = currentQData?.sessionLabel;
-                  
-                  // Get all questions from current session
-                  const questionsInSession = questions.filter(q => q.sessionLabel === currentSession);
-                  
-                  // Get all images from all questions in session
-                  const allImages = questionsInSession.reduce((acc, q, idx) => {
+                  // Get all images from all questions in the entire exam
+                  const allImages = questions.reduce((acc, q, idx) => {
                     const globalIndex = questions.findIndex(question => question._id === q._id);
                     if (q.images && q.images.length > 0) {
                       q.images.forEach((imgUrl, imgIdx) => {
@@ -3673,10 +3663,10 @@ const ExamPage = () => {
                           <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
                         </div>
                         <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-                          Aucune image dans cette session
+                          Aucune image dans cet examen
                         </h4>
                         <p className="text-gray-500 text-xs sm:text-sm">
-                          Cette session ne contient pas d'images.
+                          Cet examen ne contient pas d'images.
                         </p>
                       </div>
                     );

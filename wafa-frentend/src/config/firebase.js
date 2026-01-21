@@ -1,6 +1,6 @@
 // Firebase configuration for WAFA frontend
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
@@ -17,8 +17,15 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication
+// Initialize Firebase Authentication with local persistence (keeps user logged in)
 export const auth = getAuth(app);
+
+// Set auth persistence to local (persists across browser sessions)
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error('Error setting auth persistence:', error);
+  });
+}
 
 // Initialize Analytics (optional) - wrapped in try-catch to prevent blocking errors
 let analytics = null;
