@@ -89,7 +89,7 @@ router.post("/upload-pdf", isAuthenticated, isAdmin, multer({
 
 // Gemini AI generation endpoints - MUST come before /:id routes
 router.get("/test-gemini", isAuthenticated, isAdmin, explanationController.testGeminiConnection);
-router.post("/generate-gemini", isAuthenticated, isAdmin, explanationController.generateWithGemini);
+router.post("/generate-gemini", isAuthenticated, explanationController.generateWithGemini); // Available to all authenticated users
 router.post("/batch-generate-gemini", isAuthenticated, isAdmin, explanationController.batchGenerateWithGemini);
 
 // Upload PDF for context extraction

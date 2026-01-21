@@ -327,8 +327,8 @@ const ExamPage = () => {
     const hasAnyAnswers = Object.keys(selectedAnswers).length > 0 || Object.keys(verifiedQuestions).length > 0;
     
     if (!hasAnyAnswers) {
-      // No answers at all, exit immediately
-      navigate(-1);
+      // No answers at all, exit immediately to dashboard
+      navigate('/dashboard/home');
       return;
     }
 
@@ -408,7 +408,7 @@ const ExamPage = () => {
     } finally {
       setIsSavingBeforeExit(false);
       setShowExitConfirm(false);
-      navigate(-1);
+      navigate('/dashboard/home');
     }
   };
 
@@ -1222,42 +1222,49 @@ const ExamPage = () => {
 
   // Navigation - Move through all questions
   const goToNext = useCallback(() => {
-    const currentQ = currentQuestionRef.current;
-    
-    if (currentQ < questions.length - 1) {
-      const nextQ = currentQ + 1;
-      console.log('goToNext: moving from', currentQ, 'to', nextQ);
-      setQuestionTransition('next');
-      setCurrentQuestion(nextQ);
-      setVisitedQuestions(prev => new Set([...prev, nextQ]));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      console.log('goToNext: already at last question');
-    }
+    console.log('goToNext called, questions.length:', questions.length);
+    setCurrentQuestion(prevQuestion => {
+      console.log('goToNext: current question is', prevQuestion);
+      if (prevQuestion < questions.length - 1) {
+        const nextQ = prevQuestion + 1;
+        console.log('goToNext: moving to', nextQ);
+        setQuestionTransition('next');
+        setVisitedQuestions(prev => new Set([...prev, nextQ]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return nextQ;
+      } else {
+        console.log('goToNext: already at last question');
+        return prevQuestion;
+      }
+    });
   }, [questions.length]);
 
   const goToPrevious = useCallback(() => {
-    const currentQ = currentQuestionRef.current;
-    
-    if (currentQ > 0) {
-      const prevQ = currentQ - 1;
-      console.log('goToPrevious: moving from', currentQ, 'to', prevQ);
-      setQuestionTransition('prev');
-      setCurrentQuestion(prevQ);
-      setVisitedQuestions(prev => new Set([...prev, prevQ]));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      console.log('goToPrevious: already at first question');
-    }
+    console.log('goToPrevious called');
+    setCurrentQuestion(prevQuestion => {
+      console.log('goToPrevious: current question is', prevQuestion);
+      if (prevQuestion > 0) {
+        const prevQ = prevQuestion - 1;
+        console.log('goToPrevious: moving to', prevQ);
+        setQuestionTransition('prev');
+        setVisitedQuestions(prev => new Set([...prev, prevQ]));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return prevQ;
+      } else {
+        console.log('goToPrevious: already at first question');
+        return prevQuestion;
+      }
+    });
   }, []);
 
   const goToQuestion = useCallback((index) => {
     if (index >= 0 && index < questions.length) {
-      const currentQ = currentQuestionRef.current;
-      console.log('goToQuestion: moving from', currentQ, 'to', index);
-      setQuestionTransition(index > currentQ ? 'next' : 'prev');
-      setCurrentQuestion(index);
-      setVisitedQuestions(prev => new Set([...prev, index]));
+      console.log('goToQuestion: jumping to', index);
+      setCurrentQuestion(prevQuestion => {
+        setQuestionTransition(index > prevQuestion ? 'next' : 'prev');
+        setVisitedQuestions(prev => new Set([...prev, index]));
+        return index;
+      });
     }
     setShowSidebar(false);
     setShowMobileQuestionNav(false);
@@ -3561,7 +3568,7 @@ const ExamPage = () => {
                       className="w-full bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm py-2 h-auto"
                       onClick={() => {
                         setShowExitConfirm(false);
-                        navigate(-1);
+                        navigate('/dashboard/home');
                       }}
                     >
                       Quitter sans enregistrer
