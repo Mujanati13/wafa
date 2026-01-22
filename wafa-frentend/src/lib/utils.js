@@ -11,6 +11,11 @@ export const api = axios.create({
   withCredentials: true,
   maxContentLength: Infinity,
   maxBodyLength: Infinity,
+  // Enhanced for Firefox/Brave compatibility
+  timeout: 30000, // 30 second timeout
+  headers: {
+    'Accept': 'application/json',
+  }
 });
 
 // Request interceptor for logging

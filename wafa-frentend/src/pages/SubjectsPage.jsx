@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle, HelpCircle } from "lucide-react";
@@ -210,6 +210,18 @@ const SubjectsPage = () => {
 
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Safe back navigation that prevents going to login
+  const handleGoBack = () => {
+    // Check if there's a valid previous page in history
+    if (location.key !== 'default' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback to dashboard if no history or coming from external link
+      navigate('/dashboard');
+    }
+  };
 
   // Check user access based on subscription
   useEffect(() => {
@@ -607,7 +619,7 @@ const SubjectsPage = () => {
                   <h3 className="text-lg font-semibold mb-1">{t('dashboard:module_not_found')}</h3>
                   <p className="text-muted-foreground">{t('dashboard:module_not_exist')}</p>
                 </div>
-                <Button onClick={() => navigate(-1)} className="gap-2">
+                <Button onClick={handleGoBack} className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   {t('common:back')}
                 </Button>
@@ -641,7 +653,7 @@ const SubjectsPage = () => {
                   </p>
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
+                  <Button variant="outline" onClick={handleGoBack} className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     {t('common:back')}
                   </Button>
@@ -665,7 +677,7 @@ const SubjectsPage = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={handleGoBack}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>

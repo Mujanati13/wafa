@@ -43,14 +43,34 @@ app.use('/uploads', (req, res, next) => {
   }
 }));
 
-// CORS middleware - Allow all origins (no restrictions)
-console.log('CORS: Allowing all origins');
+// CORS middleware - Enhanced for Firefox/Brave compatibility
+console.log('CORS: Allowing all origins with enhanced browser compatibility');
 
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: function (origin, callback) {
+    // Allow all origins in development, specific origins in production
+    if (!origin || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    // In production, allow your domains
+    const allowedOrigins = [
+      'https://imrs-qcm.com',
+      'https://www.imrs-qcm.com',
+      'https://backend.imrs-qcm.com'
+    ];
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Still allow for now, but log it
+      console.log('Origin not in whitelist:', origin);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['set-cookie'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Request logging middleware
@@ -81,6 +101,8 @@ app.use(
       secure: process.env.NODE_ENV === 'production', // true in production only
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       domain: process.env.NODE_ENV === 'production' ? '.imrs-qcm.com' : undefined, // Share cookies across subdomains
+      // Enhanced for Firefox/Brave compatibility
+      path: '/',
     },
   })
 );
