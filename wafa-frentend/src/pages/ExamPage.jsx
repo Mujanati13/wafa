@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -126,9 +126,21 @@ const ExamPage = () => {
   const { examId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Get exam type from query params (default: exam-years)
   const examType = searchParams.get('type') || 'exam'; // 'exam', 'course', 'qcm'
+
+  // Safe back navigation that prevents going to login
+  const handleGoBack = () => {
+    // Check if there's a valid previous page in history
+    if (location.key !== 'default' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback to dashboard if no history or coming from external link
+      navigate('/dashboard');
+    }
+  };
 
   // Helper function to darken/lighten color
   const adjustColor = (color, amount) => {
@@ -327,8 +339,8 @@ const ExamPage = () => {
     const hasAnyAnswers = Object.keys(selectedAnswers).length > 0 || Object.keys(verifiedQuestions).length > 0;
     
     if (!hasAnyAnswers) {
-      // No answers at all, exit immediately to dashboard
-      navigate('/dashboard/home');
+      // No answers at all, exit immediately
+      handleGoBack();
       return;
     }
 
@@ -408,7 +420,7 @@ const ExamPage = () => {
     } finally {
       setIsSavingBeforeExit(false);
       setShowExitConfirm(false);
-      navigate('/dashboard/home');
+      handleGoBack();
     }
   };
 
@@ -3568,7 +3580,7 @@ const ExamPage = () => {
                       className="w-full bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm py-2 h-auto"
                       onClick={() => {
                         setShowExitConfirm(false);
-                        navigate('/dashboard/home');
+                        handleGoBack();
                       }}
                     >
                       Quitter sans enregistrer
