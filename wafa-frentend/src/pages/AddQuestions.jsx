@@ -112,6 +112,7 @@ const AddQuestions = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [sessionLabel, setSessionLabel] = useState("Session principale");
 
   // Filters for questions table
   const [filterModule, setFilterModule] = useState("all");
@@ -294,25 +295,80 @@ const AddQuestions = () => {
     }
   };
 
-  const handleSubmit = () => {
-    const context = {
-      module: selectedModule,
-      examType,
-      yearsExamName: examType === "years" ? selectedExamNameYears : undefined,
-      coursesCategory: examType === "courses" ? selectedCategory : undefined,
-      courseName: examType === "courses" ? selectedCourse : undefined,
-      yearName: examType === "courses" ? selectedYearName : undefined,
-      tpName: examType === "tp" ? selectedTPName : undefined,
-      qcmName: examType === "qcm" ? selectedQCMName : undefined,
-    };
+  const handleSubmit = async () => {
+    try {
+      let imageUrls = [];
 
-    const payload = {
-      context,
-      question: { text: questionText, imageAttached: !!imageFile, options, note },
-    };
+      // Upload image if present
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('images', imageFile);
 
-    toast.success(t('admin:question_submitted'));
-    console.log("Submit payload:", payload);
+        try {
+          const uploadResponse = await api.post('/questions/upload-images', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          const uploadedData = uploadResponse.data?.data;
+          if (uploadedData && Array.isArray(uploadedData)) {
+            imageUrls = uploadedData.map(img => img.url);
+          }
+        } catch (uploadErr) {
+          console.error('Error uploading image:', uploadErr);
+          toast.error('Erreur lors du téléchargement de l\'image');
+          return;
+        }
+      }
+
+      // Determine examId based on selected exam type - examId is required by schema
+      let examId = null;
+      if (examType === "years" && selectedExamNameYears) {
+        examId = selectedExamNameYears;
+      } else if (examType === "qcm" && selectedQCMName) {
+        examId = selectedQCMName;
+      } else if (examType === "courses" && selectedCourse) {
+        examId = selectedCourse;
+      } else {
+        toast.error("Veuillez sélectionner un examen ou une banque QCM");
+        return;
+      }
+
+      // Prepare the question payload according to the schema
+      const questionPayload = {
+        examId: examId,
+        text: questionText,
+        options: options.map(opt => ({
+          text: opt.text,
+          isCorrect: opt.isCorrect
+        })),
+        sessionLabel: sessionLabel.trim() || "Session principale",
+        note: note || undefined,
+        images: imageUrls,
+      };
+
+      // Create the question
+      await api.post('/questions/create', questionPayload);
+
+      toast.success(t('admin:question_submitted'));
+      
+      // Reset form
+      setQuestionText("");
+      setOptions([
+        { id: crypto.randomUUID(), text: "", isCorrect: false },
+        { id: crypto.randomUUID(), text: "", isCorrect: false },
+      ]);
+      setNote("");
+      setImageFile(null);
+
+      // Refresh questions list
+      if (hasContextSelected) {
+        fetchExamQuestions();
+      } else {
+        fetchAllQuestions();
+      }
+    } catch (err) {
+      console.error("Error submitting question:", err);
+      toast.error(err.response?.data?.message || "Erreur lors de la soumission de la question");
+    }
   };
 
   // Handle Export to Excel
@@ -632,6 +688,17 @@ const AddQuestions = () => {
             <CardDescription>{t('admin:add_question_text_options')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Session Label</Label>
+                <Input 
+                  value={sessionLabel} 
+                  onChange={(e) => setSessionLabel(e.target.value)} 
+                  placeholder="Ex: Session principale, Rattrapage, etc."
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>{t('admin:question_text')}</Label>
               <Textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} placeholder={t('admin:type_question_here')} rows={4} />
