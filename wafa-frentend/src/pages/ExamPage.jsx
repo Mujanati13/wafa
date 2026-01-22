@@ -3058,15 +3058,15 @@ const ExamPage = () => {
                             setCollapsedSessions(newCollapsed);
                           }}
                         >
-                          <div className="flex items-center gap-2.5">
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
                             <div className={cn(
-                              "transition-transform duration-200",
+                              "transition-transform duration-200 shrink-0",
                               !isCollapsed && "rotate-90"
                             )}>
                               <ChevronRight className="h-4 w-4 text-gray-400" />
                             </div>
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium truncate text-gray-700">{sessionName}</span>
+                            <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
+                            <span className="text-sm font-medium text-gray-700 break-words line-clamp-2">{sessionName}</span>
                           </div>
                           <Badge variant="outline" className="bg-gray-50">{sessionQuestions.length}</Badge>
                         </button>
@@ -3615,100 +3615,102 @@ const ExamPage = () => {
               </div>
 
               {/* Images Grid */}
-              <ScrollArea className="flex-1 p-3 sm:p-4">
-                {(() => {
-                  // Get all images from all questions in the entire exam
-                  const allImages = questions.reduce((acc, q, idx) => {
-                    const globalIndex = questions.findIndex(question => question._id === q._id);
-                    if (q.images && q.images.length > 0) {
-                      q.images.forEach((imgUrl, imgIdx) => {
-                        // Ensure proper URL formatting for images
-                        let imageUrl = imgUrl;
-                        if (!imageUrl.startsWith('http')) {
-                          // Get base URL without /api/v1
-                          const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || 'http://localhost:5010';
-                          
-                          // Handle different image path formats
-                          if (imageUrl.startsWith('/uploads/')) {
-                            // Already has /uploads/ prefix
-                            imageUrl = `${baseUrl}${imageUrl}`;
-                          } else if (imageUrl.includes('/uploads/')) {
-                            // Has /uploads/ somewhere in path
-                            imageUrl = `${baseUrl}/${imageUrl}`;
-                          } else {
-                            // Assume it's just filename or relative path
-                            imageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-                            imageUrl = `${baseUrl}/uploads${imageUrl}`;
+              <ScrollArea className="flex-1 p-3 sm:p-4 min-h-0">
+                <div className="pr-3 sm:pr-4">
+                  {(() => {
+                    // Get all images from all questions in the entire exam
+                    const allImages = questions.reduce((acc, q, idx) => {
+                      const globalIndex = questions.findIndex(question => question._id === q._id);
+                      if (q.images && q.images.length > 0) {
+                        q.images.forEach((imgUrl, imgIdx) => {
+                          // Ensure proper URL formatting for images
+                          let imageUrl = imgUrl;
+                          if (!imageUrl.startsWith('http')) {
+                            // Get base URL without /api/v1
+                            const baseUrl = import.meta.env.VITE_BASED_URL?.replace('/api/v1', '') || 'http://localhost:5010';
+                            
+                            // Handle different image path formats
+                            if (imageUrl.startsWith('/uploads/')) {
+                              // Already has /uploads/ prefix
+                              imageUrl = `${baseUrl}${imageUrl}`;
+                            } else if (imageUrl.includes('/uploads/')) {
+                              // Has /uploads/ somewhere in path
+                              imageUrl = `${baseUrl}/${imageUrl}`;
+                            } else {
+                              // Assume it's just filename or relative path
+                              imageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+                              imageUrl = `${baseUrl}/uploads${imageUrl}`;
+                            }
                           }
-                        }
-                        
-                        console.log(`Image URL for Q${q.displayNumber}:`, imageUrl); // Debug log
-                        
-                        acc.push({
-                          src: imageUrl,
-                          questionIndex: globalIndex,
-                          questionNumber: q.displayNumber,
-                          questionText: q.text?.substring(0, 50) + '...',
-                          imageIndex: imgIdx
+                          
+                          console.log(`Image URL for Q${q.displayNumber}:`, imageUrl); // Debug log
+                          
+                          acc.push({
+                            src: imageUrl,
+                            questionIndex: globalIndex,
+                            questionNumber: q.displayNumber,
+                            questionText: q.text?.substring(0, 50) + '...',
+                            imageIndex: imgIdx
+                          });
                         });
-                      });
-                    }
-                    return acc;
-                  }, []);
+                      }
+                      return acc;
+                    }, []);
 
-                  if (allImages.length === 0) {
-                    return (
-                      <div className="text-center py-8 sm:py-12">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                          <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+                    if (allImages.length === 0) {
+                      return (
+                        <div className="text-center py-8 sm:py-12">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                            <Image className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+                          </div>
+                          <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
+                            Aucune image dans cet examen
+                          </h4>
+                          <p className="text-gray-500 text-xs sm:text-sm">
+                            Cet examen ne contient pas d'images.
+                          </p>
                         </div>
-                        <h4 className="text-base sm:text-lg font-medium text-gray-700 mb-2">
-                          Aucune image dans cet examen
-                        </h4>
-                        <p className="text-gray-500 text-xs sm:text-sm">
-                          Cet examen ne contient pas d'images.
-                        </p>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                        {allImages.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all"
+                            onClick={() => {
+                              goToQuestion(img.questionIndex);
+                              setShowImageGallery(false);
+                            }}
+                          >
+                            <img
+                              src={img.src}
+                              alt={`Question ${img.questionNumber}`}
+                              className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                // Log error for debugging
+                                console.error(`Failed to load image from: ${img.src}`);
+                                console.error(`Error details:`, e);
+                                // Show placeholder if image fails
+                                e.target.style.backgroundColor = '#e5e7eb';
+                                e.target.alt = 'Image not found';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                              <span className="text-white text-xs font-medium">
+                                Q{img.questionNumber}
+                              </span>
+                            </div>
+                            <Badge className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-purple-600 text-[10px] sm:text-xs">
+                              Q{img.questionNumber}
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
                     );
-                  }
-
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                      {allImages.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="relative group cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all"
-                          onClick={() => {
-                            goToQuestion(img.questionIndex);
-                            setShowImageGallery(false);
-                          }}
-                        >
-                          <img
-                            src={img.src}
-                            alt={`Question ${img.questionNumber}`}
-                            className="w-full h-24 sm:h-32 object-cover group-hover:scale-105 transition-transform"
-                            onError={(e) => {
-                              // Log error for debugging
-                              console.error(`Failed to load image from: ${img.src}`);
-                              console.error(`Error details:`, e);
-                              // Show placeholder if image fails
-                              e.target.style.backgroundColor = '#e5e7eb';
-                              e.target.alt = 'Image not found';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                            <span className="text-white text-xs font-medium">
-                              Q{img.questionNumber}
-                            </span>
-                          </div>
-                          <Badge className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-purple-600 text-[10px] sm:text-xs">
-                            Q{img.questionNumber}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+                  })()}
+                </div>
               </ScrollArea>
 
               {/* Footer */}

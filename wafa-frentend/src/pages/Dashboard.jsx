@@ -76,6 +76,14 @@ const Dashboard = () => {
         const response = await userService.checkFreeSemesterStatus();
         if (response.data?.needsToSelectSemester) {
           navigate('/select-semester');
+          return;
+        }
+        
+        // Also check if user has no semesters at all (new Google sign-up users)
+        const userProfile = await userService.getUserProfile();
+        if (!userProfile.semesters || userProfile.semesters.length === 0) {
+          // New user with no semesters - redirect to semester selection
+          navigate('/select-semester');
         }
       } catch (error) {
         console.error('Error checking free semester status:', error);
@@ -173,7 +181,20 @@ const Dashboard = () => {
   // Fetch semester-specific stats when semester changes
   useEffect(() => {
     const fetchSemesterData = async () => {
-      if (!semester) return;
+      if (!semester) {
+        // No semester selected yet - clear stats data
+        setStats({
+          examsCompleted: 0,
+          averageScore: 0,
+          studyHours: 0,
+          rank: 0,
+        });
+        setModuleProgress([]);
+        setWeeklyActivity([]);
+        setPerformanceTrend([]);
+        setCompletionData([]);
+        return;
+      }
 
       try {
         // Fetch stats and leaderboard in parallel for faster loading

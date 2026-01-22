@@ -10,25 +10,43 @@ const ProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     // Listen to Firebase auth state changes
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         // User is signed in with Firebase
         // Check if we also have the JWT token
         const hasToken = localStorage.getItem('token') !== null;
         
         if (!hasToken) {
-          // Firebase user exists but no JWT token - get new token
-          user.getIdToken().then(idToken => {
-            // Try to refresh the JWT token from backend
-            console.log('Refreshing JWT token...');
-            // For now, mark as authenticated - the API interceptor will handle token refresh
-            setAuthenticated(true);
-            setLoading(false);
-          }).catch(error => {
-            console.error('Error getting Firebase token:', error);
+          // Firebase user exists but no JWT token - get new token from backend
+          try {
+            const idToken = await user.getIdToken();
+            console.log('Firebase user found without JWT token, refreshing...');
+            
+            // Call backend to get JWT token
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/firebase`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ idToken }),
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('userProfile', JSON.stringify(data.user));
+              localStorage.setItem('user', JSON.stringify(data.user));
+              setAuthenticated(true);
+            } else {
+              console.error('Failed to refresh JWT token');
+              setAuthenticated(false);
+            }
+          } catch (error) {
+            console.error('Error refreshing JWT token:', error);
             setAuthenticated(false);
+          } finally {
             setLoading(false);
-          });
+          }
         } else {
           setAuthenticated(true);
           setLoading(false);
