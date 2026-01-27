@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Browser Storage - WAFA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .storage-info {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .storage-item {
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .size {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover {
+            background: #da190b;
+        }
+        .success {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        .warning {
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .total-size {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .browser-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Browser Storage</h1>
+        <p class="subtitle">Fix "Quota Exceeded" errors in Firefox & Brave</p>
+        
+        <div class="browser-note">
+            <strong>⚠️ Why this happens:</strong><br>
+            Firefox and Brave have <strong>stricter storage limits</strong> (5-10MB) compared to Chrome (50MB+).
+            Your app stores large module data that exceeds these limits.
+        </div>
+
+        <div class="storage-info">
+            <h3>Current Storage Usage</h3>
+            <div id="storage-list"></div>
+            <div class="total-size" id="total-size">Calculating...</div>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Note:</strong> Clearing storage will log you out and remove cached data.
+            You'll need to login again, but the app will work properly in Firefox/Brave.
+        </div>
+
+        <div style="text-align: center;">
+            <button onclick="clearLargeItems()">Clear Large Cache Items</button>
+            <button onclick="clearAllStorage()" class="danger">Clear All Storage</button>
+        </div>
+
+        <div class="success" id="success-msg"></div>
+    </div>
+
+    <script>
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getItemSize(value) {
+            // Rough estimation: 2 bytes per character in UTF-16
+            return value ? value.length * 2 : 0;
+        }
+
+        function displayStorageInfo() {
+            const storageList = document.getElementById('storage-list');
+            const items = [];
+            let totalSize = 0;
+
+            // Get all localStorage items
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                const size = getItemSize(value);
+                totalSize += size;
+                items.push({ key, size });
+            }
+
+            // Sort by size (largest first)
+            items.sort((a, b) => b.size - a.size);
+
+            // Display items
+            storageList.innerHTML = items.map(item => `
+                <div class="storage-item">
+                    <span><strong>${item.key}</strong></span>
+                    <span class="size">${formatBytes(item.size)}</span>
+                </div>
+            `).join('');
+
+            // Display total
+            const totalElement = document.getElementById('total-size');
+            totalElement.textContent = `Total: ${formatBytes(totalSize)}`;
+            
+            // Warn if over 5MB (Firefox/Brave limit)
+            if (totalSize > 5 * 1024 * 1024) {
+                totalElement.style.color = '#f44336';
+                totalElement.textContent += ' ⚠️ OVER LIMIT!';
+            }
+        }
+
+        function clearLargeItems() {
+            const itemsToClear = ['modules', 'userProfile', 'examResults', 'landingSettings'];
+            let cleared = 0;
+            
+            itemsToClear.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    cleared++;
+                }
+            });
+
+            showSuccess(`Cleared ${cleared} large cache items. Refresh the page and login again.`);
+            displayStorageInfo();
+        }
+
+        function clearAllStorage() {
+            if (confirm('Are you sure? This will log you out and clear all cached data.')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                showSuccess('All storage cleared! You can now login again without quota errors.');
+                displayStorageInfo();
+            }
+        }
+
+        function showSuccess(message) {
+            const successMsg = document.getElementById('success-msg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        // Display storage info on load
+        displayStorageInfo();
+
+        // Auto-refresh every 2 seconds
+        setInterval(displayStorageInfo, 2000);
+    </script>
+</body>
+</html>

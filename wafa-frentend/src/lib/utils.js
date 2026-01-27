@@ -91,3 +91,52 @@ export const hasAllPermissions = (...permissions) => {
   const userPermissions = user.permissions || [];
   return permissions.every(p => userPermissions.includes(p));
 };
+
+// Safe localStorage wrapper for Firefox/Brave quota limits
+export const safeLocalStorage = {
+  setItem: (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn(`localStorage quota exceeded for key: ${key}. Clearing old data...`);
+        // Try to clear some space
+        try {
+          // Remove cached modules and large items first
+          const itemsToRemove = ['modules', 'userProfile', 'examResults'];
+          itemsToRemove.forEach(item => {
+            if (item !== key) localStorage.removeItem(item);
+          });
+          // Try again
+          localStorage.setItem(key, value);
+          return true;
+        } catch (e2) {
+          console.error('Still cannot save to localStorage after cleanup:', e2);
+          return false;
+        }
+      }
+      console.error('localStorage error:', e);
+      return false;
+    }
+  },
+  
+  getItem: (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.error('localStorage getItem error:', e);
+      return null;
+    }
+  },
+  
+  removeItem: (key) => {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      console.error('localStorage removeItem error:', e);
+      return false;
+    }
+  }
+};

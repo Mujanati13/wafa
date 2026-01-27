@@ -1,4 +1,4 @@
-import { api } from "@/lib/utils";
+import { api, safeLocalStorage } from "@/lib/utils";
 import { userService } from "@/services/userService";
 
 // Cache for leaderboard data
@@ -34,9 +34,9 @@ export const dashboardService = {
         userService.clearProfileCache();
       }
       const { data } = await api.get('/users/profile');
-      // Update cache
+      // Update cache with safe localStorage
       if (data?.data?.user) {
-        localStorage.setItem('userProfile', JSON.stringify(data.data.user));
+        safeLocalStorage.setItem('userProfile', JSON.stringify(data.data.user));
       }
       return data;
     } catch (error) {

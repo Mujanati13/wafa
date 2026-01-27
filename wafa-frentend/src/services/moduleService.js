@@ -41,7 +41,28 @@ export const moduleService = {
                 const response = await api.get("/modules");
                 moduleCache = response.data;
                 moduleCacheTime = Date.now();
-                localStorage.setItem("modules", JSON.stringify(response.data.data));
+                
+                // Try to save to localStorage, but don't fail if quota exceeded
+                try {
+                    localStorage.setItem("modules", JSON.stringify(response.data.data));
+                } catch (e) {
+                    // Quota exceeded - clear old data and try storing only essential fields
+                    console.warn('localStorage quota exceeded, clearing old cache:', e);
+                    try {
+                        localStorage.removeItem("modules");
+                        // Store minimal module data (only what's needed for sidebar)
+                        const minimalModules = response.data.data.map(m => ({
+                            _id: m._id,
+                            name: m.name,
+                            semester: m.semester,
+                            icon: m.icon
+                        }));
+                        localStorage.setItem("modules", JSON.stringify(minimalModules));
+                    } catch (e2) {
+                        console.error('Still cannot save to localStorage:', e2);
+                        // Continue without localStorage cache
+                    }
+                }
                 return response;
             })();
 

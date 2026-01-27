@@ -106,13 +106,24 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
         const { data } = await moduleService.getAllmodules();
         const allModules = data.data || [];
         setModules(allModules);
-        localStorage.setItem("modules", JSON.stringify(allModules));
+        
+        // Try to save to localStorage with quota exceeded protection
+        try {
+          localStorage.setItem("modules", JSON.stringify(allModules));
+        } catch (e) {
+          console.warn("Cannot save modules to localStorage (quota exceeded):", e);
+          // Firefox/Brave have stricter storage limits - just continue without cache
+        }
       } catch (error) {
         console.error("Error fetching modules:", error);
         // Fallback to localStorage if API fails
-        const storedModules = localStorage.getItem("modules");
-        if (storedModules) {
-          setModules(JSON.parse(storedModules));
+        try {
+          const storedModules = localStorage.getItem("modules");
+          if (storedModules) {
+            setModules(JSON.parse(storedModules));
+          }
+        } catch (e) {
+          console.error("Cannot read from localStorage:", e);
         }
       } finally {
         setLoading(false);
