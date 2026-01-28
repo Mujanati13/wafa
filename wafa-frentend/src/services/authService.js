@@ -18,7 +18,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const googleProvider = new GoogleAuthProvider();
 
 /**
- * Register with email and password
+ * Register with email and password (using backend local strategy - no email verification required)
  */
 export const registerWithEmail = async (email, password, userData) => {
   try {
@@ -36,38 +36,23 @@ export const registerWithEmail = async (email, password, userData) => {
       }
     }
 
-    // Create user with Firebase
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-    // Configure action code settings for email verification
-    const actionCodeSettings = {
-      url: `${window.location.origin}/login?verified=true`,
-      handleCodeInApp: false,
-    };
-
-    // Send Firebase email verification
-    await sendEmailVerification(userCredential.user, actionCodeSettings);
-
-    // Get Firebase ID token
-    const idToken = await userCredential.user.getIdToken();
-
-    // Send to backend to create user record
-    const response = await axios.post(`${API_URL}/auth/firebase`, {
-      idToken,
-      ...userData
+    // Register directly with backend (email verification disabled)
+    const response = await axios.post(`${API_URL}/auth/register`, {
+      email,
+      password,
+      username: `${userData.firstName} ${userData.lastName}`.trim(),
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      newsletter: userData.newsletter
     }, {
       withCredentials: true
     });
 
-    // Sign out user until they verify email
-    await userCredential.user.reload();
-
     return {
       success: true,
       user: response.data.user,
-      token: response.data.token,
-      needsVerification: true,
-      message: 'Un email de vérification a été envoyé à votre adresse. Veuillez cliquer sur le lien pour activer votre compte.'
+      needsVerification: response.data.requiresVerification || false, // Backend now returns false
+      message: response.data.message || 'Inscription réussie! Vous pouvez maintenant vous connecter.'
     };
   } catch (error) {
     console.error('Registration error:', error);

@@ -73,46 +73,26 @@ export const AuthController = {
 
       const hashPassword = await bcrypt.hash(password, 10);
       
-      // Generate email verification token
-      const verificationToken = crypto.randomBytes(32).toString("hex");
-      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
+      // Email verification disabled - users can log in immediately
       const newUser = await User.create({
         username,
         email,
         password: hashPassword,
-        emailVerificationToken: verificationToken,
-        emailVerificationExpires: verificationExpires,
-        emailVerified: false,
+        emailVerified: true, // Auto-verified - no email verification required
       });
 
-      // Send verification email - REQUIRED
-      try {
-        await sendVerificationEmail(email, username, verificationToken);
-        
-        res.status(201).json({
-          success: true,
-          message: "Registration successful! A verification email has been sent to your address. Please check your inbox and click the link to activate your account.",
-          user: {
-            id: newUser._id,
-            username: newUser.username,
-            email: newUser.email,
-            emailVerified: newUser.emailVerified,
-          },
-          requiresVerification: true,
-        });
-      } catch (emailError) {
-        console.error("Error sending verification email:", emailError);
-        
-        // Delete the user if email fails to send
-        await User.findByIdAndDelete(newUser._id);
-        
-        return res.status(500).json({
-          success: false,
-          message: "Failed to send verification email. Please try again or contact support.",
-          error: "Email service temporarily unavailable"
-        });
-      }
+      // Registration successful - user can log in immediately
+      res.status(201).json({
+        success: true,
+        message: "Registration successful! You can now log in with your credentials.",
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          email: newUser.email,
+          emailVerified: newUser.emailVerified,
+        },
+        requiresVerification: false,
+      });
     } catch (error) {
       console.error("Registration error:", error);
       if (error.code === 11000) {

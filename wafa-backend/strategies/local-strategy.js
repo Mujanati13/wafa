@@ -52,10 +52,7 @@ export default Passport.use(
         throw new Error(`Your account has been blocked.${reason} Please contact support.`);
       }
 
-      // Check if email is verified
-      if (!foundUser.emailVerified) {
-        throw new Error("Please verify your email before logging in. Check your inbox for the verification link.");
-      }
+      // Email verification disabled - users can log in immediately after registration
 
       // Check if password exists in user document
       if (!foundUser.password) {
