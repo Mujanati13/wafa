@@ -1234,39 +1234,36 @@ const ExamPage = () => {
 
   // Navigation - Move through all questions
   const goToNext = useCallback(() => {
-    console.log('goToNext called, questions.length:', questions.length);
-    setCurrentQuestion(prevQuestion => {
-      console.log('goToNext: current question is', prevQuestion);
-      if (prevQuestion < questions.length - 1) {
-        const nextQ = prevQuestion + 1;
-        console.log('goToNext: moving to', nextQ);
-        setQuestionTransition('next');
-        setVisitedQuestions(prev => new Set([...prev, nextQ]));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return nextQ;
-      } else {
-        console.log('goToNext: already at last question');
-        return prevQuestion;
-      }
-    });
-  }, [questions.length]);
+    const questionsLength = questionsLengthRef.current;
+    const current = currentQuestionRef.current;
+    console.log('goToNext called, questions.length:', questionsLength, 'current:', current);
+    
+    if (current < questionsLength - 1) {
+      const nextQ = current + 1;
+      console.log('goToNext: moving from', current, 'to', nextQ);
+      setQuestionTransition('next');
+      setCurrentQuestion(nextQ);
+      setVisitedQuestions(prev => new Set([...prev, nextQ]));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.log('goToNext: already at last question');
+    }
+  }, []);
 
   const goToPrevious = useCallback(() => {
-    console.log('goToPrevious called');
-    setCurrentQuestion(prevQuestion => {
-      console.log('goToPrevious: current question is', prevQuestion);
-      if (prevQuestion > 0) {
-        const prevQ = prevQuestion - 1;
-        console.log('goToPrevious: moving to', prevQ);
-        setQuestionTransition('prev');
-        setVisitedQuestions(prev => new Set([...prev, prevQ]));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return prevQ;
-      } else {
-        console.log('goToPrevious: already at first question');
-        return prevQuestion;
-      }
-    });
+    const current = currentQuestionRef.current;
+    console.log('goToPrevious called, current:', current);
+    
+    if (current > 0) {
+      const prevQ = current - 1;
+      console.log('goToPrevious: moving from', current, 'to', prevQ);
+      setQuestionTransition('prev');
+      setCurrentQuestion(prevQ);
+      setVisitedQuestions(prev => new Set([...prev, prevQ]));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.log('goToPrevious: already at first question');
+    }
   }, []);
 
   const goToQuestion = useCallback((index) => {

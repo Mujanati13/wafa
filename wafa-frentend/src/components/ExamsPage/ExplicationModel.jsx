@@ -146,7 +146,16 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
       console.error("Error generating AI explanation:", error);
       
       const errorMessage = error.response?.data?.message;
-      if (errorMessage?.includes("existe déjà")) {
+      const errorData = error.response?.data;
+      
+      // Check for rate limit error (429 or quota exceeded)
+      if (error.response?.status === 429 || errorMessage?.includes("quota") || errorMessage?.includes("rate") || errorMessage?.includes("limit") || errorMessage?.includes("too many")) {
+        toast.error("Limite de génération atteinte", {
+          description: "Vous avez atteint la limite de génération d'explications IA pour le moment. Veuillez réessayer dans quelques heures.",
+          duration: 8000,
+          icon: <AlertCircle className="h-5 w-5" />
+        });
+      } else if (errorMessage?.includes("existe déjà")) {
         toast.info("Explication IA déjà disponible", {
           description: "Une explication existe déjà pour cette question."
         });
@@ -162,7 +171,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
         }
       } else {
         toast.error("Erreur lors de la génération", {
-          description: errorMessage || "Impossible de générer l'explication IA.",
+          description: errorMessage || "Impossible de générer l'explication IA. Veuillez réessayer plus tard.",
           duration: 5000
         });
       }
