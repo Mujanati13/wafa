@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { auth } from '@/config/firebase';
-import { isAuthenticated } from '@/services/authService';
 
 const ProtectedRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -9,56 +7,38 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Listen to Firebase auth state changes
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        // User is signed in with Firebase
-        // Check if we also have the JWT token
-        const hasToken = localStorage.getItem('token') !== null;
-        
-        if (!hasToken) {
-          // Firebase user exists but no JWT token - get new token from backend
-          try {
-            const idToken = await user.getIdToken();
-            console.log('Firebase user found without JWT token, refreshing...');
-            
-            // Call backend to get JWT token
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/firebase`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ idToken }),
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              localStorage.setItem('token', data.token);
-              localStorage.setItem('userProfile', JSON.stringify(data.user));
-              localStorage.setItem('user', JSON.stringify(data.user));
-              setAuthenticated(true);
-            } else {
-              console.error('Failed to refresh JWT token');
-              setAuthenticated(false);
-            }
-          } catch (error) {
-            console.error('Error refreshing JWT token:', error);
-            setAuthenticated(false);
-          } finally {
-            setLoading(false);
-          }
-        } else {
+    // Check for JWT token in localStorage (backend authentication)
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      // User is authenticated if both token and user data exist
+      if (token && user) {
+        try {
+          JSON.parse(user); // Verify user is valid JSON
           setAuthenticated(true);
-          setLoading(false);
+        } catch (error) {
+          console.error('Invalid user data in localStorage:', error);
+          setAuthenticated(false);
         }
       } else {
-        // No Firebase user
         setAuthenticated(false);
-        setLoading(false);
       }
-    });
+      
+      setLoading(false);
+    };
 
-    return () => unsubscribe();
+    checkAuth();
+
+    // Listen for storage changes (logout in other tabs)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        checkAuth();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   if (loading) {
