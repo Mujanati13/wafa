@@ -695,8 +695,42 @@ const SubjectsPage = () => {
           
         </div>
 
-        {/* Exam Type Tabs */}
-        <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
+        {/* Show overall empty state if NO exams exist */}
+        {examsParYear.length === 0 && examsParCours.length === 0 && qcmBanque.length === 0 ? (
+          <Card className="border-2 border-dashed">
+            <CardContent className="p-12 sm:p-16 text-center">
+              <div className="flex flex-col items-center gap-4 sm:gap-6">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center" style={{
+                  backgroundColor: module?.color ? `${module.color}20` : '#f0f0f0'
+                }}>
+                  <GraduationCap className="h-8 w-8 sm:h-10 sm:w-10" style={{ color: module?.color || '#9CA3AF' }} />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                    Aucun contenu disponible
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-600 max-w-sm">
+                    Le module <strong>{module?.name}</strong> ne contient pas encore d'examens, de cours ou de QCM.
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-3">
+                    Veuillez revenir plus tard ou contactez votre instructeur.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate('/dashboard/home')}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Retour au tableau de bord
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Exam Type Tabs */}
+            <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-3 h-auto p-1 bg-white border shadow-sm">
               <TabsTrigger
@@ -871,6 +905,8 @@ const SubjectsPage = () => {
             </TabsContent>
           </div>
         </Tabs>
+          </>
+        )}
       </div>
 
       {/* Help Modal */}
