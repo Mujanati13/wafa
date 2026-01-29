@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle, HelpCircle } from "lucide-react";
@@ -81,13 +81,8 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
 
   const imageUrl = getImageUrl();
   
-  // Calculate answered questions
+  // Calculate answered questions (progress * total / 100)
   const answeredQuestions = exam.answeredQuestions || Math.round((exam.progress || 0) * exam.questions / 100);
-  
-  // Calculate REAL progress percentage based on actual answered questions
-  const realProgress = exam.questions > 0 
-    ? Math.round((answeredQuestions / exam.questions) * 100)
-    : 0;
 
   return (
     <motion.div
@@ -163,7 +158,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
               {/* Circular Progress */}
               <div className="flex-shrink-0">
                 <ProgressCircle 
-                  progress={realProgress} 
+                  progress={exam.progress || 0} 
                   size={52} 
                   color={moduleColor || '#f59e0b'} 
                 />
@@ -210,18 +205,6 @@ const SubjectsPage = () => {
 
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Safe back navigation that prevents going to login
-  const handleGoBack = () => {
-    // Check if there's a valid previous page in history
-    if (location.key !== 'default' && window.history.length > 1) {
-      navigate(-1);
-    } else {
-      // Fallback to dashboard if no history or coming from external link
-      navigate('/dashboard');
-    }
-  };
 
   // Check user access based on subscription
   useEffect(() => {
@@ -231,39 +214,10 @@ const SubjectsPage = () => {
         const semesters = userProfile.semesters || [];
         const plan = userProfile.plan || "Free";
         const freeModules = userProfile.freeModules || [];
-        const userId = userProfile._id;
-        
         setUserSemesters(semesters);
         setUserPlan(plan);
         setUserFreeModules(freeModules);
         localStorage.setItem("user", JSON.stringify(userProfile));
-
-        // Clean up stale localStorage from other users
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('exam_progress_')) {
-            // Extract userId from key format: exam_progress_{userId}_{examType}_{examId}
-            const parts = key.split('_');
-            if (parts.length >= 5) {
-              const storedUserId = parts[2];
-              
-              // If this progress doesn't belong to current user, mark for removal
-              if (storedUserId !== userId) {
-                keysToRemove.push(key);
-              }
-            }
-          }
-        }
-
-        // Remove stale data
-        if (keysToRemove.length > 0) {
-          console.log(`🧹 Cleaning up ${keysToRemove.length} stale localStorage items from other users`);
-          keysToRemove.forEach(key => {
-            localStorage.removeItem(key);
-            console.log(`  ✓ Removed: ${key}`);
-          });
-        }
       } catch (error) {
         console.error("Error fetching user profile:", error);
         const storedUser = localStorage.getItem("user");
@@ -341,6 +295,18 @@ const SubjectsPage = () => {
         // Show module data while loading exams
         setIsLoading(false);
 
+        // Map exams directly from module response
+        const yearExamsFromModule = (moduleData.exams || []).map(e => ({
+          id: e._id,
+          name: e.name,
+          questions: e.totalQuestions || 0,
+          progress: 0,
+          category: "Exam par years",
+          imageUrl: e.imageUrl,
+          year: e.year,
+          helpText: e.infoText || ""
+        }));
+
         // Fetch exams in parallel but don't block the UI
         Promise.all([
           api.get(`/exam-courses?moduleId=${id}`),
@@ -375,9 +341,6 @@ const SubjectsPage = () => {
             year: e.year,
             helpText: e.infoText || e.helpText || e.description || ""
           }));
-          
-          // Sort by year (descending) to match admin ordering
-          yearExamsFromApi.sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
 
           // Map QCM banque from /qcm-banque endpoint
           const qcmFromApi = moduleQcm.map(q => ({
@@ -389,9 +352,6 @@ const SubjectsPage = () => {
             imageUrl: q.imageUrl,
             helpText: q.infoText || q.helpText || q.description || ""
           }));
-          
-          // Sort QCM by position (if available) or name
-          qcmFromApi.sort((a, b) => a.name.localeCompare(b.name));
 
           // Also get exam-courses with category "Exam par years" as fallback
           const yearExamsFromCourses = examCourses
@@ -403,12 +363,8 @@ const SubjectsPage = () => {
               progress: 0,
               category: c.category,
               imageUrl: c.imageUrl,
-              year: c.year,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
-          
-          // Sort by year (descending) to match admin ordering
-          yearExamsFromCourses.sort((a, b) => String(b.year || "").localeCompare(String(a.year || "")));
 
           // Get all exam courses that are NOT "Exam par years" and NOT "QCM banque"
           // This includes "Exam par courses" and any custom categories
@@ -423,9 +379,6 @@ const SubjectsPage = () => {
               imageUrl: c.imageUrl,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
-          
-          // Sort course exams by name
-          courseExams.sort((a, b) => a.name.localeCompare(b.name));
 
           // QCM from exam-courses as fallback
           const qcmFromCourses = examCourses
@@ -439,12 +392,9 @@ const SubjectsPage = () => {
               imageUrl: c.imageUrl,
               helpText: c.infoText || c.helpText || c.description || ""
             }));
-          
-          // Sort QCM by name
-          qcmFromCourses.sort((a, b) => a.name.localeCompare(b.name));
 
-          // Combine sources - prioritize direct API sources
-          const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
+          // Combine sources - prioritize module's embedded exams first
+          const yearExams = yearExamsFromModule.length > 0 ? yearExamsFromModule : (yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses);
           const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
 
           // Set exams immediately to show UI faster
@@ -487,8 +437,7 @@ const SubjectsPage = () => {
                   let answeredCount = examQuestions.filter(q => {
                     const questionId = q._id?.toString() || q._id;
                     const answer = answeredQuestionsMap[questionId];
-                    // Count all answered questions (verified OR unverified)
-                    return answer && (answer.isVerified === true || answer.selectedAnswers?.length > 0);
+                    return answer && answer.isVerified === true;
                   }).length;
                   
                   // Note: We trust server data over localStorage to avoid showing stale data
@@ -619,7 +568,7 @@ const SubjectsPage = () => {
                   <h3 className="text-lg font-semibold mb-1">{t('dashboard:module_not_found')}</h3>
                   <p className="text-muted-foreground">{t('dashboard:module_not_exist')}</p>
                 </div>
-                <Button onClick={handleGoBack} className="gap-2">
+                <Button onClick={() => navigate(-1)} className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   {t('common:back')}
                 </Button>
@@ -653,7 +602,7 @@ const SubjectsPage = () => {
                   </p>
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <Button variant="outline" onClick={handleGoBack} className="gap-2">
+                  <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     {t('common:back')}
                   </Button>
@@ -677,7 +626,7 @@ const SubjectsPage = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={handleGoBack}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -729,8 +678,8 @@ const SubjectsPage = () => {
           </Card>
         ) : (
           <>
-            {/* Exam Type Tabs */}
-            <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
+        {/* Exam Type Tabs */}
+        <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-3 h-auto p-1 bg-white border shadow-sm">
               <TabsTrigger
@@ -911,7 +860,7 @@ const SubjectsPage = () => {
 
       {/* Help Modal */}
       <Dialog open={helpModalOpen} onOpenChange={setHelpModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-blue-600" />
@@ -921,7 +870,7 @@ const SubjectsPage = () => {
               Informations d'aide pour cet examen
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="mt-4">
             {selectedHelpExam?.helpText ? (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-gray-900 whitespace-pre-wrap">{selectedHelpExam.helpText}</p>
