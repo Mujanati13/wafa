@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown";
 import { userService } from "@/services/userService";
+import { signOut } from "@/services/authService";
 import { api } from "@/lib/utils";
 
 const TopBar = ({ onMenuClick, sidebarOpen }) => {
@@ -73,24 +74,20 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
     return user.name.substring(0, 2).toUpperCase();
   };
 
-  const handleLogout = () => {
-    // Clear all auth and user data
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("userProfile");
-    
-    // Clean up all exam progress items
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('exam_progress_')) {
-        keysToRemove.push(key);
-      }
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      userService.clearProfileCache();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force logout even if there's an error
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userProfile");
+      userService.clearProfileCache();
+      navigate("/login");
     }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    userService.clearProfileCache();
-    navigate("/login");
   };
 
   return (

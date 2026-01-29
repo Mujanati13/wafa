@@ -231,10 +231,28 @@ export const confirmPasswordResetService = async (oobCode, newPassword) => {
  */
 export const signOut = async () => {
   try {
-    await firebaseSignOut(auth);
+    // Call backend logout endpoint to destroy session
+    try {
+      await axios.post(`${API_URL}/auth/logout`, {}, {
+        withCredentials: true
+      });
+    } catch (logoutError) {
+      console.error('Backend logout error:', logoutError);
+      // Continue with local cleanup even if backend logout fails
+    }
+
+    // Also attempt Firebase sign out if user has a Firebase session
+    try {
+      await firebaseSignOut(auth);
+    } catch (firebaseError) {
+      console.error('Firebase sign out error:', firebaseError);
+    }
+
+    // Clear all auth tokens and user data
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userProfile');
+    localStorage.removeItem('pendingVerificationEmail');
     
     // Clear all user-specific exam progress data
     const keysToRemove = [];
@@ -252,6 +270,10 @@ export const signOut = async () => {
     };
   } catch (error) {
     console.error('Sign out error:', error);
+    // Force local cleanup even on error
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userProfile');
     throw handleAuthError(error);
   }
 };
