@@ -774,7 +774,7 @@ const Register = () => {
                     setShowAccountWarning(false);
                     
                     toast.success('Compte créé avec succès', {
-                      description: 'Bienvenue sur WAFA !',
+                      description: 'Bienvenue sur imrs Qcm !',
                     });
 
                     // Check if user needs to select free semester

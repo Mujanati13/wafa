@@ -67,46 +67,28 @@ export const registerWithEmail = async (email, password, userData) => {
 };
 
 /**
- * Login with email and password
+ * Login with email and password (using backend local strategy - no email verification required)
  */
 export const loginWithEmail = async (email, password) => {
   try {
-    // Sign in with Firebase
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
-    // Reload user to get latest verification status
-    await userCredential.user.reload();
-
-    // Check if email is verified
-    if (!userCredential.user.emailVerified) {
-      // Sign out the unverified user
-      await auth.signOut();
-
-      return {
-        success: false,
-        needsVerification: true,
-        email: email,
-        message: 'Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.'
-      };
-    }
-
-    // Get Firebase ID token
-    const idToken = await userCredential.user.getIdToken();
-
-    // Authenticate with backend and sync verification status
-    const response = await axios.post(`${API_URL}/auth/firebase`, {
-      idToken
+    // Login directly with backend (MongoDB + Passport local strategy)
+    const response = await axios.post(`${API_URL}/auth/login`, {
+      email,
+      password
     }, {
       withCredentials: true
     });
 
     // Store JWT token
-    localStorage.setItem('token', response.data.token);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
 
     return {
       success: true,
       user: response.data.user,
-      token: response.data.token
+      token: response.data.token,
+      needsVerification: false
     };
   } catch (error) {
     console.error('Login error:', error);
@@ -292,6 +274,16 @@ export const isAuthenticated = () => {
  * Handle Firebase auth errors
  */
 const handleAuthError = (error) => {
+  // Handle axios errors from backend API
+  if (error.response) {
+    // Backend returned an error response
+    const message = error.response.data?.message || error.response.data?.error;
+    if (message) {
+      return new Error(message);
+    }
+  }
+
+  // Handle Firebase errors (for Google login)
   const errorMessages = {
     'auth/email-already-in-use': 'Cette adresse email est déjà utilisée. Essayez de vous connecter ou utilisez "Mot de passe oublié".',
     'auth/invalid-email': 'Adresse email invalide',
