@@ -299,13 +299,22 @@ const SubjectsPage = () => {
         // Fetch exams in parallel to get complete data with question counts
         Promise.all([
           api.get(`/exam-courses?moduleId=${id}`),
-          api.get(`/exams/all`).catch(() => ({ data: { data: [] } })),
-          api.get(`/qcm-banque/all`).catch(() => ({ data: { data: [] } }))
+          api.get(`/exams/all`).catch((err) => {
+            console.error('Error fetching exams:', err);
+            return { data: { data: [] } };
+          }),
+          api.get(`/qcm-banque/all`).catch((err) => {
+            console.error('Error fetching QCM banque:', err);
+            return { data: { data: [] } };
+          })
         ]).then(([examCoursesResponse, examsResponse, qcmResponse]) => {
 
           const examCourses = examCoursesResponse.data?.data || [];
           const allExams = examsResponse.data?.data || [];
           const allQcmBanque = qcmResponse.data?.data || [];
+
+          console.log('All exams from API:', allExams);
+          console.log('All QCM from API:', allQcmBanque);
 
           // Filter exams by module
           const moduleExams = allExams.filter(e => 
@@ -319,17 +328,22 @@ const SubjectsPage = () => {
             q.moduleName === moduleData.name
           );
 
-          // Map exam par années from /exams endpoint
+          console.log('Filtered module exams:', moduleExams);
+          console.log('Module exams with totalQuestions:', moduleExams.map(e => ({ name: e.name, totalQuestions: e.totalQuestions })));
+
+          // Map exam par années from /exams endpoint - use totalQuestions from backend
           const yearExamsFromApi = moduleExams.map(e => ({
             id: e._id,
             name: e.name,
-            questions: Array.isArray(e.questions) ? e.questions.length : (e.totalQuestions || 0),
+            questions: e.totalQuestions || 0,  // Backend provides totalQuestions
             progress: 0,
             category: "Exam par years",
             imageUrl: e.imageUrl,
             year: e.year,
             helpText: e.infoText || e.helpText || e.description || ""
           }));
+
+          console.log('Mapped year exams:', yearExamsFromApi);
 
           // Map QCM banque from /qcm-banque endpoint
           const qcmFromApi = moduleQcm.map(q => ({
@@ -382,9 +396,12 @@ const SubjectsPage = () => {
               helpText: c.infoText || c.helpText || c.description || ""
             }));
 
-          // Combine sources - prioritize module's embedded exams first
-          const yearExams = yearExamsFromModule.length > 0 ? yearExamsFromModule : (yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses);
+          // Use API data - it includes totalQuestions from backend
+          const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
           const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
+
+          console.log('Final year exams to display:', yearExams);
+          console.log('Final QCM exams to display:', qcmExams);
 
           // Set exams immediately to show UI faster
           setExamsParYear(yearExams);
@@ -404,6 +421,8 @@ const SubjectsPage = () => {
           api.get('/users/my-stats').then(async (userStatsResponse) => {
             const userStats = userStatsResponse.data?.data;
             
+            console.log('User stats response:', userStats);
+            
             // Check if user has answered questions (not just empty object)
             const hasAnsweredQuestions = userStats && 
                                         userStats.answeredQuestions && 
@@ -413,25 +432,31 @@ const SubjectsPage = () => {
               const answeredQuestionsMap = userStats.answeredQuestions;
               
               // Helper function to calculate progress for an exam
-              const calculateExamProgress = async (exam, examTypeKey) => {
+              const calculateExamProgress = async (exam) => {
                 try {
-                  const questionsResponse = await api.get(`/questions/exam/${exam.id}`);
-                  const examQuestions = questionsResponse.data?.data || [];
-                  const totalQuestions = examQuestions.length;
+                  // If exam already has total questions from backend, use it
+                  // Otherwise fetch questions to get count
+                  let totalQuestions = exam.questions;
+                  let examQuestions = [];
+                  
+                  if (!totalQuestions || totalQuestions === 0) {
+                    const questionsResponse = await api.get(`/questions/exam/${exam.id}`);
+                    examQuestions = questionsResponse.data?.data || [];
+                    totalQuestions = examQuestions.length;
+                  } else {
+                    // Still need to fetch to check which ones are answered
+                    const questionsResponse = await api.get(`/questions/exam/${exam.id}`);
+                    examQuestions = questionsResponse.data?.data || [];
+                  }
                   
                   if (totalQuestions === 0) return { ...exam, progress: 0, answeredQuestions: 0 };
                   
                   // Count VERIFIED questions from server
-                  // Use toString() to ensure ID comparison works
                   let answeredCount = examQuestions.filter(q => {
                     const questionId = q._id?.toString() || q._id;
                     const answer = answeredQuestionsMap[questionId];
                     return answer && answer.isVerified === true;
                   }).length;
-                  
-                  // Note: We trust server data over localStorage to avoid showing stale data
-                  // for new accounts. localStorage is only used as a visual indicator during
-                  // active exam sessions, but final progress should always come from the server.
                   
                   const progress = Math.round((answeredCount / totalQuestions) * 100);
                   
@@ -444,18 +469,23 @@ const SubjectsPage = () => {
               
               // Calculate progress for all exams in parallel
               const [updatedYearExams, updatedCourseExams, updatedQcmExams] = await Promise.all([
-                Promise.all(yearExams.map(e => calculateExamProgress(e, 'exam'))),
-                Promise.all(courseExams.map(e => calculateExamProgress(e, 'course'))),
-                Promise.all(qcmExams.map(e => calculateExamProgress(e, 'qcm')))
+                Promise.all(yearExams.map(e => calculateExamProgress(e))),
+                Promise.all(courseExams.map(e => calculateExamProgress(e))),
+                Promise.all(qcmExams.map(e => calculateExamProgress(e)))
               ]);
+              
+              console.log('Updated year exams with progress:', updatedYearExams);
               
               setExamsParYear(updatedYearExams);
               setExamsParCours(updatedCourseExams);
               setQcmBanque(updatedQcmExams);
+            } else {
+              console.log('No answered questions found, keeping initial question counts');
             }
           }).catch(statsError => {
             console.error('Error fetching user stats:', statsError);
-            // Keep the initial exams that were already set
+            console.log('Keeping initial exams with question counts from backend');
+            // Keep the initial exams that were already set with totalQuestions from backend
           });
 
         }).catch(examError => {
