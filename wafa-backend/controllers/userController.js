@@ -734,6 +734,12 @@ export const UserController = {
             throw new Error("Utilisateur non trouvé");
         }
 
+        // Fix missing name field for existing users
+        if (!user.name && user.username) {
+            user.name = user.username;
+            await user.save();
+        }
+
         // Get user stats for additional data
         const UserStats = (await import("../models/userStatsModel.js")).default;
         const userStats = await UserStats.findOne({ userId: req.user._id });

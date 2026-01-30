@@ -76,6 +76,7 @@ export const AuthController = {
       // Email verification disabled - users can log in immediately
       const newUser = await User.create({
         username,
+        name: username, // Set name to username if not provided
         email,
         password: hashPassword,
         emailVerified: true, // Auto-verified - no email verification required
