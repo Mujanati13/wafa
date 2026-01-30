@@ -67,9 +67,13 @@ const Dashboard = () => {
   // Load user from localStorage immediately on component mount
   useEffect(() => {
     const storedUser = localStorage.getItem('userProfile') || localStorage.getItem('user');
+    console.log('Loading user from localStorage:', storedUser);
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log('Parsed user:', parsedUser);
+        console.log('User name field:', parsedUser.name, 'fullName:', parsedUser.fullName, 'username:', parsedUser.username);
+        setUser(parsedUser);
       } catch (error) {
         console.error('Error parsing stored user:', error);
       }
@@ -131,7 +135,15 @@ const Dashboard = () => {
         let modules = modulesData.data;
 
         const userData = profileData.data?.user || profileData.data;
+        console.log('User profile data from API:', userData);
+        console.log('User name:', userData?.name, 'fullName:', userData?.fullName, 'username:', userData?.username);
         setUser(userData);
+        
+        // Also update localStorage to persist
+        if (userData) {
+          localStorage.setItem('userProfile', JSON.stringify(userData));
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
         
         // Fetch user stats to calculate module progress
         try {
