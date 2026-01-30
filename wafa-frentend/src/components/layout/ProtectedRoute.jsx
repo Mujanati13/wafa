@@ -16,7 +16,28 @@ const ProtectedRoute = ({ children }) => {
       if (token && user) {
         try {
           JSON.parse(user); // Verify user is valid JSON
-          setAuthenticated(true);
+          
+          // Optional: Decode JWT to check expiration (basic check)
+          // JWT format: header.payload.signature
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const isExpired = payload.exp && (payload.exp * 1000) < Date.now();
+            
+            if (isExpired) {
+              console.log('Token expired, redirecting to login');
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              localStorage.removeItem('userProfile');
+              setAuthenticated(false);
+            } else {
+              setAuthenticated(true);
+            }
+          } catch (decodeError) {
+            // If we can't decode the token, assume it's still valid
+            // The backend will reject it if it's actually invalid
+            console.warn('Could not decode token:', decodeError);
+            setAuthenticated(true);
+          }
         } catch (error) {
           console.error('Invalid user data in localStorage:', error);
           setAuthenticated(false);

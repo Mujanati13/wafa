@@ -296,24 +296,7 @@ const SubjectsPage = () => {
         // Show module data while loading exams
         setIsLoading(false);
 
-        // Map exams directly from module response
-        const yearExamsFromModule = (moduleData.exams || []).map(e => ({
-          id: e._id,
-          name: e.name,
-          questions: e.totalQuestions || 0,
-          progress: 0,
-          category: "Exam par years",
-          imageUrl: e.imageUrl,
-          year: e.year,
-          helpText: e.infoText || ""
-        }));
-
-        // Show module exams immediately
-        if (yearExamsFromModule.length > 0) {
-          setExamsParYear(yearExamsFromModule);
-        }
-
-        // Fetch exams in parallel but don't block the UI
+        // Fetch exams in parallel to get complete data with question counts
         Promise.all([
           api.get(`/exam-courses?moduleId=${id}`),
           api.get(`/exams/all`).catch(() => ({ data: { data: [] } })),

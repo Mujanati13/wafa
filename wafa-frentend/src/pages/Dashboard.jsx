@@ -64,6 +64,18 @@ const Dashboard = () => {
   const [completionData, setCompletionData] = useState([]);
   const [semesterPage, setSemesterPage] = useState(0); // For paginating semesters (2 at a time)
 
+  // Load user from localStorage immediately on component mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('userProfile') || localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+  }, []);
+
   // Only show subscribed semesters instead of all semesters
   const semestersPerPage = 2;
   const totalSemesterPages = Math.max(1, Math.ceil(userSemesters.length / semestersPerPage));
