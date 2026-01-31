@@ -17,7 +17,7 @@ import {
   X,
   RefreshCw,
 } from 'lucide-react';
-import axios from 'axios';
+import { api } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -99,10 +99,7 @@ const NotificationAdmin = () => {
   const fetchNotificationHistory = async () => {
     try {
       setLoadingHistory(true);
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/notifications/admin/history`,
-        { withCredentials: true }
-      );
+      const response = await api.get('/notifications/admin/history');
       setNotificationHistory(response.data.data || []);
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -130,16 +127,12 @@ const NotificationAdmin = () => {
 
     setSending(true);
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/notifications/admin/send-broadcast`,
-        {
-          title: formData.title,
-          message: formData.message,
-          type: formData.type,
-          priority: formData.priority,
-        },
-        { withCredentials: true }
-      );
+      const response = await api.post('/notifications/admin/send-broadcast', {
+        title: formData.title,
+        message: formData.message,
+        type: formData.type,
+        priority: formData.priority,
+      });
 
       if (response.data.success) {
         toast.success('Notification envoyée !', {
@@ -170,17 +163,13 @@ const NotificationAdmin = () => {
 
     setSending(true);
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/notifications/admin/send-system`,
-        {
-          userIds: selectedUsers.map(u => u._id),
-          title: formData.title,
-          message: formData.message,
-          type: formData.type,
-          priority: formData.priority,
-        },
-        { withCredentials: true }
-      );
+      const response = await api.post('/notifications/admin/send-system', {
+        userIds: selectedUsers.map(u => u._id),
+        title: formData.title,
+        message: formData.message,
+        type: formData.type,
+        priority: formData.priority,
+      });
 
       if (response.data.success) {
         toast.success('Notifications envoyées !', {

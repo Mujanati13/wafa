@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import axios from 'axios';
+import { api } from '@/lib/utils';
 
 const ContactMessagesAdmin = () => {
     const [messages, setMessages] = useState([]);
@@ -24,9 +24,7 @@ const ContactMessagesAdmin = () => {
     const fetchMessages = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/contact`, {
-                withCredentials: true
-            });
+            const response = await api.get('/contact');
             setMessages(response.data?.data || response.data || []);
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -43,11 +41,7 @@ const ContactMessagesAdmin = () => {
 
     const handleUpdateStatus = async (id, status) => {
         try {
-            await axios.patch(
-                `${import.meta.env.VITE_API_URL}/contact/${id}/status`,
-                { status },
-                { withCredentials: true }
-            );
+            await api.patch(`/contact/${id}/status`, { status });
             toast.success('Statut mis à jour avec succès');
             fetchMessages();
         } catch (error) {
@@ -60,9 +54,7 @@ const ContactMessagesAdmin = () => {
         if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return;
 
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/contact/${id}`, {
-                withCredentials: true
-            });
+            await api.delete(`/contact/${id}`);
             toast.success('Message supprimé avec succès');
             fetchMessages();
         } catch (error) {
