@@ -135,6 +135,10 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
   // Filter modules based on selected semester from context
   const filteredModules = modules.filter((module) => {
+    // Modules available in all semesters are always shown
+    if (module.availableInAllSemesters) {
+      return true;
+    }
     // If a specific semester is selected, show only modules from that semester
     if (selectedSemester) {
       return module.semester === selectedSemester;

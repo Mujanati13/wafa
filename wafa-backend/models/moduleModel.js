@@ -10,7 +10,14 @@ const moduleSchema = new mongoose.Schema(
         semester: {
                 type: String,
                 enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10"],
-                required: [true, "Semester is required"]
+                required: function() {
+                    return !this.availableInAllSemesters;
+                }
+        },
+        // Flag to make module available in all semesters
+        availableInAllSemesters: {
+                type: Boolean,
+                default: false
         },
         // Order within semester for display
         order: {

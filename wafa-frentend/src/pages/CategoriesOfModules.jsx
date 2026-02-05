@@ -456,7 +456,11 @@ const CategoriesOfModules = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{m.semester}</Badge>
+                          {m.availableInAllSemesters ? (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">📚 Tous</Badge>
+                          ) : (
+                            <Badge variant="outline">{m.semester}</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge className={m.categoryColor || "bg-gray-100 text-gray-700"}>

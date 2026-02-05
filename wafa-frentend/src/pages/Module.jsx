@@ -72,7 +72,8 @@ const Module = () => {
         helpContent: m?.helpContent || "",
         helpImage: m?.helpImage || "",
         helpPdf: m?.helpPdf || "",
-        difficulty: m?.difficulty || "QE"
+        difficulty: m?.difficulty || "QE",
+        availableInAllSemesters: m?.availableInAllSemesters || false
       }));
       setModules(list);
     } catch (e) {
@@ -163,11 +164,14 @@ const Module = () => {
   const filteredModules = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return modules.filter((m) => {
+      // Modules available in all semesters pass semester filter
       const passesSemester =
-        semesterFilter === "all" || m.semester === semesterFilter;
+        semesterFilter === "all" || 
+        m.availableInAllSemesters || 
+        m.semester === semesterFilter;
       const passesSearch =
         m.name.toLowerCase().includes(term) ||
-        m.semester.toLowerCase().includes(term) ||
+        (m.semester && m.semester.toLowerCase().includes(term)) ||
         String(m.id).includes(term);
       return passesSemester && passesSearch;
     });
@@ -362,7 +366,11 @@ const Module = () => {
                         </TableCell>
                         <TableCell className="font-mono text-sm">{m.id.slice(-6)}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{m.semester}</Badge>
+                          {m.availableInAllSemesters ? (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">📚 Tous les semestres</Badge>
+                          ) : (
+                            <Badge variant="secondary">{m.semester}</Badge>
+                          )}
                         </TableCell>
                         <TableCell className="font-medium">{m.name}</TableCell>
                         <TableCell>

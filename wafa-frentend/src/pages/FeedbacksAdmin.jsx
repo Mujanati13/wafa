@@ -1,0 +1,590 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  Loader2,
+  MessageSquare,
+  Plus,
+  Edit,
+  Trash2,
+  Star,
+  CheckCircle,
+  XCircle,
+  Award,
+  User,
+} from "lucide-react";
+import { api } from "@/lib/utils";
+
+const FeedbacksAdmin = () => {
+  const [loading, setLoading] = useState(true);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [showDialog, setShowDialog] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    role: "Étudiant en médecine",
+    message: "",
+    rating: 5,
+    imageUrl: "",
+    isApproved: false,
+    isFeatured: false,
+    order: 0,
+  });
+
+  useEffect(() => {
+    fetchFeedbacks();
+  }, []);
+
+  const fetchFeedbacks = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/feedbacks/admin");
+      if (response.data.success) {
+        setFeedbacks(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching feedbacks:", error);
+      toast.error("Erreur lors du chargement des témoignages");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDialog = (feedback = null) => {
+    if (feedback) {
+      setEditMode(true);
+      setSelectedFeedback(feedback);
+      setFormData({
+        name: feedback.name,
+        role: feedback.role,
+        message: feedback.message,
+        rating: feedback.rating,
+        imageUrl: feedback.imageUrl || "",
+        isApproved: feedback.isApproved,
+        isFeatured: feedback.isFeatured,
+        order: feedback.order,
+      });
+    } else {
+      setEditMode(false);
+      setSelectedFeedback(null);
+      setFormData({
+        name: "",
+        role: "Étudiant en médecine",
+        message: "",
+        rating: 5,
+        imageUrl: "",
+        isApproved: false,
+        isFeatured: false,
+        order: 0,
+      });
+    }
+    setShowDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setEditMode(false);
+    setSelectedFeedback(null);
+    setFormData({
+      name: "",
+      role: "Étudiant en médecine",
+      message: "",
+      rating: 5,
+      imageUrl: "",
+      isApproved: false,
+      isFeatured: false,
+      order: 0,
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      if (editMode && selectedFeedback) {
+        const response = await api.put(`/feedbacks/${selectedFeedback._id}`, formData);
+        if (response.data.success) {
+          toast.success("Témoignage mis à jour avec succès");
+          fetchFeedbacks();
+          handleCloseDialog();
+        }
+      } else {
+        const response = await api.post("/feedbacks", formData);
+        if (response.data.success) {
+          toast.success("Témoignage créé avec succès");
+          fetchFeedbacks();
+          handleCloseDialog();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving feedback:", error);
+      toast.error("Erreur lors de l'enregistrement du témoignage");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce témoignage ?")) {
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/feedbacks/${id}`);
+      if (response.data.success) {
+        toast.success("Témoignage supprimé avec succès");
+        fetchFeedbacks();
+      }
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+      toast.error("Erreur lors de la suppression du témoignage");
+    }
+  };
+
+  const handleToggleApproval = async (id) => {
+    try {
+      const response = await api.patch(`/feedbacks/${id}/approve`);
+      if (response.data.success) {
+        toast.success(response.data.message);
+        fetchFeedbacks();
+      }
+    } catch (error) {
+      console.error("Error toggling approval:", error);
+      toast.error("Erreur lors de la modification du statut");
+    }
+  };
+
+  const handleToggleFeatured = async (id) => {
+    try {
+      const response = await api.patch(`/feedbacks/${id}/feature`);
+      if (response.data.success) {
+        toast.success(response.data.message);
+        fetchFeedbacks();
+      }
+    } catch (error) {
+      console.error("Error toggling featured:", error);
+      toast.error("Erreur lors de la modification du statut");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+              <MessageSquare className="h-8 w-8 text-blue-600" />
+              Gestion des Témoignages
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Gérez les témoignages affichés sur la page d'accueil
+            </p>
+          </div>
+          <Button
+            onClick={() => handleOpenDialog()}
+            className="bg-blue-600 hover:bg-blue-700 gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter un témoignage
+          </Button>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Total
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{feedbacks.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Approuvés
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {feedbacks.filter((f) => f.isApproved).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                En attente
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                {feedbacks.filter((f) => !f.isApproved).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                En vedette
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {feedbacks.filter((f) => f.isFeatured).length}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Feedbacks Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Liste des témoignages</CardTitle>
+            <CardDescription>
+              Tous les témoignages dans le système
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Nom</TableHead>
+                    <TableHead>Rôle</TableHead>
+                    <TableHead className="max-w-xs">Message</TableHead>
+                    <TableHead className="text-center">Note</TableHead>
+                    <TableHead className="text-center">Statuts</TableHead>
+                    <TableHead className="text-center">Ordre</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {feedbacks.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-12 text-muted-foreground"
+                      >
+                        Aucun témoignage trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    feedbacks.map((feedback) => (
+                      <TableRow key={feedback._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {feedback.imageUrl ? (
+                              <img
+                                src={feedback.imageUrl}
+                                alt={feedback.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <User className="h-4 w-4 text-blue-600" />
+                              </div>
+                            )}
+                            <span className="font-medium">{feedback.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {feedback.role}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate text-sm">
+                          {feedback.message}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="font-medium">{feedback.rating}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-2 items-center">
+                            <Badge
+                              variant={feedback.isApproved ? "success" : "secondary"}
+                              className="cursor-pointer"
+                              onClick={() => handleToggleApproval(feedback._id)}
+                            >
+                              {feedback.isApproved ? (
+                                <>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Approuvé
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  En attente
+                                </>
+                              )}
+                            </Badge>
+                            {feedback.isFeatured && (
+                              <Badge
+                                variant="default"
+                                className="bg-blue-600 cursor-pointer"
+                                onClick={() => handleToggleFeatured(feedback._id)}
+                              >
+                                <Award className="h-3 w-3 mr-1" />
+                                Vedette
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">{feedback.order}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(feedback)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(feedback._id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={showDialog} onOpenChange={handleCloseDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editMode ? "Modifier le témoignage" : "Ajouter un témoignage"}
+            </DialogTitle>
+            <DialogDescription>
+              {editMode
+                ? "Modifiez les informations du témoignage"
+                : "Ajoutez un nouveau témoignage à afficher sur la page d'accueil"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom complet *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Dr. Ahmed Bennani"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Rôle/Titre *</Label>
+                <Input
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Étudiant en 3ème année"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="message">Message *</Label>
+              <Textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                placeholder="Écrivez le témoignage ici..."
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="rating">Note (1-5) *</Label>
+                <Select
+                  value={formData.rating.toString()}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, rating: parseInt(value) }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: num }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                            />
+                          ))}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="order">Ordre d'affichage</Label>
+                <Input
+                  id="order"
+                  name="order"
+                  type="number"
+                  value={formData.order}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">URL de l'image (optionnel)</Label>
+              <Input
+                id="imageUrl"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleInputChange}
+                placeholder="https://example.com/image.jpg"
+              />
+              {formData.imageUrl && (
+                <div className="mt-2">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-full object-cover border"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-6 pt-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isApproved"
+                  name="isApproved"
+                  checked={formData.isApproved}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="isApproved" className="cursor-pointer">
+                  Approuver (visible sur le site)
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  name="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={handleInputChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <Label htmlFor="isFeatured" className="cursor-pointer">
+                  Mettre en vedette
+                </Label>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDialog}
+                disabled={saving}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    {editMode ? "Mettre à jour" : "Créer"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default FeedbacksAdmin;

@@ -72,6 +72,7 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
   const [useGradient, setUseGradient] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [difficulty, setDifficulty] = useState("QE");
+  const [availableInAllSemesters, setAvailableInAllSemesters] = useState(false);
   
   // File states
   const [moduleImageFile, setModuleImageFile] = useState(null);
@@ -82,7 +83,7 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
 
   const newModuleSchema = z.object({
     name: z.string().min(2, t("admin:module_name_required")),
-    semester: z.string().min(1, t("admin:semester_required")),
+    semester: z.string().optional(),
     infoText: z.string().optional(),
     helpContent: z.string().optional(),
     textContent: z.string().optional(),
@@ -125,11 +126,17 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
   };
 
   const onSubmit = async (data) => {
+    if (!availableInAllSemesters && !data.semester) {
+      toast.error("Veuillez sélectionner un semestre ou cocher 'Disponible pour tous les semestres'");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("name", data.name);
-      formData.append("semester", data.semester);
+      formData.append("semester", availableInAllSemesters ? "" : data.semester);
+      formData.append("availableInAllSemesters", availableInAllSemesters);
       formData.append("difficulty", difficulty);
       formData.append("color", selectedColor);
       formData.append("gradientColor", useGradient ? gradientColor : "");
@@ -231,12 +238,16 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-semibold text-gray-900">
-                          {t("admin:select_semester")} *
+                          {t("admin:select_semester")} {!availableInAllSemesters && '*'}
                         </FormLabel>
                         <FormControl>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("admin:choose_semester")} />
+                          <Select 
+                            value={field.value} 
+                            onValueChange={field.onChange}
+                            disabled={availableInAllSemesters}
+                          >
+                            <SelectTrigger className={availableInAllSemesters ? "opacity-50" : ""}>
+                              <SelectValue placeholder={availableInAllSemesters ? "Tous les semestres" : t("admin:choose_semester")} />
                             </SelectTrigger>
                             <SelectContent>
                               {Array.from({ length: 10 }, (_, i) => `S${i + 1}`).reverse().map((s) => (
@@ -249,6 +260,25 @@ const NewModuleForm = ({ setShowNewModuleForm, onModuleCreated }) => {
                       </FormItem>
                     )}
                   />
+
+                  {/* Available in All Semesters Checkbox */}
+                  <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="availableInAllSemesters"
+                      checked={availableInAllSemesters}
+                      onChange={(e) => {
+                        setAvailableInAllSemesters(e.target.checked);
+                        if (e.target.checked) {
+                          form.setValue('semester', '');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="availableInAllSemesters" className="text-sm font-medium text-blue-900 cursor-pointer">
+                      📚 Disponible pour tous les semestres
+                    </label>
+                  </div>
 
                   <FormField
                     control={form.control}

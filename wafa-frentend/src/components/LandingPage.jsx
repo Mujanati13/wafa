@@ -161,7 +161,7 @@ const LandingPage = () => {
       <HeroSection settings={landingSettings} />
       <FeaturesSection />
       <PricingSection settings={landingSettings} />
-      {/* TestimonialsSection hidden - will be enabled when real reviews exist */}
+      <TestimonialsSection />
       <FAQSection settings={landingSettings} />
       <FeedbackSection settings={landingSettings} />
       <Footer settings={landingSettings} />
@@ -958,30 +958,32 @@ const PricingSection = ({ settings }) => {
 // Testimonials Section
 const TestimonialsSection = () => {
   const { t } = useTranslation("landing");
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const testimonials = [
-    {
-      name: t("testimonial_1_author"),
-      role: t("testimonial_1_role"),
-      content: t("testimonial_1_content"),
-      rating: 5
-    },
-    {
-      name: t("testimonial_2_author"),
-      role: t("testimonial_2_role"),
-      content: t("testimonial_2_content"),
-      rating: 5
-    },
-    {
-      name: t("testimonial_3_author"),
-      role: t("testimonial_3_role"),
-      content: t("testimonial_3_content"),
-      rating: 5
-    }
-  ];
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/feedbacks`);
+        if (response.data.success) {
+          setTestimonials(response.data.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
+  // Don't show section if no testimonials
+  if (!loading && testimonials.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50" aria-label={t("testimonials_title")}>
+    <section className="py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50" aria-label="Témoignages">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -990,40 +992,62 @@ const TestimonialsSection = () => {
           className="text-center mb-12 md:mb-16"
         >
           <Badge variant="secondary" className="mb-3 md:mb-4 text-xs md:text-sm">
-            {t("testimonials_badge")}
+            Témoignages
           </Badge>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 md:mb-4">
-            {t("testimonials_title")}
+            Ce que disent nos étudiants
           </h2>
+          <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto">
+            Rejoignez des centaines d'étudiants qui ont réussi leurs examens avec notre plateforme
+          </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group"
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 transform hover:-translate-y-1">
-                <CardContent className="pt-6 h-full flex flex-col">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 md:h-5 w-4 md:w-5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-6 flex-grow text-sm md:text-base leading-relaxed">"{testimonial.content}"</p>
-                  <div>
-                    <p className="font-semibold text-sm md:text-base">{testimonial.name}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial._id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group"
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 transform hover:-translate-y-1">
+                  <CardContent className="pt-6 h-full flex flex-col">
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 md:h-5 w-4 md:w-5 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground mb-6 flex-grow text-sm md:text-base leading-relaxed">"{testimonial.message}"</p>
+                    <div className="flex items-center gap-3">
+                      {testimonial.imageUrl ? (
+                        <img
+                          src={testimonial.imageUrl}
+                          alt={testimonial.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-blue-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                          {testimonial.name.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-sm md:text-base">{testimonial.name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1243,6 +1267,7 @@ const ContactSection = () => {
 // Feedback Section
 const FeedbackSection = ({ settings }) => {
   const { t } = useTranslation("landing");
+  const navigate = useNavigate();
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({

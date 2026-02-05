@@ -63,6 +63,7 @@ import TermsOfUsePage from "./pages/TermsOfUsePage";
 import SubAdminPage from "./pages/SubAdminPage";
 import AdminPaypalSettings from "./pages/AdminPaypalSettings";
 import LandingPageAdmin from "./pages/LandingPageAdmin";
+import FeedbacksAdmin from "./pages/FeedbacksAdmin";
 import PrivacyPolicyAdmin from "./pages/PrivacyPolicyAdmin";
 import ContactMessagesAdmin from "./pages/ContactMessagesAdmin";
 import StatisticsPage from "./pages/StatisticsPage";
@@ -152,6 +153,7 @@ export default function App() {
           />
           <Route path="paypal-settings" element={<AdminPaypalSettings />} />
           <Route path="landing-settings" element={<LandingPageAdmin />} />
+          <Route path="feedbacks" element={<FeedbacksAdmin />} />
           <Route path="privacy-policy" element={<PrivacyPolicyAdmin />} />
           <Route path="contact-messages" element={<ContactMessagesAdmin />} />
         </Route>

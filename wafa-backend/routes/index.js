@@ -21,6 +21,7 @@ import examCourseRoute from "./examCourseRoute.js";
 import settingsRoute from "./settingsRoute.js";
 import qcmBanqueRoute from "./qcmBanqueRoute.js";
 import courseCategoryRoute from "./courseCategoryRoute.js";
+import feedbackRoute from "./feedbackRoute.js";
 
 const router = Router();
 
@@ -45,5 +46,6 @@ router.use("/landing-settings", landingPageSettingsRoute);
 router.use("/exam-courses", examCourseRoute);
 router.use("/course-categories", courseCategoryRoute);
 router.use("/settings", settingsRoute);
+router.use("/feedbacks", feedbackRoute);
 
 export default router;

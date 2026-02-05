@@ -341,9 +341,10 @@ const Dashboard = () => {
   // Filter courses based on selected semester and user's subscription
   useEffect(() => {
     if (coursesData && semester && userSemesters.length > 0) {
-      // Only show modules for the selected semester if user is subscribed to it
+      // Filter modules: show selected semester modules OR modules available in all semesters
       let filtered = coursesData.filter(course =>
-        course.semester === semester && userSemesters.includes(course.semester)
+        (course.semester === semester && userSemesters.includes(course.semester)) ||
+        course.availableInAllSemesters === true
       );
       
       // Free users: Show only 1 module total (not per semester)

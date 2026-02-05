@@ -68,6 +68,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [difficulty, setDifficulty] = useState(module?.difficulty || "QE");
   const [selectedSemester, setSelectedSemester] = useState(module?.semester || "");
+  const [availableInAllSemesters, setAvailableInAllSemesters] = useState(module?.availableInAllSemesters || false);
   
   // File states
   const [moduleImageFile, setModuleImageFile] = useState(null);
@@ -111,6 +112,7 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
       setUseGradient(!!module.gradientColor);
       setDifficulty(module.difficulty || "QE");
       setSelectedSemester(module.semester || "");
+      setAvailableInAllSemesters(module.availableInAllSemesters || false);
       
       // Set existing image/pdf previews
       if (module.imageUrl) {
@@ -150,8 +152,8 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
   };
 
   const onSubmit = async (data) => {
-    if (!selectedSemester) {
-      toast.error("Veuillez sélectionner un semestre");
+    if (!availableInAllSemesters && !selectedSemester) {
+      toast.error("Veuillez sélectionner un semestre ou cocher 'Disponible pour tous les semestres'");
       return;
     }
     
@@ -159,7 +161,8 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
     try {
       const formData = new FormData();
       formData.append("name", data.name);
-      formData.append("semester", selectedSemester);
+      formData.append("semester", availableInAllSemesters ? "" : selectedSemester);
+      formData.append("availableInAllSemesters", availableInAllSemesters);
       formData.append("difficulty", difficulty);
       formData.append("color", selectedColor);
       formData.append("gradientColor", useGradient ? gradientColor : "");
@@ -258,11 +261,16 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                 {/* Semester - Controlled */}
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-gray-900">
-                    {t("admin:select_semester")} *
+                    {t("admin:select_semester")} {!availableInAllSemesters && '*'}
                   </Label>
-                  <Select key={`semester-${module?.id || module?._id}`} value={selectedSemester} onValueChange={setSelectedSemester}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("admin:choose_semester")} />
+                  <Select 
+                    key={`semester-${module?.id || module?._id}`} 
+                    value={selectedSemester} 
+                    onValueChange={setSelectedSemester}
+                    disabled={availableInAllSemesters}
+                  >
+                    <SelectTrigger className={availableInAllSemesters ? "opacity-50" : ""}>
+                      <SelectValue placeholder={availableInAllSemesters ? "Tous les semestres" : t("admin:choose_semester")} />
                     </SelectTrigger>
                     <SelectContent>
                       {Array.from({ length: 10 }, (_, i) => `S${i + 1}`).reverse().map((s) => (
@@ -270,6 +278,25 @@ const EditModuleForm = ({ module, setShowEditForm, onModuleUpdated }) => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Available in All Semesters Checkbox */}
+                <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="editAvailableInAllSemesters"
+                    checked={availableInAllSemesters}
+                    onChange={(e) => {
+                      setAvailableInAllSemesters(e.target.checked);
+                      if (e.target.checked) {
+                        setSelectedSemester('');
+                      }
+                    }}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="editAvailableInAllSemesters" className="text-sm font-medium text-blue-900 cursor-pointer">
+                    📚 Disponible pour tous les semestres
+                  </label>
                 </div>
 
                 <FormField

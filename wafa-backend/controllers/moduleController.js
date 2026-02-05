@@ -9,10 +9,11 @@ import qcmBanqueModel from "../models/qcmBanqueModel.js";
 
 export const moduleController = {
     create: asyncHandler(async (req, res) => {
-        const { name, semester, imageUrl, infoText, color, helpContent, helpImage, helpPdf, difficulty, contentType, textContent } = req.body;
+        const { name, semester, imageUrl, infoText, color, helpContent, helpImage, helpPdf, difficulty, contentType, textContent, availableInAllSemesters } = req.body;
         const newModule = await moduleSchema.create({
             name,
-            semester,
+            semester: availableInAllSemesters ? "" : semester,
+            availableInAllSemesters: availableInAllSemesters || false,
             imageUrl,
             infoText,
             color: color || "#6366f1",
@@ -36,6 +37,13 @@ export const moduleController = {
         // Only include fields that are provided in the request
         if (req.body.name !== undefined) updateData.name = req.body.name;
         if (req.body.semester !== undefined) updateData.semester = req.body.semester;
+        if (req.body.availableInAllSemesters !== undefined) {
+            updateData.availableInAllSemesters = req.body.availableInAllSemesters;
+            // If setting to all semesters, clear the specific semester
+            if (req.body.availableInAllSemesters) {
+                updateData.semester = "";
+            }
+        }
         if (req.body.order !== undefined) updateData.order = req.body.order;
         if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
         if (req.body.infoText !== undefined) updateData.infoText = req.body.infoText;

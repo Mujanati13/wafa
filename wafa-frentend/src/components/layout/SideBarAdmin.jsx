@@ -343,6 +343,12 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
           path: "/admin/landing-settings",
         },
         {
+          id: "feedbacks",
+          label: t('admin:feedbacks', 'Témoignages'),
+          icon: MessageSquare,
+          path: "/admin/feedbacks",
+        },
+        {
           id: "privacyPolicy",
           label: t('admin:privacy_policy', 'Politique de confidentialité'),
           icon: Shield,
