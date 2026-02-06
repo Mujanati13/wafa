@@ -345,7 +345,7 @@ const SideBarAdmin = ({ sidebarOpen = true, onToggle, isMobile = false }) => {
         {
           id: "feedbacks",
           label: t('admin:feedbacks', 'Témoignages'),
-          icon: MessageSquare,
+          icon: MessageCircle,
           path: "/admin/feedbacks",
         },
         {

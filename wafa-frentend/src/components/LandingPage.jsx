@@ -965,11 +965,14 @@ const TestimonialsSection = () => {
     const fetchTestimonials = async () => {
       try {
         const response = await axios.get(`${API_URL}/feedbacks`);
+        console.log('Testimonials API response:', response.data);
         if (response.data.success) {
           setTestimonials(response.data.data || []);
+          console.log('Loaded testimonials:', response.data.data?.length || 0);
         }
       } catch (error) {
         console.error("Error fetching testimonials:", error);
+        setTestimonials([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
@@ -979,7 +982,15 @@ const TestimonialsSection = () => {
 
   // Don't show section if no testimonials
   if (!loading && testimonials.length === 0) {
+    console.warn('TestimonialsSection: No approved testimonials found to display');
     return null;
+  }
+
+  // Debug info
+  if (loading) {
+    console.log('TestimonialsSection: Loading testimonials...');
+  } else {
+    console.log('TestimonialsSection: Displaying', testimonials.length, 'testimonials');
   }
 
   return (
