@@ -151,10 +151,13 @@ const LeaderboardClient = () => {
     );
   }
 
-  // Show all users in the leaderboard (no year filtering)
   const sorted = leaderboardData;
   const topThree = sorted.slice(0, 3);
   const maxScore = sorted[0]?.totalPoints || 1;
+  
+  // Get user's ranking and info
+  const userRank = userContext?.userRank || null;
+  const currentUserData = sorted.find(u => user && (u.odUserIdStr === user._id || u.email === user.email)) || userContext;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
@@ -176,6 +179,49 @@ const LeaderboardClient = () => {
           </p>
         </div>
       </div>
+
+      {/* User's Ranking Card */}
+      {currentUserData && userRank && (
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Award className="h-5 w-5 text-blue-600" />
+              Votre classement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage 
+                  src={currentUserData.profilePicture?.startsWith('http') 
+                    ? currentUserData.profilePicture 
+                    : currentUserData.profilePicture 
+                      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${currentUserData.profilePicture}` 
+                      : undefined
+                  } 
+                  alt={currentUserData.name} 
+                />
+                <AvatarFallback className="text-lg font-bold bg-blue-100">
+                  {getInitials(currentUserData.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="text-2xl font-bold text-blue-700">#{userRank}</p>
+                <p className="text-sm text-gray-600 mt-1">{currentUserData.name}</p>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="flex items-center gap-1 text-sm">
+                    <span className="font-semibold text-lg">{currentUserData.totalPoints}</span>
+                    <span className="text-gray-500">pts</span>
+                  </span>
+                  <Badge className={`${getUserLevel(currentUserData.totalPoints).color} text-white`}>
+                    Nv.{getUserLevel(currentUserData.totalPoints).level}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Podium */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -526,27 +572,28 @@ const LeaderboardClient = () => {
         </CardContent>
       </Card>
 
-      {/* User Context - Show if user is not in top 20 */}
-      {userContext && userContext.userRank > 20 && (
+      {/* Nearby Users - Above and Below */}
+      {userContext && userContext.nearbyUsers && userContext.nearbyUsers.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MoreHorizontal className="h-5 w-5" />
-              Votre position
+              3 utilisateurs en avant et après vous
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Dots separator */}
-            <div className="flex justify-center py-4">
+            {/* Separator */}
+            <div className="flex justify-center py-4 mb-4">
               <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
               </div>
             </div>
 
+            {/* Show only 3 users ahead and 3 users after */}
             <div className="divide-y space-y-2 lg:space-y-0 lg:divide-y">
-              {userContext.nearbyUsers.map((userData, idx) => {
+              {userContext.nearbyUsers.slice(0, 6).map((userData, idx) => {
                 const levelInfo = getUserLevel(userData.totalPoints);
                 const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
                 const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);

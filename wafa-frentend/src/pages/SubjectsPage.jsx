@@ -16,6 +16,25 @@ import { PageHeader } from "@/components/shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
+// Custom hook for responsive breakpoints
+const useResponsiveSize = () => {
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return {
+    isMobile: windowWidth < 400,
+    isSmall: windowWidth < 640,
+    isMedium: windowWidth < 1024,
+    isLarge: windowWidth >= 1024,
+    windowWidth
+  };
+};
+
 // Progress Circle Component
 const ProgressCircle = ({ progress, size = 48, color }) => {
   const radius = (size - 8) / 2;
@@ -60,6 +79,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
 // Exam Card Component
 const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) => {
   const API_URL = import.meta.env.VITE_API_URL;
+  const responsive = useResponsiveSize();
   
   // Helper function to adjust color
   const adjustColorLocal = (color, amount) => {
@@ -83,6 +103,13 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
   
   // Calculate answered questions (progress * total / 100)
   const answeredQuestions = exam.answeredQuestions || Math.round((exam.progress || 0) * exam.questions / 100);
+  
+  // Responsive progress circle size
+  const getProgressCircleSize = () => {
+    if (responsive.isMobile) return 44;
+    if (responsive.isSmall) return 48;
+    return 60;
+  };
 
   return (
     <motion.div
@@ -100,21 +127,21 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-2 right-2 h-8 w-8 p-0 z-10 hover:bg-blue-50 rounded-full"
+              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 h-7 w-7 sm:h-8 sm:w-8 p-0 z-10 hover:bg-blue-50 rounded-full transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
               }}
             >
-              <HelpCircle className="h-4 w-4 text-blue-600" />
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
             </Button>
           )}
           
-          <div className="flex items-center gap-4 p-4 sm:p-6">
+          <div className="flex items-center gap-2.5 xs:gap-3 sm:gap-4 p-3 xs:p-3.5 sm:p-5 md:p-6">
             {/* Left side - Icon/Image with rounded corners */}
             <div className="flex-shrink-0">
               {imageUrl ? (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shadow-md group-hover:shadow-lg transition-all">
+                <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg xs:rounded-xl sm:rounded-2xl overflow-hidden shadow-sm xs:shadow-md group-hover:shadow-lg transition-all">
                   <img 
                     src={imageUrl} 
                     alt={exam.name} 
@@ -122,33 +149,33 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
-                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
+                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
                       const bgColor = moduleColor || '#3b82f6';
                       const darkColor = adjustColorLocal(moduleColor, -30) || '#4f46e5';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl" style="background: linear-gradient(to bottom right, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-lg xs:rounded-xl sm:rounded-2xl" style="background: linear-gradient(to bottom right, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
                     }}
                   />
                 </div>
               ) : (
                 <div
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all group-hover:scale-105"
+                  className="w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg xs:rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm xs:shadow-md group-hover:shadow-lg transition-all group-hover:scale-105"
                   style={{
                     background: `linear-gradient(to bottom right, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`
                   }}
                 >
-                  <FileQuestion className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                  <FileQuestion className="h-6 w-6 xs:h-8 xs:w-8 sm:h-12 sm:w-12 md:h-14 md:w-14 text-white" />
                 </div>
               )}
             </div>
 
             {/* Right side - Info */}
-            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0 pr-2">
-                <h3 className="font-semibold text-gray-900 text-[11px] mb-1 leading-tight line-clamp-2">
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
+              <div className="flex-1 min-w-0 pr-1.5 xs:pr-2">
+                <h3 className="font-semibold text-gray-900 text-xs xs:text-sm sm:text-base md:text-lg mb-1 xs:mb-1.5 sm:mb-2 leading-tight line-clamp-2">
                   {exam.name}
                 </h3>
-                <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                  <FileQuestion className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 text-[11px] xs:text-xs sm:text-sm text-gray-600">
+                  <FileQuestion className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                   <span className="font-semibold">{answeredQuestions}</span>
                   <span className="text-gray-400">/</span>
                   <span>{exam.questions}</span>
@@ -159,7 +186,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
               <div className="flex-shrink-0">
                 <ProgressCircle 
                   progress={exam.progress || 0} 
-                  size={52} 
+                  size={getProgressCircleSize()} 
                   color={moduleColor || '#f59e0b'} 
                 />
               </div>
@@ -560,12 +587,12 @@ const SubjectsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-4 xs:space-y-5 sm:space-y-6">
+          <Skeleton className="h-8 xs:h-10 sm:h-12 w-48 xs:w-56 sm:w-64" />
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-20 xs:h-24 sm:h-24 md:h-28" />
             ))}
           </div>
         </div>
@@ -575,7 +602,7 @@ const SubjectsPage = () => {
 
   if (!module) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card>
             <CardContent className="p-12 text-center">
@@ -601,7 +628,7 @@ const SubjectsPage = () => {
 
   if (!hasAccess && !checkingAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <Card>
             <CardContent className="p-12 text-center">
@@ -638,21 +665,22 @@ const SubjectsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 xs:space-y-5 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2.5 xs:gap-3 sm:gap-4 flex-wrap">
           <Button
             variant="outline"
             size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{module.name}</h1>
+            <h1 className="text-xl xs:text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-slate-800 leading-tight">{module.name}</h1>
             <div
-              className={`h-1 w-24 mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
+              className={`h-1 w-16 xs:w-20 sm:w-24 mt-1.5 xs:mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
               style={module.color ? {
                 background: `linear-gradient(to right, ${module.color}, ${adjustColor(module.color, -30)})`
               } : undefined}
@@ -724,9 +752,9 @@ const SubjectsPage = () => {
 
           {/* Category Filter - Only for "Par Cours" */}
           {selectedExamType === "course" && categories.length > 1 && (
-            <Card className="mt-4">
-              <CardContent className="p-4">
-                <div className="flex flex-wrap gap-2">
+            <Card className="mt-3 xs:mt-4 sm:mt-4">
+              <CardContent className="p-3 xs:p-3.5 sm:p-4">
+                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-2.5">
                   {categories.map((cat) => (
                     <Button
                       key={cat.id}
@@ -748,9 +776,9 @@ const SubjectsPage = () => {
           )}
 
           {/* Exam Lists */}
-          <div className="mt-4">
+          <div className="mt-3 xs:mt-4 sm:mt-5">
             <TabsContent value="year" className="mt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
                 {examsParYear.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -778,7 +806,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="course" className="mt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
                 {filteredCourseExams.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -811,7 +839,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="qcm" className="mt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
                 {qcmBanque.map((exam, index) => (
                   <ExamCard
                     key={exam.id}

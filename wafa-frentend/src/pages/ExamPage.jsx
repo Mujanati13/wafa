@@ -1904,11 +1904,11 @@ const ExamPage = () => {
                             </Badge>
                           </button>
                           {!isCollapsed && (
-                            <div className="pl-6 space-y-0.5">
+                            <div className="pl-2 flex flex-wrap gap-2">
                               {sessionQuestions.map((q, idx) => {
                                 const globalIndex = questions.findIndex(question => question._id === q._id);
-                                if (globalIndex === -1) return null; // Skip if question not found
-                                const questionData = questions[globalIndex]; // Get the question with displayNumber
+                                if (globalIndex === -1) return null;
+                                const questionData = questions[globalIndex];
                                 const { status, isFlagged } = getQuestionStatus(globalIndex);
                                 const isCurrent = globalIndex === currentQuestion;
                                 return (
@@ -1916,24 +1916,20 @@ const ExamPage = () => {
                                     key={q._id}
                                     onClick={() => goToQuestion(globalIndex)}
                                     className={cn(
-                                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium transition-all",
-                                      isCurrent && "bg-blue-50 border-l-2 border-blue-500",
-                                      !isCurrent && "hover:bg-gray-50"
-                                    )}
-                                  >
-                                    <div className={cn(
-                                      "w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px] border",
+                                      "relative w-8 h-8 rounded-md text-xs font-semibold transition-all border-2 flex items-center justify-center",
+                                      isCurrent && "ring-2 ring-blue-500 ring-offset-1",
                                       status === 'correct' && "bg-green-100 border-green-300 text-green-700",
                                       status === 'incorrect' && "bg-red-100 border-red-300 text-red-700",
                                       status === 'flagged' && "bg-purple-100 border-purple-300 text-purple-700",
                                       status === 'visited' && "bg-orange-100 border-orange-300 text-orange-700",
-                                      status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600"
-                                    )}>
-                                      {shouldShowNumberInBox(questionData) ? (questionData?.displayNumber || idx + 1) : ''}
-                                    </div>
-                                    <span className="flex-1 text-left text-gray-600">Q{questionData?.displayNumber || idx + 1}</span>
+                                      status === 'unanswered' && "bg-gray-100 border-gray-300 text-gray-600",
+                                      "hover:shadow-md active:scale-95"
+                                    )}
+                                    title={`Q${questionData?.displayNumber || idx + 1}`}
+                                  >
+                                    {questionData?.displayNumber || idx + 1}
                                     {isFlagged && !showResults && (
-                                      <Flag className="h-3 w-3 fill-purple-500 text-purple-500 shrink-0" />
+                                      <Flag className="absolute -top-1 -right-1 h-2.5 w-2.5 fill-purple-500 text-purple-500" />
                                     )}
                                   </button>
                                 );
@@ -1998,20 +1994,6 @@ const ExamPage = () => {
                               </>
                             );
                           })()}
-                        </div>
-                        <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            Correctes
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            Incorrectes
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                            Non vérifiées
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -3624,8 +3606,8 @@ const ExamPage = () => {
               </div>
 
               {/* Images Grid */}
-              <ScrollArea className="flex-1 p-3 sm:p-4 min-h-0">
-                <div className="pr-3 sm:pr-4">
+              <ScrollArea className="flex-1 p-3 sm:p-4 min-h-0 overflow-y-auto">
+                <div className="pr-3 sm:pr-4 space-y-0">
                   {(() => {
                     // Get all images from all questions in the entire exam
                     const allImages = questions.reduce((acc, q, idx) => {
