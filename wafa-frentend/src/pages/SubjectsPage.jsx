@@ -141,7 +141,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             </Button>
           )}
           
-          <div className="flex items-center gap-3 sm:gap-4 md:gap-5 p-3.5 sm:p-4 md:p-5">
+          <div className="flex items-center gap-3 sm:gap-4 md:gap-5 py-1 sm:py-1.5 md:py-2 px-3.5 sm:px-4 md:px-5">
             {/* Left side - Compact Icon/Image */}
             <div className="flex-shrink-0">
               {imageUrl ? (
