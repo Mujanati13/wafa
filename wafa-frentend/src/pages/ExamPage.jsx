@@ -2114,25 +2114,38 @@ const ExamPage = () => {
                           ) : null}
                         </div>
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-1 text-[9px] sm:text-xs text-gray-600 bg-white px-2 py-1 sm:py-1.5 rounded-md flex-wrap border">
-                          <BookOpen className="h-3 w-3 shrink-0" />
-                          <span className="break-words font-medium max-w-full">
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-700 bg-white px-2.5 py-1.5 sm:py-2 rounded-lg flex-wrap border border-gray-200 shadow-sm">
+                          <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-gray-500" />
+                          <span className="break-words font-medium max-w-full leading-relaxed">
                             {(() => {
                               const moduleName = examData?.moduleName || 'Module';
-                              const examYear = examData?.year ? `${examData.year}` : '';
+                              const examYear = examData?.year || '';
+                              const examName = examData?.name || examData?.title || '';
+                              const sessionName = currentQuestionData?.sessionLabel || '';
                               const examType = examData?.examType || examData?.category || '';
-                              const courseName = currentQuestionData?.sessionLabel || examData?.courseName || '';
-                              const qcmName = examData?.title || examData?.name || '';
 
-                              if (examType === 'QCM banque' || examData?.isQcmBanque) {
-                                return `${moduleName} > ${qcmName}`;
+                              // Build breadcrumb with full hierarchy
+                              const parts = [];
+                              
+                              // Always start with module name
+                              parts.push(moduleName);
+                              
+                              // Add year if available
+                              if (examYear) {
+                                parts.push(examYear);
                               }
-
-                              if (examType === 'Exam par courses' || examData?.isParCours) {
-                                return `${moduleName}${courseName ? ` > ${courseName}` : ''}${examYear ? ` > ${examYear}` : ''}`;
+                              
+                              // Add exam name if different from year and not default
+                              if (examName && examName !== examYear && examName !== moduleName) {
+                                parts.push(examName);
                               }
-
-                              return `${moduleName}${examYear ? ` > ${examYear}` : ''}${courseName ? ` > ${courseName}` : ''}`;
+                              
+                              // Add session/course name if available and not default
+                              if (sessionName && sessionName !== 'Session principale' && sessionName !== examName) {
+                                parts.push(sessionName);
+                              }
+                              
+                              return parts.join(' > ');
                             })()}
                           </span>
                         </div>

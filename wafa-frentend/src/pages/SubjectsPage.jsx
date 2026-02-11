@@ -122,7 +122,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
       className="h-full"
     >
       <Card
-        className="h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-100 shadow-sm bg-white"
+        className="h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-2 border-gray-100 hover:border-gray-200 shadow-sm bg-white"
         onClick={() => onStart(exam.id, examType)}
       >
         <CardContent className="p-0 h-full relative">
@@ -131,21 +131,21 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-2 right-2 sm:top-3 sm:right-3 h-8 w-8 sm:h-9 sm:w-9 p-0 z-10 hover:bg-blue-50 rounded-full transition-all hover:scale-110 shadow-sm bg-white/80 backdrop-blur-sm"
+              className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 h-7 w-7 sm:h-8 sm:w-8 p-0 z-10 hover:bg-blue-100 rounded-full transition-all hover:scale-110 shadow-sm bg-white/90 backdrop-blur-sm border border-blue-200/50"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
               }}
             >
-              <HelpCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-blue-600" />
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
             </Button>
           )}
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 md:gap-5 p-4 sm:p-5 md:p-6">
-            {/* Left side - Icon/Image with rounded corners */}
-            <div className="flex-shrink-0 w-full sm:w-auto flex justify-center sm:justify-start">
+          <div className="flex items-center gap-3 sm:gap-4 md:gap-5 p-3.5 sm:p-4 md:p-5">
+            {/* Left side - Compact Icon/Image */}
+            <div className="flex-shrink-0">
               {imageUrl ? (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden shadow-md group-hover:shadow-xl transition-all duration-300" style={{
+                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300 ring-2 ring-gray-100 group-hover:ring-gray-200" style={{
                   transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                 }}>  
                   <img 
@@ -155,77 +155,77 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
-                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
+                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 sm:h-9 sm:w-9 md:h-10 md:w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
                       const bgColor = moduleColor || '#3b82f6';
                       const darkColor = adjustColorLocal(moduleColor, -30) || '#4f46e5';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl" style="background: linear-gradient(135deg, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-xl" style="background: linear-gradient(135deg, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
                     }}
                   />
                 </div>
               ) : (
                 <div
-                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-2xl flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300"
+                  className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 ring-2 ring-white/50"
                   style={{
                     background: `linear-gradient(135deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`,
-                    transform: isHovered ? 'scale(1.05) rotate(3deg)' : 'scale(1)'
+                    transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                   }}
                 >
-                  <FileQuestion className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 text-white drop-shadow-lg" />
+                  <FileQuestion className="h-7 w-7 sm:h-9 sm:w-9 md:h-10 md:w-10 text-white drop-shadow-lg" />
                 </div>
               )}
             </div>
 
-            {/* Right side - Info */}
-            <div className="flex-1 min-w-0 w-full sm:w-auto">
-              <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg lg:text-xl mb-2 sm:mb-2.5 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {exam.name}
-                  </h3>
-                  <div className="flex items-center gap-2 sm:gap-2.5">
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm md:text-base">
-                      <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center" style={{
-                        backgroundColor: `${moduleColor || '#3b82f6'}15`,
-                      }}>
-                        <FileQuestion className="h-4 w-4 sm:h-4.5 sm:w-4.5" style={{ color: moduleColor || '#3b82f6' }} />
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-bold text-gray-900 text-base sm:text-lg" style={{ color: moduleColor || '#3b82f6' }}>{answeredQuestions}</span>
-                        <span className="text-gray-400 font-medium text-sm">/</span>
-                        <span className="text-gray-600 font-semibold text-sm sm:text-base">{exam.questions}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Progress Badge */}
-                    <Badge 
-                      variant="secondary" 
-                      className="text-xs px-2 py-0.5 font-semibold"
-                      style={{
-                        backgroundColor: exam.progress >= 100 ? '#10b98120' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}20` : '#f59e0b20',
-                        color: exam.progress >= 100 ? '#10b981' : exam.progress >= 50 ? moduleColor || '#3b82f6' : '#f59e0b'
-                      }}
-                    >
-                      {exam.progress}%
-                    </Badge>
+            {/* Right side - Optimized Info Layout */}
+            <div className="flex-1 min-w-0 space-y-2 sm:space-y-2.5">
+              {/* Title */}
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                {exam.name}
+              </h3>
+              
+              {/* Stats Row */}
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* Questions Count */}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-200">
+                    <FileQuestion className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                   </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="mt-2.5 sm:mt-3">
-                    <div className="h-2 sm:h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ 
-                          background: exam.progress >= 100 
-                            ? 'linear-gradient(90deg, #10b981, #059669)' 
-                            : `linear-gradient(90deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -20) || '#2563eb'})`,
-                          width: `${exam.progress || 0}%`
-                        }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${exam.progress || 0}%` }}
-                        transition={{ duration: 0.8, delay: index * 0.05 }}
-                      />
-                    </div>
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="font-bold text-sm sm:text-base text-gray-900">{answeredQuestions}</span>
+                    <span className="text-gray-400 text-xs">/</span>
+                    <span className="text-gray-600 text-xs sm:text-sm font-medium">{exam.questions}</span>
                   </div>
+                </div>
+                
+                {/* Progress Badge */}
+                <Badge 
+                  variant="outline" 
+                  className="text-[11px] sm:text-xs px-2 py-0.5 font-bold border-2"
+                  style={{
+                    backgroundColor: exam.progress >= 100 ? '#ecfdf5' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}10` : '#fef3c7',
+                    color: exam.progress >= 100 ? '#059669' : exam.progress >= 50 ? moduleColor || '#3b82f6' : '#d97706',
+                    borderColor: exam.progress >= 100 ? '#86efac' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}40` : '#fcd34d'
+                  }}
+                >
+                  {exam.progress}%
+                </Badge>
+              </div>
+              
+              {/* Progress Bar - More Compact */}
+              <div className="relative">
+                <div className="h-1.5 sm:h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
+                  <motion.div
+                    className="h-full rounded-full transition-all duration-500 relative"
+                    style={{ 
+                      background: exam.progress >= 100 
+                        ? 'linear-gradient(90deg, #10b981, #059669)' 
+                        : `linear-gradient(90deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -20) || '#2563eb'})`,
+                      width: `${exam.progress || 0}%`,
+                      boxShadow: exam.progress > 0 ? '0 0 8px rgba(0,0,0,0.1)' : 'none'
+                    }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${exam.progress || 0}%` }}
+                    transition={{ duration: 0.8, delay: index * 0.05 }}
+                  />
                 </div>
               </div>
             </div>
@@ -629,9 +629,9 @@ const SubjectsPage = () => {
         <div className="max-w-7xl mx-auto space-y-4 xs:space-y-5 sm:space-y-6">
           <Skeleton className="h-10 sm:h-12 md:h-14 w-56 sm:w-64 md:w-72" />
           <Skeleton className="h-12 sm:h-14 w-full max-w-2xl" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32 sm:h-36 md:h-40 rounded-2xl" />
+              <Skeleton key={i} className="h-28 sm:h-32 rounded-xl" />
             ))}
           </div>
         </div>
@@ -814,7 +814,7 @@ const SubjectsPage = () => {
           {/* Exam Lists */}
           <div className="mt-4 sm:mt-5 md:mt-6">
             <TabsContent value="year" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
                 {examsParYear.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -828,15 +828,15 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {examsParYear.length === 0 && (
-                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-blue-50/30">
-                  <CardContent className="p-12 sm:p-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center shadow-sm">
-                        <Calendar className="h-10 w-10 sm:h-12 sm:w-12 text-blue-500" />
+                <Card className="border-dashed border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-white col-span-full">
+                  <CardContent className="p-10 sm:p-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center shadow-sm border-2 border-blue-100">
+                        <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-gray-900 font-semibold mb-1">Aucun examen disponible</p>
-                        <p className="text-sm text-muted-foreground">Les examens par année apparaîtront ici</p>
+                        <p className="text-gray-900 font-bold text-sm sm:text-base mb-1">Aucun examen disponible</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Les examens par année apparaîtront ici</p>
                       </div>
                     </div>
                   </CardContent>
@@ -845,7 +845,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="course" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
                 {filteredCourseExams.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -859,20 +859,20 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {filteredCourseExams.length === 0 && (
-                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-orange-50/30">
-                  <CardContent className="p-12 sm:p-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center shadow-sm">
-                        <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-orange-500" />
+                <Card className="border-dashed border-2 border-orange-200 bg-gradient-to-br from-orange-50/50 to-white col-span-full">
+                  <CardContent className="p-10 sm:p-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center shadow-sm border-2 border-orange-100">
+                        <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600" />
                       </div>
                       <div>
-                        <p className="text-gray-900 font-semibold mb-1">
+                        <p className="text-gray-900 font-bold text-sm sm:text-base mb-1">
                           {selectedCategory === "all"
                             ? "Aucun examen disponible"
                             : "Aucun examen dans cette catégorie"
                           }
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-gray-500">
                           {selectedCategory === "all" 
                             ? "Les examens par cours apparaîtront ici"
                             : "Essayez une autre catégorie"
@@ -886,7 +886,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="qcm" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
                 {qcmBanque.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -900,15 +900,15 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {qcmBanque.length === 0 && (
-                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-purple-50/30">
-                  <CardContent className="p-12 sm:p-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center shadow-sm">
-                        <Library className="h-10 w-10 sm:h-12 sm:w-12 text-purple-500" />
+                <Card className="border-dashed border-2 border-purple-200 bg-gradient-to-br from-purple-50/50 to-white col-span-full">
+                  <CardContent className="p-10 sm:p-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center shadow-sm border-2 border-purple-100">
+                        <Library className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-gray-900 font-semibold mb-1">Aucun QCM disponible</p>
-                        <p className="text-sm text-muted-foreground">Les QCM de la banque apparaîtront ici</p>
+                        <p className="text-gray-900 font-bold text-sm sm:text-base mb-1">Aucun QCM disponible</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Les QCM de la banque apparaîtront ici</p>
                       </div>
                     </div>
                   </CardContent>
