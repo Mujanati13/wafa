@@ -1871,6 +1871,32 @@ const ExamPage = () => {
           <div className="hidden lg:block lg:col-span-1 h-full">
             <Card className="sticky top-24 shadow-xl border-0 overflow-hidden flex flex-col h-[calc(100vh-7rem)]">
               <CardContent className="p-0 flex-1 overflow-hidden min-h-0 flex flex-col">
+                {/* Legend Section - Moved to Top */}
+                <div className="border-b px-3 py-3 bg-gray-50/50 shrink-0">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[10px]">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
+                      <span className="text-gray-500">non visité</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
+                      <span className="text-gray-500">visité</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
+                      <span className="text-gray-500">correct</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
+                      <span className="text-gray-500">incorrect</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
+                      <span className="text-gray-500">surligné</span>
+                    </div>
+                  </div>
+                </div>
+
                 <ScrollArea className="h-full flex-1">
                   <div className="p-3 space-y-2">
                     {Object.entries(examData.questions || {}).map(([sessionName, sessionQuestions]) => {
@@ -1994,32 +2020,6 @@ const ExamPage = () => {
                               </>
                             );
                           })()}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Legend Section */}
-                    <div className="border-t pt-3 px-0">
-                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[10px] px-0.5">
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-gray-100 border border-gray-300"></div>
-                          <span className="text-gray-500">non visité</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-orange-100 border border-orange-300"></div>
-                          <span className="text-gray-500">visité</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div>
-                          <span className="text-gray-500">correct</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-red-100 border border-red-300"></div>
-                          <span className="text-gray-500">incorrect</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div>
-                          <span className="text-gray-500">surligné</span>
                         </div>
                       </div>
                     </div>

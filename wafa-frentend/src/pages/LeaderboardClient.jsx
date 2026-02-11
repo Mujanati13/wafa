@@ -180,49 +180,6 @@ const LeaderboardClient = () => {
         </div>
       </div>
 
-      {/* User's Ranking Card */}
-      {currentUserData && userRank && (
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Award className="h-5 w-5 text-blue-600" />
-              Votre classement
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage 
-                  src={currentUserData.profilePicture?.startsWith('http') 
-                    ? currentUserData.profilePicture 
-                    : currentUserData.profilePicture 
-                      ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${currentUserData.profilePicture}` 
-                      : undefined
-                  } 
-                  alt={currentUserData.name} 
-                />
-                <AvatarFallback className="text-lg font-bold bg-blue-100">
-                  {getInitials(currentUserData.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="text-2xl font-bold text-blue-700">#{userRank}</p>
-                <p className="text-sm text-gray-600 mt-1">{currentUserData.name}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="flex items-center gap-1 text-sm">
-                    <span className="font-semibold text-lg">{currentUserData.totalPoints}</span>
-                    <span className="text-gray-500">pts</span>
-                  </span>
-                  <Badge className={`${getUserLevel(currentUserData.totalPoints).color} text-white`}>
-                    Nv.{getUserLevel(currentUserData.totalPoints).level}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Podium */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {topThree.map((user, index) => {
@@ -572,8 +529,8 @@ const LeaderboardClient = () => {
         </CardContent>
       </Card>
 
-      {/* Nearby Users - Above and Below */}
-      {userContext && userContext.nearbyUsers && userContext.nearbyUsers.length > 0 && (
+      {/* Nearby Users - Above and Below (Only if user is NOT in top 20) */}
+      {userContext && userContext.nearbyUsers && userContext.nearbyUsers.length > 0 && userRank && userRank > 20 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -591,9 +548,9 @@ const LeaderboardClient = () => {
               </div>
             </div>
 
-            {/* Show only 3 users ahead and 3 users after */}
+            {/* Show 3 users before + current user + 3 users after */}
             <div className="divide-y space-y-2 lg:space-y-0 lg:divide-y">
-              {userContext.nearbyUsers.slice(0, 6).map((userData, idx) => {
+              {userContext.nearbyUsers.map((userData, idx) => {
                 const levelInfo = getUserLevel(userData.totalPoints);
                 const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
                 const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);

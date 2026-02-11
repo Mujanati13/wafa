@@ -80,6 +80,7 @@ const ProgressCircle = ({ progress, size = 48, color }) => {
 const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   const responsive = useResponsiveSize();
+  const [isHovered, setIsHovered] = useState(false);
   
   // Helper function to adjust color
   const adjustColorLocal = (color, amount) => {
@@ -116,9 +117,12 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="h-full"
     >
       <Card
-        className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-0 shadow-md"
+        className="h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-100 shadow-sm bg-white"
         onClick={() => onStart(exam.id, examType)}
       >
         <CardContent className="p-0 h-full relative">
@@ -127,68 +131,102 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 h-7 w-7 sm:h-8 sm:w-8 p-0 z-10 hover:bg-blue-50 rounded-full transition-colors"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 h-8 w-8 sm:h-9 sm:w-9 p-0 z-10 hover:bg-blue-50 rounded-full transition-all hover:scale-110 shadow-sm bg-white/80 backdrop-blur-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
               }}
             >
-              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+              <HelpCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-blue-600" />
             </Button>
           )}
           
-          <div className="flex items-center gap-2.5 xs:gap-3 sm:gap-4 p-3 xs:p-3.5 sm:p-5 md:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 md:gap-5 p-4 sm:p-5 md:p-6">
             {/* Left side - Icon/Image with rounded corners */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-full sm:w-auto flex justify-center sm:justify-start">
               {imageUrl ? (
-                <div className="w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg xs:rounded-xl sm:rounded-2xl overflow-hidden shadow-sm xs:shadow-md group-hover:shadow-lg transition-all">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-2xl overflow-hidden shadow-md group-hover:shadow-xl transition-all duration-300" style={{
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)'
+                }}>  
                   <img 
                     src={imageUrl} 
                     alt={exam.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.style.display = 'none';
-                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
+                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
                       const bgColor = moduleColor || '#3b82f6';
                       const darkColor = adjustColorLocal(moduleColor, -30) || '#4f46e5';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-lg xs:rounded-xl sm:rounded-2xl" style="background: linear-gradient(to bottom right, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl" style="background: linear-gradient(135deg, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
                     }}
                   />
                 </div>
               ) : (
                 <div
-                  className="w-16 h-16 xs:w-20 xs:h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg xs:rounded-xl sm:rounded-2xl flex items-center justify-center shadow-sm xs:shadow-md group-hover:shadow-lg transition-all group-hover:scale-105"
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-2xl flex items-center justify-center shadow-md group-hover:shadow-xl transition-all duration-300"
                   style={{
-                    background: `linear-gradient(to bottom right, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`
+                    background: `linear-gradient(135deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`,
+                    transform: isHovered ? 'scale(1.05) rotate(3deg)' : 'scale(1)'
                   }}
                 >
-                  <FileQuestion className="h-6 w-6 xs:h-8 xs:w-8 sm:h-12 sm:w-12 md:h-14 md:w-14 text-white" />
+                  <FileQuestion className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 text-white drop-shadow-lg" />
                 </div>
               )}
             </div>
 
             {/* Right side - Info */}
-            <div className="flex-1 min-w-0 flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
-              <div className="flex-1 min-w-0 pr-1.5 xs:pr-2">
-                <h3 className="font-semibold text-gray-900 text-xs xs:text-sm sm:text-base md:text-lg mb-1 xs:mb-1.5 sm:mb-2 leading-tight line-clamp-2">
-                  {exam.name}
-                </h3>
-                <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 text-[11px] xs:text-xs sm:text-sm text-gray-600">
-                  <FileQuestion className="h-3 w-3 xs:h-3.5 xs:w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-                  <span className="font-semibold">{answeredQuestions}</span>
-                  <span className="text-gray-400">/</span>
-                  <span>{exam.questions}</span>
+            <div className="flex-1 min-w-0 w-full sm:w-auto">
+              <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg lg:text-xl mb-2 sm:mb-2.5 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {exam.name}
+                  </h3>
+                  <div className="flex items-center gap-2 sm:gap-2.5">
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm md:text-base">
+                      <div className="flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center" style={{
+                        backgroundColor: `${moduleColor || '#3b82f6'}15`,
+                      }}>
+                        <FileQuestion className="h-4 w-4 sm:h-4.5 sm:w-4.5" style={{ color: moduleColor || '#3b82f6' }} />
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-bold text-gray-900 text-base sm:text-lg" style={{ color: moduleColor || '#3b82f6' }}>{answeredQuestions}</span>
+                        <span className="text-gray-400 font-medium text-sm">/</span>
+                        <span className="text-gray-600 font-semibold text-sm sm:text-base">{exam.questions}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Badge */}
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs px-2 py-0.5 font-semibold"
+                      style={{
+                        backgroundColor: exam.progress >= 100 ? '#10b98120' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}20` : '#f59e0b20',
+                        color: exam.progress >= 100 ? '#10b981' : exam.progress >= 50 ? moduleColor || '#3b82f6' : '#f59e0b'
+                      }}
+                    >
+                      {exam.progress}%
+                    </Badge>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-2.5 sm:mt-3">
+                    <div className="h-2 sm:h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          background: exam.progress >= 100 
+                            ? 'linear-gradient(90deg, #10b981, #059669)' 
+                            : `linear-gradient(90deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -20) || '#2563eb'})`,
+                          width: `${exam.progress || 0}%`
+                        }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${exam.progress || 0}%` }}
+                        transition={{ duration: 0.8, delay: index * 0.05 }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Circular Progress */}
-              <div className="flex-shrink-0">
-                <ProgressCircle 
-                  progress={exam.progress || 0} 
-                  size={getProgressCircleSize()} 
-                  color={moduleColor || '#f59e0b'} 
-                />
               </div>
             </div>
           </div>
@@ -589,10 +627,11 @@ const SubjectsPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-4 xs:space-y-5 sm:space-y-6">
-          <Skeleton className="h-8 xs:h-10 sm:h-12 w-48 xs:w-56 sm:w-64" />
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-20 xs:h-24 sm:h-24 md:h-28" />
+          <Skeleton className="h-10 sm:h-12 md:h-14 w-56 sm:w-64 md:w-72" />
+          <Skeleton className="h-12 sm:h-14 w-full max-w-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 sm:h-36 md:h-40 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -604,17 +643,17 @@ const SubjectsPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-red-50 flex items-center justify-center">
-                  <BookOpen className="h-10 w-10 text-red-500" />
+          <Card className="border-gray-200 shadow-lg">
+            <CardContent className="p-12 sm:p-16 text-center">
+              <div className="flex flex-col items-center gap-5">
+                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-red-100 to-red-50 flex items-center justify-center shadow-md">
+                  <BookOpen className="h-12 w-12 sm:h-14 sm:w-14 text-red-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">{t('dashboard:module_not_found')}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{t('dashboard:module_not_found')}</h3>
                   <p className="text-muted-foreground">{t('dashboard:module_not_exist')}</p>
                 </div>
-                <Button onClick={() => navigate(-1)} className="gap-2">
+                <Button onClick={() => navigate(-1)} className="gap-2 rounded-lg shadow-md hover:shadow-lg transition-all">
                   <ArrowLeft className="h-4 w-4" />
                   {t('common:back')}
                 </Button>
@@ -630,29 +669,29 @@ const SubjectsPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <Card>
-            <CardContent className="p-12 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-amber-50 flex items-center justify-center">
-                  <Lock className="h-10 w-10 text-amber-500" />
+          <Card className="border-gray-200 shadow-lg">
+            <CardContent className="p-12 sm:p-16 text-center">
+              <div className="flex flex-col items-center gap-5">
+                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center shadow-md">
+                  <Lock className="h-12 w-12 sm:h-14 sm:w-14 text-amber-500" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {t('dashboard:access_restricted', 'Accès Restreint')}
                   </h3>
                   <p className="text-muted-foreground mb-2">
                     {t('dashboard:module_not_in_plan', "Ce module n'est pas inclus dans votre abonnement actuel.")}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-700 font-semibold">
                     <strong>{module?.name}</strong> - {module?.semester}
                   </p>
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
+                  <Button variant="outline" onClick={() => navigate(-1)} className="gap-2 rounded-lg shadow-sm hover:shadow-md transition-all">
                     <ArrowLeft className="h-4 w-4" />
                     {t('common:back')}
                   </Button>
-                  <Button onClick={() => navigate('/dashboard/subscription')} className="gap-2">
+                  <Button onClick={() => navigate('/dashboard/subscription')} className="gap-2 rounded-lg shadow-md hover:shadow-lg transition-all">
                     {t('dashboard:upgrade_plan', 'Améliorer mon abonnement')}
                   </Button>
                 </div>
@@ -668,19 +707,19 @@ const SubjectsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 xs:p-4 sm:p-5 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-4 xs:space-y-5 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-2.5 xs:gap-3 sm:gap-4 flex-wrap">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 sm:h-10 sm:w-10"
+            className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl xs:text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-slate-800 leading-tight">{module.name}</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 leading-tight tracking-tight">{module.name}</h1>
             <div
-              className={`h-1 w-16 xs:w-20 sm:w-24 mt-1.5 xs:mt-2 rounded-full ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
+              className={`h-1.5 sm:h-2 w-20 sm:w-24 mt-2 sm:mt-2.5 rounded-full shadow-sm ${!module.color ? 'bg-gradient-to-r from-blue-600 to-indigo-500' : ''}`}
               style={module.color ? {
                 background: `linear-gradient(to right, ${module.color}, ${adjustColor(module.color, -30)})`
               } : undefined}
@@ -694,10 +733,10 @@ const SubjectsPage = () => {
         {/* Exam Type Tabs */}
         <Tabs value={selectedExamType} onValueChange={setSelectedExamType} className="w-full">
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-3 h-auto p-1 bg-white border shadow-sm">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-3 h-auto p-1.5 bg-white border border-gray-200 shadow-sm rounded-xl">
               <TabsTrigger
                 value="year"
-                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                className="flex items-center gap-2 py-3 px-4 data-[state=active]:text-white whitespace-nowrap text-sm font-medium rounded-lg transition-all"
                 style={module.color ? {
                   '--tw-bg-opacity': '1',
                   backgroundColor: selectedExamType === 'year' ? module.color : undefined
@@ -705,44 +744,41 @@ const SubjectsPage = () => {
                 data-state={selectedExamType === 'year' ? 'active' : 'inactive'}
               >
                 <Calendar className="h-4 w-4" />
-                <span className="hidden xs:inline">Par Year</span>
-                <span className="xs:hidden">Year</span>
+                <span>Par Année</span>
                 {examsParYear.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-blue-100 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white text-[10px] sm:text-xs">
+                  <Badge variant="secondary" className="ml-1 bg-white/20 text-white data-[state=inactive]:bg-blue-50 data-[state=inactive]:text-blue-700 text-xs font-semibold px-2 py-0.5">
                     {examsParYear.length}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="course"
-                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                className="flex items-center gap-2 py-3 px-4 data-[state=active]:text-white whitespace-nowrap text-sm font-medium rounded-lg transition-all"
                 style={module.color ? {
                   backgroundColor: selectedExamType === 'course' ? module.color : undefined
                 } : undefined}
                 data-state={selectedExamType === 'course' ? 'active' : 'inactive'}
               >
                 <BookOpen className="h-4 w-4" />
-                <span className="hidden xs:inline">Par Cours</span>
-                <span className="xs:hidden">Cours</span>
+                <span>Par Cours</span>
                 {examsParCours.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700 data-[state=active]:bg-orange-400 data-[state=active]:text-white text-[10px] sm:text-xs">
+                  <Badge variant="secondary" className="ml-1 bg-white/20 text-white data-[state=inactive]:bg-orange-50 data-[state=inactive]:text-orange-700 text-xs font-semibold px-2 py-0.5">
                     {examsParCours.length}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger
                 value="qcm"
-                className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm"
+                className="flex items-center gap-2 py-3 px-4 data-[state=active]:text-white whitespace-nowrap text-sm font-medium rounded-lg transition-all"
                 style={module.color ? {
                   backgroundColor: selectedExamType === 'qcm' ? module.color : undefined
                 } : undefined}
                 data-state={selectedExamType === 'qcm' ? 'active' : 'inactive'}
               >
                 <Library className="h-4 w-4" />
-                <span className="hidden xs:inline">QCM Banque</span>
-                <span className="xs:hidden">Banque</span>
+                <span>QCM Banque</span>
                 {qcmBanque.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-purple-100 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white text-[10px] sm:text-xs">
+                  <Badge variant="secondary" className="ml-1 bg-white/20 text-white data-[state=inactive]:bg-purple-50 data-[state=inactive]:text-purple-700 text-xs font-semibold px-2 py-0.5">
                     {qcmBanque.length}
                   </Badge>
                 )}
@@ -752,9 +788,9 @@ const SubjectsPage = () => {
 
           {/* Category Filter - Only for "Par Cours" */}
           {selectedExamType === "course" && categories.length > 1 && (
-            <Card className="mt-3 xs:mt-4 sm:mt-4">
-              <CardContent className="p-3 xs:p-3.5 sm:p-4">
-                <div className="flex flex-wrap gap-1.5 xs:gap-2 sm:gap-2.5">
+            <Card className="mt-4 border-gray-200 shadow-sm">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => (
                     <Button
                       key={cat.id}
@@ -765,7 +801,7 @@ const SubjectsPage = () => {
                         backgroundColor: module.color,
                         borderColor: module.color
                       } : undefined}
-                      className={selectedCategory === cat.id && !module.color ? "bg-orange-500 hover:bg-orange-600" : ""}
+                      className={`${selectedCategory === cat.id && !module.color ? "bg-orange-500 hover:bg-orange-600" : ""} rounded-lg font-medium transition-all hover:shadow-md ${selectedCategory === cat.id ? "shadow-md" : ""}`}
                     >
                       {cat.name}
                     </Button>
@@ -776,9 +812,9 @@ const SubjectsPage = () => {
           )}
 
           {/* Exam Lists */}
-          <div className="mt-3 xs:mt-4 sm:mt-5">
+          <div className="mt-4 sm:mt-5 md:mt-6">
             <TabsContent value="year" className="mt-0">
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                 {examsParYear.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -792,13 +828,16 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {examsParYear.length === 0 && (
-                <Card>
-                  <CardContent className="p-12 text-center">
+                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-blue-50/30">
+                  <CardContent className="p-12 sm:p-16 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center">
-                        <Calendar className="h-8 w-8 text-blue-400" />
+                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center shadow-sm">
+                        <Calendar className="h-10 w-10 sm:h-12 sm:w-12 text-blue-500" />
                       </div>
-                      <p className="text-muted-foreground">Aucun examen par année disponible</p>
+                      <div>
+                        <p className="text-gray-900 font-semibold mb-1">Aucun examen disponible</p>
+                        <p className="text-sm text-muted-foreground">Les examens par année apparaîtront ici</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -806,7 +845,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="course" className="mt-0">
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                 {filteredCourseExams.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -820,18 +859,26 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {filteredCourseExams.length === 0 && (
-                <Card>
-                  <CardContent className="p-12 text-center">
+                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-orange-50/30">
+                  <CardContent className="p-12 sm:p-16 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="h-16 w-16 rounded-full bg-orange-50 flex items-center justify-center">
-                        <BookOpen className="h-8 w-8 text-orange-400" />
+                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center shadow-sm">
+                        <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-orange-500" />
                       </div>
-                      <p className="text-muted-foreground">
-                        {selectedCategory === "all"
-                          ? "Aucun examen par cours disponible"
-                          : "Aucun examen dans cette catégorie"
-                        }
-                      </p>
+                      <div>
+                        <p className="text-gray-900 font-semibold mb-1">
+                          {selectedCategory === "all"
+                            ? "Aucun examen disponible"
+                            : "Aucun examen dans cette catégorie"
+                          }
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedCategory === "all" 
+                            ? "Les examens par cours apparaîtront ici"
+                            : "Essayez une autre catégorie"
+                          }
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -839,7 +886,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="qcm" className="mt-0">
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2.5 xs:gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                 {qcmBanque.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -853,13 +900,16 @@ const SubjectsPage = () => {
                 ))}
               </div>
               {qcmBanque.length === 0 && (
-                <Card>
-                  <CardContent className="p-12 text-center">
+                <Card className="border-dashed border-2 bg-gradient-to-br from-gray-50 to-purple-50/30">
+                  <CardContent className="p-12 sm:p-16 text-center">
                     <div className="flex flex-col items-center gap-4">
-                      <div className="h-16 w-16 rounded-full bg-purple-50 flex items-center justify-center">
-                        <Library className="h-8 w-8 text-purple-400" />
+                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center shadow-sm">
+                        <Library className="h-10 w-10 sm:h-12 sm:w-12 text-purple-500" />
                       </div>
-                      <p className="text-muted-foreground">Aucun QCM banque disponible</p>
+                      <div>
+                        <p className="text-gray-900 font-semibold mb-1">Aucun QCM disponible</p>
+                        <p className="text-sm text-muted-foreground">Les QCM de la banque apparaîtront ici</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
