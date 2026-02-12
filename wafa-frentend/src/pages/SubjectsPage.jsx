@@ -6,6 +6,7 @@ import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar,
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { api } from "@/lib/utils";
+import helpIcon from "@/assets/help-icon.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -82,17 +83,6 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
   const responsive = useResponsiveSize();
   const [isHovered, setIsHovered] = useState(false);
   
-  // Helper function to adjust color
-  const adjustColorLocal = (color, amount) => {
-    if (!color) return null;
-    const hex = color.replace('#', '');
-    const num = parseInt(hex, 16);
-    const r = Math.max(0, Math.min(255, (num >> 16) + amount));
-    const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
-    const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-  };
-
   // Get the proper image URL
   const getImageUrl = () => {
     if (!exam.imageUrl) return null;
@@ -104,13 +94,12 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
   
   // Calculate answered questions (progress * total / 100)
   const answeredQuestions = exam.answeredQuestions || Math.round((exam.progress || 0) * exam.questions / 100);
-  
-  // Responsive progress circle size
-  const getProgressCircleSize = () => {
-    if (responsive.isMobile) return 44;
-    if (responsive.isSmall) return 48;
-    return 60;
-  };
+
+  // Circular progress component
+  const progressPercent = exam.progress || 0;
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
     <motion.div
@@ -122,111 +111,105 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
       className="h-full"
     >
       <Card
-        className="h-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border-2 border-gray-100 hover:border-gray-200 shadow-sm bg-white"
+        className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-200 shadow-sm bg-white rounded-2xl"
         onClick={() => onStart(exam.id, examType)}
       >
-        <CardContent className="p-0 h-full relative">
+        <CardContent className="px-5 sm:px-6 py-3 sm:py-4 h-full flex flex-col relative">
           {/* Help button - top right corner */}
           {exam.helpText && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 h-7 w-7 sm:h-8 sm:w-8 p-0 z-10 hover:bg-blue-100 rounded-full transition-all hover:scale-110 shadow-sm bg-white/90 backdrop-blur-sm border border-blue-200/50"
+              className="absolute top-2 right-2 h-7 w-7 p-0 z-10 hover:opacity-80 rounded-full transition-all hover:scale-110 bg-transparent"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
               }}
             >
-              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+              <img src={helpIcon} alt="Help" className="h-5 w-5" />
             </Button>
           )}
-          
-          <div className="flex items-center gap-3 sm:gap-4 md:gap-5 py-1 sm:py-1.5 md:py-2 px-3.5 sm:px-4 md:px-5">
-            {/* Left side - Compact Icon/Image */}
-            <div className="flex-shrink-0">
-              {imageUrl ? (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300 ring-2 ring-gray-100 group-hover:ring-gray-200" style={{
-                  transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-                }}>  
-                  <img 
-                    src={imageUrl} 
-                    alt={exam.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.style.display = 'none';
-                      const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 sm:h-9 sm:w-9 md:h-10 md:w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>';
-                      const bgColor = moduleColor || '#3b82f6';
-                      const darkColor = adjustColorLocal(moduleColor, -30) || '#4f46e5';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-xl" style="background: linear-gradient(135deg, ' + bgColor + ', ' + darkColor + ')">' + svgIcon + '</div>';
-                    }}
-                  />
-                </div>
-              ) : (
-                <div
-                  className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 ring-2 ring-white/50"
-                  style={{
-                    background: `linear-gradient(135deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -30) || '#4f46e5'})`,
-                    transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-                  }}
-                >
-                  <FileQuestion className="h-7 w-7 sm:h-9 sm:w-9 md:h-10 md:w-10 text-white drop-shadow-lg" />
-                </div>
-              )}
-            </div>
 
-            {/* Right side - Optimized Info Layout */}
-            <div className="flex-1 min-w-0 space-y-2 sm:space-y-2.5">
-              {/* Title */}
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                {exam.name}
-              </h3>
-              
-              {/* Stats Row */}
-              <div className="flex items-center gap-3 sm:gap-4">
-                {/* Questions Count */}
-                <div className="flex items-center gap-1.5">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-200">
-                    <FileQuestion className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                  </div>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className="font-bold text-sm sm:text-base text-gray-900">{answeredQuestions}</span>
-                    <span className="text-gray-400 text-xs">/</span>
-                    <span className="text-gray-600 text-xs sm:text-sm font-medium">{exam.questions}</span>
-                  </div>
-                </div>
-                
-                {/* Progress Badge */}
-                <Badge 
-                  variant="outline" 
-                  className="text-[11px] sm:text-xs px-2 py-0.5 font-bold border-2"
-                  style={{
-                    backgroundColor: exam.progress >= 100 ? '#ecfdf5' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}10` : '#fef3c7',
-                    color: exam.progress >= 100 ? '#059669' : exam.progress >= 50 ? moduleColor || '#3b82f6' : '#d97706',
-                    borderColor: exam.progress >= 100 ? '#86efac' : exam.progress >= 50 ? `${moduleColor || '#3b82f6'}40` : '#fcd34d'
+          {/* Image/Icon - centered at top */}
+          <div className="flex-shrink-0 flex justify-center mb-3">
+            {imageUrl ? (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300"
+                style={{
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)'
+                }}
+              >  
+                <img 
+                  src={imageUrl} 
+                  alt={exam.name} 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-14 sm:w-14 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>';
                   }}
-                >
-                  {exam.progress}%
-                </Badge>
+                />
               </div>
-              
-              {/* Progress Bar - More Compact */}
-              <div className="relative">
-                <div className="h-1.5 sm:h-2 w-full bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
-                  <motion.div
-                    className="h-full rounded-full transition-all duration-500 relative"
-                    style={{ 
-                      background: exam.progress >= 100 
-                        ? 'linear-gradient(90deg, #10b981, #059669)' 
-                        : `linear-gradient(90deg, ${moduleColor || '#3b82f6'}, ${adjustColorLocal(moduleColor, -20) || '#2563eb'})`,
-                      width: `${exam.progress || 0}%`,
-                      boxShadow: exam.progress > 0 ? '0 0 8px rgba(0,0,0,0.1)' : 'none'
-                    }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${exam.progress || 0}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.05 }}
-                  />
-                </div>
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-md group-hover:shadow-lg transition-all duration-300"
+                style={{
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)'
+                }}
+              >
+                <BookOpen className="h-12 w-12 sm:h-14 sm:w-14 text-white drop-shadow-lg" strokeWidth={1.5} />
+              </div>
+            )}
+          </div>
+
+          {/* Title - centered */}
+          <div className="flex-1 flex items-start justify-center text-center mb-4">
+            <h3 className="font-bold text-gray-800 text-base sm:text-lg leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors">
+              {exam.name}
+            </h3>
+          </div>
+
+          {/* Bottom section - Lock icon + count on left, percentage circle on right */}
+          <div className="w-full flex items-center justify-between mt-auto">
+            {/* Left: Lock icon + count */}
+            <div className="flex items-center gap-1.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 border border-gray-200">
+                <Lock className="h-4 w-4 text-gray-500" />
+              </div>
+              <div className="flex items-baseline gap-0.5 text-gray-500">
+                <span className="font-semibold text-sm">{answeredQuestions}</span>
+                <span className="text-xs">/</span>
+                <span className="text-sm">{exam.questions}</span>
+              </div>
+            </div>
+            
+            {/* Right: Circular percentage */}
+            <div className="relative w-14 h-14 flex-shrink-0">
+              <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 64 64">
+                {/* Background circle */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={radius}
+                  fill="none"
+                  stroke="#e5e7eb"
+                  strokeWidth="4"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={radius}
+                  fill="none"
+                  stroke={progressPercent >= 100 ? '#10b981' : progressPercent >= 50 ? '#3b82f6' : '#d1d5db'}
+                  strokeWidth="4"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  className="transition-all duration-500"
+                />
+              </svg>
+              {/* Percentage text */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-sm font-bold text-blue-600">{progressPercent}%</span>
               </div>
             </div>
           </div>
@@ -814,7 +797,7 @@ const SubjectsPage = () => {
           {/* Exam Lists */}
           <div className="mt-4 sm:mt-5 md:mt-6">
             <TabsContent value="year" className="mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {examsParYear.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -845,7 +828,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="course" className="mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {filteredCourseExams.map((exam, index) => (
                   <ExamCard
                     key={exam.id}
@@ -886,7 +869,7 @@ const SubjectsPage = () => {
             </TabsContent>
 
             <TabsContent value="qcm" className="mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-3.5 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {qcmBanque.map((exam, index) => (
                   <ExamCard
                     key={exam.id}

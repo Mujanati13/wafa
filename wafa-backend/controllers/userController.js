@@ -1065,21 +1065,27 @@ export const UserController = {
             else if (sortBy === 'level') sortField = '$totalPoints'; // Level is based on totalPoints
             else if (sortBy === 'percentage') sortField = '$percentageAnswered';
 
-            const leaderboard = await UserStats.aggregate([
+            // Start from Users and lookup their stats to include users with 0 stats
+            const User = mongoose.model('User');
+            
+            const leaderboard = await User.aggregate([
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'userId',
-                        foreignField: '_id',
-                        as: 'user'
+                    $match: {
+                        isAactive: true,
+                        isBlocked: { $ne: true }
                     }
                 },
                 {
-                    $unwind: '$user'
+                    $lookup: {
+                        from: 'userstats',
+                        localField: '_id',
+                        foreignField: 'userId',
+                        as: 'stats'
+                    }
                 },
                 {
-                    $match: {
-                        'user.isAactive': true
+                    $addFields: {
+                        stats: { $arrayElemAt: ['$stats', 0] }
                     }
                 },
                 {
@@ -1087,7 +1093,7 @@ export const UserController = {
                         // Calculate level: 1 level = 50 points
                         level: { 
                             $floor: { 
-                                $divide: [{ $ifNull: ['$totalPoints', 0] }, 50] 
+                                $divide: [{ $ifNull: ['$stats.totalPoints', 0] }, 50] 
                             } 
                         },
                         // Calculate percentage: questionsAnswered / totalQuestionsInSystem * 100
@@ -1096,7 +1102,7 @@ export const UserController = {
                                 if: { $gt: [totalQuestionsInSystem, 0] },
                                 then: {
                                     $multiply: [
-                                        { $divide: [{ $ifNull: ['$questionsAnswered', 0] }, totalQuestionsInSystem] },
+                                        { $divide: [{ $ifNull: ['$stats.questionsAnswered', 0] }, totalQuestionsInSystem] },
                                         100
                                     ]
                                 },
@@ -1107,28 +1113,28 @@ export const UserController = {
                 },
                 {
                     $project: {
-                        odUserId: '$userId',
-                        odUserIdStr: { $toString: '$userId' },
-                        username: '$user.username',
-                        name: '$user.name',
-                        email: '$user.email',
-                        currentYear: '$user.currentYear',
-                        profilePicture: '$user.profilePicture',
-                        points: { $ifNull: ['$totalPoints', 0] },
-                        totalPoints: { $ifNull: ['$totalPoints', 0] },
-                        bluePoints: { $ifNull: ['$bluePoints', 0] },
-                        greenPoints: { $ifNull: ['$greenPoints', 0] },
+                        odUserId: '$_id',
+                        odUserIdStr: { $toString: '$_id' },
+                        username: '$username',
+                        name: { $ifNull: ['$name', '$username'] },
+                        email: '$email',
+                        currentYear: '$currentYear',
+                        profilePicture: '$profilePicture',
+                        points: { $ifNull: ['$stats.totalPoints', 0] },
+                        totalPoints: { $ifNull: ['$stats.totalPoints', 0] },
+                        bluePoints: { $ifNull: ['$stats.bluePoints', 0] },
+                        greenPoints: { $ifNull: ['$stats.greenPoints', 0] },
                         level: '$level',
-                        questionsAnswered: { $ifNull: ['$questionsAnswered', 0] },
-                        correctAnswers: { $ifNull: ['$correctAnswers', 0] },
+                        questionsAnswered: { $ifNull: ['$stats.questionsAnswered', 0] },
+                        correctAnswers: { $ifNull: ['$stats.correctAnswers', 0] },
                         percentageAnswered: { $round: ['$percentageCalculated', 1] },
-                        totalExams: { $ifNull: ['$totalExamsCompleted', 0] },
-                        averageScore: { $ifNull: ['$averageScore', 0] },
-                        sortValue: sortField === '$totalPoints' ? { $ifNull: ['$totalPoints', 0] } :
-                                   sortField === '$bluePoints' ? { $ifNull: ['$bluePoints', 0] } :
-                                   sortField === '$greenPoints' ? { $ifNull: ['$greenPoints', 0] } :
+                        totalExams: { $ifNull: ['$stats.totalExamsCompleted', 0] },
+                        averageScore: { $ifNull: ['$stats.averageScore', 0] },
+                        sortValue: sortField === '$totalPoints' ? { $ifNull: ['$stats.totalPoints', 0] } :
+                                   sortField === '$bluePoints' ? { $ifNull: ['$stats.bluePoints', 0] } :
+                                   sortField === '$greenPoints' ? { $ifNull: ['$stats.greenPoints', 0] } :
                                    sortField === '$percentageAnswered' ? '$percentageCalculated' :
-                                   { $ifNull: ['$totalPoints', 0] }
+                                   { $ifNull: ['$stats.totalPoints', 0] }
                     }
                 },
                 {
@@ -1142,46 +1148,23 @@ export const UserController = {
                 rank: index + 1
             }));
 
-            // If userId provided, find user's position and get context
-            let userContext = null;
+            // Get user's rank if userId provided
+            let userRank = null;
             if (userId) {
                 const userIndex = rankedLeaderboard.findIndex(u => u.odUserIdStr === userId);
                 if (userIndex !== -1) {
-                    // Get 5 users before and after current user
-                    const startIndex = Math.max(0, userIndex - 5);
-                    const endIndex = Math.min(rankedLeaderboard.length, userIndex + 6);
-                    userContext = {
-                        userRank: userIndex + 1,
-                        nearbyUsers: rankedLeaderboard.slice(startIndex, endIndex)
-                    };
+                    userRank = userIndex + 1;
                 }
             }
 
-            // If segmented mode, return first 10, then jump by 50 and get next 10, repeat
-            let displayLeaderboard = [];
-            if (segmented === 'true') {
-                // Get first 10
-                displayLeaderboard = rankedLeaderboard.slice(0, 10);
-                
-                // Get segments: 70-80, 130-140, 190-200, etc.
-                let currentStart = 70; // Start at rank 70 (index 69)
-                while (currentStart <= rankedLeaderboard.length) {
-                    const segmentStart = currentStart - 1; // Convert rank to index
-                    const segmentEnd = Math.min(currentStart + 9, rankedLeaderboard.length); // Get 10 users or remaining
-                    const segment = rankedLeaderboard.slice(segmentStart, segmentEnd);
-                    displayLeaderboard = displayLeaderboard.concat(segment);
-                    currentStart += 60; // Jump to next segment (70 -> 130 -> 190, etc.)
-                }
-            } else {
-                // Return top N users as before
-                displayLeaderboard = rankedLeaderboard.slice(0, parseInt(limit));
-            }
+            // Return top N users based on limit
+            const displayLeaderboard = rankedLeaderboard.slice(0, parseInt(limit));
 
             res.status(200).json({
                 success: true,
                 data: {
                     leaderboard: displayLeaderboard,
-                    userContext,
+                    userRank,
                     totalUsers: rankedLeaderboard.length,
                     totalQuestionsInSystem
                 }

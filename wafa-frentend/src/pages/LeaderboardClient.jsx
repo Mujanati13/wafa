@@ -129,9 +129,9 @@ const LeaderboardClient = () => {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const response = await userService.getLeaderboard(20, sortBy, user?._id, true); // Enable segmented mode
+      const response = await userService.getLeaderboard(100, sortBy, user?._id);
       setLeaderboardData(response.data.leaderboard || []);
-      setUserContext(response.data.userContext || null);
+      setUserContext({ userRank: response.data.userRank });
       setTotalQuestionsInSystem(response.data.totalQuestionsInSystem || 0);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
@@ -153,11 +153,10 @@ const LeaderboardClient = () => {
 
   const sorted = leaderboardData;
   const topThree = sorted.slice(0, 3);
+  const remainingUsers = sorted.slice(3);
   const maxScore = sorted[0]?.totalPoints || 1;
   
-  // Get user's ranking and info
   const userRank = userContext?.userRank || null;
-  const currentUserData = sorted.find(u => user && (u.odUserIdStr === user._id || u.email === user.email)) || userContext;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
@@ -257,10 +256,10 @@ const LeaderboardClient = () => {
         })}
       </div>
 
-      {/* Top 20 List */}
+      {/* All Users List */}
       <Card>
         <CardHeader>
-          <CardTitle>Classement par Segments</CardTitle>
+          <CardTitle>Classement Complet</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Table Header - Desktop only */}
@@ -285,33 +284,18 @@ const LeaderboardClient = () => {
           </div>
 
           <div className="space-y-2 lg:space-y-0 lg:divide-y">
-            {sorted.map((userData, idx) => {
-              const rank = userData.rank || idx + 1;
+            {remainingUsers.map((userData, idx) => {
+              const rank = userData.rank;
+              if (!rank) return null;
+              
               const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
               const levelInfo = getUserLevel(userData.totalPoints);
               const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
-              const dropdownId = `top20-${userData._id || idx}`;
+              const dropdownId = `user-${userData._id || idx}`;
               const isDropdownOpen = openDropdownId === dropdownId;
-              
-              // Check if we need a separator (after rank 10, and between segments)
-              const previousRank = idx > 0 ? (sorted[idx - 1]?.rank || idx) : 0;
-              const showSeparator = rank > 10 && rank - previousRank > 10;
               
               return (
                 <React.Fragment key={userData._id || userData.odUserId || idx}>
-                  {showSeparator && (
-                    <div className="py-4 flex items-center justify-center">
-                      <div className="flex items-center gap-3 text-muted-foreground">
-                        <div className="h-px w-12 sm:w-20 bg-gray-300"></div>
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                        </div>
-                        <div className="h-px w-12 sm:w-20 bg-gray-300"></div>
-                      </div>
-                    </div>
-                  )}
                   <div
                     className={`p-3 lg:p-0 rounded-lg lg:rounded-none lg:py-3 ${
                       isCurrentUser ? "bg-blue-50 border-2 border-blue-300 lg:bg-blue-50/50 lg:border-0" : "bg-white lg:bg-transparent border lg:border-0"
@@ -528,201 +512,6 @@ const LeaderboardClient = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Nearby Users - Above and Below (Only if user is NOT in top 20) */}
-      {userContext && userContext.nearbyUsers && userContext.nearbyUsers.length > 0 && userRank && userRank > 20 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MoreHorizontal className="h-5 w-5" />
-              3 utilisateurs en avant et après vous
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Separator */}
-            <div className="flex justify-center py-4 mb-4">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-              </div>
-            </div>
-
-            {/* Show 3 users before + current user + 3 users after */}
-            <div className="divide-y space-y-2 lg:space-y-0 lg:divide-y">
-              {userContext.nearbyUsers.map((userData, idx) => {
-                const levelInfo = getUserLevel(userData.totalPoints);
-                const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
-                const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
-                const dropdownId = `context-${userData._id || idx}`;
-                const isDropdownOpen = openDropdownId === dropdownId;
-                
-                return (
-                  <div
-                    key={userData._id || userData.odUserId || idx}
-                    className={`p-3 lg:p-0 rounded-lg lg:rounded-none lg:py-3 ${
-                      isCurrentUser ? "bg-blue-100 border-2 border-blue-300 rounded-lg" : "bg-white lg:bg-transparent border lg:border-0"
-                    }`}
-                  >
-                    {/* Mobile Layout */}
-                    <div className="flex lg:hidden items-start justify-between gap-2">
-                      {/* Left: Rank + Avatar + Name */}
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-xs text-foreground/70 border-muted flex-shrink-0">
-                          #{userData.rank}
-                        </span>
-                        <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarImage 
-                            src={userData.profilePicture?.startsWith('http') 
-                              ? userData.profilePicture 
-                              : userData.profilePicture 
-                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
-                                : undefined
-                            } 
-                            alt={userData.name} 
-                          />
-                          <AvatarFallback className="text-sm font-semibold bg-muted text-foreground/80">
-                            {getInitials(userData.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
-                            {userData.name}
-                            {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
-                              {userData.totalPoints} pts
-                            </span>
-                            <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
-                              Nv.{levelInfo.level}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right: 3-dot menu */}
-                      <div className="relative flex-shrink-0">
-                        <button 
-                          onClick={() => setOpenDropdownId(isDropdownOpen ? null : dropdownId)}
-                          className="p-1.5 hover:bg-gray-100 rounded-md transition"
-                        >
-                          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                        </button>
-                        {isDropdownOpen && (
-                          <>
-                            <div 
-                              className="fixed inset-0 z-10" 
-                              onClick={() => setOpenDropdownId(null)}
-                            />
-                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
-                              <div className="p-3 space-y-2 text-sm">
-                                <div className="flex items-center justify-between pb-2 border-b">
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                    Points Bleus
-                                  </span>
-                                  <span className="font-semibold text-blue-600">{userData.bluePoints}</span>
-                                </div>
-                                <div className="flex items-center justify-between pb-2 border-b">
-                                  <span className="text-muted-foreground flex items-center gap-1">
-                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                    Points Verts
-                                  </span>
-                                  <span className="font-semibold text-green-600">{userData.greenPoints}</span>
-                                </div>
-                                <div className="flex items-center justify-between pb-2 border-b">
-                                  <span className="text-muted-foreground">Niveau</span>
-                                  <Badge className={`${levelInfo.color} text-white text-xs`}>
-                                    <TrendingUp className="h-3 w-3 mr-1" />
-                                    {levelInfo.level}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center justify-between pb-2 border-b">
-                                  <span className="text-muted-foreground">Pourcentage</span>
-                                  <span className="font-semibold text-cyan-600">{userData.percentageAnswered || 0}%</span>
-                                </div>
-                                <div className="pt-1">
-                                  <div className="text-xs text-muted-foreground mb-1">Progression</div>
-                                  <div className="h-2 w-full rounded-full bg-gray-200">
-                                    <div
-                                      className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
-                                      style={{ width: `${Math.round((userData.totalPoints / maxScore) * 100)}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Desktop Layout */}
-                    <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4">
-                      <div className="flex items-center gap-3 min-w-0 col-span-2">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border bg-accent font-semibold text-sm text-foreground/70 border-muted">
-                          #{userData.rank}
-                        </span>
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage 
-                            src={userData.profilePicture?.startsWith('http') 
-                              ? userData.profilePicture 
-                              : userData.profilePicture 
-                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
-                                : undefined
-                            } 
-                            alt={userData.name} 
-                          />
-                          <AvatarFallback className="text-sm font-semibold bg-muted text-foreground/80">
-                            {getInitials(userData.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
-                            {userData.name}
-                            {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-center">
-                        <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                          {userData.totalPoints} pts
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
-                      </div>
-                      <div className="flex justify-center">
-                        <Badge className={`${levelInfo.color} text-white text-xs`}>
-                          {levelInfo.level}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-center">
-                        <span className="text-sm font-medium text-cyan-600">
-                          {userData.percentageAnswered || 0}%
-                        </span>
-                      </div>
-                      <div className="block">
-                        <div className="h-2 w-full rounded-full bg-gray-200">
-                          <div
-                            className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
-                            style={{ width: `${Math.min(userData.percentageAnswered || 0, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Points System Info */}
       <Card className="mt-6">
