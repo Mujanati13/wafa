@@ -6,7 +6,6 @@ import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar,
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { api } from "@/lib/utils";
-import helpIcon from "@/assets/help-icon.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,26 +113,26 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
         className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-200 shadow-sm bg-white rounded-2xl"
         onClick={() => onStart(exam.id, examType)}
       >
-        <CardContent className="px-5 sm:px-6 py-3 sm:py-4 h-full flex flex-col relative">
-          {/* Help button - top right corner */}
+        <CardContent className="p-3 sm:px-4 sm:py-3 h-full flex flex-col relative">
+          {/* Help button - top left corner */}
           {exam.helpText && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-2 right-2 h-7 w-7 p-0 z-10 hover:opacity-80 rounded-full transition-all hover:scale-110 bg-transparent"
+              className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 h-6 w-6 sm:h-7 sm:w-7 p-0 z-10 hover:bg-blue-100 rounded-full transition-all hover:scale-110 bg-blue-50"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
               }}
             >
-              <img src={helpIcon} alt="Help" className="h-5 w-5" />
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
             </Button>
           )}
 
           {/* Image/Icon - centered at top */}
-          <div className="flex-shrink-0 flex justify-center mb-3">
+          <div className="flex-shrink-0 flex justify-center mb-2 sm:mb-3">
             {imageUrl ? (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300"
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
                 style={{
                   transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                 }}
@@ -145,44 +144,44 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-14 sm:w-14 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>';
+                    e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div>';
                   }}
                 />
               </div>
             ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-md group-hover:shadow-lg transition-all duration-300"
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
                 style={{
                   transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                 }}
               >
-                <BookOpen className="h-12 w-12 sm:h-14 sm:w-14 text-white drop-shadow-lg" strokeWidth={1.5} />
+                <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-lg" strokeWidth={1.5} />
               </div>
             )}
           </div>
 
           {/* Title - centered */}
-          <div className="flex-1 flex items-start justify-center text-center mb-4">
-            <h3 className="font-bold text-gray-800 text-base sm:text-lg leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors">
+          <div className="flex-1 flex items-center justify-center text-center mb-2 sm:mb-3 px-1">
+            <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
               {exam.name}
             </h3>
           </div>
 
           {/* Bottom section - Lock icon + count on left, percentage circle on right */}
-          <div className="w-full flex items-center justify-between mt-auto">
+          <div className="w-full flex items-center justify-between mt-auto pt-1">
             {/* Left: Lock icon + count */}
-            <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 border border-gray-200">
-                <Lock className="h-4 w-4 text-gray-500" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-gray-100 border border-gray-200">
+                <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
               </div>
               <div className="flex items-baseline gap-0.5 text-gray-500">
-                <span className="font-semibold text-sm">{answeredQuestions}</span>
+                <span className="font-semibold text-sm sm:text-base">{answeredQuestions}</span>
                 <span className="text-xs">/</span>
                 <span className="text-sm">{exam.questions}</span>
               </div>
             </div>
             
             {/* Right: Circular percentage */}
-            <div className="relative w-14 h-14 flex-shrink-0">
+            <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
               <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 64 64">
                 {/* Background circle */}
                 <circle
@@ -209,7 +208,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
               </svg>
               {/* Percentage text */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-blue-600">{progressPercent}%</span>
+                <span className="text-xs sm:text-sm font-bold text-blue-600">{progressPercent}%</span>
               </div>
             </div>
           </div>

@@ -153,7 +153,24 @@ const LeaderboardClient = () => {
 
   const sorted = leaderboardData;
   const topThree = sorted.slice(0, 3);
-  const remainingUsers = sorted.slice(3);
+  
+  // Get top 20 users (3 in podium + 17 in list)
+  const top20 = sorted.slice(0, 20);
+  const remainingUsers = sorted.slice(3, 20); // Users from rank 4 to 20
+  
+  // Check if current user is in top 20
+  const currentUserInTop20 = user && top20.some(u => 
+    (u.odUserIdStr === user._id || u.email === user.email)
+  );
+  
+  // If current user is not in top 20, find them in the full list
+  let currentUserData = null;
+  if (user && !currentUserInTop20) {
+    currentUserData = sorted.find(u => 
+      (u.odUserIdStr === user._id || u.email === user.email)
+    );
+  }
+  
   const maxScore = sorted[0]?.totalPoints || 1;
   
   const userRank = userContext?.userRank || null;
@@ -509,6 +526,260 @@ const LeaderboardClient = () => {
               </React.Fragment>
               );
             })}
+
+            {/* Show current user if they're outside top 20 */}
+            {currentUserData && (
+              <React.Fragment>
+                {/* Separator */}
+                <div className="py-4 px-3 text-center">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="bg-white px-3 text-sm font-medium text-gray-500">
+                        Votre Position
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current user card */}
+                <div className="p-3 lg:p-0 rounded-lg lg:py-3 bg-blue-50 border-2 border-blue-300">
+                  {(() => {
+                    const rank = currentUserData.rank;
+                    const levelInfo = getUserLevel(currentUserData.totalPoints);
+                    const badge =
+                      rank === 1
+                        ? "bg-amber-50 border-amber-200 text-amber-700"
+                        : rank === 2
+                        ? "bg-slate-50 border-slate-200 text-slate-600"
+                        : rank === 3
+                        ? "bg-orange-50 border-orange-200 text-orange-700"
+                        : rank <= 10
+                        ? "bg-blue-50 border-blue-200 text-blue-700"
+                        : "bg-gray-50 border-gray-200 text-gray-600";
+
+                    return (
+                      <>
+                        {/* Mobile Layout */}
+                        <div className="flex lg:hidden items-start justify-between gap-2">
+                          {/* Left Side: Rank, Avatar, Name */}
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span
+                              className={`flex-shrink-0 font-bold text-sm px-2 py-1 rounded-md ${
+                                rank === 1
+                                  ? "bg-amber-100 text-amber-700"
+                                  : rank === 2
+                                  ? "bg-slate-100 text-slate-600"
+                                  : rank === 3
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-muted text-foreground/70"
+                              }`}
+                            >
+                              #{rank}
+                            </span>
+                            <Avatar className="h-9 w-9 flex-shrink-0">
+                              <AvatarImage
+                                src={
+                                  currentUserData.profilePicture?.startsWith("http")
+                                    ? currentUserData.profilePicture
+                                    : currentUserData.profilePicture
+                                    ? `${import.meta.env.VITE_API_URL?.replace("/api/v1", "")}${
+                                        currentUserData.profilePicture
+                                      }`
+                                    : undefined
+                                }
+                                alt={currentUserData.name}
+                              />
+                              <AvatarFallback
+                                className={`text-sm font-semibold ${
+                                  rank === 1
+                                    ? "bg-amber-100 text-amber-800"
+                                    : rank === 2
+                                    ? "bg-slate-100 text-slate-700"
+                                    : rank === 3
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-muted text-foreground/80"
+                                }`}
+                              >
+                                {getInitials(currentUserData.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate text-blue-700">
+                                {currentUserData.name}
+                                <span className="ml-1 text-xs">(vous)</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right Side: Points & Dropdown */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                              {currentUserData.totalPoints} pts
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <div className="p-2 space-y-2 text-sm">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Points bleus:</span>
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-semibold text-blue-600">
+                                        {currentUserData.bluePoints}
+                                      </span>
+                                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Points verts:</span>
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-semibold text-green-600">
+                                        {currentUserData.greenPoints}
+                                      </span>
+                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Niveau:</span>
+                                    <Badge className={`${levelInfo.color} text-white text-xs`}>
+                                      <TrendingUp className="h-3 w-3 mr-1" />
+                                      {levelInfo.level}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Progression:</span>
+                                    <span className="font-medium text-cyan-600">
+                                      {currentUserData.percentageAnswered || 0}%
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="h-2 w-full rounded-full bg-gray-200">
+                                      <div
+                                        className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                                        style={{
+                                          width: `${Math.min(
+                                            currentUserData.percentageAnswered || 0,
+                                            100
+                                          )}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+
+                        {/* Desktop Layout */}
+                        <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4">
+                          {/* Rank + Avatar + Name */}
+                          <div className="col-span-2 flex items-center gap-3">
+                            <span
+                              className={`flex-shrink-0 font-bold text-sm px-2.5 py-1 rounded-md ${
+                                rank === 1
+                                  ? "bg-amber-100 text-amber-700"
+                                  : rank === 2
+                                  ? "bg-slate-100 text-slate-600"
+                                  : rank === 3
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-muted text-foreground/70"
+                              }`}
+                            >
+                              #{rank}
+                            </span>
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage
+                                src={
+                                  currentUserData.profilePicture?.startsWith("http")
+                                    ? currentUserData.profilePicture
+                                    : currentUserData.profilePicture
+                                    ? `${import.meta.env.VITE_API_URL?.replace("/api/v1", "")}${
+                                        currentUserData.profilePicture
+                                      }`
+                                    : undefined
+                                }
+                                alt={currentUserData.name}
+                              />
+                              <AvatarFallback
+                                className={`text-sm font-semibold ${
+                                  rank === 1
+                                    ? "bg-amber-100 text-amber-800"
+                                    : rank === 2
+                                    ? "bg-slate-100 text-slate-700"
+                                    : rank === 3
+                                    ? "bg-orange-100 text-orange-800"
+                                    : "bg-muted text-foreground/80"
+                                }`}
+                              >
+                                {getInitials(currentUserData.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate text-blue-700">
+                                {currentUserData.name}
+                                <span className="ml-1 text-xs">(vous)</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Desktop: All stats */}
+                          <div className="flex justify-center">
+                            <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                              {currentUserData.totalPoints} pts
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-sm font-semibold text-blue-600">
+                              {currentUserData.bluePoints}
+                            </span>
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          </div>
+
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-sm font-semibold text-green-600">
+                              {currentUserData.greenPoints}
+                            </span>
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          </div>
+
+                          <div className="flex justify-center">
+                            <Badge className={`${levelInfo.color} text-white text-xs`}>
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                              {levelInfo.level}
+                            </Badge>
+                          </div>
+
+                          <div className="flex justify-center">
+                            <span className="text-sm font-medium text-cyan-600">
+                              {currentUserData.percentageAnswered || 0}%
+                            </span>
+                          </div>
+
+                          <div className="block">
+                            <div className="h-2 w-full rounded-full bg-gray-200">
+                              <div
+                                className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                                style={{
+                                  width: `${Math.min(currentUserData.percentageAnswered || 0, 100)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </React.Fragment>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -110,7 +110,7 @@ const Leaderboard = () => {
       // Create CSV content with new columns
       const csvData = [
         ['Rang', 'Utilisateur', 'Année', 'Points Normaux', 'Points Bleus', 'Points Verts', 'Niveau'],
-        ...filteredData.map(user => {
+        ...top20Data.map(user => {
           const levelInfo = calculateLevel(user.totalPoints);
           return [
             user.rank,
@@ -162,6 +162,9 @@ const Leaderboard = () => {
       user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Limit to top 20 users for better performance
+  const top20Data = filteredData.slice(0, 20);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="w-full space-y-6">
@@ -184,7 +187,7 @@ const Leaderboard = () => {
           </Button>
         </div>
 
-        {/* Note Banner - All Years */}
+        {/* Note Banner - Top 20 */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
           <div className="text-blue-600 mt-1">
             <Award className="w-5 h-5" />
@@ -192,7 +195,7 @@ const Leaderboard = () => {
           <div>
             <p className="text-sm font-semibold text-blue-900">Note importante</p>
             <p className="text-sm text-blue-800 mt-1">
-              Le classement affiche tous les étudiants de toutes les années confondues.
+              Le classement affiche les 20 premiers étudiants de toutes les années confondues.
             </p>
           </div>
         </div>
@@ -337,14 +340,14 @@ const Leaderboard = () => {
                       <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-20 mx-auto"></div></td>
                     </tr>
                   ))
-                ) : filteredData.length === 0 ? (
+                ) : top20Data.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-8 text-gray-500">
                       {t('dashboard:no_data_found')}
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((user) => {
+                  top20Data.map((user) => {
                     const levelInfo = calculateLevel(user.totalPoints);
                     return (
                       <tr
