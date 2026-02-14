@@ -447,6 +447,16 @@ const SubjectsPage = () => {
           const yearExams = yearExamsFromApi.length > 0 ? yearExamsFromApi : yearExamsFromCourses;
           const qcmExams = qcmFromApi.length > 0 ? qcmFromApi : qcmFromCourses;
 
+          // Sort exams to match admin dashboard order
+          // Exam par années: sort by year descending (newest first)
+          yearExams.sort((a, b) => (b.year || 0) - (a.year || 0));
+          
+          // Exam par courses: sort alphabetically by name
+          courseExams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          
+          // QCM banque: sort alphabetically by name
+          qcmExams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
           console.log('Final year exams to display:', yearExams);
           console.log('Final QCM exams to display:', qcmExams);
 
@@ -520,6 +530,11 @@ const SubjectsPage = () => {
                 Promise.all(courseExams.map(e => calculateExamProgress(e))),
                 Promise.all(qcmExams.map(e => calculateExamProgress(e)))
               ]);
+              
+              // Maintain sorted order after progress calculation
+              updatedYearExams.sort((a, b) => (b.year || 0) - (a.year || 0));
+              updatedCourseExams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+              updatedQcmExams.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
               
               console.log('Updated year exams with progress:', updatedYearExams);
               
