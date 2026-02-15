@@ -261,7 +261,7 @@ export const AdminAnalyticsController = {
 
   // Get leaderboard with rankings
   getLeaderboard: asyncHandler(async (req, res) => {
-    const { year, studentYear, period = 'all', limit = 50 } = req.query;
+    const { year, studentYear, period = 'all', limit = 200 } = req.query;
     
     // Build match criteria
     const matchCriteria = {};
@@ -270,43 +270,83 @@ export const AdminAnalyticsController = {
       matchCriteria['semesters'] = year;
     }
     
-    // Fetch users with their stats
-    const leaderboard = await UserStats.aggregate([
+    // Fetch ALL users and left join with their stats (show all users even without stats)
+    const leaderboard = await User.aggregate([
+      {
+        $match: matchCriteria
+      },
       {
         $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
-      {
-        $unwind: '$user'
-      },
-      {
-        $match: {
-          ...matchCriteria,
-          'user.isAactive': true
+          from: 'userstats',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'stats'
         }
       },
       {
         $project: {
-          username: '$user.username',
-          name: '$user.name',
-          email: '$user.email',
-          photoURL: '$user.profilePicture',
-          normalPoints: { $ifNull: ['$totalPoints', 0] },
-          points: { $ifNull: ['$totalPoints', 0] },
-          bluePoints: { $ifNull: ['$bluePoints', 0] },
-          greenPoints: { $ifNull: ['$greenPoints', 0] },
-          totalExams: { $ifNull: ['$totalExams', 0] },
-          averageScore: { $ifNull: ['$averageScore', 0] },
-          studyHours: { $ifNull: ['$studyHours', 0] },
-          questionsAnswered: { $ifNull: ['$questionsAnswered', 0] },
-          correctAnswers: { $ifNull: ['$correctAnswers', 0] },
-          semesters: '$user.semesters',
-          plan: '$user.plan',
-          currentYear: '$user.currentYear'
+          username: '$username',
+          name: '$name',
+          email: '$email',
+          photoURL: '$profilePicture',
+          normalPoints: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.totalPoints', 0] }, 
+              0
+            ] 
+          },
+          points: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.totalPoints', 0] }, 
+              0
+            ] 
+          },
+          bluePoints: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.bluePoints', 0] }, 
+              0
+            ] 
+          },
+          greenPoints: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.greenPoints', 0] }, 
+              0
+            ] 
+          },
+          totalExams: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.totalExams', 0] }, 
+              0
+            ] 
+          },
+          averageScore: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.averageScore', 0] }, 
+              0
+            ] 
+          },
+          studyHours: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.studyHours', 0] }, 
+              0
+            ] 
+          },
+          questionsAnswered: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.questionsAnswered', 0] }, 
+              0
+            ] 
+          },
+          correctAnswers: { 
+            $ifNull: [
+              { $arrayElemAt: ['$stats.correctAnswers', 0] }, 
+              0
+            ] 
+          },
+          semesters: '$semesters',
+          plan: '$plan',
+          currentYear: '$currentYear',
+          isAactive: '$isAactive'
         }
       },
       {
@@ -314,7 +354,7 @@ export const AdminAnalyticsController = {
           totalPoints: { $add: ['$normalPoints', '$bluePoints', '$greenPoints'] },
           level: { 
             $floor: { 
-              $divide: [{ $ifNull: ['$totalPoints', 0] }, 50] 
+              $divide: [{ $add: ['$normalPoints', '$bluePoints', '$greenPoints'] }, 50] 
             } 
           }
         }
