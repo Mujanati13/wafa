@@ -162,8 +162,7 @@ const Leaderboard = () => {
       user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Limit to top 20 users for better performance
-  const top20Data = filteredData.slice(0, 20);
+  const top20Data = filteredData;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -195,7 +194,7 @@ const Leaderboard = () => {
           <div>
             <p className="text-sm font-semibold text-blue-900">Note importante</p>
             <p className="text-sm text-blue-800 mt-1">
-              Le classement affiche les 20 premiers étudiants de toutes les années confondues.
+              Le classement affiche tous les étudiants de toutes les années confondues.
             </p>
           </div>
         </div>

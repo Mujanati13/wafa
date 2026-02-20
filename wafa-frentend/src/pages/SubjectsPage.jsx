@@ -107,13 +107,13 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
       transition={{ delay: index * 0.05 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="h-full"
+      className=""
     >
       <Card
-        className="h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-200 shadow-sm bg-white rounded-2xl"
+        className="py-0 gap-0 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer group active:scale-[0.98] overflow-hidden border border-gray-200 shadow-sm bg-white rounded-2xl"
         onClick={() => onStart(exam.id, examType)}
       >
-        <CardContent className="p-3 sm:px-4 sm:py-3 h-full flex flex-col relative">
+        <CardContent className="px-3 py-3 sm:px-4 sm:py-3 flex flex-col relative">
           {/* Help button - top left corner */}
           {exam.helpText && (
             <Button
@@ -132,7 +132,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
           {/* Image/Icon - centered at top */}
           <div className="flex-shrink-0 flex justify-center mb-2 sm:mb-3">
             {imageUrl ? (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
                 style={{
                   transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                 }}
@@ -149,25 +149,25 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
                 />
               </div>
             ) : (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm sm:shadow-md group-hover:shadow-lg transition-all duration-300"
                 style={{
                   transform: isHovered ? 'scale(1.05)' : 'scale(1)'
                 }}
               >
-                <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 text-white drop-shadow-lg" strokeWidth={1.5} />
+                <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-white drop-shadow-lg" strokeWidth={1.5} />
               </div>
             )}
           </div>
 
           {/* Title - centered */}
-          <div className="flex-1 flex items-center justify-center text-center mb-2 sm:mb-3 px-1">
+          <div className="flex items-center justify-center text-center mb-2 sm:mb-3 px-1">
             <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
               {exam.name}
             </h3>
           </div>
 
           {/* Bottom section - Lock icon + count on left, percentage circle on right */}
-          <div className="w-full flex items-center justify-between mt-auto pt-1">
+          <div className="w-full flex items-center justify-between pt-1">
             {/* Left: Lock icon + count */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-gray-100 border border-gray-200">
