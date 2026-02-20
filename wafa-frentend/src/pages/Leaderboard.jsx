@@ -289,140 +289,218 @@ const Leaderboard = () => {
         </div>
 
         {/* Leaderboard Table Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-700 w-16">
-                    Rang
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700 min-w-[300px]">
-                    Utilisateur
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700 w-20">
-                    <div className="flex items-center gap-1">
-                      <GraduationCap className="w-4 h-4" />
-                      year
+        <Card>
+          <CardContent className="p-0 sm:p-0">
+            {/* Table Header - Desktop only */}
+            <div className="hidden lg:grid lg:grid-cols-7 items-center gap-4 px-4 border-b text-sm font-medium text-muted-foreground h-[52px]">
+              <div className="col-span-2">Étudiant</div>
+              <div className="text-center">
+                <span className="flex items-center justify-center gap-1">
+                  <GraduationCap className="w-4 h-4" />
+                  Année
+                </span>
+              </div>
+              <div className="text-center">Points</div>
+              <div className="text-center">
+                <span className="flex items-center justify-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  Bleus
+                </span>
+              </div>
+              <div className="text-center">
+                <span className="flex items-center justify-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  Verts
+                </span>
+              </div>
+              <div className="text-center">Niveau</div>
+            </div>
+
+            <div className="space-y-2 lg:space-y-0 lg:divide-y">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="hidden lg:grid lg:grid-cols-7 items-center gap-4 h-[52px] px-4">
+                    <div className="col-span-2 flex items-center gap-4">
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
                     </div>
-                  </th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    Points
-                  </th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      bleu points
-                    </div>
-                  </th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      vert poits
-                    </div>
-                  </th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-700">
-                    level
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={index} className="border-b border-gray-100">
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-12 mx-auto"></div></td>
-                      <td className="py-4 px-4"><div className="h-4 bg-gray-200 rounded animate-pulse w-20 mx-auto"></div></td>
-                    </tr>
-                  ))
-                ) : top20Data.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-gray-500">
-                      {t('dashboard:no_data_found')}
-                    </td>
-                  </tr>
-                ) : (
-                  top20Data.map((user) => {
-                    const levelInfo = calculateLevel(user.totalPoints);
-                    return (
-                      <tr
-                        key={user._id || user.rank}
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors align-middle ${
-                          user.rank === 1 ? "bg-yellow-50" : user.rank === 2 ? "bg-slate-50" : user.rank === 3 ? "bg-orange-50" : ""
-                        }`}
-                      >
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            {user.rank <= 3 ? (
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                user.rank === 1 ? 'bg-yellow-400' : user.rank === 2 ? 'bg-gray-300' : 'bg-orange-400'
-                              }`}>
-                                <Trophy className="w-4 h-4 text-white" />
-                              </div>
-                            ) : (
-                              <span className="w-8 h-8 flex items-center justify-center font-bold text-gray-600">
-                                {user.rank}
+                    <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-12"></div></div>
+                    <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-12"></div></div>
+                    <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-12"></div></div>
+                    <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-12"></div></div>
+                    <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div></div>
+                  </div>
+                ))
+              ) : top20Data.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {t('dashboard:no_data_found')}
+                </div>
+              ) : (
+                top20Data.map((user) => {
+                  const levelInfo = calculateLevel(user.totalPoints);
+                  const rank = user.rank;
+                  
+                  const getScoreBadgeClasses = (score) => {
+                    if (score >= 1000) return "bg-emerald-100 text-emerald-700 border-emerald-200";
+                    if (score >= 500) return "bg-lime-100 text-lime-700 border-lime-200";
+                    if (score >= 200) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+                    if (score >= 50) return "bg-orange-100 text-orange-700 border-orange-200";
+                    return "bg-rose-100 text-rose-700 border-rose-200";
+                  };
+                  const badge = getScoreBadgeClasses(user.normalPoints);
+
+                  return (
+                    <div
+                      key={user._id || user.rank}
+                      className={`p-3 lg:p-0 rounded-lg lg:rounded-none bg-white lg:bg-transparent border lg:border-0 ${
+                        rank === 1 ? "lg:bg-yellow-50/50" : rank === 2 ? "lg:bg-slate-50/50" : rank === 3 ? "lg:bg-orange-50/50" : ""
+                      }`}
+                    >
+                      {/* Mobile Layout */}
+                      <div className="flex lg:hidden items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs bg-accent font-semibold flex-shrink-0 ${
+                              rank === 1
+                                ? "text-amber-700 border-amber-300 bg-amber-50"
+                                : rank === 2
+                                ? "text-slate-700 border-slate-300 bg-slate-50"
+                                : rank === 3
+                                ? "text-amber-800 border-amber-200 bg-orange-50"
+                                : "text-foreground/70 border-muted"
+                            }`}
+                          >
+                            #{rank}
+                          </span>
+                          <Avatar className="h-9 w-9 flex-shrink-0">
+                            <AvatarImage 
+                              src={user.photoURL?.startsWith('http') 
+                                ? user.photoURL 
+                                : user.photoURL 
+                                  ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.photoURL}` 
+                                  : undefined
+                              } 
+                              alt={user.name || user.username} 
+                            />
+                            <AvatarFallback delayMs={0} className={`text-sm font-semibold ${
+                              rank === 1
+                                ? "bg-amber-100 text-amber-800"
+                                : rank === 2
+                                ? "bg-slate-100 text-slate-700"
+                                : rank === 3
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-muted text-foreground/80"
+                            }`}>
+                              {(user.name || user.username)?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm truncate">
+                              {user.name || user.username}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
+                                {user.normalPoints} pts
                               </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Avatar className="h-10 w-10 flex-shrink-0">
-                              <AvatarImage 
-                                src={user.photoURL?.startsWith('http') 
-                                  ? user.photoURL 
-                                  : user.photoURL 
-                                    ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.photoURL}` 
-                                    : undefined
-                                } 
-                                alt={user.name || user.username} 
-                              />
-                              <AvatarFallback delayMs={0} className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                                {(user.name || user.username)?.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-semibold text-gray-900 truncate" title={user.name || user.username}>{user.name || user.username}</span>
-                              <span className="text-sm text-gray-500 truncate">@{user.username}</span>
+                              <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
+                                Nv.{levelInfo.level}
+                              </Badge>
                             </div>
                           </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="text-gray-700">
-                            {user.currentYear ? `${user.currentYear}eme` : '-'}
+                        </div>
+                      </div>
+
+                      {/* Desktop Layout */}
+                      <div className="hidden lg:grid lg:grid-cols-7 items-center gap-4 h-[52px] px-4">
+                        {/* Rank and User Info */}
+                        <div className="flex items-center gap-5 min-w-0 col-span-2">
+                          <span
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm bg-accent font-semibold flex-shrink-0 ${
+                              rank === 1
+                                ? "text-amber-700 border-amber-300"
+                                : rank === 2
+                                ? "text-slate-700 border-slate-300"
+                                : rank === 3
+                                ? "text-amber-800 border-amber-200"
+                                : "text-foreground/70 border-muted"
+                            }`}
+                          >
+                            #{rank}
                           </span>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <span className="font-bold text-gray-900">{user.normalPoints}</span>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="font-bold text-blue-600">{user.bluePoints}</span>
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <Avatar className="h-9 w-9 flex-shrink-0">
+                            <AvatarImage 
+                              src={user.photoURL?.startsWith('http') 
+                                ? user.photoURL 
+                                : user.photoURL 
+                                  ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${user.photoURL}` 
+                                  : undefined
+                              } 
+                              alt={user.name || user.username} 
+                            />
+                            <AvatarFallback delayMs={0} className={`text-sm font-semibold ${
+                              rank === 1
+                                ? "bg-amber-100 text-amber-800"
+                                : rank === 2
+                                ? "bg-slate-100 text-slate-700"
+                                : rank === 3
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-muted text-foreground/80"
+                            }`}>
+                              {(user.name || user.username)?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex flex-col">
+                            <p className="font-medium truncate">
+                              {user.name || user.username}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              @{user.username}
+                            </p>
                           </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="font-bold text-green-600">{user.greenPoints}</span>
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <span className="font-bold text-gray-900">{levelInfo.level}</span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        </div>
+
+                        {/* Year */}
+                        <div className="flex justify-center">
+                          <span className="text-sm text-gray-700">
+                            {user.currentYear ? `${user.currentYear}ème` : '-'}
+                          </span>
+                        </div>
+
+                        {/* Points */}
+                        <div className="flex justify-center">
+                          <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
+                            {user.normalPoints} pts
+                          </span>
+                        </div>
+
+                        {/* Blue Points */}
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-sm font-semibold text-blue-600">{user.bluePoints}</span>
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        </div>
+
+                        {/* Green Points */}
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-sm font-semibold text-green-600">{user.greenPoints}</span>
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        </div>
+
+                        {/* Level */}
+                        <div className="flex justify-center">
+                          <Badge className={`${levelInfo.color} text-white text-xs`}>
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            {levelInfo.level}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

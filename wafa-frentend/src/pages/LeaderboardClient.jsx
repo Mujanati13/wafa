@@ -241,7 +241,7 @@ const LeaderboardClient = () => {
                       } 
                       alt={user.name} 
                     />
-                    <AvatarFallback className="text-lg font-semibold bg-white">
+                    <AvatarFallback delayMs={0} className="text-lg font-semibold bg-white">
                       {getInitials(user.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -275,245 +275,129 @@ const LeaderboardClient = () => {
       </div>
 
       {/* All Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Classement Complet</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Table Header - Desktop only */}
-          <div className="hidden lg:grid lg:grid-cols-8 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
-            <div className="col-span-2">Étudiant</div>
-            <div className="text-center">Points</div>
-            <div className="text-center">
-              <span className="flex items-center justify-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                Bleus
-              </span>
-            </div>
-            <div className="text-center">
-              <span className="flex items-center justify-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                Verts
-              </span>
-            </div>
-            <div className="text-center">Niveau</div>
-            <div className="text-center">%</div>
-            <div className="text-center">Progression</div>
-          </div>
-
-          <div className="space-y-2 lg:space-y-0 lg:divide-y">
-            {remainingUsers.map((userData, idx) => {
-              const rank = userData.rank;
-              if (!rank) return null;
-              
-              const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
-              const levelInfo = getUserLevel(userData.totalPoints);
-              const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
-              const dropdownId = `user-${userData._id || idx}`;
-              const isDropdownOpen = openDropdownId === dropdownId;
-              
-              return (
-                <React.Fragment key={userData._id || userData.odUserId || idx}>
-                  <div
-                    className={`p-3 lg:p-0 rounded-lg lg:rounded-none lg:py-3 ${
-                      isCurrentUser ? "bg-blue-50 border-2 border-blue-300 lg:bg-blue-50/50 lg:border-0" : "bg-white lg:bg-transparent border lg:border-0"
-                    } ${rank <= 3 ? rank === 1 ? "lg:bg-yellow-50/50" : rank === 2 ? "lg:bg-slate-50/50" : "lg:bg-orange-50/50" : ""}`}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Classement Complet</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1000px]">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 font-medium text-gray-700 w-16">
+                  Rang
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700 min-w-[300px]">
+                  Étudiant
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-700">
+                  Points
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-700">
+                  <div className="flex items-center justify-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    Bleus
+                  </div>
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-700">
+                  <div className="flex items-center justify-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    Verts
+                  </div>
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-700">
+                  Niveau
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-700">
+                  %
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-700 min-w-[150px]">
+                  Progression
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {remainingUsers.map((userData, idx) => {
+                const rank = userData.rank;
+                if (!rank) return null;
+                
+                const badge = getScoreBadgeClasses(userData.totalPoints, maxScore);
+                const levelInfo = getUserLevel(userData.totalPoints);
+                const isCurrentUser = user && (userData.odUserIdStr === user._id || userData.email === user.email);
+                
+                return (
+                  <tr
+                    key={userData._id || userData.odUserId || idx}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors align-middle ${
+                      isCurrentUser ? "bg-blue-50" : ""
+                    } ${rank === 1 ? "bg-yellow-50" : rank === 2 ? "bg-slate-50" : rank === 3 ? "bg-orange-50" : ""}`}
                   >
-                  {/* Mobile Layout */}
-                  <div className="flex lg:hidden items-center justify-between gap-2">
-                    {/* Left: Rank + Avatar + Name */}
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs bg-accent font-semibold flex-shrink-0 ${
-                          rank === 1
-                            ? "text-amber-700 border-amber-300 bg-amber-50"
-                            : rank === 2
-                            ? "text-slate-700 border-slate-300 bg-slate-50"
-                            : rank === 3
-                            ? "text-amber-800 border-amber-200 bg-orange-50"
-                            : "text-foreground/70 border-muted"
-                        }`}
-                      >
-                        #{rank}
-                      </span>
-                      <Avatar className="h-9 w-9 flex-shrink-0">
-                        <AvatarImage 
-                          src={userData.profilePicture?.startsWith('http') 
-                            ? userData.profilePicture 
-                            : userData.profilePicture 
-                              ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
-                              : undefined
-                          } 
-                          alt={userData.name} 
-                        />
-                        <AvatarFallback delayMs={0} className={`text-sm font-semibold ${
-                          rank === 1
-                            ? "bg-amber-100 text-amber-800"
-                            : rank === 2
-                            ? "bg-slate-100 text-slate-700"
-                            : rank === 3
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-muted text-foreground/80"
-                        }`}>
-                          {getInitials(userData.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className={`font-medium text-sm truncate ${isCurrentUser ? "text-blue-700 font-bold" : ""}`}>
-                          {userData.name}
-                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
-                            {userData.totalPoints} pts
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        {rank <= 3 ? (
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            rank === 1 ? 'bg-yellow-400' : rank === 2 ? 'bg-gray-300' : 'bg-orange-400'
+                          }`}>
+                            <Trophy className="w-4 h-4 text-white" />
+                          </div>
+                        ) : (
+                          <span className="w-8 h-8 flex items-center justify-center font-bold text-gray-600">
+                            {rank}
                           </span>
-                          <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
-                            Nv.{levelInfo.level}
-                          </Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarImage 
+                            src={userData.profilePicture?.startsWith('http') 
+                              ? userData.profilePicture 
+                              : userData.profilePicture 
+                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
+                                : undefined
+                            } 
+                            alt={userData.name} 
+                          />
+                          <AvatarFallback delayMs={0} className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                            {getInitials(userData.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                          <span className={`font-semibold truncate ${isCurrentUser ? "text-blue-700" : "text-gray-900"}`} title={userData.name}>
+                            {userData.name}
+                            {isCurrentUser && <span className="ml-1 text-xs font-normal text-blue-600">(vous)</span>}
+                          </span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Right: 3-dot menu */}
-                    <div className="relative flex-shrink-0">
-                      <button 
-                        onClick={() => setOpenDropdownId(isDropdownOpen ? null : dropdownId)}
-                        className="p-1.5 hover:bg-gray-100 rounded-md transition"
-                      >
-                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                      </button>
-                      {isDropdownOpen && (
-                        <>
-                          {/* Backdrop to close dropdown */}
-                          <div 
-                            className="fixed inset-0 z-10" 
-                            onClick={() => setOpenDropdownId(null)}
-                          />
-                          {/* Dropdown */}
-                          <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
-                            <div className="p-3 space-y-2 text-sm">
-                              <div className="flex items-center justify-between pb-2 border-b">
-                                <span className="text-muted-foreground flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                  Points Bleus
-                                </span>
-                                <span className="font-semibold text-blue-600">{userData.bluePoints}</span>
-                              </div>
-                              <div className="flex items-center justify-between pb-2 border-b">
-                                <span className="text-muted-foreground flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                  Points Verts
-                                </span>
-                                <span className="font-semibold text-green-600">{userData.greenPoints}</span>
-                              </div>
-                              <div className="flex items-center justify-between pb-2 border-b">
-                                <span className="text-muted-foreground">Niveau</span>
-                                <Badge className={`${levelInfo.color} text-white text-xs`}>
-                                  <TrendingUp className="h-3 w-3 mr-1" />
-                                  {levelInfo.level}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between pb-2 border-b">
-                                <span className="text-muted-foreground">Pourcentage</span>
-                                <span className="font-semibold text-cyan-600">{userData.percentageAnswered || 0}%</span>
-                              </div>
-                              <div className="pt-1">
-                                <div className="text-xs text-muted-foreground mb-1">Progression</div>
-                                <div className="h-2 w-full rounded-full bg-gray-200">
-                                  <div
-                                    className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
-                                    style={{
-                                      width: `${Math.min(userData.percentageAnswered || 0, 100)}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Desktop Layout */}
-                  <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4 min-h-[52px]">
-                    {/* Rank and User Info */}
-                    <div className="flex items-center gap-3 min-w-0 col-span-2">
-                      <span
-                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm bg-accent font-semibold ${
-                          rank === 1
-                            ? "text-amber-700 border-amber-300"
-                            : rank === 2
-                            ? "text-slate-700 border-slate-300"
-                            : rank === 3
-                            ? "text-amber-800 border-amber-200"
-                            : "text-foreground/70 border-muted"
-                        }`}
-                      >
-                        #{rank}
-                      </span>
-                      <Avatar className="h-9 w-9 flex-shrink-0">
-                        <AvatarImage 
-                          src={userData.profilePicture?.startsWith('http') 
-                            ? userData.profilePicture 
-                            : userData.profilePicture 
-                              ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${userData.profilePicture}` 
-                              : undefined
-                          } 
-                          alt={userData.name} 
-                        />
-                        <AvatarFallback delayMs={0} className={`text-sm font-semibold ${
-                          rank === 1
-                            ? "bg-amber-100 text-amber-800"
-                            : rank === 2
-                            ? "bg-slate-100 text-slate-700"
-                            : rank === 3
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-muted text-foreground/80"
-                        }`}>
-                          {getInitials(userData.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className={`font-medium truncate ${isCurrentUser ? "text-blue-700" : ""}`}>
-                          {userData.name}
-                          {isCurrentUser && <span className="ml-1 text-xs">(vous)</span>}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Desktop: All stats */}
-                    <div className="flex justify-center">
+                    </td>
+                    <td className="py-4 px-4 text-center">
                       <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
                         {userData.totalPoints} pts
                       </span>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-sm font-semibold text-blue-600">{userData.bluePoints}</span>
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-sm font-semibold text-green-600">{userData.greenPoints}</span>
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    </div>
-
-                    <div className="flex justify-center">
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-blue-600">{userData.bluePoints}</span>
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-green-600">{userData.greenPoints}</span>
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
                       <Badge className={`${levelInfo.color} text-white text-xs`}>
                         <TrendingUp className="h-3 w-3 mr-1" />
                         {levelInfo.level}
                       </Badge>
-                    </div>
-
-                    <div className="flex justify-center">
-                      <span className="text-sm font-medium text-cyan-600">
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="font-medium text-cyan-600">
                         {userData.percentageAnswered || 0}%
                       </span>
-                    </div>
-
-                    <div className="block">
-                      <div className="h-2 w-full rounded-full bg-gray-200">
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="w-full h-2 rounded-full bg-gray-200">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
                           style={{
@@ -521,271 +405,105 @@ const LeaderboardClient = () => {
                           }}
                         />
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </React.Fragment>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })}
 
-            {/* Show current user if they're outside top 20 */}
-            {currentUserData && (
-              <React.Fragment>
-                {/* Separator */}
-                <div className="py-4 px-3 text-center">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t-2 border-dashed border-gray-300"></div>
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-white px-3 text-sm font-medium text-gray-500">
-                        Votre Position
+              {/* Show current user if they're outside top 20 */}
+              {currentUserData && (
+                <>
+                  <tr>
+                    <td colSpan={8} className="py-4 px-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center">
+                          <span className="bg-white px-3 text-sm font-medium text-gray-500">
+                            Votre Position
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-gray-100 bg-blue-50 hover:bg-blue-100 transition-colors align-middle">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 flex items-center justify-center font-bold text-blue-700 bg-blue-100 rounded-md">
+                          {currentUserData.rank}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarImage 
+                            src={currentUserData.profilePicture?.startsWith('http') 
+                              ? currentUserData.profilePicture 
+                              : currentUserData.profilePicture 
+                                ? `${import.meta.env.VITE_API_URL?.replace('/api/v1', '')}${currentUserData.profilePicture}` 
+                                : undefined
+                            } 
+                            alt={currentUserData.name} 
+                          />
+                          <AvatarFallback delayMs={0} className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                            {getInitials(currentUserData.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-blue-700 truncate" title={currentUserData.name}>
+                            {currentUserData.name}
+                            <span className="ml-1 text-xs font-normal text-blue-600">(vous)</span>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className={`text-xs px-2 py-1 rounded-md border ${getScoreBadgeClasses(currentUserData.totalPoints, maxScore)}`}>
+                        {currentUserData.totalPoints} pts
                       </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Current user card */}
-                <div className="p-3 lg:p-0 rounded-lg lg:py-3 bg-blue-50 border-2 border-blue-300">
-                  {(() => {
-                    const rank = currentUserData.rank;
-                    const levelInfo = getUserLevel(currentUserData.totalPoints);
-                    const badge =
-                      rank === 1
-                        ? "bg-amber-50 border-amber-200 text-amber-700"
-                        : rank === 2
-                        ? "bg-slate-50 border-slate-200 text-slate-600"
-                        : rank === 3
-                        ? "bg-orange-50 border-orange-200 text-orange-700"
-                        : rank <= 10
-                        ? "bg-blue-50 border-blue-200 text-blue-700"
-                        : "bg-gray-50 border-gray-200 text-gray-600";
-
-                    return (
-                      <>
-                        {/* Mobile Layout */}
-                        <div className="flex lg:hidden items-center justify-between gap-2">
-                          {/* Left Side: Rank, Avatar, Name */}
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span
-                              className={`flex-shrink-0 font-bold text-sm px-2 py-1 rounded-md ${
-                                rank === 1
-                                  ? "bg-amber-100 text-amber-700"
-                                  : rank === 2
-                                  ? "bg-slate-100 text-slate-600"
-                                  : rank === 3
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-muted text-foreground/70"
-                              }`}
-                            >
-                              #{rank}
-                            </span>
-                            <Avatar className="h-9 w-9 flex-shrink-0">
-                              <AvatarImage
-                                src={
-                                  currentUserData.profilePicture?.startsWith("http")
-                                    ? currentUserData.profilePicture
-                                    : currentUserData.profilePicture
-                                    ? `${import.meta.env.VITE_API_URL?.replace("/api/v1", "")}${
-                                        currentUserData.profilePicture
-                                      }`
-                                    : undefined
-                                }
-                                alt={currentUserData.name}
-                              />
-                              <AvatarFallback
-                                delayMs={0}
-                                className={`text-sm font-semibold ${
-                                  rank === 1
-                                    ? "bg-amber-100 text-amber-800"
-                                    : rank === 2
-                                    ? "bg-slate-100 text-slate-700"
-                                    : rank === 3
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-muted text-foreground/80"
-                                }`}
-                              >
-                                {getInitials(currentUserData.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium truncate text-blue-700">
-                                {currentUserData.name}
-                                <span className="ml-1 text-xs">(vous)</span>
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Right Side: Points & Dropdown */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                              {currentUserData.totalPoints} pts
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                <div className="p-2 space-y-2 text-sm">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Points bleus:</span>
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-semibold text-blue-600">
-                                        {currentUserData.bluePoints}
-                                      </span>
-                                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Points verts:</span>
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-semibold text-green-600">
-                                        {currentUserData.greenPoints}
-                                      </span>
-                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Niveau:</span>
-                                    <Badge className={`${levelInfo.color} text-white text-xs`}>
-                                      <TrendingUp className="h-3 w-3 mr-1" />
-                                      {levelInfo.level}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Progression:</span>
-                                    <span className="font-medium text-cyan-600">
-                                      {currentUserData.percentageAnswered || 0}%
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <div className="h-2 w-full rounded-full bg-gray-200">
-                                      <div
-                                        className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
-                                        style={{
-                                          width: `${Math.min(
-                                            currentUserData.percentageAnswered || 0,
-                                            100
-                                          )}%`,
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-
-                        {/* Desktop Layout */}
-                        <div className="hidden lg:grid lg:grid-cols-8 items-center gap-4 min-h-[52px]">
-                          {/* Rank + Avatar + Name */}
-                          <div className="col-span-2 flex items-center gap-3">
-                            <span
-                              className={`flex-shrink-0 font-bold text-sm px-2.5 py-1 rounded-md ${
-                                rank === 1
-                                  ? "bg-amber-100 text-amber-700"
-                                  : rank === 2
-                                  ? "bg-slate-100 text-slate-600"
-                                  : rank === 3
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-muted text-foreground/70"
-                              }`}
-                            >
-                              #{rank}
-                            </span>
-                            <Avatar className="h-9 w-9 flex-shrink-0">
-                              <AvatarImage
-                                src={
-                                  currentUserData.profilePicture?.startsWith("http")
-                                    ? currentUserData.profilePicture
-                                    : currentUserData.profilePicture
-                                    ? `${import.meta.env.VITE_API_URL?.replace("/api/v1", "")}${
-                                        currentUserData.profilePicture
-                                      }`
-                                    : undefined
-                                }
-                                alt={currentUserData.name}
-                              />
-                              <AvatarFallback
-                                delayMs={0}
-                                className={`text-sm font-semibold ${
-                                  rank === 1
-                                    ? "bg-amber-100 text-amber-800"
-                                    : rank === 2
-                                    ? "bg-slate-100 text-slate-700"
-                                    : rank === 3
-                                    ? "bg-orange-100 text-orange-800"
-                                    : "bg-muted text-foreground/80"
-                                }`}
-                              >
-                                {getInitials(currentUserData.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <p className="font-medium truncate text-blue-700">
-                                {currentUserData.name}
-                                <span className="ml-1 text-xs">(vous)</span>
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Desktop: All stats */}
-                          <div className="flex justify-center">
-                            <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                              {currentUserData.totalPoints} pts
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="text-sm font-semibold text-blue-600">
-                              {currentUserData.bluePoints}
-                            </span>
-                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                          </div>
-
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="text-sm font-semibold text-green-600">
-                              {currentUserData.greenPoints}
-                            </span>
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          </div>
-
-                          <div className="flex justify-center">
-                            <Badge className={`${levelInfo.color} text-white text-xs`}>
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                              {levelInfo.level}
-                            </Badge>
-                          </div>
-
-                          <div className="flex justify-center">
-                            <span className="text-sm font-medium text-cyan-600">
-                              {currentUserData.percentageAnswered || 0}%
-                            </span>
-                          </div>
-
-                          <div className="block">
-                            <div className="h-2 w-full rounded-full bg-gray-200">
-                              <div
-                                className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
-                                style={{
-                                  width: `${Math.min(currentUserData.percentageAnswered || 0, 100)}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </React.Fragment>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-blue-600">{currentUserData.bluePoints}</span>
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-green-600">{currentUserData.greenPoints}</span>
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <Badge className={`${getUserLevel(currentUserData.totalPoints).color} text-white text-xs`}>
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {getUserLevel(currentUserData.totalPoints).level}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="font-medium text-cyan-600">
+                        {currentUserData.percentageAnswered || 0}%
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="w-full h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                          style={{
+                            width: `${Math.min(currentUserData.percentageAnswered || 0, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Points System Info */}
       <Card className="mt-6">
