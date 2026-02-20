@@ -351,7 +351,7 @@ const Leaderboard = () => {
                     return (
                       <tr
                         key={user._id || user.rank}
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors align-middle ${
                           user.rank === 1 ? "bg-yellow-50" : user.rank === 2 ? "bg-slate-50" : user.rank === 3 ? "bg-orange-50" : ""
                         }`}
                       >
@@ -382,7 +382,7 @@ const Leaderboard = () => {
                                 } 
                                 alt={user.name || user.username} 
                               />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                              <AvatarFallback delayMs={0} className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
                                 {(user.name || user.username)?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
