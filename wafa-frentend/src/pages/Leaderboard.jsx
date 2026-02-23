@@ -46,6 +46,8 @@ const Leaderboard = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [stats, setStats] = useState({
     totalUsers: 0,
     topPoints: 0,
@@ -55,6 +57,11 @@ const Leaderboard = () => {
   useEffect(() => {
     fetchLeaderboard();
   }, [studentYear]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, studentYear, pointType]);
 
   const fetchLeaderboard = async () => {
     try {
@@ -110,7 +117,7 @@ const Leaderboard = () => {
       // Create CSV content with new columns
       const csvData = [
         ['Rang', 'Utilisateur', 'Année', 'Points Normaux', 'Points Bleus', 'Points Verts', 'Niveau'],
-        ...top20Data.map(user => {
+        ...filteredData.map(user => {
           const levelInfo = calculateLevel(user.totalPoints);
           return [
             user.rank,
@@ -155,14 +162,27 @@ const Leaderboard = () => {
 
   const activeFilterCount = (searchTerm ? 1 : 0) + (studentYear !== "all" ? 1 : 0) + (pointType !== "normal" ? 1 : 0);
 
-  // Filter logic (client-side search only)
-  const filteredData = leaderboardData.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter + sort logic
+  const filteredData = leaderboardData
+    .filter((user) => {
+      const matchesSearch =
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesYear =
+        studentYear === "all" || String(user.currentYear) === studentYear;
+      return matchesSearch && matchesYear;
+    })
+    .sort((a, b) => {
+      if (pointType === "report") return (b.greenPoints || 0) - (a.greenPoints || 0);
+      if (pointType === "explication") return (b.bluePoints || 0) - (a.bluePoints || 0);
+      return (b.normalPoints || 0) - (a.normalPoints || 0); // default: normal
+    });
 
-  const top20Data = filteredData;
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -300,7 +320,13 @@ const Leaderboard = () => {
                   Année
                 </span>
               </div>
-              <div className="text-center">Points</div>
+              <div className="text-center">{
+                pointType === 'report' ? (
+                  <span className="flex items-center justify-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div>Verts</span>
+                ) : pointType === 'explication' ? (
+                  <span className="flex items-center justify-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div>Bleus</span>
+                ) : 'Points'
+              }</div>
               <div className="text-center">
                 <span className="flex items-center justify-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
@@ -332,12 +358,12 @@ const Leaderboard = () => {
                     <div className="flex justify-center"><div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div></div>
                   </div>
                 ))
-              ) : top20Data.length === 0 ? (
+              ) : paginatedData.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   {t('dashboard:no_data_found')}
                 </div>
               ) : (
-                top20Data.map((user) => {
+                paginatedData.map((user) => {
                   const levelInfo = calculateLevel(user.totalPoints);
                   const rank = user.rank;
                   
@@ -348,7 +374,11 @@ const Leaderboard = () => {
                     if (score >= 50) return "bg-orange-100 text-orange-700 border-orange-200";
                     return "bg-rose-100 text-rose-700 border-rose-200";
                   };
-                  const badge = getScoreBadgeClasses(user.normalPoints);
+                  const activePoints =
+                    pointType === 'report' ? user.greenPoints
+                    : pointType === 'explication' ? user.bluePoints
+                    : user.normalPoints;
+                  const badge = getScoreBadgeClasses(activePoints);
 
                   return (
                     <div
@@ -401,7 +431,7 @@ const Leaderboard = () => {
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`text-xs px-1.5 py-0.5 rounded border ${badge}`}>
-                                {user.normalPoints} pts
+                                {activePoints} pts
                               </span>
                               <Badge className={`${levelInfo.color} text-white text-[10px] px-1.5 py-0`}>
                                 Nv.{levelInfo.level}
@@ -470,7 +500,7 @@ const Leaderboard = () => {
                         {/* Points */}
                         <div className="flex justify-center">
                           <span className={`text-xs px-2 py-1 rounded-md border ${badge}`}>
-                            {user.normalPoints} pts
+                            {activePoints} pts
                           </span>
                         </div>
 
@@ -499,6 +529,64 @@ const Leaderboard = () => {
                 })
               )}
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <p className="text-sm text-gray-600">
+                  Affichage {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} sur {filteredData.length} résultats
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    ‹ Précédent
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => {
+                      // Show first, last, current and neighbors
+                      return (
+                        page === 1 ||
+                        page === totalPages ||
+                        Math.abs(page - currentPage) <= 1
+                      );
+                    })
+                    .reduce((acc, page, i, arr) => {
+                      // Insert ellipsis between gaps
+                      if (i > 0 && page - arr[i - 1] > 1) {
+                        acc.push('...');
+                      }
+                      acc.push(page);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
+                      ) : (
+                        <Button
+                          key={item}
+                          variant={currentPage === item ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(item)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {item}
+                        </Button>
+                      )
+                    )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Suivant ›
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

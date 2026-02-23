@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Play, BookOpen, GraduationCap, Lock, FileQuestion, Calendar, Library, Shuffle, HelpCircle } from "lucide-react";
+import { ArrowLeft, Play, BookOpen, GraduationCap, FileQuestion, Calendar, Library, Shuffle, HelpCircle } from "lucide-react";
 import { moduleService } from "@/services/moduleService";
 import { userService } from "@/services/userService";
 import { api } from "@/lib/utils";
+import helpIconImg from "@/assets/help-icon.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,12 +115,12 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
         onClick={() => onStart(exam.id, examType)}
       >
         <CardContent className="px-3 py-3 sm:px-4 sm:py-3 flex flex-col relative">
-          {/* Help button - top left corner */}
+          {/* Help button - top right corner */}
           {exam.helpText && (
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 h-6 w-6 sm:h-7 sm:w-7 p-0 z-10 hover:bg-blue-100 rounded-full transition-all hover:scale-110 bg-blue-50"
+              className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 h-6 w-6 sm:h-7 sm:w-7 p-0 z-10 hover:bg-blue-100 rounded-full transition-all hover:scale-110 bg-blue-50"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowHelp(exam);
@@ -166,12 +167,12 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
             </h3>
           </div>
 
-          {/* Bottom section - Lock icon + count on left, percentage circle on right */}
+          {/* Bottom section - Help icon + count on left, percentage circle on right */}
           <div className="w-full flex items-center justify-between pt-1">
-            {/* Left: Lock icon + count */}
+            {/* Left: Help icon + count */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-gray-100 border border-gray-200">
-                <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500" />
+                <img src={helpIconImg} alt="help" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
               <div className="flex items-baseline gap-0.5 text-gray-500">
                 <span className="font-semibold text-sm sm:text-base">{answeredQuestions}</span>
@@ -198,7 +199,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
                   cy="32"
                   r={radius}
                   fill="none"
-                  stroke={progressPercent >= 100 ? '#10b981' : progressPercent >= 50 ? '#3b82f6' : '#d1d5db'}
+                  stroke={moduleColor || '#3b82f6'}
                   strokeWidth="4"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
@@ -208,7 +209,7 @@ const ExamCard = ({ exam, onStart, onShowHelp, index, moduleColor, examType }) =
               </svg>
               {/* Percentage text */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs sm:text-sm font-bold text-blue-600">{progressPercent}%</span>
+                <span className="text-xs sm:text-sm font-bold" style={{ color: moduleColor || '#3b82f6' }}>{progressPercent}%</span>
               </div>
             </div>
           </div>

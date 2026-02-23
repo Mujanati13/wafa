@@ -10,10 +10,21 @@ import qcmBanqueModel from "../models/qcmBanqueModel.js";
 export const moduleController = {
     create: asyncHandler(async (req, res) => {
         const { name, semester, imageUrl, infoText, color, helpContent, helpImage, helpPdf, difficulty, contentType, textContent, availableInAllSemesters } = req.body;
+        // FormData sends booleans as strings; parse correctly
+        const isAvailableInAllSems = availableInAllSemesters === true || availableInAllSemesters === 'true';
+
+        // Validate: semester required when not available in all semesters
+        if (!isAvailableInAllSems && !semester) {
+            return res.status(400).json({
+                success: false,
+                message: "Un semestre est requis lorsque le module n'est pas disponible pour tous les semestres."
+            });
+        }
+
         const newModule = await moduleSchema.create({
             name,
-            semester: availableInAllSemesters ? "" : semester,
-            availableInAllSemesters: availableInAllSemesters || false,
+            semester: isAvailableInAllSems ? "" : semester,
+            availableInAllSemesters: isAvailableInAllSems,
             imageUrl,
             infoText,
             color: color || "#6366f1",
@@ -38,9 +49,11 @@ export const moduleController = {
         if (req.body.name !== undefined) updateData.name = req.body.name;
         if (req.body.semester !== undefined) updateData.semester = req.body.semester;
         if (req.body.availableInAllSemesters !== undefined) {
-            updateData.availableInAllSemesters = req.body.availableInAllSemesters;
+            // FormData sends booleans as strings; parse correctly
+            const isAvailable = req.body.availableInAllSemesters === true || req.body.availableInAllSemesters === 'true';
+            updateData.availableInAllSemesters = isAvailable;
             // If setting to all semesters, clear the specific semester
-            if (req.body.availableInAllSemesters) {
+            if (isAvailable) {
                 updateData.semester = "";
             }
         }
@@ -57,10 +70,21 @@ export const moduleController = {
 
         console.log(`Updating module ${id} with data:`, updateData);
 
+        // Manual guard: if not available in all semesters, a semester must be provided
+        const finalAvailable = updateData.availableInAllSemesters !== undefined
+            ? updateData.availableInAllSemesters
+            : undefined; // will be resolved from existing doc if not provided
+        if (finalAvailable === false && updateData.semester !== undefined && !updateData.semester) {
+            return res.status(400).json({
+                success: false,
+                message: "Un semestre est requis lorsque le module n'est pas disponible pour tous les semestres."
+            });
+        }
+
         const updatedModule = await moduleSchema.findByIdAndUpdate(
             id,
             updateData,
-            { new: true, runValidators: true }
+            { new: true, runValidators: true, context: 'query' }
         );
 
         if (!updatedModule) {

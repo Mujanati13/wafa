@@ -13,7 +13,7 @@ const examCourseSchema = new mongoose.Schema(
         },
         category: {
             type: String,
-            required: [true, "Category is required"],
+            default: "",
         },
         subCategory: {
             type: String,

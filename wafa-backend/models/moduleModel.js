@@ -9,10 +9,9 @@ const moduleSchema = new mongoose.Schema(
         },
         semester: {
                 type: String,
-                enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10"],
-                required: function() {
-                    return !this.availableInAllSemesters;
-                }
+                enum: ["S1", "S2", "S3","S4", "S5", "S6","S7", "S8", "S9","S10", ""],
+                // Validation is handled at controller level to avoid issues with findByIdAndUpdate context
+                required: false
         },
         // Flag to make module available in all semesters
         availableInAllSemesters: {

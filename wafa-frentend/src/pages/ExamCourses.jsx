@@ -239,10 +239,6 @@ const ExamCourses = () => {
       toast.error("Veuillez sélectionner un module");
       return;
     }
-    if (!categoryToUse) {
-      toast.error("Veuillez sélectionner ou créer une catégorie");
-      return;
-    }
 
     try {
       // Find module ID from name
@@ -365,15 +361,14 @@ const ExamCourses = () => {
       fetchCategoriesForModule(module._id);
     }
     
-    // Check if category is in the existing list
-    const categoryExists = moduleCategoriesData.includes(course.category);
-    setUseCustomCategory(!categoryExists);
+    // Always use select box (no custom toggle needed)
+    setUseCustomCategory(false);
     
     setFormData({
       courseName: course.courseName,
       moduleName: course.moduleName,
-      category: categoryExists ? course.category : "",
-      customCategory: !categoryExists ? course.category : "",
+      category: course.category || "",
+      customCategory: "",
       imageUrl: course.imageUrl === placeholderImage ? "" : course.imageUrl,
       helpText: course.helpText || "",
     });
@@ -397,10 +392,6 @@ const ExamCourses = () => {
     }
     if (!formData.moduleName) {
       toast.error("Veuillez sélectionner un module");
-      return;
-    }
-    if (!categoryToUse) {
-      toast.error("Veuillez sélectionner ou créer une catégorie");
       return;
     }
 
@@ -734,20 +725,9 @@ const ExamCourses = () => {
                     )}
                   </div>
 
-                  {/* Category selection with toggle for custom */}
+                  {/* Category selection with select box only */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-black font-medium">Catégorie *</Label>
-                      {moduleCategoriesData.length > 0 && !loadingCategories && (
-                        <button
-                          type="button"
-                          className="text-xs text-purple-600 hover:text-purple-700 underline"
-                          onClick={() => setUseCustomCategory(!useCustomCategory)}
-                        >
-                          {useCustomCategory ? "Choisir une existante" : "Créer une nouvelle"}
-                        </button>
-                      )}
-                    </div>
+                    <Label className="text-black font-medium">Catégorie</Label>
                     
                     {!formData.moduleName && (
                       <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
@@ -761,11 +741,11 @@ const ExamCourses = () => {
                       </p>
                     )}
                     
-                    {formData.moduleName && !loadingCategories && !useCustomCategory && moduleCategoriesData.length > 0 ? (
+                    {formData.moduleName && !loadingCategories && moduleCategoriesData.length > 0 && (
                       <>
                         <Select value={formData.category} onValueChange={(value) => handleFormChange("category", value)}>
                           <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
-                            <SelectValue placeholder="Sélectionner une catégorie" />
+                            <SelectValue placeholder="Sélectionner une catégorie (optionnel)" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border-gray-200">
                             {moduleCategoriesData.map((cat) => (
@@ -776,18 +756,18 @@ const ExamCourses = () => {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-gray-500">
-                          {moduleCategoriesData.length} catégorie(s) existante(s) pour ce module
+                          {moduleCategoriesData.length} catégorie(s) disponible(s)
                         </p>
                       </>
-                    ) : (
-                      formData.moduleName && !loadingCategories && (
-                        <Input
-                          placeholder={moduleCategoriesData.length > 0 ? "Ou entrez un nouveau nom de catégorie..." : "Entrez le nom de la catégorie..."}
-                          value={formData.customCategory}
-                          onChange={(e) => handleFormChange("customCategory", e.target.value)}
-                          className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
-                        />
-                      )
+                    )}
+                    
+                    {formData.moduleName && !loadingCategories && moduleCategoriesData.length === 0 && (
+                      <Input
+                        placeholder="Aucune catégorie existante - entrez une nouvelle ou laissez vide"
+                        value={formData.customCategory}
+                        onChange={(e) => handleFormChange("customCategory", e.target.value)}
+                        className="bg-gray-50 border-gray-300 text-black placeholder:text-gray-500 focus:border-purple-500 focus:ring-purple-500"
+                      />
                     )}
                   </div>
 
