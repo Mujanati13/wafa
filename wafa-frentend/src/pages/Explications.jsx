@@ -519,7 +519,7 @@ const Explications = () => {
       }
 
       return true;
-    });
+    }).sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
   }, [explanations, searchQuery, statusFilter, moduleFilter, examTypeFilter, userFilter, explanationTypeFilter, dateFrom, dateTo]);
 
   // Calculate pagination using filtered data

@@ -45,7 +45,7 @@ export const reportQuestionsController = {
             .populate({ path: "userId", select: "username email" })
             .populate({
                 path: "questionId",
-                select: "text examId qcmBanqueId sessionLabel",
+                select: "text examId qcmBanqueId sessionLabel questionNumber",
                 populate: [
                     {
                         path: "examId",
@@ -109,6 +109,7 @@ export const reportQuestionsController = {
                 courseCategory: r.questionId?.examId?.category || null,
                 courseName: r.questionId?.examId?.courseName || r.questionId?.examId?.name,
                 // Number of questions in the exam/course
+                questionNumber: r.questionId?.questionNumber || null,
                 numberOfQuestions: examId 
                     ? examQuestionCounts[examId] || 0
                     : qcmBanqueId 

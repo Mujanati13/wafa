@@ -88,8 +88,10 @@ const ExamCourses = () => {
     }
     try {
       setLoadingCategories(true);
-      const { data } = await api.get(`/exam-courses/module/${moduleId}/categories`);
-      setModuleCategoriesData(data?.data || []);
+      // Fetch predefined categories from CourseCategory model for this module
+      const { data } = await api.get(`/course-categories`, { params: { moduleId } });
+      const categoryNames = (data?.data || []).map(cat => cat.name).filter(Boolean);
+      setModuleCategoriesData(categoryNames);
     } catch (err) {
       console.error("Error fetching module categories:", err);
       setModuleCategoriesData([]);

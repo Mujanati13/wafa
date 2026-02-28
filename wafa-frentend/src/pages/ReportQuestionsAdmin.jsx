@@ -83,6 +83,7 @@ const ReportQuestionsAdmin = () => {
         courseCategory: r?.courseCategory || "—",
         courseName: r?.courseName || "—",
         // Number of questions
+        questionNumber: r?.questionNumber || "—",
         numberOfQuestions: r?.numberOfQuestions || "—",
       }));
       console.log("Processed list:", list);
@@ -225,7 +226,7 @@ const ReportQuestionsAdmin = () => {
     const matchesUser = userFilter === "all" || report.username === userFilter;
 
     return matchesSearch && matchesDate && matchesStatus && matchesCategory && matchesModule && matchesUser;
-  });
+  }).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredReports.length / itemsPerPage) || 1;
@@ -542,7 +543,7 @@ const ReportQuestionsAdmin = () => {
                     <TableHead>Module</TableHead>
                     <TableHead>Type d'Examen</TableHead>
                     <TableHead>Examen / Cours</TableHead>
-                    <TableHead>Nb Questions</TableHead>
+                    <TableHead>N° Question</TableHead>
                     <TableHead>Question</TableHead>
                     <TableHead>Détails</TableHead>
                     <TableHead>Date</TableHead>
@@ -622,7 +623,7 @@ const ReportQuestionsAdmin = () => {
                         </TableCell>
                         <TableCell>
                           <span className="text-sm font-medium text-slate-600">
-                            {report.numberOfQuestions || "—"}
+                            {report.questionNumber || "—"}
                           </span>
                         </TableCell>
                         <TableCell className="max-w-xs">
