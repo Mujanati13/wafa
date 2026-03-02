@@ -25,6 +25,7 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
   const [fetchedExplanations, setFetchedExplanations] = useState([]);
   const [loadingExplanations, setLoadingExplanations] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [currentUserSubmission, setCurrentUserSubmission] = useState(null); // Track current user's own submission
   
   // State for AI generation
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -58,6 +59,16 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
           setAiExplanationData(aiExplanation);
         }
         
+        // Detect if the current user already has a user (non-AI) submission
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const currentUserId = storedUser._id || storedUser.id;
+        if (currentUserId) {
+          const mySubmission = explanations.find(
+            e => !e.isAiGenerated && (e.userId?._id === currentUserId || e.userId?.id === currentUserId || e.userId === currentUserId)
+          );
+          if (mySubmission) setCurrentUserSubmission(mySubmission);
+        }
+
         // Filter to only approved user explanations and map to proper format
         const approvedExplanations = explanations
           .filter(e => e.status === 'approved' && !e.isAiGenerated)
@@ -609,8 +620,8 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                     </button>
                   ))}
 
-                  {/* Add button if slots available */}
-                  {canAddExplanation && (
+                  {/* Add button if slots available and user hasn't already submitted */}
+                  {canAddExplanation && !currentUserSubmission && (
                     <button
                       onClick={() => setShowSubmitForm(true)}
                       className="px-4 py-1.5 rounded-full bg-green-50 text-green-700 font-medium border border-green-200 hover:bg-green-100 transition-all flex items-center gap-1"
@@ -618,6 +629,17 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                       <Plus className="h-3 w-3" />
                       Ajouter ({remainingSlots} restant{remainingSlots > 1 ? 's' : ''})
                     </button>
+                  )}
+                  {currentUserSubmission && (
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                      currentUserSubmission.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                      currentUserSubmission.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                      'bg-green-50 text-green-700 border-green-200'
+                    }`}>
+                      {currentUserSubmission.status === 'pending' ? '⏳ Votre explication est en attente de validation' :
+                       currentUserSubmission.status === 'rejected' ? '❌ Votre explication a été rejetée' :
+                       '✅ Votre explication a été approuvée'}
+                    </span>
                   )}
                 </div>
               )}
@@ -756,13 +778,25 @@ const ExplicationModel = ({ question, setShowExplanation, userPlan = "Free" }) =
                   <p className="text-gray-500 text-sm mb-4">
                     Soyez le premier à partager votre compréhension !
                   </p>
-                  <Button
-                    onClick={() => setShowSubmitForm(true)}
-                    className="gap-2 bg-purple-600 hover:bg-purple-700"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Proposer une explication
-                  </Button>
+                  {currentUserSubmission ? (
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                      currentUserSubmission.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                      currentUserSubmission.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                      'bg-green-50 text-green-700 border-green-200'
+                    }`}>
+                      {currentUserSubmission.status === 'pending' ? '⏳ Votre explication est en attente de validation' :
+                       currentUserSubmission.status === 'rejected' ? '❌ Votre explication a été rejetée' :
+                       '✅ Votre explication a été approuvée'}
+                    </span>
+                  ) : (
+                    <Button
+                      onClick={() => setShowSubmitForm(true)}
+                      className="gap-2 bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Proposer une explication
+                    </Button>
+                  )}
                 </div>
               ) : null}
 

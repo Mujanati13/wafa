@@ -61,8 +61,8 @@ export const explanationController = {
             });
         }
 
-        // Check if user already has an explanation for this question
-        const userExplanation = await explanationModel.findOne({ userId, questionId });
+        // Check if user already has a user explanation for this question
+        const userExplanation = await explanationModel.findOne({ userId, questionId, isAiGenerated: false });
         if (userExplanation) {
             return res.status(400).json({
                 success: false,
