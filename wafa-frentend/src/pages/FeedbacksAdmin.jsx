@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +40,16 @@ import {
   XCircle,
   Award,
   User,
+  Upload,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/utils";
+
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace("/api/v1", "");
+const getImageSrc = (url) => {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `${BASE_URL}${url}`;
+};
 
 const FeedbacksAdmin = () => {
   const [loading, setLoading] = useState(true);
@@ -50,6 +58,9 @@ const FeedbacksAdmin = () => {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: "",
     role: "Étudiant en médecine",
@@ -84,6 +95,8 @@ const FeedbacksAdmin = () => {
     if (feedback) {
       setEditMode(true);
       setSelectedFeedback(feedback);
+      setImageFile(null);
+      setImagePreview(getImageSrc(feedback.imageUrl || ""));
       setFormData({
         name: feedback.name,
         role: feedback.role,
@@ -97,6 +110,8 @@ const FeedbacksAdmin = () => {
     } else {
       setEditMode(false);
       setSelectedFeedback(null);
+      setImageFile(null);
+      setImagePreview("");
       setFormData({
         name: "",
         role: "Étudiant en médecine",
@@ -115,6 +130,8 @@ const FeedbacksAdmin = () => {
     setShowDialog(false);
     setEditMode(false);
     setSelectedFeedback(null);
+    setImageFile(null);
+    setImagePreview("");
     setFormData({
       name: "",
       role: "Étudiant en médecine",
@@ -135,20 +152,43 @@ const FeedbacksAdmin = () => {
     }));
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image valide");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
 
     try {
+      const submitData = new FormData();
+      Object.entries(formData).forEach(([key, val]) => {
+        if (key !== "imageUrl") submitData.append(key, val);
+      });
+      if (imageFile) {
+        submitData.append("image", imageFile);
+      } else {
+        submitData.append("imageUrl", formData.imageUrl || "");
+      }
+
+      const config = { headers: { "Content-Type": "multipart/form-data" } };
+
       if (editMode && selectedFeedback) {
-        const response = await api.put(`/feedbacks/${selectedFeedback._id}`, formData);
+        const response = await api.put(`/feedbacks/${selectedFeedback._id}`, submitData, config);
         if (response.data.success) {
           toast.success("Témoignage mis à jour avec succès");
           fetchFeedbacks();
           handleCloseDialog();
         }
       } else {
-        const response = await api.post("/feedbacks", formData);
+        const response = await api.post("/feedbacks", submitData, config);
         if (response.data.success) {
           toast.success("Témoignage créé avec succès");
           fetchFeedbacks();
@@ -326,7 +366,7 @@ const FeedbacksAdmin = () => {
                           <div className="flex items-center gap-2">
                             {feedback.imageUrl ? (
                               <img
-                                src={feedback.imageUrl}
+                                src={getImageSrc(feedback.imageUrl)}
                                 alt={feedback.name}
                                 className="w-8 h-8 rounded-full object-cover"
                               />
@@ -510,23 +550,46 @@ const FeedbacksAdmin = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">URL de l'image (optionnel)</Label>
-              <Input
-                id="imageUrl"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                placeholder="https://example.com/image.jpg"
+              <Label>Photo (optionnel)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
               />
-              {formData.imageUrl && (
-                <div className="mt-2">
-                  <img
-                    src={formData.imageUrl}
-                    alt="Preview"
-                    className="w-16 h-16 rounded-full object-cover border"
-                  />
-                </div>
-              )}
+              <div className="flex items-center gap-3">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-full object-cover border-2 border-blue-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setImageFile(null); setImagePreview(""); setFormData(p => ({ ...p, imageUrl: "" })); }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <User className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  {imagePreview ? "Changer" : "Télécharger"}
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center gap-6 pt-2">

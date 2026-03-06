@@ -955,6 +955,26 @@ const PricingSection = ({ settings }) => {
   );
 };
 
+// Truncated testimonial message with expand toggle
+const TestimonialMessage = ({ message }) => {
+  const [expanded, setExpanded] = useState(false);
+  const limit = 200;
+  const isLong = message.length > limit;
+  return (
+    <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
+      "{expanded || !isLong ? message : message.slice(0, limit) + '…'}"
+      {isLong && (
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="ml-1 text-blue-600 hover:underline text-xs font-medium"
+        >
+          {expanded ? 'Voir moins' : 'Voir plus'}
+        </button>
+      )}
+    </p>
+  );
+};
+
 // Testimonials Section
 const TestimonialsSection = () => {
   const { t } = useTranslation("landing");
@@ -1030,21 +1050,16 @@ const TestimonialsSection = () => {
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-2 transform hover:-translate-y-1">
                   <CardContent className="pt-6 h-full flex flex-col">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 md:h-5 w-4 md:w-5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground mb-6 flex-grow text-sm md:text-base leading-relaxed">"{testimonial.message}"</p>
-                    <div className="flex items-center gap-3">
+                    {/* Avatar + name at top */}
+                    <div className="flex items-center gap-3 mb-4">
                       {testimonial.imageUrl ? (
                         <img
-                          src={testimonial.imageUrl}
+                          src={testimonial.imageUrl.startsWith('http') ? testimonial.imageUrl : `${API_URL?.replace('/api/v1', '')}${testimonial.imageUrl}`}
                           alt={testimonial.name}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-blue-200"
+                          className="w-12 h-12 rounded-full object-cover border-2 border-blue-200 flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                           {testimonial.name.charAt(0)}
                         </div>
                       )}
@@ -1053,6 +1068,12 @@ const TestimonialsSection = () => {
                         <p className="text-xs md:text-sm text-muted-foreground">{testimonial.role}</p>
                       </div>
                     </div>
+                    <div className="flex gap-1 mb-3">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 md:h-5 w-4 md:w-5 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <TestimonialMessage message={testimonial.message} />
                   </CardContent>
                 </Card>
               </motion.div>
