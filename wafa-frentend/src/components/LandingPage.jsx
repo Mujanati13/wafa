@@ -161,6 +161,7 @@ const LandingPage = () => {
       <HeroSection settings={landingSettings} />
       <FeaturesSection />
       <PricingSection settings={landingSettings} />
+      <QuickContact settings={landingSettings} />
       <TestimonialsSection />
       <FAQSection settings={landingSettings} />
       <FeedbackSection settings={landingSettings} />
@@ -1178,6 +1179,34 @@ const FAQSection = ({ settings }) => {
             })}
           </Accordion>
         </motion.div>
+      </div>
+    </section>
+  );
+};
+
+// Quick Contact Line
+const QuickContact = ({ settings }) => {
+  const contactPhone = settings?.contactPhone || "+1234567890";
+  const whatsappNumber = settings?.whatsappNumber || "";
+
+  return (
+    <section className="bg-gradient-to-r from-blue-50 to-purple-50 py-6 md:py-8 px-4 sm:px-6 lg:px-8 border-y border-blue-100">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm md:text-base">
+          <div className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+            <Phone className="h-4 w-4" />
+            <a href={`tel:${contactPhone}`} className="font-medium">{contactPhone}</a>
+          </div>
+          {whatsappNumber && (
+            <>
+              <div className="hidden sm:block text-gray-300">•</div>
+              <div className="flex items-center gap-2 hover:text-green-600 transition-colors">
+                <MessageCircle className="h-4 w-4 text-green-500" />
+                <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="font-medium text-green-600">WhatsApp</a>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
