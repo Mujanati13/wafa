@@ -42,6 +42,7 @@ import {
 const Dashboard = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const navigate = useNavigate();
+  const WHATSAPP_NUMBER = "0699204386";
 
   // Use shared semester context instead of local state
   const { selectedSemester: semester, setSelectedSemester: setSemester, userSemesters } = useSemester();
@@ -63,6 +64,9 @@ const Dashboard = () => {
   const [performanceTrend, setPerformanceTrend] = useState([]);
   const [completionData, setCompletionData] = useState([]);
   const [semesterPage, setSemesterPage] = useState(0); // For paginating semesters (2 at a time)
+
+  const normalizedPlan = (user?.plan || 'Free').toLowerCase();
+  const isFreeUser = normalizedPlan === 'free' || normalizedPlan === 'gratuit';
 
   // Load user from localStorage immediately on component mount
   useEffect(() => {
@@ -455,6 +459,12 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
     });
   };
 
+  const handleContactWhatsApp = () => {
+    const message = encodeURIComponent("Bonjour, je souhaite activer mon abonnement pour accéder a tous les modules.");
+    const whatsappUrl = `https://wa.me/212${WHATSAPP_NUMBER.replace(/^0/, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-4 md:p-6">
       {/* Background Effects */}
@@ -496,14 +506,17 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                         Bienvenue, {user?.name || user?.fullName || 'Étudiant'} !
                       </h1>
                       <p className="text-blue-100 text-xs xs:text-sm mt-1">
-                        Prêt à exceller dans vos études ?
+                        {isFreeUser
+                          ? "Vous etes sur le plan Free. Activez votre abonnement pour debloquer tous les modules."
+                          : "Pret a exceller dans vos etudes ?"
+                        }
                       </p>
                     </div>
                   </div>
 
                   {/* Support Link */}
                   <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-shrink-0">
-                    <p className="text-blue-100">Besoin d'aide ?</p>
+                    <p className="text-blue-100">{isFreeUser ? "Besoin d'aide pour l'activation ?" : "Besoin d'aide ?"}</p>
                     <Button
                       variant="link"
                       className="p-0 h-auto text-white font-semibold hover:text-yellow-300 underline underline-offset-4 text-xs sm:text-sm"
@@ -527,9 +540,11 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                       <div className="text-white min-w-0 flex-1">
                         <p className="text-xs sm:text-sm font-medium opacity-90">Mon Abonnement</p>
                         <p className="text-xl sm:text-2xl font-bold mt-1 truncate">
-                          {user?.plan === 'Premium Annuel' ? 'Premium Pro' : (user?.plan || 'Gratuit')}
+                          {isFreeUser ? 'Free' : (user?.plan === 'Premium Annuel' ? 'Premium Pro' : (user?.plan || 'Gratuit'))}
                         </p>
-                        <p className="text-[10px] xs:text-xs opacity-80 mt-2 group-hover:underline">Voir les détails →</p>
+                        <p className="text-[10px] xs:text-xs opacity-80 mt-2 group-hover:underline">
+                          {isFreeUser ? 'Voir les options de paiement →' : 'Voir les details →'}
+                        </p>
                       </div>
                       <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">
                         <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
@@ -596,6 +611,33 @@ ${selectedModule.exams?.length ? `\n📋 Examens disponibles:\n${selectedModule.
                     </p>
                   </div>
                 </div>
+
+                {isFreeUser && (
+                  <div className="rounded-xl sm:rounded-2xl border-2 border-amber-200 bg-amber-50/95 p-4 sm:p-6 shadow-lg">
+                    <div className="text-center space-y-3 sm:space-y-4">
+                      <p className="text-lg sm:text-2xl font-bold text-amber-900 leading-snug">
+                        Vous souhaitez acceder a tous les modules ?
+                      </p>
+                      <p className="text-sm sm:text-base text-amber-800">
+                        Consultez les methodes de paiement ou discutez directement avec notre equipe sur WhatsApp.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center pt-1">
+                        <Button
+                          onClick={() => navigate('/dashboard/subscription')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                        >
+                          Voir les paiements
+                        </Button>
+                        <Button
+                          onClick={handleContactWhatsApp}
+                          className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                        >
+                          Cliquez ici (WhatsApp)
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Right Column - For future content if needed */}
               </div>
