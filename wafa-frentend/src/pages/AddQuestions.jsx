@@ -91,6 +91,7 @@ const AddQuestions = () => {
   };
 
   const [selectedModule, setSelectedModule] = useState("");
+  const [selectedContextSemester, setSelectedContextSemester] = useState("");
   const [examType, setExamType] = useState("");
   const [selectedExamNameYears, setSelectedExamNameYears] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -127,6 +128,26 @@ const AddQuestions = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const contextSemesterOptions = useMemo(() => {
+    const semesters = Array.from(new Set(modules.map((m) => m.semester).filter(Boolean)));
+    return semesters.sort((a, b) => {
+      const numA = parseInt(String(a).replace(/^S/i, ""), 10);
+      const numB = parseInt(String(b).replace(/^S/i, ""), 10);
+
+      if (Number.isNaN(numA) && Number.isNaN(numB)) {
+        return String(a).localeCompare(String(b));
+      }
+      if (Number.isNaN(numA)) return 1;
+      if (Number.isNaN(numB)) return -1;
+      return numA - numB;
+    });
+  }, [modules]);
+
+  const contextModules = useMemo(() => {
+    if (!selectedContextSemester) return [];
+    return modules.filter((m) => m.semester === selectedContextSemester);
+  }, [modules, selectedContextSemester]);
 
   // Filter questions based on search and exam filter
   const filteredQuestions = useMemo(() => {
@@ -485,7 +506,38 @@ const AddQuestions = () => {
             <CardDescription>{t('admin:select_module_exam_type')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label>{t('admin:semester', 'Semester')}</Label>
+                <Select
+                  value={selectedContextSemester}
+                  onValueChange={(val) => {
+                    setSelectedContextSemester(val);
+                    setSelectedModule("");
+                    setExamType("");
+                    setSelectedExamNameYears("");
+                    setSelectedCategory("");
+                    setSelectedCourse("");
+                    setSelectedYearName("");
+                    setSelectedTPName("");
+                    setSelectedQCMName("");
+                    setCategories([]);
+                    setCourses([]);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('admin:choose_semester', 'Choisir un semestre')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contextSemesterOptions.map((semester) => (
+                      <SelectItem key={semester} value={semester}>
+                        {semester}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>{t('admin:module')}</Label>
                 <Select
@@ -501,12 +553,13 @@ const AddQuestions = () => {
                     setSelectedQCMName("");
                     fetchCategoriesForModule(val);
                   }}
+                  disabled={!selectedContextSemester}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('admin:choose_module')} />
+                    <SelectValue placeholder={selectedContextSemester ? t('admin:choose_module') : t('admin:choose_semester', 'Choisir un semestre')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {modules.map((m) => (
+                    {contextModules.map((m) => (
                       <SelectItem key={m._id} value={m._id}>
                         {m.name}
                       </SelectItem>

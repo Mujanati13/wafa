@@ -1188,24 +1188,40 @@ const FAQSection = ({ settings }) => {
 const QuickContact = ({ settings }) => {
   const contactPhone = settings?.contactPhone || "+1234567890";
   const whatsappNumber = settings?.whatsappNumber || "";
+  const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
 
   return (
-    <section className="bg-gradient-to-r from-blue-50 to-purple-50 py-6 md:py-8 px-4 sm:px-6 lg:px-8 border-y border-blue-100">
+    <section className="relative py-6 md:py-8 px-4 sm:px-6 lg:px-8 border-y border-blue-100 bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm md:text-base">
-          <div className="flex items-center gap-2 hover:text-blue-600 transition-colors">
-            <Phone className="h-4 w-4" />
-            <a href={`tel:${contactPhone}`} className="font-medium">{contactPhone}</a>
+        <div className="rounded-2xl border border-blue-100/80 bg-white/80 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-4 md:py-5">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 text-sm md:text-base">
+            <a
+              href={`tel:${contactPhone}`}
+              className="group w-full md:w-auto flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 hover:border-blue-300 hover:bg-blue-50/80 transition-all"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700 group-hover:bg-blue-200 transition-colors">
+                <Phone className="h-4 w-4" />
+              </span>
+              <span className="font-semibold tracking-wide">{contactPhone}</span>
+            </a>
+
+            {whatsappNumber && (
+              <>
+                <div className="hidden md:flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 text-slate-400 text-lg">•</div>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group w-full md:w-auto flex items-center justify-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100/70 transition-all"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200 transition-colors">
+                    <MessageCircle className="h-4 w-4" />
+                  </span>
+                  <span className="font-semibold tracking-wide">WhatsApp</span>
+                </a>
+              </>
+            )}
           </div>
-          {whatsappNumber && (
-            <>
-              <div className="hidden sm:block text-gray-300">•</div>
-              <div className="flex items-center gap-2 hover:text-green-600 transition-colors">
-                <MessageCircle className="h-4 w-4 text-green-500" />
-                <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="font-medium text-green-600">WhatsApp</a>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </section>

@@ -20,6 +20,7 @@ const CreateCategoriesForCourses = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
+    semester: "",
     moduleId: "",
     category: "",
     imageUrl: "",
@@ -93,8 +94,23 @@ const CreateCategoriesForCourses = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const semesterOptions = useMemo(() => {
+    const uniqueSemesters = Array.from(new Set(modules.map((mod) => mod.semester).filter(Boolean)));
+    return uniqueSemesters.sort((a, b) => {
+      const numA = parseInt(String(a).replace("S", ""), 10);
+      const numB = parseInt(String(b).replace("S", ""), 10);
+      if (Number.isNaN(numA) || Number.isNaN(numB)) return String(a).localeCompare(String(b));
+      return numA - numB;
+    });
+  }, [modules]);
+
+  const filteredFormModules = useMemo(() => {
+    if (!formData.semester) return [];
+    return modules.filter((mod) => mod.semester === formData.semester);
+  }, [modules, formData.semester]);
+
   const handleCreate = async () => {
-    if (!formData.moduleId || !formData.category) {
+    if (!formData.semester || !formData.moduleId || !formData.category) {
       toast.error("Veuillez remplir les champs obligatoires");
       return;
     }
@@ -119,7 +135,7 @@ const CreateCategoriesForCourses = () => {
       }
       toast.success("Catégorie créée avec succès");
       setShowCreateForm(false);
-      setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      setFormData({ name: "", semester: "", moduleId: "", category: "", imageUrl: "" });
       setImageFile(null);
       setImagePreview(null);
       fetchCategories();
@@ -130,8 +146,10 @@ const CreateCategoriesForCourses = () => {
   };
 
   const handleEdit = (category) => {
+    const selectedModule = modules.find((mod) => mod._id === category.moduleId);
     setFormData({
       name: category.categoryName,
+      semester: selectedModule?.semester || category.moduleSemester || "",
       moduleId: category.moduleId,
       category: category.categoryName || "",
       imageUrl: category.rawImageUrl || "",
@@ -148,7 +166,7 @@ const CreateCategoriesForCourses = () => {
   };
 
   const handleUpdate = async () => {
-    if (!formData.moduleId || !formData.category) {
+    if (!formData.semester || !formData.moduleId || !formData.category) {
       toast.error("Veuillez remplir les champs obligatoires");
       return;
     }
@@ -171,7 +189,7 @@ const CreateCategoriesForCourses = () => {
       toast.success("Catégorie mise à jour avec succès");
       setShowCreateForm(false);
       setEditingCategory(null);
-      setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+      setFormData({ name: "", semester: "", moduleId: "", category: "", imageUrl: "" });
       setImageFile(null);
       setImagePreview(null);
       fetchCategories();
@@ -609,18 +627,43 @@ const CreateCategoriesForCourses = () => {
 
                 <form className="space-y-4 py-4" onSubmit={(e) => { e.preventDefault(); editingCategory ? handleUpdate() : handleCreate(); }}>
                   <div className="space-y-2">
+                    <Label className="text-black">Select Semester *</Label>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Choisissez d'abord le semestre
+                    </p>
+                    <Select
+                      value={formData.semester}
+                      onValueChange={(value) => {
+                        handleFormChange("semester", value);
+                        handleFormChange("moduleId", "");
+                      }}
+                    >
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
+                        <SelectValue placeholder="Choose semester" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {semesterOptions.map((semester) => (
+                          <SelectItem key={semester} value={semester} className="text-black">
+                            {semester}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label className="text-black">Select Module *</Label>
                     <p className="text-xs text-gray-500 mb-1">
                       Le module auquel cette catégorie de cours sera rattachée
                     </p>
                     <Select value={formData.moduleId} onValueChange={(value) => handleFormChange("moduleId", value)}>
-                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black">
-                        <SelectValue placeholder="Choose module" />
+                      <SelectTrigger className="bg-gray-50 border-gray-300 text-black" disabled={!formData.semester}>
+                        <SelectValue placeholder={formData.semester ? "Choose module" : "Choose semester first"} />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-gray-200">
-                        {modules.map((mod) => (
+                        {filteredFormModules.map((mod) => (
                           <SelectItem key={mod._id} value={mod._id} className="text-black">
-                            {mod.name} ({mod.semester})
+                            {mod.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -681,7 +724,7 @@ const CreateCategoriesForCourses = () => {
                       onClick={() => {
                         setShowCreateForm(false);
                         setEditingCategory(null);
-                        setFormData({ name: "", moduleId: "", category: "", imageUrl: "" });
+                        setFormData({ name: "", semester: "", moduleId: "", category: "", imageUrl: "" });
                       }}
                     >
                       Cancel

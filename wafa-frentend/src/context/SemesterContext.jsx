@@ -2,26 +2,50 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { userService } from '@/services/userService';
 
 const SemesterContext = createContext();
+const SELECTED_SEMESTER_STORAGE_KEY = 'selectedSemester';
+
+const getCachedUserProfile = () => {
+    try {
+        const cached = localStorage.getItem('userProfile') || localStorage.getItem('user');
+        if (!cached) return null;
+        return JSON.parse(cached);
+    } catch (error) {
+        console.error('Error parsing cached user profile:', error);
+        return null;
+    }
+};
 
 export const SemesterProvider = ({ children }) => {
-    // Initialize from localStorage for instant display
+    // Initialize from persisted selected semester for stable UX across route transitions
     const [selectedSemester, setSelectedSemester] = useState(() => {
-        const cached = localStorage.getItem('userProfile');
-        if (cached) {
-            const user = JSON.parse(cached);
-            return user.semesters?.[0] || null;
+        const persisted = localStorage.getItem(SELECTED_SEMESTER_STORAGE_KEY);
+        const user = getCachedUserProfile();
+
+        if (persisted) {
+            if (!Array.isArray(user?.semesters) || user.semesters.includes(persisted)) {
+                return persisted;
+            }
         }
-        return null;
+
+        return user?.semesters?.[0] || null;
     });
+
     const [userSemesters, setUserSemesters] = useState(() => {
-        const cached = localStorage.getItem('userProfile');
-        if (cached) {
-            const user = JSON.parse(cached);
-            return user.semesters || [];
+        const user = getCachedUserProfile();
+        if (Array.isArray(user?.semesters)) {
+            return user.semesters;
         }
         return [];
     });
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (selectedSemester) {
+            localStorage.setItem(SELECTED_SEMESTER_STORAGE_KEY, selectedSemester);
+        } else {
+            localStorage.removeItem(SELECTED_SEMESTER_STORAGE_KEY);
+        }
+    }, [selectedSemester]);
 
     // Fetch user profile to get subscribed semesters
     useEffect(() => {
@@ -33,16 +57,28 @@ export const SemesterProvider = ({ children }) => {
                 }
                 
                 const userProfile = await userService.getUserProfile();
-                const semesters = userProfile.semesters || [];
+                const semesters = Array.isArray(userProfile?.semesters) ? userProfile.semesters : [];
                 setUserSemesters(semesters);
 
-                // Set default semester to the first subscribed semester
-                if (semesters.length > 0 && !selectedSemester) {
-                    setSelectedSemester(semesters[0]);
-                }
+                // Keep selected semester if still valid; otherwise fallback safely
+                setSelectedSemester((currentSemester) => {
+                    if (semesters.length === 0) return null;
+
+                    if (currentSemester && semesters.includes(currentSemester)) {
+                        return currentSemester;
+                    }
+
+                    const persisted = localStorage.getItem(SELECTED_SEMESTER_STORAGE_KEY);
+                    if (persisted && semesters.includes(persisted)) {
+                        return persisted;
+                    }
+
+                    return semesters[0];
+                });
 
                 // Update localStorage with latest user data
                 localStorage.setItem("user", JSON.stringify(userProfile));
+                localStorage.setItem("userProfile", JSON.stringify(userProfile));
             } catch (error) {
                 console.error("Error fetching user semesters:", error);
                 // Fallback to localStorage - already initialized above
