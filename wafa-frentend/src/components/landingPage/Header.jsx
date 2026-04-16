@@ -64,8 +64,8 @@ const Header = ({ settings }) => {
 
   const navItems = [
     { label: t('common:nav_home'), href: '#accueil' },
-    { label: t('common:nav_about'), href: '#apropos' },
-    { label: t('common:nav_pricing'), href: '#tarifs' },
+    { label: t('common:nav_about'), href: '#features' },
+    { label: t('common:nav_pricing'), href: '#pricing' },
     { label: t('common:nav_contact'), href: '#contact' }
   ];
 
@@ -75,7 +75,11 @@ const Header = ({ settings }) => {
     setIsMenuOpen(false);
 
     const targetId = href.substring(1);
-    const element = document.getElementById(targetId);
+    const idAlias = {
+      apropos: 'features',
+      tarifs: 'pricing'
+    };
+    const element = document.getElementById(targetId) || document.getElementById(idAlias[targetId]);
 
     if (element) {
       const headerHeight = 80;
