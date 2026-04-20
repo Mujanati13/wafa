@@ -56,7 +56,7 @@ export const SemesterProvider = ({ children }) => {
                     setLoading(true);
                 }
                 
-                const userProfile = await userService.getUserProfile();
+                const userProfile = await userService.getUserProfile(true);
                 const semesters = Array.isArray(userProfile?.semesters) ? userProfile.semesters : [];
                 setUserSemesters(semesters);
 
@@ -88,6 +88,15 @@ export const SemesterProvider = ({ children }) => {
         };
 
         fetchUserSemesters();
+
+        const handleAuthStateChanged = () => {
+            fetchUserSemesters();
+        };
+
+        window.addEventListener('auth-state-changed', handleAuthStateChanged);
+        return () => {
+            window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+        };
     }, []);
 
     const value = {

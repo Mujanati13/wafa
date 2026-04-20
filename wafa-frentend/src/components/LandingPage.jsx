@@ -57,6 +57,23 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const requestWithRetry = async (requestFn, maxRetries = 1, retryDelayMs = 500) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+  }
+
+  throw lastError;
+};
+
 // Countdown Timer Component
 const CountdownTimer = ({ settings }) => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -134,7 +151,7 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchLandingSettings = async () => {
       try {
-        const response = await axios.get(`${API_URL}/landing-settings`);
+        const response = await requestWithRetry(() => axios.get(`${API_URL}/landing-settings`));
         if (response.data.success) {
           setLandingSettings(response.data.data);
         }
@@ -186,9 +203,20 @@ const HeroSection = ({ settings }) => {
   const [stats, setStats] = useState({ average: 85, progress: 22, rank: 'Top 5%' });
 
   useEffect(() => {
-    // Check if user is logged in by checking for auth token
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
+    const syncAuthState = () => {
+      // Check if user is logged in by checking for auth token
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+
+    syncAuthState();
+    window.addEventListener('storage', syncAuthState);
+    window.addEventListener('auth-state-changed', syncAuthState);
+
+    return () => {
+      window.removeEventListener('storage', syncAuthState);
+      window.removeEventListener('auth-state-changed', syncAuthState);
+    };
   }, []);
 
   // Update chart data every 3 seconds with animation
@@ -985,7 +1013,7 @@ const TestimonialsSection = () => {
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const response = await axios.get(`${API_URL}/feedbacks`);
+        const response = await requestWithRetry(() => axios.get(`${API_URL}/feedbacks`));
         console.log('Testimonials API response:', response.data);
         if (response.data.success) {
           setTestimonials(response.data.data || []);

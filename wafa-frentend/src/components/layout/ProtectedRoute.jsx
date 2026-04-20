@@ -58,8 +58,16 @@ const ProtectedRoute = ({ children }) => {
       }
     };
 
+    const handleAuthStateChanged = () => {
+      checkAuth();
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-state-changed', handleAuthStateChanged);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+    };
   }, []);
 
   if (loading) {

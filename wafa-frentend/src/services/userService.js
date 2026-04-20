@@ -103,7 +103,7 @@ export const userService = {
             }
 
             // If there's already a pending request, wait for it (prevents duplicate calls)
-            if (userService._pendingProfileRequest) {
+            if (!forceRefresh && userService._pendingProfileRequest) {
                 return userService._pendingProfileRequest;
             }
 
@@ -111,6 +111,7 @@ export const userService = {
             if (forceRefresh) {
                 localStorage.removeItem('userProfile');
                 userService._profileCache = null;
+                userService._pendingProfileRequest = null;
             }
 
             // Create the request and store it
@@ -134,9 +135,14 @@ export const userService = {
             console.error('Error fetching user profile:', error);
             
             // Return cached data from localStorage as fallback
-            const cached = localStorage.getItem('userProfile');
+            const cached = localStorage.getItem('userProfile') || localStorage.getItem('user');
             if (cached) {
-                return JSON.parse(cached);
+                try {
+                    return JSON.parse(cached);
+                } catch (parseError) {
+                    console.error('Invalid cached user profile JSON:', parseError);
+                    localStorage.removeItem('userProfile');
+                }
             }
             throw error;
         }

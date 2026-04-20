@@ -11,6 +11,8 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import axios from 'axios';
+import { userService } from '@/services/userService';
+import { dashboardService } from '@/services/dashboardService';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -84,6 +86,10 @@ export const loginWithEmail = async (email, password) => {
       localStorage.setItem('token', response.data.token);
     }
 
+    // Ensure stale dashboard/profile caches are reset for the new session.
+    dashboardService.clearCache();
+    userService.clearProfileCache();
+
     return {
       success: true,
       user: response.data.user,
@@ -116,6 +122,10 @@ export const loginWithGoogle = async () => {
 
     // Store JWT token
     localStorage.setItem('token', response.data.token);
+
+    // Ensure stale dashboard/profile caches are reset for the new session.
+    dashboardService.clearCache();
+    userService.clearProfileCache();
 
     return {
       success: true,
@@ -253,6 +263,9 @@ export const signOut = async () => {
     localStorage.removeItem('user');
     localStorage.removeItem('userProfile');
     localStorage.removeItem('pendingVerificationEmail');
+    dashboardService.clearCache();
+    userService.clearProfileCache();
+    window.dispatchEvent(new Event('auth-state-changed'));
     
     // Clear all user-specific exam progress data
     const keysToRemove = [];
@@ -274,6 +287,9 @@ export const signOut = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userProfile');
+    dashboardService.clearCache();
+    userService.clearProfileCache();
+    window.dispatchEvent(new Event('auth-state-changed'));
     throw handleAuthError(error);
   }
 };

@@ -26,6 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { moduleService } from "@/services/moduleService";
+import { userService } from "@/services/userService";
 import { useSemester } from "@/context/SemesterContext";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -88,15 +89,41 @@ const SideBar = ({ sidebarOpen, setSidebarOpen, isMobile }) => {
 
   // Load user plan from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const applyCachedUserPlan = () => {
+      const storedUser = localStorage.getItem("userProfile") || localStorage.getItem("user");
+      if (!storedUser) return;
+
       try {
         const user = JSON.parse(storedUser);
         setUserPlan(user.plan || "Free");
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
-    }
+    };
+
+    const syncUserPlan = async () => {
+      try {
+        const user = await userService.getUserProfile(true);
+        setUserPlan(user?.plan || "Free");
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userProfile", JSON.stringify(user));
+      } catch (error) {
+        console.error("Error fetching user plan:", error);
+        applyCachedUserPlan();
+      }
+    };
+
+    const handleAuthStateChanged = () => {
+      syncUserPlan();
+    };
+
+    applyCachedUserPlan();
+    syncUserPlan();
+    window.addEventListener('auth-state-changed', handleAuthStateChanged);
+
+    return () => {
+      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+    };
   }, []);
 
   useEffect(() => {

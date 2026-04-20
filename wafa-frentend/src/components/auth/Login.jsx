@@ -73,6 +73,8 @@ const Login = () => {
         console.error('Error fetching full profile:', profileError);
       }
 
+      window.dispatchEvent(new Event('auth-state-changed'));
+
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),
       });
@@ -132,6 +134,8 @@ const Login = () => {
       } catch (profileError) {
         console.error('Error fetching full profile:', profileError);
       }
+
+      window.dispatchEvent(new Event('auth-state-changed'));
 
       toast.success(t('auth:login_success'), {
         description: t('auth:login_success'),

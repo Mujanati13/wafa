@@ -26,7 +26,11 @@ const Header = ({ settings }) => {
     checkAuth();
     // Listen for storage changes (login/logout in other tabs)
     window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+    window.addEventListener('auth-state-changed', checkAuth);
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('auth-state-changed', checkAuth);
+    };
   }, []);
 
   useEffect(() => {

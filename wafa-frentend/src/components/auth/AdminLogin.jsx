@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import axios from 'axios';
 import logo from '@/assets/logo.png';
+import { userService } from '@/services/userService';
+import { dashboardService } from '@/services/dashboardService';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -62,9 +64,14 @@ const AdminLogin = () => {
 
       // Store user data and token
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('userProfile', JSON.stringify(user));
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
       }
+      dashboardService.clearCache();
+      userService.clearProfileCache();
+      localStorage.setItem('userProfile', JSON.stringify(user));
+      window.dispatchEvent(new Event('auth-state-changed'));
 
       toast.success('Connexion réussie', {
         description: 'Bienvenue dans le tableau de bord administrateur.',

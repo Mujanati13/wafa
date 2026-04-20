@@ -18,18 +18,22 @@ import { userService } from "@/services/userService";
 import { signOut } from "@/services/authService";
 import { api } from "@/lib/utils";
 
+const parseStorageJSON = (key, fallback = null) => {
+  try {
+    const rawValue = localStorage.getItem(key);
+    return rawValue ? JSON.parse(rawValue) : fallback;
+  } catch (error) {
+    console.warn(`Invalid JSON found in localStorage for key: ${key}`, error);
+    return fallback;
+  }
+};
+
 const TopBar = ({ onMenuClick, sidebarOpen }) => {
   const { t } = useTranslation(['dashboard', 'common']);
-  const [user, setUser] = useState(() => {
-    // Initialize from localStorage for instant display
-    const cached = localStorage.getItem('userProfile');
-    return cached ? JSON.parse(cached) : null;
-  });
-  const [landingSettings, setLandingSettings] = useState(() => {
-    // Initialize from localStorage for instant display
-    const cached = localStorage.getItem('landingSettings');
-    return cached ? JSON.parse(cached) : { siteName: 'WAFA', siteVersion: 'v1.1', logoUrl: '' };
-  });
+  const [user, setUser] = useState(() => parseStorageJSON('userProfile', parseStorageJSON('user', null)));
+  const [landingSettings, setLandingSettings] = useState(() =>
+    parseStorageJSON('landingSettings', { siteName: 'WAFA', siteVersion: 'v1.1', logoUrl: '' })
+  );
   const navigate = useNavigate();
 
   // Fetch landing settings
@@ -50,19 +54,42 @@ const TopBar = ({ onMenuClick, sidebarOpen }) => {
 
   // Fetch user profile on mount (force refresh to get latest data)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
       try {
         // Force refresh on component mount to ensure we have latest data
         const userData = await userService.getUserProfile(true);
+        if (!isMounted) return;
         setUser(userData);
         // Sync both localStorage keys
         localStorage.setItem('userProfile', JSON.stringify(userData));
         localStorage.setItem('user', JSON.stringify(userData));
       } catch (error) {
         console.error('Failed to fetch user in TopBar:', error);
+        setUser(parseStorageJSON('userProfile', parseStorageJSON('user', null)));
       }
     };
+
+    const handleAuthStateChanged = () => {
+      fetchUser();
+    };
+
+    const handleStorageChange = (event) => {
+      if (!event.key || event.key === 'user' || event.key === 'userProfile' || event.key === 'token') {
+        fetchUser();
+      }
+    };
+
     fetchUser();
+    window.addEventListener('auth-state-changed', handleAuthStateChanged);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const getUserInitials = () => {

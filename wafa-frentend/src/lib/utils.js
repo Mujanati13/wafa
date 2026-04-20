@@ -49,7 +49,23 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const config = error.config || {};
+    const method = (config.method || 'get').toLowerCase();
+    const status = error.response?.status;
+    const isGetRequest = method === 'get';
+    const isTransientFailure = !error.response || error.code === 'ECONNABORTED' || (status >= 500 && status < 600);
+
+    if (isGetRequest && isTransientFailure) {
+      config.__retryCount = config.__retryCount || 0;
+
+      if (config.__retryCount < 1) {
+        config.__retryCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return api.request(config);
+      }
+    }
+
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
