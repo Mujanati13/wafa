@@ -9,6 +9,8 @@ import { userService } from '@/services/userService';
 import { moduleService } from '@/services/moduleService';
 import logo from '@/assets/logo.png';
 
+const FREE_PLAN_ALLOWED_SEMESTERS = ['S1', 'S3', 'S5', 'S7', 'S9'];
+
 const SelectFreeSemester = () => {
   const navigate = useNavigate();
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -24,11 +26,14 @@ const SelectFreeSemester = () => {
         setLoadingModules(true);
         const { data } = await moduleService.getAllmodules();
         const allModules = data.data || [];
+        const freePlanModules = allModules.filter(
+          (module) => module?.semester && FREE_PLAN_ALLOWED_SEMESTERS.includes(module.semester)
+        );
         
         // Extract unique semesters and group modules by semester
         const semesterMap = new Map();
         
-        allModules.forEach(module => {
+        freePlanModules.forEach(module => {
           const semester = module.semester;
           if (semester) {
             if (!semesterMap.has(semester)) {
@@ -97,6 +102,13 @@ const SelectFreeSemester = () => {
   const handleSelectSemester = async () => {
     if (!selectedSemester) {
       toast.error('Veuillez sélectionner un semestre');
+      return;
+    }
+
+    if (!FREE_PLAN_ALLOWED_SEMESTERS.includes(selectedSemester)) {
+      toast.error('Semestre invalide', {
+        description: 'Le plan gratuit autorise uniquement S1, S3, S5, S7 et S9.'
+      });
       return;
     }
 
