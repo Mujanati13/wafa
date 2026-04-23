@@ -11,6 +11,12 @@ import logo from '@/assets/logo.png';
 
 const FREE_PLAN_ALLOWED_SEMESTERS = ['S1', 'S3', 'S5', 'S7', 'S9'];
 
+const getYearText = (semesterId) => {
+  const semesterNum = parseInt(semesterId.replace('S', ''), 10);
+  const yearNum = Math.ceil(semesterNum / 2);
+  return `${yearNum}${yearNum === 1 ? 'ère' : 'ème'} année`;
+};
+
 const SelectFreeSemester = () => {
   const navigate = useNavigate();
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -29,32 +35,32 @@ const SelectFreeSemester = () => {
         const freePlanModules = allModules.filter(
           (module) => module?.semester && FREE_PLAN_ALLOWED_SEMESTERS.includes(module.semester)
         );
-        
-        // Extract unique semesters and group modules by semester
-        const semesterMap = new Map();
-        
+
+        // Always expose all free-plan semesters, even if some have no returned modules.
+        const semesterMap = new Map(
+          FREE_PLAN_ALLOWED_SEMESTERS.map((semesterId) => {
+            const semesterNum = parseInt(semesterId.replace('S', ''), 10);
+            return [semesterId, {
+              id: semesterId,
+              name: `Semestre ${semesterNum}`,
+              year: getYearText(semesterId),
+              description: '',
+              moduleCount: 0,
+              modules: []
+            }];
+          })
+        );
+
         freePlanModules.forEach(module => {
           const semester = module.semester;
           if (semester) {
-            if (!semesterMap.has(semester)) {
-              // Determine year based on semester number
-              const semesterNum = parseInt(semester.replace('S', ''));
-              const yearNum = Math.ceil(semesterNum / 2);
-              const yearText = `${yearNum}${yearNum === 1 ? 'ère' : 'ème'} année`;
-              
-              semesterMap.set(semester, {
-                id: semester,
-                name: `Semestre ${semesterNum}`,
-                year: yearText,
-                description: module.name,
-                moduleCount: 1,
-                modules: [module.name]
-              });
-            } else {
-              // Add module to existing semester
-              const existing = semesterMap.get(semester);
-              existing.moduleCount += 1;
-              existing.modules.push(module.name);
+            const existing = semesterMap.get(semester);
+            if (!existing) return;
+
+            existing.moduleCount += 1;
+            existing.modules.push(module.name);
+            if (!existing.description) {
+              existing.description = module.name;
             }
           }
         });
