@@ -9,8 +9,6 @@ import { userService } from '@/services/userService';
 import { moduleService } from '@/services/moduleService';
 import logo from '@/assets/logo.png';
 
-const FREE_PLAN_ALLOWED_SEMESTERS = ['S1', 'S3', 'S5', 'S7', 'S9'];
-
 const getYearText = (semesterId) => {
   const semesterNum = parseInt(semesterId.replace('S', ''), 10);
   const yearNum = Math.ceil(semesterNum / 2);
@@ -32,35 +30,32 @@ const SelectFreeSemester = () => {
         setLoadingModules(true);
         const { data } = await moduleService.getAllmodules();
         const allModules = data.data || [];
-        const freePlanModules = allModules.filter(
-          (module) => module?.semester && FREE_PLAN_ALLOWED_SEMESTERS.includes(module.semester)
-        );
+        const semesterMap = new Map();
 
-        // Always expose all free-plan semesters, even if some have no returned modules.
-        const semesterMap = new Map(
-          FREE_PLAN_ALLOWED_SEMESTERS.map((semesterId) => {
-            const semesterNum = parseInt(semesterId.replace('S', ''), 10);
-            return [semesterId, {
-              id: semesterId,
-              name: `Semestre ${semesterNum}`,
-              year: getYearText(semesterId),
-              description: '',
-              moduleCount: 0,
-              modules: []
-            }];
-          })
-        );
-
-        freePlanModules.forEach(module => {
+        allModules.forEach(module => {
           const semester = module.semester;
-          if (semester) {
-            const existing = semesterMap.get(semester);
-            if (!existing) return;
+          if (!semester || !/^S\d+$/i.test(semester)) {
+            return;
+          }
 
+          if (!semesterMap.has(semester)) {
+            const semesterNum = parseInt(semester.replace('S', ''), 10);
+            semesterMap.set(semester, {
+              id: semester,
+              name: `Semestre ${semesterNum}`,
+              year: getYearText(semester),
+              description: module.name || '',
+              moduleCount: 1,
+              modules: module.name ? [module.name] : []
+            });
+          } else {
+            const existing = semesterMap.get(semester);
             existing.moduleCount += 1;
-            existing.modules.push(module.name);
-            if (!existing.description) {
-              existing.description = module.name;
+            if (module.name) {
+              existing.modules.push(module.name);
+              if (!existing.description) {
+                existing.description = module.name;
+              }
             }
           }
         });
@@ -111,9 +106,10 @@ const SelectFreeSemester = () => {
       return;
     }
 
-    if (!FREE_PLAN_ALLOWED_SEMESTERS.includes(selectedSemester)) {
+    const availableSemesterIds = new Set(semesters.map((semester) => semester.id));
+    if (!availableSemesterIds.has(selectedSemester)) {
       toast.error('Semestre invalide', {
-        description: 'Le plan gratuit autorise uniquement S1, S3, S5, S7 et S9.'
+        description: 'Veuillez choisir un semestre disponible.'
       });
       return;
     }

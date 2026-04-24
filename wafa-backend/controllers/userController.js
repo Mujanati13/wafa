@@ -901,21 +901,15 @@ export const UserController = {
         const userId = req.user._id;
         const { semester } = req.body;
 
-        // Define free plan semesters and their allowed modules
-        const freeSemesterModules = {
-            "S1": ["Anatomie 1"],
-            "S3": ["Anatomie 3"],
-            "S5": ["Parasitologie", "Infection"],
-            "S7": ["Maladies de l'enfant"],
-            "S9": ["Réanimation urgence douleur", "Soins palliatifs", "Réanimation"]
-        };
+        const availableSemesters = (await mongoose
+            .model("Module")
+            .distinct("semester", { semester: { $nin: [null, ""] } }))
+            .filter((value) => /^S\d+$/i.test(value));
 
-        // Validate semester (only S1, S3, S5, S7, S9 for free plan)
-        const validFreeSemesters = ["S1", "S3", "S5", "S7", "S9"];
-        if (!semester || !validFreeSemesters.includes(semester)) {
+        if (!semester || !availableSemesters.includes(semester)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid semester. Free plan only allows: S1, S3, S5, S7, S9"
+                message: `Invalid semester. Allowed semesters: ${availableSemesters.sort((a, b) => parseInt(a.replace("S", ""), 10) - parseInt(b.replace("S", ""), 10)).join(", ")}`
             });
         }
 
@@ -946,9 +940,25 @@ export const UserController = {
             });
         }
 
+        const fallbackModules = await mongoose
+            .model("Module")
+            .find({ semester })
+            .sort({ order: 1, createdAt: 1 })
+            .limit(1)
+            .select("name")
+            .lean();
+        const selectedFreeModules = (fallbackModules || []).map((module) => module.name).filter(Boolean);
+
+        if (selectedFreeModules.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: `No modules available for semester ${semester}`
+            });
+        }
+
         // Grant the free semester
         user.semesters = [semester];
-        user.freeModules = freeSemesterModules[semester];
+        user.freeModules = selectedFreeModules || [];
         user.hasUsedFreeSemester = true;
         user.freeSemesterSelectedAt = new Date();
         await user.save();
