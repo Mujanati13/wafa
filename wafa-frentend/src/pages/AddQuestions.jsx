@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/shared";
 import { toast } from "sonner";
 import { api } from "@/lib/utils";
 
-const yearNames = ["2021", "2022", "2023", "2024"];
+const yearNames = ["2021", "2022", "2023", "2024", "2025"];
 
 const AddQuestions = () => {
   const { t } = useTranslation(['admin', 'common']);
@@ -77,12 +77,15 @@ const AddQuestions = () => {
 
   // Fetch courses when category changes
   const fetchCoursesForCategory = async (moduleId, category) => {
-    if (!moduleId || !category) {
+    if (!moduleId) {
       setCourses([]);
       return;
     }
     try {
-      const response = await api.get(`/exam-courses?moduleId=${moduleId}&category=${category}`);
+      const url = category
+        ? `/exam-courses?moduleId=${moduleId}&category=${category}`
+        : `/exam-courses?moduleId=${moduleId}`;
+      const response = await api.get(url);
       setCourses(response.data?.data || []);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -218,7 +221,7 @@ const AddQuestions = () => {
   const hasContextSelected = (() => {
     if (!selectedModule || !examType) return false;
     if (examType === "years") return !!selectedExamNameYears;
-    if (examType === "courses") return !!(selectedCategory && selectedCourse && selectedYearName);
+    if (examType === "courses") return !!(selectedCourse && selectedYearName);
     if (examType === "tp") return !!selectedTPName;
     if (examType === "qcm") return !!selectedQCMName;
     return false;
@@ -551,7 +554,10 @@ const AddQuestions = () => {
                     setSelectedYearName("");
                     setSelectedTPName("");
                     setSelectedQCMName("");
+                    setCategories([]);
+                    setCourses([]);
                     fetchCategoriesForModule(val);
+                    fetchCoursesForCategory(val, "");
                   }}
                   disabled={!selectedContextSemester}
                 >
@@ -641,7 +647,7 @@ const AddQuestions = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>{t('admin:course')}</Label>
-                    <Select value={selectedCourse} onValueChange={setSelectedCourse} disabled={!selectedCategory}>
+                    <Select value={selectedCourse} onValueChange={setSelectedCourse} disabled={!selectedModule}>
                       <SelectTrigger>
                         <SelectValue placeholder={t('admin:choose_course')} />
                       </SelectTrigger>
